@@ -1,6 +1,3 @@
-// lib/admins.actions.ts
-
-// lib/student.actions.ts
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import {
   Profile,
@@ -35,19 +32,15 @@ import { withCoalescedInvoke } from "next/dist/lib/coalesced-function";
 import toast from "react-hot-toast";
 import { DatabaseIcon } from "lucide-react";
 import { SYSTEM_ENTRYPOINTS } from "next/dist/shared/lib/constants";
-import { getAllSessions } from "./admin.actions";
+import { getAllSessions, getMeeting } from "./admin.actions";
 import { fromZonedTime } from "date-fns-tz";
 import { Table } from "../supabase/tables";
 import {
   tableToInterfaceMeetings,
   tableToInterfaceProfiles,
 } from "../type-utils";
+import { supabase } from "@/lib/supabase/client";
 // import { getMeeting } from "./meeting.actions";
-
-const supabase = createClientComponentClient({
-  supabaseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL,
-  supabaseKey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
-});
 
 /**
  * Fetches all sessions within a 24-hour window around the requested date
@@ -382,19 +375,19 @@ export async function getStudentSessions(
   return sessions;
 }
 
-
 export async function getTutorSessions(
   profileId: string,
   params: {
-    startDate?: string,
-    endDate?: string,
-    status?: string | string[],
-    orderBy?: string,
-    ascending?: boolean,
-  }
+    startDate?: string;
+    endDate?: string;
+    status?: string | string[];
+    orderBy?: string;
+    ascending?: boolean;
+  },
 ): Promise<Session[]> {
-  
-  const { startDate, endDate, status, orderBy, ascending } = params ? params : {}
+  const { startDate, endDate, status, orderBy, ascending } = params
+    ? params
+    : {};
 
   let query = supabase
     .from(Table.Sessions)
@@ -404,7 +397,7 @@ export async function getTutorSessions(
      meeting:Meetings!meeting_id(*),
      student:Profiles!student_id(*),
      tutor:Profiles!tutor_id(*)
-    `
+    `,
     )
     .eq("tutor_id", profileId);
 

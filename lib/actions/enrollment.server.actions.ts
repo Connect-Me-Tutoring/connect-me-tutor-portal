@@ -1,16 +1,15 @@
-"use server"
+"use server";
 import { Enrollment } from "@/types";
 import { createAdminClient, createClient } from "../supabase/server";
 import { Table } from "../supabase/tables";
 import { tableToInterfaceProfiles } from "../type-utils";
 import { cache } from "react";
-import { handleCalculateDuration } from "../utils";
+import { handleCalculateDuration, isValidUUID } from "../utils";
 import { subWeeks } from "date-fns";
-
 
 /* ENROLLMENTS */
 export async function getAllActiveEnrollmentsServer(
-  endOfWeek: string
+  endOfWeek: string,
 ): Promise<Enrollment[]> {
   try {
     const supabase = await createClient();
@@ -33,7 +32,7 @@ export async function getAllActiveEnrollmentsServer(
         frequency,
         student:Profiles!student_id(*),
         tutor:Profiles!tutor_id(*)
-      `
+      `,
       )
       .eq("paused", false)
       .lte("start_date", endOfWeek);
@@ -73,7 +72,7 @@ export async function getAllActiveEnrollmentsServer(
 }
 
 export async function getAllEnrollments(): Promise<Enrollment[] | null> {
-  const supabase = await createClient()
+  const supabase = await createClient();
   try {
     // Fetch meeting details from Supabase
     const { data, error } = await supabase.from(Table.Enrollments).select(`
@@ -129,14 +128,15 @@ export async function getAllEnrollments(): Promise<Enrollment[] | null> {
   }
 }
 
-
 export async function getAllActiveEnrollments(
-  endOfWeek?: string
+  endOfWeek?: string,
 ): Promise<Enrollment[]> {
   try {
-    const supabase = await createClient()
+    const supabase = await createClient();
     // Fetch meeting details from Supabase
-    let query = supabase.from(Table.Enrollments).select(
+    let query = supabase
+      .from(Table.Enrollments)
+      .select(
         `
         id,
         created_at,
@@ -152,15 +152,14 @@ export async function getAllActiveEnrollments(
         frequency,
         student:Profiles!student_id(*),
         tutor:Profiles!tutor_id(*)
-      `
+      `,
       )
-      .eq("paused", false)
+      .eq("paused", false);
 
-    if (endOfWeek)
-      query = query.lte("start_date", endOfWeek)
+    if (endOfWeek) query = query.lte("start_date", endOfWeek);
 
-    const { data, error } = await query
-    
+    const { data, error } = await query;
+
     // Check for errors and log them
     if (error) {
       console.error("Error fetching event details:", error.message);
@@ -196,10 +195,10 @@ export async function getAllActiveEnrollments(
 }
 
 export async function getEnrollments(
-  tutorId: string
+  tutorId: string,
 ): Promise<Enrollment[] | null> {
   try {
-    const supabase = await createClient()
+    const supabase = await createClient();
     // Fetch meeting details from Supabase
     const { data, error } = await supabase
       .from(Table.Enrollments)
@@ -218,7 +217,7 @@ export async function getEnrollments(
         duration,
         student:Profiles!student_id(*),
         tutor:Profiles!tutor_id(*)
-      `
+      `,
       )
       .eq("tutor_id", tutorId);
 
@@ -253,10 +252,13 @@ export async function getEnrollments(
   }
 }
 
-export const cachedGetEnrollments = cache(getEnrollments)
+export const cachedGetEnrollments = cache(getEnrollments);
 
-// added this in order to remove future sessions on the SCHEDULE after an enrollment is deleted. 
-export const removeFutureSessions = async (enrollmentId: string, supabase: any) => {
+// added this in order to remove future sessions on the SCHEDULE after an enrollment is deleted.
+export const removeFutureSessions = async (
+  enrollmentId: string,
+  supabase: any,
+) => {
   try {
     const now: string = new Date().toISOString();
     await supabase
@@ -289,13 +291,13 @@ export const removeEnrollment = async (enrollmentId: string) => {
 };
 
 export const updateEnrollment = async (enrollment: Enrollment) => {
-  const supabase = await createClient()
+  const supabase = await createClient();
   try {
     const now = new Date().toISOString();
 
     const duration = await handleCalculateDuration(
       enrollment.availability[0].startTime,
-      enrollment.availability[0].endTime
+      enrollment.availability[0].endTime,
     );
 
     const { data: updateEnrollmentData, error: updateEnrollmentError } =
@@ -352,7 +354,7 @@ export const updateEnrollment = async (enrollment: Enrollment) => {
 };
 
 export const getEnrollmentsWithMissingSEF = async () => {
-  const supabase = await createClient()
+  const supabase = await createClient();
   try {
     const twoWeeksAgo = subWeeks(new Date(), 2).toISOString();
     const now = new Date().toISOString();
@@ -382,7 +384,7 @@ export const getEnrollmentsWithMissingSEF = async () => {
           date,
           status
         )
-        `
+        `,
       )
       .eq("sessions.status", "Active")
       .gte("sessions.date", twoWeeksAgo)
@@ -390,7 +392,7 @@ export const getEnrollmentsWithMissingSEF = async () => {
       .throwOnError();
 
     const enrollmentsWithTwoMissingSessions = enrollments.filter(
-      (enrollment) => enrollment.sessions.length >= 2
+      (enrollment) => enrollment.sessions.length >= 2,
     );
 
     console.log(enrollmentsWithTwoMissingSessions);
@@ -400,4 +402,65 @@ export const getEnrollmentsWithMissingSEF = async () => {
   }
 };
 
+export const addEnrollment = async (
+  enrollment: Omit<Enrollment, "id" | "createdAt">,
+  sendEmail?: boolean,
+) => {
+  const supabase = await createClient();
+  try {
+    const duration = await handleCalculateDuration(
+      enrollment.availability[0].startTime,
+      enrollment.availability[0].endTime,
+    );
 
+    if (enrollment.duration <= 0)
+      throw new Error("Duration should be a positive amount");
+
+    if (!enrollment.student) throw new Error("Please select a Student");
+
+    if (enrollment.meetingId && !isValidUUID(enrollment.meetingId)) {
+      throw new Error("Invalid or no meeting link");
+    }
+
+    const { data, error } = await supabase
+      .from(Table.Enrollments)
+      .insert({
+        student_id: enrollment.student?.id,
+        tutor_id: enrollment.tutor?.id,
+        summary: enrollment.summary,
+        start_date: enrollment.startDate,
+        end_date: enrollment.endDate,
+        availability: enrollment.availability,
+        meetingId: enrollment.meetingId,
+        duration: duration, //default
+        frequency: enrollment.frequency,
+      })
+      .select(
+        `*,
+        student:Profiles!student_id(*),
+        tutor:Profiles!tutor_id(*)`,
+      )
+      .single();
+
+    if (error) {
+      console.error("Error adding enrollment:", error);
+      throw error;
+    }
+
+    return {
+      createdAt: data.created_at,
+      id: data.id,
+      summary: data.summary,
+      student: data.student,
+      tutor: data.tutor,
+      startDate: data.start_date,
+      endDate: data.end_date,
+      availability: data.availability,
+      meetingId: data.meetingId,
+      duration: data.duration,
+      frequency: data.frequency,
+    };
+  } catch (error) {
+    throw error;
+  }
+};

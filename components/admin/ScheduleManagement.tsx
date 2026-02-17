@@ -55,11 +55,12 @@ import {
   getAllProfiles,
   removeSession,
   getMeeting,
-  addOneSession,
+
   // checkMeetingsAvailability,
   // isMeetingAvailable,
 } from "@/lib/actions/admin.actions";
 // Add these imports at the top of the file
+import { addOneSession } from "@/lib/actions/session.server.actions";
 import { addHours, areIntervalsOverlapping } from "date-fns";
 
 import { fetchDaySessionsFromSchedule } from "@/lib/actions/session.actions";
@@ -233,13 +234,13 @@ const Schedule = ({
   const tutors = tutorsResult.data || [];
   const enrollments: Enrollment[] = useMemo(
     () => enrollmentsResult.data ?? [],
-    [enrollmentsResult.data]
+    [enrollmentsResult.data],
   );
   const meetings = meetingsResult.data || [];
-// added enrollment filtering, 
+  // added enrollment filtering,
   const activeEnrollmentIds = useMemo(
     () => new Set(enrollments.map((enrollment: Enrollment) => enrollment.id)),
-    [enrollments]
+    [enrollments],
   );
 
   let isLoading = sessionsResult.isLoading;
@@ -442,7 +443,7 @@ const Schedule = ({
       setIsCheckingMeetingAvailability(true);
       const updatedMeetingAvailability = await checkAvailableMeeting(
         session,
-        meetings
+        meetings,
       );
       setMeetingAvailabilityMap(updatedMeetingAvailability);
     } catch (error) {
@@ -457,21 +458,17 @@ const Schedule = ({
     mutationFn: ({ enrollments }: { enrollments: Enrollment[] }) =>
       addSessions(weekStart, weekEnd, enrollments, sessions),
     onMutate: async () => {
-
       // await queryClient.cancelQueries({ queryKey: ["sessions"] });
-
       // const prevSessions: Session[] | undefined = queryClient.getQueryData([
       //   "sessions",
       //   weekStart,
       //   weekEnd,
       // ]);
-
       // await queryClient.setQueryData(
       //   ["sessions", weekStart, weekEnd],
       //   (sessions: Session[] | undefined) =>
       //     sessions && prevSessions ? [...sessions, ...prevSessions] : []
       // );
-
       // return { prevSessions };
     },
     onSuccess: (newSessions: Session[]) => {
@@ -492,10 +489,9 @@ const Schedule = ({
         ? toast.error("Please wait until adding new sessions")
         : toast.error(`Failed to add sessions. ${error.message}`);
     },
-    onSettled: () => {
-    },
+    onSettled: () => {},
   });
-// refetch all of it before Update Week so new sessions arent created for deleted enrollments
+  // refetch all of it before Update Week so new sessions arent created for deleted enrollments
   const handleUpdateWeek = async () => {
     const freshEnrollments =
       (await queryClient.fetchQuery({
@@ -521,7 +517,7 @@ const Schedule = ({
         return (
           format(
             toZonedTime(parseISO(session.date), "America/New_York"),
-            "yyyy-MM-dd"
+            "yyyy-MM-dd",
           ) === format(day, "yyyy-MM-dd")
         );
       } catch (error) {
@@ -546,7 +542,9 @@ const Schedule = ({
       queryClient.setQueryData(
         ["sessions", weekStart, weekEnd],
         (sessions: Session[] | undefined) =>
-          sessions ? sessions.filter((session) => session.id !== sessionId) : []
+          sessions
+            ? sessions.filter((session) => session.id !== sessionId)
+            : [],
       );
 
       return { prevSessions };
@@ -559,7 +557,7 @@ const Schedule = ({
       if (context) {
         queryClient.setQueryData(
           ["sessions", weekStart, weekEnd],
-          context.prevSessions
+          context.prevSessions,
         );
       }
       console.error("Failed to remove session", error);
@@ -649,7 +647,7 @@ const Schedule = ({
   const getEnrollmentProgress = () => {
     const totalStudents = students.length;
     const studentsThisWeek = new Set(
-      sessions.map((session) => session?.student?.id)
+      sessions.map((session) => session?.student?.id),
     ).size;
     return { totalStudents, studentsThisWeek };
   };
@@ -657,13 +655,15 @@ const Schedule = ({
   // calc total and unique sessions for the week
   const getSessionStatistics = () => {
     const totalSessions = sessions.length;
-    const tutorsInvolved = new Set(sessions.map((session) => session?.tutor?.id)).size;
+    const tutorsInvolved = new Set(
+      sessions.map((session) => session?.tutor?.id),
+    ).size;
     return { totalSessions, tutorsInvolved };
   };
 
   const handleGetMissingSEF = async () => {
     try {
-      await  getEnrollmentsWithMissingSEF();
+      await getEnrollmentsWithMissingSEF();
       toast.success("Printed to console");
     } catch (error) {
       console.error(error);
@@ -717,9 +717,7 @@ const Schedule = ({
           </Button>
           <Dialog>
             <DialogTrigger asChild>
-              <Button className="mx-4 bg-connect-me-blue-3" >
-                Add Session
-              </Button>
+              <Button className="mx-4 bg-connect-me-blue-3">Add Session</Button>
             </DialogTrigger>
             <DialogContent>
               <DialogHeader>
@@ -770,7 +768,7 @@ const Schedule = ({
                           date: scheduledDate.toISOString(),
                         };
                         await checkMeetingAvailabilites(
-                          updatedSession as Session
+                          updatedSession as Session,
                         );
                         setNewSession(updatedSession);
                       }}
@@ -803,7 +801,7 @@ const Schedule = ({
                             <SelectLabel>Duration</SelectLabel>
                             {Array.from(
                               { length: 12 },
-                              (_, i) => (i + 1) * 0.25
+                              (_, i) => (i + 1) * 0.25,
                             ).map((duration) => {
                               const minutes = (duration % 1) * 60;
                               const hours = Math.floor(duration);
@@ -873,7 +871,7 @@ const Schedule = ({
                   <Button
                     onClick={handleAddSession}
                     disabled={isCheckingMeetingAvailability}
-                    className = "bg-connect-me-blue-3"
+                    className="bg-connect-me-blue-3"
                   >
                     {isCheckingMeetingAvailability ? (
                       <>
@@ -888,7 +886,12 @@ const Schedule = ({
               </ScrollArea>
             </DialogContent>
           </Dialog>
-          <Button className = "bg-connect-me-blue-4" onClick={() => handleGetMissingSEF()}>Function Tester</Button>
+          <Button
+            className="bg-connect-me-blue-4"
+            onClick={() => handleGetMissingSEF()}
+          >
+            Function Tester
+          </Button>
 
           {isLoading ? (
             <div className="text-center py-10">
@@ -968,7 +971,7 @@ const Schedule = ({
                     (session) =>
                       session?.date &&
                       format(parseISO(session.date), "yyyy-MM-dd") ===
-                        format(day, "yyyy-MM-dd")
+                        format(day, "yyyy-MM-dd"),
                   ).length === 0 && (
                     <p className="text-sm text-gray-400 text-center">
                       No sessions
@@ -1020,7 +1023,7 @@ const Schedule = ({
                   <Select
                     value={selectedSession?.status}
                     onValueChange={(
-                      value: "Active" | "Complete" | "Cancelled"
+                      value: "Active" | "Complete" | "Cancelled",
                     ) => {
                       if (value && selectedSession) {
                         const updatedSession = {
@@ -1074,7 +1077,7 @@ const Schedule = ({
                             <SelectItem key={tutor.id} value={tutor.id}>
                               {tutor.firstName} {tutor.lastName}
                             </SelectItem>
-                          )
+                          ),
                       )}
                     </SelectContent>
                   </Select>
@@ -1108,7 +1111,7 @@ const Schedule = ({
                             <SelectItem key={student.id} value={student.id}>
                               {student.firstName} {student.lastName}
                             </SelectItem>
-                          )
+                          ),
                       )}
                     </SelectContent>
                   </Select>
@@ -1119,7 +1122,7 @@ const Schedule = ({
                     type="datetime-local"
                     defaultValue={format(
                       parseISO(selectedSession.date),
-                      "yyyy-MM-dd'T'HH:mm"
+                      "yyyy-MM-dd'T'HH:mm",
                     )}
                     onBlur={(e) => {
                       const scheduledDate = new Date(e.target.value);
@@ -1128,7 +1131,7 @@ const Schedule = ({
                         date: scheduledDate.toISOString(),
                       });
                       checkMeetingAvailabilites(
-                        selectedSession as Session
+                        selectedSession as Session,
                         // scheduledDate
                       );
                     }}

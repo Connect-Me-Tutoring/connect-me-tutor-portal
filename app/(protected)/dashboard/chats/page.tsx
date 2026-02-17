@@ -10,7 +10,6 @@ import {
 } from "@/components/ui/card";
 import { SharedPairing } from "@/types/pairing";
 import { MessageSquare, Shield, Users } from "lucide-react";
-// import { getAccountEnrollments } from "@/lib/actions/enrollments.action";
 import { getAccountPairings } from "@/lib/actions/pairing.server.actions";
 import { getProfileRole } from "@/lib/actions/user.actions";
 import { createClient, createServerClient } from "@/lib/supabase/server";
@@ -21,7 +20,7 @@ import Link from "next/link";
 import { getUser } from "@/lib/actions/auth.server.actions";
 
 export default async function ChatPage() {
-  const user = await getUser()
+  const user = await getUser();
   const userId = user?.id;
   if (!userId) redirect("/");
 

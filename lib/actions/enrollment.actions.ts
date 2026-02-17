@@ -40,10 +40,12 @@ import { SYSTEM_ENTRYPOINTS } from "next/dist/shared/lib/constants";
 import { Table } from "../supabase/tables";
 import { StdioNull } from "node:child_process";
 import { tableToInterfaceProfiles } from "../type-utils";
+import { SharedEnrollment } from "@/types/enrollment";
+import { handleCalculateDuration, isValidUUID } from "../utils";
 // import { getMeeting } from "./meeting.actions";
 
 export async function getEnrollments(
-  tutorId: string
+  tutorId: string,
 ): Promise<Enrollment[] | null> {
   try {
     // Fetch meeting details from Supabase
@@ -64,7 +66,7 @@ export async function getEnrollments(
         duration,
         student:Profiles!student_id(*),
         tutor:Profiles!tutor_id(*)
-      `
+      `,
       )
       .eq("tutor_id", tutorId);
 
@@ -124,7 +126,7 @@ export const getOverlappingAvailabilites = async (
     day: string;
     startTime: string;
     endTime: string;
-  }[]
+  }[],
 ): Promise<Availability[]> => {
   try {
     const { data, error } = await supabase.rpc(
@@ -132,7 +134,7 @@ export const getOverlappingAvailabilites = async (
       {
         a: tutorAvailability,
         b: studentAvailability,
-      }
+      },
     );
     if (error) throw error;
     return data;
@@ -144,7 +146,7 @@ export const getOverlappingAvailabilites = async (
 };
 
 export async function getAllActiveEnrollments(
-  endOfWeek: string
+  endOfWeek: string,
 ): Promise<Enrollment[]> {
   try {
     // Fetch meeting details from Supabase
@@ -166,7 +168,7 @@ export async function getAllActiveEnrollments(
         frequency,
         student:Profiles!student_id(*),
         tutor:Profiles!tutor_id(*)
-      `
+      `,
       )
       .eq("paused", false)
       .lte("start_date", endOfWeek);
@@ -204,3 +206,24 @@ export async function getAllActiveEnrollments(
     throw error;
   }
 }
+
+export async function getAccountEnrollments(userId: string) {
+  const { data, error } = await supabase.rpc(
+    "get_user_enrollments_with_profiles",
+    {
+      requestor_auth_id: userId,
+    },
+  );
+
+  if (error) {
+    console.error("Error fetching enrollments:", error);
+    return null;
+  }
+
+  return (data as SharedEnrollment[]) || ([] as SharedEnrollment[]);
+}
+
+const sql = `
+ SELECT * FROM ${Table.Enrollments} LEFT JOIN ${Table.Profiles} ON ${Table.Profiles}.user_id = some inputted ID  WHERE tutor_id = ${Table.Profiles}.id OR student_id = ${Table.Profiles}.id
+ ORDER BY created_at DESC
+`;

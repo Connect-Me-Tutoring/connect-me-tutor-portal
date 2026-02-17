@@ -49,8 +49,6 @@ async function isSessioninPastWeek(enrollmentId: string, midWeek: Date) {
   return Object.keys(data).length > 0;
 }
 
-
-
 /**
  * Add sessions for enrollments within the specified week range
  * @param weekStartString - ISO string of week start in Eastern Time
@@ -75,7 +73,7 @@ function normalizeMeetingId(meetingId: string): string {
  * @returns Meeting record or null if not found
  */
 export async function findMeetingByNormalizedId(
-  zoomMeetingNumber: string
+  zoomMeetingNumber: string,
 ): Promise<{ id: string; meeting_id: string } | null> {
   try {
     const supabase = await createClient();
@@ -141,10 +139,11 @@ import {
   tableToInterfaceProfiles,
 } from "../type-utils";
 import { revalidatePath } from "next/cache";
+import { sendScheduledEmailsBeforeSessions } from "./email.server.actions";
 
 export async function getSessions(
   start: string,
-  end: string
+  end: string,
 ): Promise<Session[]> {
   try {
     const supabase = await createClient();
@@ -174,7 +173,7 @@ export async function getSessions(
         isQuestionOrConcern: Boolean(session.is_question_or_concern),
         isFirstSession: Boolean(session.is_first_session),
         duration: session.duration,
-      }))
+      })),
     );
 
     return sessions;
@@ -188,7 +187,7 @@ export async function getAllSessionsServer(
   startDate?: string,
   endDate?: string,
   orderBy?: string,
-  ascending?: boolean
+  ascending?: boolean,
 ) {
   const supabase = await createClient();
   try {
@@ -253,7 +252,7 @@ export async function getAllSessionsServer(
             isFirstSession: Boolean(session.is_first_session),
             duration: session.duration,
           };
-        })
+        }),
     );
 
     return sessions;
@@ -271,7 +270,7 @@ export async function getAllSessions(
       field: string;
       ascending: boolean;
     };
-  }
+  },
 ): Promise<Session[]> {
   try {
     const supabase = await createClient();
@@ -382,7 +381,7 @@ export interface ParticipationData {
 }
 
 export async function getParticipationData(
-  sessionId: string
+  sessionId: string,
 ): Promise<ParticipationData | null> {
   try {
     if (!sessionId) {
@@ -413,7 +412,7 @@ export async function getParticipationData(
     // Sort events by timestamp
     events.sort(
       (a, b) =>
-        new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
+        new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime(),
     );
 
     // Calculate participant summaries
@@ -510,7 +509,7 @@ export async function getParticipationData(
     });
 
     const participantSummaries = Array.from(participantMap.values()).sort(
-      (a, b) => b.totalDuration - a.totalDuration
+      (a, b) => b.totalDuration - a.totalDuration,
     );
 
     return {
@@ -532,7 +531,7 @@ export async function getParticipationData(
 }
 
 export async function getSessionById(
-  sessionId: string
+  sessionId: string,
 ): Promise<Session | null> {
   try {
     const supabase = await createClient();
@@ -556,7 +555,7 @@ export async function getSessionById(
         session_exit_form,
         duration,
         meetings:Meetings!meeting_id(*)
-      `
+      `,
       )
       .eq("id", sessionId)
       .single();
@@ -598,20 +597,20 @@ export async function getSessionById(
   }
 }
 
-
 export async function getTutorSessions(
   profileId: string,
   params: {
-    startDate?: string,
-    endDate?: string,
-    status?: string | string[],
-    orderBy?: string,
-    ascending?: boolean,
-  }
+    startDate?: string;
+    endDate?: string;
+    status?: string | string[];
+    orderBy?: string;
+    ascending?: boolean;
+  },
 ): Promise<Session[]> {
-  
-  const supabase = await createClient()
-  const { startDate, endDate, status, orderBy, ascending } = params ? params : {}
+  const supabase = await createClient();
+  const { startDate, endDate, status, orderBy, ascending } = params
+    ? params
+    : {};
 
   let query = supabase
     .from(Table.Sessions)
@@ -621,7 +620,7 @@ export async function getTutorSessions(
      meeting:Meetings!meeting_id(*),
      student:Profiles!student_id(*),
      tutor:Profiles!tutor_id(*)
-    `
+    `,
     )
     .eq("tutor_id", profileId);
 
@@ -676,7 +675,6 @@ export async function getTutorSessions(
   return sessions;
 }
 
-
 export async function getStudentSessions(
   profileId: string,
   params?: {
@@ -687,8 +685,7 @@ export async function getStudentSessions(
     ascending?: boolean;
   },
 ): Promise<Session[]> {
-
-  const supabase = await createClient()
+  const supabase = await createClient();
   const { startDate, endDate, status, orderBy, ascending } = params
     ? params
     : {};
@@ -761,9 +758,9 @@ export async function rescheduleSession(
   sessionId: string,
   newDate: any,
   meetingId: string,
-  tutorid?: string
+  tutorid?: string,
 ) {
-  const supabase = await createClient()
+  const supabase = await createClient();
   try {
     const { data: sessionData, error } = await supabase
       .from(Table.Sessions)
@@ -793,9 +790,60 @@ export async function rescheduleSession(
     if (sessionData) {
       return sessionData;
     }
-    
   } catch (error) {
     console.error("Unable to reschedule", error);
+    throw error;
+  }
+}
+export async function addOneSession(
+  session: Session,
+  scheduleEmail: boolean = true,
+): Promise<void> {
+  const supabase = await createClient();
+  try {
+    const newSession = {
+      date: session.date,
+      enrollment_id: null, //omdependent of enrollment date
+      student_id: session.student?.id,
+      tutor_id: session.tutor?.id,
+      status: "Active",
+      summary: session.summary,
+      meeting_id: session.meeting?.id,
+      duration: 1,
+    };
+
+    const { data, error } = await supabase
+      .from(Table.Sessions)
+      .insert(newSession)
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    if (!data) toast.error("No Data");
+
+    if (data && scheduleEmail) {
+      const addedSession: Session = {
+        id: data.id,
+        enrollmentId: data.enrollment_id,
+        createdAt: data.created_at,
+        environment: data.environment,
+        date: data.date,
+        summary: data.summary,
+        meeting: await getMeeting(data.meeting_id),
+        student: await getProfileWithProfileId(data.student_id),
+        tutor: await getProfileWithProfileId(data.tutor_id),
+        status: data.status,
+        session_exit_form: data.session_exit_form || null,
+        isQuestionOrConcern: data.isQuestionOrConcern,
+        isFirstSession: data.isFirstSession,
+        duration: 1, //default //! might fix
+      };
+
+      sendScheduledEmailsBeforeSessions([addedSession]);
+    }
+  } catch (error) {
+    console.error("Unable to add one session", error);
     throw error;
   }
 }

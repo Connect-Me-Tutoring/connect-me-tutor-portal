@@ -11,13 +11,12 @@ import { IncomingPairingMatch } from "./pairing.actions";
 import { NextResponse } from "next/server";
 import { PairingLogSchemaType } from "../pairing/types";
 import { getSupabase } from "../supabase-server/serverClient";
-import { addEnrollment, createEnrollment } from "./admin.actions";
 import { getOverlappingAvailabilites } from "./enrollment.actions";
 import { formatDateAdmin, to12Hour } from "../utils";
 
 export const getPairingFromEnrollmentId = async (enrollmentId: string) => {
   try {
-    const supabase = await createClient()
+    const supabase = await createClient();
     const { data, error } = await supabase
       .from("Enrollments")
       .select("pairing_id")
@@ -33,13 +32,12 @@ export const getPairingFromEnrollmentId = async (enrollmentId: string) => {
 
 export async function getAccountPairings(userId: string) {
   try {
-  
-    const supabase = await createClient()
+    const supabase = await createClient();
     const { data, error } = await supabase.rpc(
       "get_user_pairings_with_profiles",
       {
         requestor_auth_id: userId,
-      }
+      },
     );
 
     if (error) {
@@ -64,7 +62,7 @@ export const deleteAllPairingRequests = async () => {
       throw new Error("Missing Supabase environment variables");
     }
 
-    const supabase = await createClient()
+    const supabase = await createClient();
 
     // // Delete all rows from pairing_requests
     // const { error: pairingRequestsError } = await supabase
@@ -114,7 +112,7 @@ export const resetPairingQueues = async () => {
     throw new Error("Missing Supabase environment variables");
   }
 
-  const supabase = await createClient()
+  const supabase = await createClient();
 
   const { error } = await supabase
     .from("pairing_requests")
@@ -130,7 +128,7 @@ export const resetPairingQueues = async () => {
 export const sendPairingAlertToWebhook = async (
   tutorData: Profile,
   studentData: Profile,
-  autoEnrollment: Omit<Enrollment, "id" | "createdAt">
+  autoEnrollment: Omit<Enrollment, "id" | "createdAt">,
 ) => {
   const response = await fetch(`${process.env.PAIRING_ALERTS_WEBHOOK}`, {
     method: "POST",
@@ -154,10 +152,9 @@ Parent Phone: ${studentData.parentPhone}
 **Start Time:** ${to12Hour(autoEnrollment.availability[0].startTime)} EST 
 **End Time:** ${to12Hour(autoEnrollment.availability[0].endTime)} EST
 
-**First Session Date:** ${formatDateAdmin(autoEnrollment.startDate, false, true)}`,
+**First Session Date:** ${formatDateAdmin(autoEnrollment.startDate, { includeTime: true, includeDate: true })}`,
     }),
   });
   if (response.status != 200) {
   }
 };
-
