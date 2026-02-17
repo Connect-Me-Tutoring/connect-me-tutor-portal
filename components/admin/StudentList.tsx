@@ -346,7 +346,7 @@ const StudentList = ({ initialStudents }: any) =>
         const err = error as Error;
         console.error("Error adding student:", error);
         toast.error("Failed to Add Student.");
-        toast.error(`${err.message}`);
+        toast.error(`Failed to Add Student: Please Try Again`);
       } finally {
         setAddingStudent(false);
       }
@@ -410,7 +410,7 @@ const StudentList = ({ initialStudents }: any) =>
         const err = error as Error;
         console.error("Error adding student:", error);
         toast.error("Failed to Add Student.");
-        toast.error(`${err.message}`);
+        toast.error(`Failed to Add Student: Please Try Again`);
       } finally {
         setAddingStudent(false);
       }
