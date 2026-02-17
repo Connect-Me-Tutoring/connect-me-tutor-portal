@@ -58,8 +58,6 @@ export const getUser = async () => {
 const inviteUser = async (newProfileData: CreatedProfileData) => {
   const supabase = await createAdminClient();
 
-  console.log("INVITING USER");
-  console.log(supabase.auth.admin);
   const { data: authData, error: authError } =
     await supabase.auth.admin.inviteUserByEmail(newProfileData.email, {
       data: {
@@ -102,14 +100,6 @@ export const createUser = async (newProfileData: CreatedProfileData) => {
     if (prevProfile?.role === "Admin") {
       throw new Error("Multiple profiles prohibited for provided email");
     }
-
-    // const userId =
-    //   prevProfile?.user_id ??
-    //   (await inviteUser(newProfileData).catch(() => {
-    //     if (!prevProfile) {
-    //       async () => await supabase.auth.admin.deleteUser(userId);
-    //     }
-    //   }));
 
     let userId = prevProfile?.user_id;
     if (!userId) {
@@ -162,18 +152,11 @@ export const createUser = async (newProfileData: CreatedProfileData) => {
       throw profileError;
     }
 
-    console.log("Created Profile");
-
     const createdProfileData: Profile =
       tableToInterfaceProfiles(createdProfile);
 
-    console.log("Finished Inviting User");
     return createdProfileData;
   } catch (error) {
-    // const { data } = await supabase.rpc("get_user_by_email", {
-    // email: newProfileData.email,
-    // });
-    // console.log(data);
     console.error("Error creating user:", error);
     throw error;
   }
