@@ -4,7 +4,6 @@ import { Profile } from "@/types";
 import { createClient } from "@supabase/supabase-js";
 import { addMinutes, subMinutes, parseISO } from "date-fns";
 import {
-  scheduleEmail,
   sendScheduledEmailsBeforeSessions,
 } from "@/lib/actions/email.server.actions";
 import { getSessions } from "@/lib/actions/session.server.actions";

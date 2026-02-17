@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { Session } from "@/types";
 import { Profile } from "@/types";
-import { createClient } from "@/lib/supabase/server"
+import { createClient } from "@/lib/supabase/server";
 import { addMinutes, subMinutes, parseISO } from "date-fns";
 import { scheduleEmail } from "@/lib/actions/email.server.actions";
 import { getSupabase } from "@/lib/supabase-server/serverClient";
@@ -11,7 +11,7 @@ export const dynamic = "force-dynamic";
 
 export async function POST(request: NextRequest) {
   try {
-    await verifyAdmin()
+    await verifyAdmin();
     const supabase = await createClient();
 
     const data = await request.json();
@@ -77,20 +77,20 @@ export async function POST(request: NextRequest) {
  * @param session Session Details
  * @param tutor Details about the tutor
  * @param student Details about the student
- * 
- * 
+ *
+ *
  * @returns email notification message
  */
 
 const createMessage = (session: Session, tutor: Profile, student: Profile) => {
-   const tutorName: string = tutor
-      ? ` ${tutor.firstName} ${tutor.lastName}`
-      : "";
-    const studentName: string = student
-      ? `${student.firstName} ${student.lastName}`
-      : "your student";
+  const tutorName: string = tutor
+    ? ` ${tutor.firstName} ${tutor.lastName}`
+    : "";
+  const studentName: string = student
+    ? `${student.firstName} ${student.lastName}`
+    : "your student";
 
-return `
+  return `
     <p>Hi ${tutorName},<br><br>
 
     This is a reminder that your tutoring session with ${studentName} starts in <strong>15 minutes</strong>!<br><br>

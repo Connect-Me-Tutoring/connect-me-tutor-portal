@@ -1,20 +1,15 @@
-"use client"
+"use client";
 import { supabase } from "@/lib/supabase/client";
 import { CreatedProfileData, Profile } from "@/types";
-import { createClient } from "@/lib/supabase/server"
-import { createUser as createUserServer} from "@/lib/actions/auth.server.actions"
-import {
-  createPassword,
-} from "@/lib/utils"
+import { createClient } from "@/lib/supabase/server";
+import { createUser as createUserServer } from "@/lib/actions/auth.server.actions";
+import { createPassword } from "@/lib/utils";
 import { NextResponse } from "next/server";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import { createPairingRequest, handleResolveQueues } from "./pairing.actions";
 import { X } from "lucide-react";
 
-
-const createUser = async (
-  userData: CreatedProfileData
-): Promise<Profile> => {
+const createUser = async (userData: CreatedProfileData): Promise<Profile> => {
   try {
     // Call signUp to create a new user
     const response = await fetch("/api/admin/create-user", {
@@ -32,17 +27,16 @@ const createUser = async (
     }
     return data.profileData;
   } catch (error) {
-    const err = error as Error
+    const err = error as Error;
     console.error("Error creating user in API:", err.message);
-    throw err
+    throw err;
   }
 };
-
 
 export const addUser = async (
   userData: Partial<Profile>,
   userRole: "Tutor" | "Student",
-  isAddToPairing: boolean = false
+  isAddToPairing: boolean = false,
 ) => {
   let userId: string | null = null;
   try {
@@ -51,40 +45,21 @@ export const addUser = async (
     }
 
     const lowerCaseEmail = userData.email.toLowerCase().trim();
-
-    // // Check if a user with this email already exists
-    // const { data: existingUser, error: userCheckError } = await supabase
-    //   .from("Profiles")
-    //   .select("user_id")
-    //   .eq("email", lowerCaseEmail);
-
-    // if (userCheckError && userCheckError.code !== "PGRST116") {
-    //   // PGRST116 means no rows returned, which is what we want
-    //   throw userCheckError;
-    // }
-
-    // if (existingUser && existingUser.length > 0) {
-    //   throw new Error("A user with this email already exists");
-    // }
-
-    // -----Moved After Duplicate Check to prevent Sending confimration email-----
     const tempPassword = await createPassword();
 
-
-    const userAvailability = userData.availability 
-                            ? userData.availability.length === 0 ?
-                            [
-                              {day: "Monday", startTime: "00:00", endTime: "23:59"},
-                              {day: "Tuesday", startTime: "00:00", endTime: "23:59"},
-                              {day: "Wednesday", startTime: "00:00", endTime: "23:59"},
-                              {day: "Thursday", startTime: "00:00", endTime: "23:59"},
-                              {day: "Friday", startTime: "00:00", endTime: "23:59"},
-                              {day: "Saturday", startTime: "00:00", endTime: "23:59"},
-                              {day: "Sunday", startTime: "00:00", endTime: "23:59"},
-                            ]
-                            : userData.availability
-                            : []
-        
+    const userAvailability = userData.availability
+      ? userData.availability.length === 0
+        ? [
+            { day: "Monday", startTime: "00:00", endTime: "23:59" },
+            { day: "Tuesday", startTime: "00:00", endTime: "23:59" },
+            { day: "Wednesday", startTime: "00:00", endTime: "23:59" },
+            { day: "Thursday", startTime: "00:00", endTime: "23:59" },
+            { day: "Friday", startTime: "00:00", endTime: "23:59" },
+            { day: "Saturday", startTime: "00:00", endTime: "23:59" },
+            { day: "Sunday", startTime: "00:00", endTime: "23:59" },
+          ]
+        : userData.availability
+      : [];
 
     const newProfileData: CreatedProfileData = {
       email: lowerCaseEmail,
@@ -106,16 +81,14 @@ export const addUser = async (
       status: "Active",
       studentNumber: userData.studentNumber || "",
       languages_spoken: userData.languages_spoken || [],
-    }
+    };
 
     const profileData: Profile = await createUserServer(newProfileData);
 
     return profileData;
   } catch (error) {
-
     const err = error as Error;
     console.error("Error adding tutor:", err.message);
     throw err;
   }
 };
-

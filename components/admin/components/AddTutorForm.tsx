@@ -256,7 +256,7 @@ const AddTutorForm = ({
                       Time Zone
                     </Label>
                     <div className="col-span-3">
-                      <TimeZoneSelector
+                        <TimeZoneSelector
                         profile={newTutor}
                         handleTimeZone={handleTimeZone}
                       />
