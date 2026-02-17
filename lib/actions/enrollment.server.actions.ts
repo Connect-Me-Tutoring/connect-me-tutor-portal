@@ -408,6 +408,10 @@ export const addEnrollment = async (
 ) => {
   const supabase = await createClient();
   try {
+    if (enrollment.availability.length == 0) {
+      throw new Error("Please add an availability");
+    }
+
     const duration = await handleCalculateDuration(
       enrollment.availability[0].startTime,
       enrollment.availability[0].endTime,
@@ -451,8 +455,8 @@ export const addEnrollment = async (
       createdAt: data.created_at,
       id: data.id,
       summary: data.summary,
-      student: data.student,
-      tutor: data.tutor,
+      student: tableToInterfaceProfiles(data.student),
+      tutor: tableToInterfaceProfiles(data.tutor),
       startDate: data.start_date,
       endDate: data.end_date,
       availability: data.availability,
