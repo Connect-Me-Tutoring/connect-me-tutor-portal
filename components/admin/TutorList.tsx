@@ -272,8 +272,7 @@ const TutorList = ({ initialTutors }: any) => {
       }
     } catch (error) {
       const err = error as Error;
-      console.error("Error adding tutor:", error);
-      toast.error(`Failed to add tutor: ${err.message}`);
+      toast.error(`Failed to add tutor: Please Try Again`);
     } finally {
       setAddingTutor(false);
     }
