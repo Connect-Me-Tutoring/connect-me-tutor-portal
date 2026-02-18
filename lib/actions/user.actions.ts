@@ -3,8 +3,7 @@ import { Profile } from "@/types";
 import { Table } from "../supabase/tables";
 import { tableToInterfaceProfiles } from "../type-utils";
 import { table } from "console";
-import { supabase } from "@/lib/supabase/client"
-
+import { supabase } from "@/lib/supabase/client";
 
 export const getUser = async () => {
   const {
@@ -46,7 +45,7 @@ export const getProfileFromUserSettings = async (userId: string) => {
           settings_id,
           languages_spoken
         )
-      `
+      `,
       )
       .eq("user_id", userId)
       .single();
@@ -58,7 +57,7 @@ export const getProfileFromUserSettings = async (userId: string) => {
     }
 
     if (!data) {
-      throw new Error("No profile associated with user id")
+      throw new Error("No profile associated with user id");
     }
 
     return tableToInterfaceProfiles(data.profile as any);
@@ -88,12 +87,14 @@ export const getProfileByEmail = async (email: string) => {
       .select(
         `
       profile:Profiles!last_active_profile_id(*)  
-        `
+        `,
       )
       .eq("email", email)
       .single();
     if (error) throw new Error(`Profile fetch failed: ${error.message}`);
-    const userProfile: Profile | null = await tableToInterfaceProfiles(data.profile);
+    const userProfile: Profile | null = await tableToInterfaceProfiles(
+      data.profile,
+    );
     return userProfile;
   } catch (error) {
     throw error;
@@ -101,7 +102,7 @@ export const getProfileByEmail = async (email: string) => {
 };
 
 export const getProfileRole = async (
-  userId: string
+  userId: string,
 ): Promise<string | null> => {
   if (!userId) {
     console.error("User ID is required to fetch profile role");
@@ -110,36 +111,47 @@ export const getProfileRole = async (
 
   try {
     // first, check if user_settings exists for this user
+    console.log("User Id", userId);
     const { data, error } = await supabase
       .from("user_settings")
       .select(
         `
         profile:Profiles!last_active_profile_id(role)
-      `
+      `,
       )
       .eq("user_id", userId);
 
     if (error) {
-      console.error(`Database error fetching user_settings for ${userId}:`, error.message);
+      console.error(
+        `Database error fetching user_settings for ${userId}:`,
+        error.message,
+      );
       return null;
     }
 
     // handle no user_settings record
     if (!data || data.length === 0) {
-      console.warn(`No user_settings record found for user ${userId}. User/profile mismatch.`);
+      console.log("Data", data);
+      console.warn(
+        `No user_settings record found for user ${userId}. User/profile mismatch.`,
+      );
       return null;
     }
 
     // handle multiple user_settings records (should take the first one)
     if (data.length > 1) {
-      console.warn(`Multiple user_settings records found for user ${userId}. Using first record.`);
+      console.warn(
+        `Multiple user_settings records found for user ${userId}. Using first record.`,
+      );
     }
 
     const profileRole: { profile: { role: string } | null } = data[0] as any;
 
     // landle missing profile
     if (!profileRole || !profileRole.profile) {
-      console.warn(`User ${userId} has user_settings but no associated profile. User/profile mismatch.`);
+      console.warn(
+        `User ${userId} has user_settings but no associated profile. User/profile mismatch.`,
+      );
       return null;
     }
 
@@ -151,7 +163,10 @@ export const getProfileRole = async (
 
     return profileRole.profile.role;
   } catch (error) {
-    console.error(`Unexpected error in getProfileRole for user ${userId}:`, error);
+    console.error(
+      `Unexpected error in getProfileRole for user ${userId}:`,
+      error,
+    );
     return null;
   }
 };
@@ -169,7 +184,7 @@ export const getSessionUserProfile = async (): Promise<Profile | null> => {
 };
 
 export async function getProfileWithProfileId(
-  profileId: string
+  profileId: string,
 ): Promise<Profile | null> {
   try {
     const { data, error } = await supabase
@@ -196,7 +211,7 @@ export async function getProfileWithProfileId(
         status,
         student_number,
         settings_id
-      `
+      `,
       )
       .eq("id", profileId)
       .single();
@@ -204,7 +219,7 @@ export async function getProfileWithProfileId(
     if (error) {
       console.error(
         "Error fetching profile in getProfileWithProfileId:",
-        error.message
+        error.message,
       );
       console.error("Error details:", error);
       return null;
