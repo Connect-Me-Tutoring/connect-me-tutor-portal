@@ -15,7 +15,7 @@ import { useParams } from "next/navigation";
 import { useFetchProfile } from "@/hooks/auth";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import { useEnrollment } from "@/hooks/enrollments";
-import { fetchAdmins } from "@/lib/actions/chat.actions";
+import { fetchAdmins } from "@/lib/actions/chat.server.actions";
 import { usePairing } from "@/hooks/pairings";
 
 // Types for our chat components
@@ -112,7 +112,7 @@ export function ChatRoom({
                 };
                 return acc;
               },
-              {} as Record<string, User>
+              {} as Record<string, User>,
             ) || {};
 
           const chatRoomUsers = {
@@ -145,10 +145,10 @@ export function ChatRoom({
                 };
                 return acc;
               },
-              {} as Record<string, User>
+              {} as Record<string, User>,
             ) || {};
 
-          if (isMounted) {
+          if (isMounted && profile) {
             setUsers({
               ...adminUsers,
               [profile.id]: {
@@ -224,7 +224,7 @@ export function ChatRoom({
               const newMessage = payload.new as Message;
               setMessages((prev) => [...prev, newMessage]);
             }
-          }
+          },
         )
         .subscribe();
     };
@@ -493,7 +493,7 @@ export function ChatRoom({
 
                   if (!user) {
                     console.warn(
-                      `User not found for message: ${message.id}, user_id: ${message.user_id}`
+                      `User not found for message: ${message.id}, user_id: ${message.user_id}`,
                     );
                     return null; // Skip rendering this message instead of throwing error
                   }
@@ -537,7 +537,7 @@ export function ChatRoom({
                               {
                                 hour: "2-digit",
                                 minute: "2-digit",
-                              }
+                              },
                             )}
                           </span>
                         </div>

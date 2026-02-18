@@ -18,17 +18,17 @@ import { fetchUserAdminConversation } from "@/lib/actions/chat.server.actions";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { getUser } from "@/lib/actions/auth.server.actions";
+import { cachedGetUser } from "@/lib/actions/user.server.actions";
+import { cachedGetProfile } from "@/lib/actions/profile.server.actions";
 
 export default async function ChatPage() {
-  const user = await getUser();
+  const user = await cachedGetUser();
   const userId = user?.id;
   if (!userId) redirect("/");
+  const adminConversationID = await fetchUserAdminConversation(userId);
 
-  const [adminConversationID, pairings, role] = await Promise.all([
-    fetchUserAdminConversation(userId),
-    getAccountPairings(userId),
-    getProfileRole(userId),
-  ]);
+  const profile = cachedGetProfile(userId);
+  const pairings = getAccountPairings(userId);
 
   return (
     <div className="flex flex-col h-screen">
@@ -76,11 +76,7 @@ export default async function ChatPage() {
           </Card>
         </div>
       </div>
-      <ChatList
-        pairings={pairings!}
-        currentUserId="7b4dbab0-436b-4cfd-bdb5-2640caebe920"
-        role={role as any}
-      />
+      <ChatList pairingsPromise={pairings} profilePromise={profile} />
     </div>
   );
 }

@@ -1,15 +1,17 @@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Profile } from "@/types";
 
 import { SharedPairing } from "@/types/pairing";
+import { profile } from "console";
 import Link from "next/link";
-import { useMemo } from "react";
+import { redirect, useRouter } from "next/navigation";
+import { use, useMemo } from "react";
 
 interface ChatListProps {
-  pairings: SharedPairing[];
-  currentUserId?: string;
-  role: "Student" | "Tutor" | "Admin";
+  pairingsPromise: Promise<SharedPairing[] | null>;
+  profilePromise: Promise<Profile | null>;
 }
 
 // Mock function to simulate unread message counts
@@ -27,7 +29,7 @@ const getUnreadCount = (pairingId: string): number => {
 // Mock function to get last message
 // In a real app, this would come from your messaging system
 const getLastMessage = (
-  pairingId: string
+  pairingId: string,
 ): { text: string; timestamp: string } => {
   const mockMessages: Record<string, { text: string; timestamp: string }> = {
     "c95f7af1-e531-479e-86e9-14cb22e45785": {
@@ -74,7 +76,15 @@ const formatDate = (dateString: string): string => {
     return `${Math.floor(diffInHours / 24)}d`;
   }
 };
-export function ChatList({ pairings, currentUserId, role }: ChatListProps) {
+
+export function ChatList({ pairingsPromise, profilePromise }: ChatListProps) {
+  const pairings = use(pairingsPromise) || [];
+  const profile = use(profilePromise);
+  if (!profile) {
+    redirect("/");
+  }
+  const role = profile.role;
+
   const clientConversations = useMemo(
     () =>
       pairings.map((pairing) => {
@@ -90,7 +100,7 @@ export function ChatList({ pairings, currentUserId, role }: ChatListProps) {
         };
       }),
     // const d
-    [pairings, role]
+    [pairings, role],
   );
   return (
     <div className="flex flex-col h-screen">
