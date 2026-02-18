@@ -3,9 +3,7 @@
 import crypto from "crypto";
 import { createClient } from "../supabase/server";
 import { AdminConversation } from "@/types/chat";
-import { getUserFromAction } from "./user.server.actions";
-import { getUserFromId } from "./admin.actions";
-import { getProfileFromUserSettings } from "./user.actions";
+import { getProfileFromUserSettings } from "./profile.server.actions";
 
 export const createAdminConversation = async (user_id: string) => {
   const supabase = await createClient();
@@ -15,18 +13,8 @@ export const createAdminConversation = async (user_id: string) => {
     false,
   );
 
-  // const { data: profileData, error } = await supabase
-  //   .from("Profiles")
-  //   .select("id")
-  //   .eq("user_id", user_id)
-  //   .single();
-  // if (error) throw error;
-
   const profileData = await getProfileFromUserSettings(user_id);
   const profile_id = profileData.id;
-
-  // const user = await getUserFromId(profile_id);
-  // if (!user) throw new Error("failed to locate profile");
 
   if (createdConversationID) return createdConversationID;
 
@@ -56,8 +44,8 @@ export async function fetchUserAdminConversation(
   userId: string,
   createIfNull: boolean = true,
 ) {
+  const supabase = await createClient();
   try {
-    const supabase = await createClient();
     const profile = await getProfileFromUserSettings(userId);
 
     const profileId = profile.id;
