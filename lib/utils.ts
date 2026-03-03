@@ -358,8 +358,6 @@ export const handleCalculateDuration = async (
   endTime: string,
 ) => {
   try {
-    console.log("Start Time", startTime);
-    console.log("End Time", endTime);
     const startTimeNumber: number = timeStrToHours(startTime);
     const endTimeNumber: number = timeStrToHours(endTime);
     let difference = endTimeNumber - startTimeNumber;

@@ -1,5 +1,5 @@
 "use server";
-import { Enrollment, Session } from "@/types";
+import { Enrollment, Meeting, Session } from "@/types";
 import { toast } from "react-hot-toast";
 import { Client } from "@upstash/qstash";
 import { createClient } from "@/lib/supabase/server";
@@ -798,18 +798,25 @@ export async function rescheduleSession(
 export async function addOneSession(
   session: Session,
   scheduleEmail: boolean = true,
+  details?: {
+    student?: Profile;
+    tutor?: Profile;
+    meeting?: Meeting;
+  },
 ): Promise<void> {
   const supabase = await createClient();
+
   try {
     const newSession = {
       date: session.date,
-      enrollment_id: null, //omdependent of enrollment date
+      enrollment_id: session.enrollmentId || null, //omdependent of enrollment date
       student_id: session.student?.id,
       tutor_id: session.tutor?.id,
-      status: "Active",
+      status: session.status || "Active",
       summary: session.summary,
       meeting_id: session.meeting?.id,
-      duration: 1,
+      duration: session.duration || 1,
+      environment: session.environment || "Virtual",
     };
 
     const { data, error } = await supabase
@@ -817,6 +824,12 @@ export async function addOneSession(
       .insert(newSession)
       .select()
       .single();
+
+    const [meeting, student, tutor] = await Promise.all([
+      details?.meeting || (await getMeeting(data.meeting_id)),
+      details?.student || (await getProfileWithProfileId(data.student_id)),
+      details?.tutor || (await getProfileWithProfileId(data.tuotr_id)),
+    ]);
 
     if (error) throw error;
 
@@ -830,9 +843,9 @@ export async function addOneSession(
         environment: data.environment,
         date: data.date,
         summary: data.summary,
-        meeting: await getMeeting(data.meeting_id),
-        student: await getProfileWithProfileId(data.student_id),
-        tutor: await getProfileWithProfileId(data.tutor_id),
+        meeting: meeting,
+        student: student,
+        tutor: tutor,
         status: data.status,
         session_exit_form: data.session_exit_form || null,
         isQuestionOrConcern: data.isQuestionOrConcern,
