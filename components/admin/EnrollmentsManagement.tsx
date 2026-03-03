@@ -109,11 +109,14 @@ const EnrollmentList = ({
   studentsPromise,
   tutorsPromise,
 }: any) => {
-  const initialEnrollments: Enrollment[] = use(enrollmentsPromise);
-  const initialMeetings: Meeting[] = use(meetingsPromise);
-  const initialStudents: Profile[] = use(studentsPromise);
-  const initialTutors: Profile[] = use(tutorsPromise);
-
+  const combinedPromise = Promise.all([
+    enrollmentsPromise,
+    meetingsPromise,
+    studentsPromise,
+    tutorsPromise,
+  ]);
+  const [initialEnrollments, initialMeetings, initialStudents, initialTutors] =
+    use(combinedPromise);
   const [enrollments, setEnrollments] =
     useState<Enrollment[]>(initialEnrollments);
   const [filteredEnrollments, setFilteredEnrollments] =

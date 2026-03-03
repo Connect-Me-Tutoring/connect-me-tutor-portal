@@ -24,7 +24,6 @@ import toast from "react-hot-toast";
 import { Button } from "@/components/ui/button";
 import { Card, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 
-
 interface EnrollmentDetails {
   studentId: string;
   firstName: string;
@@ -39,14 +38,22 @@ interface EventDetails {
   summary: string;
 }
 
-const Stats = ({ enrollmentDetailsPromise, eventDetailsPromise }: {enrollmentDetailsPromise: Promise<EnrollmentDetails[]>, eventDetailsPromise: Promise<{[key: string]: EventDetails[]}>}) => {
-
-  const enrollmentDetails = use(enrollmentDetailsPromise)
-  const eventDetails = use(eventDetailsPromise)
+const Stats = ({
+  enrollmentDetailsPromise,
+  eventDetailsPromise,
+}: {
+  enrollmentDetailsPromise: Promise<EnrollmentDetails[]>;
+  eventDetailsPromise: Promise<{ [key: string]: EventDetails[] }>;
+}) => {
+  const combinedPromise = Promise.all([
+    enrollmentDetailsPromise,
+    eventDetailsPromise,
+  ]);
+  const [enrollmentDetails, eventDetails] = use(combinedPromise);
 
   const [activeTab, setActiveTab] = useState("cards");
   const [expandedSections, setExpandedSections] = useState(
-    new Set(["TUTORING"])
+    new Set(["TUTORING"]),
   );
 
   const toggleSection = (section: any) => {
@@ -72,7 +79,6 @@ const Stats = ({ enrollmentDetailsPromise, eventDetailsPromise }: {enrollmentDet
     .reduce((sum, e) => sum + e.hours, 0);
 
   const totalAllHours = totalSessionHours + totalEventHours;
-
 
   return (
     <>
@@ -127,7 +133,7 @@ const Stats = ({ enrollmentDetailsPromise, eventDetailsPromise }: {enrollmentDet
                     <TableCell>{event.date}</TableCell>
                     <TableCell>{event.hours}</TableCell>
                   </TableRow>
-                ))
+                )),
               )}
             </TableBody>
             <TableFooter>

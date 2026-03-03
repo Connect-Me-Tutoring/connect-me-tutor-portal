@@ -860,3 +860,21 @@ export async function addOneSession(
     throw error;
   }
 }
+
+export async function cancelUnsubmittedSEF(profile: Profile) {
+  try {
+    const supabase = await createClient();
+    const now = new Date();
+    const fortyEightHoursAgo = new Date(
+      now.getTime() - 48 * 60 * 60 * 1000,
+    ).toISOString();
+
+    await supabase
+      .from("Sessions")
+      .update({ status: "Complete" })
+      .eq("tutor_id", profile.id)
+      .lt("session_date", fortyEightHoursAgo);
+  } catch (error) {
+    console.error("Unable to cancel unsubmitted SEF");
+  }
+}
