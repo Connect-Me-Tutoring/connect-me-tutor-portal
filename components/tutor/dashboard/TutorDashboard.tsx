@@ -250,10 +250,10 @@ const TutorDashboard = () => {
 
   return (
     <>
-      <div className="p-8">
-        <h1 className="text-3xl font-bold mb-6">This Week</h1>
-        <div className="flex space-x-6">
-          <div className="flex-grow bg-white rounded-lg shadow p-6">
+      <div className="p-4 md:p-8">
+        <h1 className="text-2xl md:text-3xl font-bold mb-4 md:mb-6">This Week</h1>
+        <div className="flex flex-col lg:flex-row gap-6">
+          <div className="flex-grow bg-white rounded-lg shadow p-4 md:p-6 overflow-x-auto">
             <CurrentSessionsTable
               meetings={TC.meetings}
               totalPages={totalPages}
@@ -268,17 +268,17 @@ const TutorDashboard = () => {
           </div>
         </div>
       </div>{" "}
-      <div className="p-8">
-        <h1 className="text-3xl font-bold mb-6">Active Sessions</h1>
+      <div className="p-4 md:p-8">
+        <h1 className="text-2xl md:text-3xl font-bold mb-4 md:mb-6">Active Sessions</h1>
 
-        <div className="flex space-x-6">
-          <div className="flex-grow bg-white rounded-lg shadow p-6">
-            <div className="flex justify-between items-center mb-4">
-              <div className="flex space-x-2">
+        <div className="flex flex-col lg:flex-row gap-6">
+          <div className="flex-grow bg-white rounded-lg shadow p-4 md:p-6 overflow-x-auto">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-4 sm:gap-0">
+              <div className="flex w-full sm:w-auto space-x-2">
                 <Input
                   type="text"
                   placeholder="Filter sessions..."
-                  className="w-64"
+                  className="w-full sm:w-64"
                   value={TC.filterValueActiveSessions}
                   onChange={(e) => TC.setFilterValueActiveSessions(e.target.value)}
                 />
@@ -300,17 +300,17 @@ const TutorDashboard = () => {
 
         </div>
       </div>
-      <div className="p-8">
-        <h1 className="text-3xl font-bold mb-6">Past Sessions</h1>
+      <div className="p-4 md:p-8">
+        <h1 className="text-2xl md:text-3xl font-bold mb-4 md:mb-6">Past Sessions</h1>
 
-        <div className="flex space-x-6">
-          <div className="flex-grow bg-white rounded-lg shadow p-6">
-            <div className="flex justify-between items-center mb-4">
-              <div className="flex space-x-2">
+        <div className="flex flex-col lg:flex-row gap-6">
+          <div className="flex-grow bg-white rounded-lg shadow p-4 md:p-6 overflow-x-auto">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-4 sm:gap-0">
+              <div className="flex w-full sm:w-auto space-x-2">
                 <Input
                   type="text"
                   placeholder="Filter sessions..."
-                  className="w-64"
+                  className="w-full sm:w-64"
                   value={TC.filterValuePastSessions}
                   onChange={(e) => TC.setFilterValuePastSessions(e.target.value)}
                 />
