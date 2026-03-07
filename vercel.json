@@ -12,6 +12,10 @@
     {
       "path": "/api/cron/cancel-unsubmitted-sef",
       "schedule": "0 0 * * *"
+    },
+    {
+      "path": "/api/cron/delete-inactive-enrollments",
+      "schedule": "0 0 * * * "
     }
   ],
   "functions": {
