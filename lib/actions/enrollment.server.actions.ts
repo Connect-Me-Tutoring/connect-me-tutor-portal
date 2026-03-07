@@ -359,32 +359,18 @@ export const updateEnrollment = async (enrollment: Enrollment) => {
   }
 };
 
-export const getEnrollmentsWithMissingSEF = async () => {
+export const getEnrollmentsWithMissingSEF = async (
+  timeProvided: Date,
+  weeksMissingSEF: number,
+) => {
   const supabase = await createClient();
   try {
-    const twoWeeksAgo = subWeeks(new Date(), 2).toISOString();
     const now = new Date().toISOString();
-
     const { data: enrollments } = await supabase
       .from("Enrollments")
       .select(
         `
         id,
-        student_id,
-        tutor_id,
-        availability,
-        student:Profiles!student_id(
-          id,
-          first_name,
-          last_name,
-          email
-        ),
-        tutor:Profiles!tutor_id(
-          id,
-          first_name,
-          last_name,
-          email
-        ),
         sessions:Sessions!enrollment_id!inner(
           id,
           date,
@@ -393,15 +379,15 @@ export const getEnrollmentsWithMissingSEF = async () => {
         `,
       )
       .eq("sessions.status", "Active")
-      .gte("sessions.date", twoWeeksAgo)
+      .gte("sessions.date", timeProvided)
       .lte("sessions.date", now)
       .throwOnError();
 
     const enrollmentsWithTwoMissingSessions = enrollments.filter(
-      (enrollment) => enrollment.sessions.length >= 2,
+      (enrollment) => enrollment.sessions.length >= weeksMissingSEF,
     );
 
-    console.log(enrollmentsWithTwoMissingSessions);
+    return enrollmentsWithTwoMissingSessions;
   } catch (error) {
     console.error("Unable to filter ", error);
     throw error;
