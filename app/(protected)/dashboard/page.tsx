@@ -4,22 +4,15 @@ import StudentDashboard from "@/components/student/StudentDashboard";
 import TutorDashboard from "@/components/tutor/dashboard";
 import SkeletonTable from "@/components/ui/skeleton";
 import { getMeetings } from "@/lib/actions/meeting.server.actions";
-import {
-  cachedGetProfile,
-  getProfile,
-} from "@/lib/actions/profile.server.actions";
-import {
-  cancelUnsubmittedSEF,
-  getTutorSessions,
-} from "@/lib/actions/session.server.actions";
+import { cachedGetProfile } from "@/lib/actions/profile.server.actions";
+import { getTutorSessions } from "@/lib/actions/session.server.actions";
 import { getStudentSessions } from "@/lib/actions/session.server.actions";
-import { cachedGetUser, getUser } from "@/lib/actions/user.server.actions";
+import { cachedGetUser } from "@/lib/actions/user.server.actions";
 import { Meeting, Profile } from "@/types";
 import { endOfWeek, startOfWeek } from "date-fns";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { DashboardContextProvider } from "@/contexts/dashboardContext";
-import { createClient } from "@/lib/supabase/server";
 
 async function TutorDashboardPage({
   profile,
@@ -28,33 +21,28 @@ async function TutorDashboardPage({
   profile: Profile;
   meetings: Promise<Meeting[] | null>;
 }) {
-  const wrapper = async () => {
-    await cancelUnsubmittedSEF(profile);
-    const currentTutorSessions = getTutorSessions(profile.id, {
-      startDate: startOfWeek(new Date()).toISOString(),
-      endDate: endOfWeek(new Date()).toISOString(),
-      orderBy: "date",
-      ascending: true,
-    });
+  const sessions = getTutorSessions(profile.id, {
+    orderBy: "date",
+    ascending: true,
+  });
 
-    const activeTutorSessions = getTutorSessions(profile.id, {
-      status: "Active",
-      orderBy: "date",
-      ascending: true,
-    });
+  const activeTutorSessions = sessions.then((sessions) =>
+    sessions.filter((session) => session.status == "Active"),
+  );
 
-    const pastTutorSessions = getTutorSessions(profile.id, {
-      status: ["Complete", "Cancelled"],
-      orderBy: "date",
-      ascending: true,
+  const pastTutorSessions = sessions.then((sessions) =>
+    sessions.filter((session) => session.status == "Complete" || "Cancelled"),
+  );
+
+  const currentTutorSessions = sessions.then((sessions) => {
+    const now = new Date();
+    const start = startOfWeek(now);
+    const end = endOfWeek(now);
+    return sessions.filter((session) => {
+      const sessionDate = new Date(session.date);
+      return sessionDate >= start && sessionDate <= end;
     });
-    return {
-      currentTutorSessions,
-      activeTutorSessions,
-      pastTutorSessions,
-      meetings,
-    };
-  };
+  });
 
   return (
     <Suspense fallback={<SkeletonTable />}>
@@ -81,24 +69,28 @@ async function StudentDashboardPage({
   profile: Profile;
   meetings: Promise<Meeting[] | null>;
 }) {
-  const currentStudentSessions = getStudentSessions(profile.id, {
-    startDate: startOfWeek(new Date()).toISOString(),
-    endDate: endOfWeek(new Date()).toISOString(),
+  const sessions = getStudentSessions(profile.id, {
     orderBy: "date",
     ascending: true,
   });
 
-  const activeStudentSessions = getStudentSessions(profile.id, {
-    status: "Active",
-    orderBy: "date",
-    ascending: true,
+  const currentStudentSessions = sessions.then((sessions) => {
+    const now = new Date();
+    const start = startOfWeek(now);
+    const end = endOfWeek(now);
+    return sessions.filter((session) => {
+      const sessionDate = new Date(session.date);
+      return sessionDate >= start && sessionDate <= end;
+    });
   });
 
-  const pastStudentSessions = getStudentSessions(profile.id, {
-    status: ["Complete", "Cancelled"],
-    orderBy: "date",
-    ascending: true,
-  });
+  const activeStudentSessions = sessions.then((sessions) =>
+    sessions.filter((session) => session.status == "Active"),
+  );
+
+  const pastStudentSessions = sessions.then((sessions) =>
+    sessions.filter((session) => session.status == "Complete" || "Cancelled"),
+  );
 
   return (
     <Suspense fallback={<SkeletonTable />}>
