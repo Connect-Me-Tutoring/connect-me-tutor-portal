@@ -1179,7 +1179,7 @@ const Schedule = ({
                 </div>
 
                 <div>
-                  <Label className="text-right">Summary</Label>
+                  <Label className="text-right">Notes (Only viewable Admin Side)</Label> {/* admin only notes label */}
                   <Textarea
                     value={selectedSession?.summary}
                     onChange={(e) =>
@@ -1190,6 +1190,56 @@ const Schedule = ({
                     }
                   ></Textarea>
                 </div>
+
+                {(() => {
+                  const rawSef = (selectedSession as any)?.session_exit_form as
+                    | string
+                    | null
+                    | undefined; // pull sef string w null safe
+
+                  const sefFlags: string[] = []; // keep sef boxes tiny
+                  if ((selectedSession as any)?.isQuestionOrConcern)
+                    sefFlags.push("question/concern"); // show tutor box
+                  if ((selectedSession as any)?.isFirstSession)
+                    sefFlags.push("first session"); // show tutor box
+                  if (selectedSession.status === "Cancelled")
+                    sefFlags.push("cancelled"); // quick context
+
+                  let sefReasonText = rawSef ?? ""; // default to raw text
+                  if (rawSef && rawSef.trim().startsWith("{")) {
+                    try {
+                      const parsed = JSON.parse(rawSef) as any; // handle future sef json
+                      sefReasonText =
+                        parsed?.reason ??
+                        parsed?.notes ??
+                        parsed?.exitReason ??
+                        rawSef; // prefer explicit reason field
+                      const extraFlags =
+                        parsed?.boxes ?? parsed?.flags ?? parsed?.options; // try grab checkbox list
+                      if (Array.isArray(extraFlags)) {
+                        extraFlags
+                          .filter((x) => typeof x === "string")
+                          .forEach((x) => sefFlags.push(x)); // merge extra boxes
+                      }
+                    } catch {
+                      // ignore parse fail, raw text fine
+                    }
+                  }
+
+                  return (
+                    <div>
+                      <Label>SEF Exit Reason</Label> {/* show sef reason */}
+                      <Textarea
+                        readOnly
+                        value={sefReasonText || ""}
+                        placeholder="no session exit form yet"
+                      />
+                      <p className="text-xs text-gray-500 mt-1">
+                        SEF boxes: {sefFlags.length ? sefFlags.join(", ") : "none"}
+                      </p>
+                    </div>
+                  );
+                })()}
                 <div className="flex flex-col gap-3">
                   <Link
                     href={`/dashboard/session/${selectedSession.id}/participation`}
