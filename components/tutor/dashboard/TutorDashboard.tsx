@@ -9,24 +9,21 @@ import CurrentSessionsTable from "../components/CurrentSessionsTable";
 import CompletedSessionsTable from "../components/CompletedSessionsTable";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import { getProfile } from "@/lib/actions/user.actions";
-import {
-  updateSession,
-} from "@/lib/actions/admin.actions";
+import { updateSession } from "@/lib/actions/admin.actions";
 import {
   recordSessionExitForm,
   undoCancelSession,
 } from "@/lib/actions/tutor.actions";
-import {
-  rescheduleSession
-} from "@/lib/actions/session.server.actions"
+import { rescheduleSession } from "@/lib/actions/session.server.actions";
 import { Session, Profile, Meeting } from "@/types";
 import toast from "react-hot-toast";
 import { useDashboardContext } from "@/contexts/dashboardContext";
-
+import { undoSessionExitForm } from "@/lib/actions/tutor.actions";
+import { getSessionTimePassed } from "@/lib/actions/session.actions";
 
 const TutorDashboard = () => {
   const router = useRouter();
-  const TC = useDashboardContext()
+  const TC = useDashboardContext();
 
   useEffect(() => {
     const filtered = TC.sessions.filter(
@@ -36,7 +33,7 @@ const TutorDashboard = () => {
           .includes(TC.filterValueActiveSessions.toLowerCase()) ||
         session.student?.lastName
           .toLowerCase()
-          .includes(TC.filterValueActiveSessions.toLowerCase())
+          .includes(TC.filterValueActiveSessions.toLowerCase()),
     );
     TC.setFilteredSessions(filtered);
     TC.setCurrentPage(1);
@@ -50,7 +47,7 @@ const TutorDashboard = () => {
           .includes(TC.filterValuePastSessions.toLowerCase()) ||
         session.student?.lastName
           .toLowerCase()
-          .includes(TC.filterValuePastSessions.toLowerCase())
+          .includes(TC.filterValuePastSessions.toLowerCase()),
     );
     TC.setFilteredPastSessions(filtered);
     TC.setCurrentPage(1);
@@ -70,7 +67,7 @@ const TutorDashboard = () => {
   const handleReschedule = async (
     sessionId: string,
     newDate: string,
-    meetingId: string
+    meetingId: string,
   ) => {
     try {
       if (!TC.profile || !TC.profile.id) {
@@ -81,19 +78,20 @@ const TutorDashboard = () => {
       const updatedSession = await rescheduleSession(
         sessionId,
         newDate,
-        meetingId
+        meetingId,
       );
+      console.log("Updated session:", updatedSession);
 
       if (updatedSession) {
         TC.setCurrentSessions(
           TC.currentSessions.map((e: Session) =>
-            e.id === updatedSession.id ? updatedSession : e
-          )
+            e.id === updatedSession.id ? updatedSession : e,
+          ),
         );
         TC.setSessions(
           TC.sessions.map((e: Session) =>
-            e.id === updatedSession.id ? updatedSession : e
-          )
+            e.id === updatedSession.id ? updatedSession : e,
+          ),
         );
       }
       TC.setSelectedSession(null);
@@ -110,13 +108,13 @@ const TutorDashboard = () => {
       await updateSession(updatedSession);
       TC.setCurrentSessions(
         TC.currentSessions.map((e: Session) =>
-          e.id === updatedSession.id ? updatedSession : e
-        )
+          e.id === updatedSession.id ? updatedSession : e,
+        ),
       );
       TC.setSessions(
         TC.sessions.map((e: Session) =>
-          e.id === updatedSession.id ? updatedSession : e
-        )
+          e.id === updatedSession.id ? updatedSession : e,
+        ),
       );
       toast.success("Session updated successfully");
     } catch (error) {
@@ -129,7 +127,7 @@ const TutorDashboard = () => {
     session: Session,
     notes: string,
     isQuestionOrConcern: boolean,
-    isFirstSession: boolean
+    isFirstSession: boolean,
   ) => {
     try {
       const updatedSession = session;
@@ -140,13 +138,13 @@ const TutorDashboard = () => {
       await updateSession(updatedSession);
       TC.setCurrentSessions(
         TC.currentSessions.map((e: Session) =>
-          e.id === updatedSession.id ? updatedSession : e
-        )
+          e.id === updatedSession.id ? updatedSession : e,
+        ),
       );
       TC.setSessions(
         TC.sessions.map((e: Session) =>
-          e.id === updatedSession.id ? updatedSession : e
-        )
+          e.id === updatedSession.id ? updatedSession : e,
+        ),
       );
       toast.success("Session Marked Complete");
       TC.setIsSessionExitFormOpen(false);
@@ -172,7 +170,7 @@ const TutorDashboard = () => {
               tutorEmail: session.tutor?.email,
               studentEmail: session.student?.email,
             }),
-          }
+          },
         );
         const data = await response.json();
 
@@ -187,20 +185,51 @@ const TutorDashboard = () => {
     }
   };
 
+  const handleUndoSessionExitForm = async (sessionId: string) => {
+    console.log("Undo clicked:", sessionId);
+    try {
+      const timePassed = await getSessionTimePassed(sessionId);
+      if (timePassed > 1000 * 60 * 60 * 24 * 7) {
+        const err = new Error("Undo Expired");
+        throw new Error("Undo Expired");
+      }
+      const session = await undoSessionExitForm(sessionId);
+      if (!session) return;
+
+      TC.setSessions((prev) =>
+        prev.map((s) => (s.id === sessionId ? session : s)),
+      );
+
+      TC.setPastSessions((prev) => prev.filter((s) => s.id !== sessionId));
+      TC.setCurrentSessions((prev) => [
+        session,
+        ...prev.filter((s) => s.id !== sessionId),
+      ]);
+
+      toast.success("Session exit form undone");
+    } catch (error) {
+      const err = error as Error;
+      console.error("Undo exit form failed:", err);
+      if ((err.message = "Undo Expired")) {
+        toast.error("Time To Undo Expired");
+      } else {
+        toast.error("Could not undo session exit form");
+      }
+    }
+  };
+
   // why: restore cancelled session to active status and update UI state
   const handleUndoCancel = async (sessionId: string) => {
     try {
       await undoCancelSession(sessionId, "Active");
       TC.setCurrentSessions(
         TC.currentSessions.map((s) =>
-          s.id === sessionId ? { ...s, status: "Active" } : s
-        )
+          s.id === sessionId ? { ...s, status: "Active" } : s,
+        ),
       );
-      TC.setPastSessions(
-        TC.pastSessions.filter((s) => s.id !== sessionId)
-      );
+      TC.setPastSessions(TC.pastSessions.filter((s) => s.id !== sessionId));
       TC.setFilteredPastSessions(
-        TC.filteredPastSessions.filter((s) => s.id !== sessionId)
+        TC.filteredPastSessions.filter((s) => s.id !== sessionId),
       );
       toast.success("Session cancellation undone");
     } catch (error) {
@@ -211,12 +240,12 @@ const TutorDashboard = () => {
 
   const paginatedSessions = TC.filteredSessions.slice(
     (TC.currentPage - 1) * TC.rowsPerPage,
-    TC.currentPage * TC.rowsPerPage
+    TC.currentPage * TC.rowsPerPage,
   );
 
   const paginatedPastSessions = TC.filteredPastSessions.slice(
     (TC.currentPage - 1) * TC.rowsPerPage,
-    TC.currentPage * TC.rowsPerPage
+    TC.currentPage * TC.rowsPerPage,
   );
 
   const handleInputChange = (e: {
@@ -243,7 +272,7 @@ const TutorDashboard = () => {
 
     if (TC.selectedSession) {
       TC.setSelectedSession((prevState) =>
-        handleNestedChange({ ...prevState }, name, value)
+        handleNestedChange({ ...prevState }, name, value),
       );
     }
   };
@@ -280,7 +309,9 @@ const TutorDashboard = () => {
                   placeholder="Filter sessions..."
                   className="w-64"
                   value={TC.filterValueActiveSessions}
-                  onChange={(e) => TC.setFilterValueActiveSessions(e.target.value)}
+                  onChange={(e) =>
+                    TC.setFilterValueActiveSessions(e.target.value)
+                  }
                 />
               </div>
             </div>
@@ -297,7 +328,6 @@ const TutorDashboard = () => {
               handleInputChange={handleInputChange}
             />
           </div>
-
         </div>
       </div>
       <div className="p-8">
@@ -312,27 +342,21 @@ const TutorDashboard = () => {
                   placeholder="Filter sessions..."
                   className="w-64"
                   value={TC.filterValuePastSessions}
-                  onChange={(e) => TC.setFilterValuePastSessions(e.target.value)}
+                  onChange={(e) =>
+                    TC.setFilterValuePastSessions(e.target.value)
+                  }
                 />
               </div>
             </div>
 
             <CompletedSessionsTable
               paginatedSessions={paginatedPastSessions}
-              // filteredSessions={filteredPastSessions}
-              // currentPage={currentPage}
               totalPages={totalPages}
-              // rowsPerPage={rowsPerPage.toString()}
-              // selectedSession={selectedSession}
-              // setSelectedSession={setSelectedSession}
               handlePageChange={handlePageChange}
               handleRowsPerPageChange={handleRowsPerPageChange}
+              handleUndoSessionExitForm={handleUndoSessionExitForm}
             />
           </div>
-
-          {/* <div className="w-80">
-            {/* <TutorCalendar sessions={sessions} /> */}
-          {/* </div>  */}
         </div>
       </div>
     </>

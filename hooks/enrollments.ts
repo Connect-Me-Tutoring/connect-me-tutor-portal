@@ -1,10 +1,9 @@
 import { SharedEnrollment } from "@/types/enrollment";
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
+import { supabase } from "@/lib/supabase/client";
 import { useEffect, useState } from "react";
 
 export const useEnrollment = (enrollmentId: string) => {
   const [enrollment, setEnrollment] = useState<SharedEnrollment>();
-  const supabase = createClientComponentClient();
   useEffect(() => {
     (async () => {
       const { data, error } = await supabase
@@ -18,6 +17,6 @@ export const useEnrollment = (enrollmentId: string) => {
       }
 
     })();
-  }, [supabase, enrollmentId]);
+  }, [enrollmentId]);
   return { enrollment };
 };

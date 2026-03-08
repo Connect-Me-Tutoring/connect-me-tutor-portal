@@ -1,12 +1,8 @@
-import React from "react";
-import { useState } from "react";
+import React, { useState } from "react";
 import { formatSessionDate, formatSessionDuration } from "@/lib/utils";
-import { Session, Meeting } from "@/types";
+import { Session } from "@/types";
 import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Checkbox } from "@/components/ui/checkbox";
 import {
   Table,
   TableBody,
@@ -16,13 +12,6 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
   Dialog,
   DialogContent,
   DialogHeader,
@@ -30,49 +19,40 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import {
-  HoverCard,
-  HoverCardContent,
-  HoverCardTrigger,
-} from "@/components/ui/hover-card";
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
-  Circle,
-  Loader2,
   ChevronsLeft,
   ChevronsRight,
   ChevronLeft,
   ChevronRight,
   CircleCheckBig,
   CircleX,
-  TableCellsMerge,
+  Ellipsis,
 } from "lucide-react";
-import { format, parseISO, isAfter } from "date-fns";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { useDashboardContext } from "@/contexts/dashboardContext";
-
-interface SessionsTableProps {
-  paginatedSessions: Session[];
-  filteredSessions: Session[];
-  currentPage: number;
-  totalPages: number;
-  rowsPerPage: string;
-  selectedSession: Session | null;
-  setSelectedSession: (session: Session | null) => void;
-  handlePageChange: (page: number) => void;
-  handleRowsPerPageChange: (value: string) => void;
-}
 
 const CompletedSessionsTable = ({
   paginatedSessions,
-  // filteredSessions,
-  // currentPage,
   totalPages,
-  // rowsPerPage,
-  // selectedSession,
-  // setSelectedSession,
   handlePageChange,
   handleRowsPerPageChange,
-} : any) => {
-  const TC = useDashboardContext()
-
+  handleUndoSessionExitForm,
+}: any) => {
+  const TC = useDashboardContext();
   const [isMeetingNotesOpen, setIsMeetingNotesOpen] = useState(false);
 
   return (
@@ -115,36 +95,64 @@ const CompletedSessionsTable = ({
                 {session.student?.firstName} {session.student?.lastName}
               </TableCell>
               <TableCell>{formatSessionDuration(session.duration)}</TableCell>
-
               <TableCell>
-                <Dialog
-                  open={isMeetingNotesOpen}
-                  onOpenChange={setIsMeetingNotesOpen}
-                >
-                  <DialogTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      onClick={() => {
-                        setIsMeetingNotesOpen(true);
-                        TC.setSelectedSession(session);
-                      }}
-                    >
-                      View Session Notes
+                <div className="flex flex-col space-y-2">
+                  <Dialog
+                    open={isMeetingNotesOpen}
+                    onOpenChange={setIsMeetingNotesOpen}
+                  >
+                    <DialogTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        onClick={() => {
+                          setIsMeetingNotesOpen(true);
+                          TC.setSelectedSession(session);
+                        }}
+                      >
+                        View Session Notes
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent>
+                      <DialogHeader>
+                        <DialogTitle>Meeting Notes</DialogTitle>
+                      </DialogHeader>
+                      <Textarea readOnly>
+                        {TC.selectedSession?.session_exit_form}
+                      </Textarea>
+                    </DialogContent>
+                  </Dialog>
+                </div>
+              </TableCell>
+              <TableCell>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="icon">
+                      <Ellipsis />
                     </Button>
-                  </DialogTrigger>
-                  <DialogContent>
-                    <DialogHeader>
-                      <DialogTitle>Meeting Notes</DialogTitle>
-                    </DialogHeader>
-                    <Textarea>{TC.selectedSession?.session_exit_form}</Textarea>
-                  </DialogContent>
-                </Dialog>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent>
+                    <DropdownMenuGroup>
+                      <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                      <DropdownMenuItem
+                        onClick={() => {
+                          if (session.status === "Complete") {
+                            handleUndoSessionExitForm(session.id);
+                          } else {
+                            TC.setSelectedSession(session);
+                            TC.setIsSessionExitFormOpen(true);
+                          }
+                        }}
+                      >
+                        Undo
+                      </DropdownMenuItem>
+                    </DropdownMenuGroup>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </TableCell>
             </TableRow>
           ))}
         </TableBody>
       </Table>
-
       <div className="mt-4 flex justify-between items-center">
         <span>{TC.filteredSessions.length} row(s) total.</span>
         <div className="flex items-center space-x-2">

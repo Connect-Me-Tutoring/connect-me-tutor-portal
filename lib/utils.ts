@@ -187,6 +187,7 @@ export function formatDateUTC(
 export function getSessionTimespan(timeStr: string, duration: number): string {
   const options: Intl.DateTimeFormatOptions = {
     hour: "numeric",
+    minute: "2-digit",
     hour12: true,
     timeZone: "America/New_York",
     // timeZoneName: "short", // To include time zone information
@@ -242,7 +243,6 @@ export function formatStandardToMilitaryTime(standardTime: string): string {
   if (period.toUpperCase() === "PM") {
     hours = (hours % 12) + 12;
   } else if (hours === 12) {
-    // handles edge case of 12 AM
     hours = 0;
   }
   return `${hours.toString().padStart(2, "0")}:${minutes
@@ -359,8 +359,6 @@ export const handleCalculateDuration = async (
   endTime: string,
 ) => {
   try {
-    console.log("Start Time", startTime);
-    console.log("End Time", endTime);
     const startTimeNumber: number = timeStrToHours(startTime);
     const endTimeNumber: number = timeStrToHours(endTime);
     let difference = endTimeNumber - startTimeNumber;

@@ -584,6 +584,32 @@ export default function DashboardLayout({
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button
+                    asChild
+                    variant="ghost"
+                    className={cn(
+                      "w-full justify-start",
+                      !isOpen && "justify-center px-2"
+                    )}
+                  >
+                    <a
+                      href="https://docs.google.com/document/d/1Tzc0JA90Ghy76UdBPCRFrUcT27jOxTvqh4yxq1_xVXY/edit?tab=t.0#heading=h.kk1966kbedef"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      <HelpCircleIcon className="h-5 w-5" />
+                      {isOpen && <span className="ml-3">Tutor Portal Manual</span>}
+                    </a>
+                  </Button>
+                </TooltipTrigger>
+                {!isOpen && (
+                  <TooltipContent side="right">
+                    <p>Tutor Portal Manual</p>
+                  </TooltipContent>
+                )}
+              </Tooltip>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
                     variant="ghost"
                     className={cn(
                       "w-full justify-start",
@@ -591,8 +617,8 @@ export default function DashboardLayout({
                     )}
                     onClick={handleLogout}
                   >
-                    <LogOut className="mr-2 h-4 w-4" />
-                    {isOpen && <span className="ml-2">Logout</span>}
+                    <LogOut className="h-5 w-5" />
+                    {isOpen && <span className="ml-3">Logout</span>}
                   </Button>
                 </TooltipTrigger>
                 {!isOpen && (

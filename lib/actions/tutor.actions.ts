@@ -246,3 +246,26 @@ export async function recordSessionExitForm(sessionId: string, notes: string) {
     .single();
   if (error) throw error;
 }
+
+export async function undoSessionExitForm(sessionId: string) {
+  try {
+    const { data, error } = await supabase
+      .from(Table.Sessions)
+      .update({
+        status: "Active",
+        session_exit_form: null,
+        is_question_or_concern: false,
+        is_first_session: false,
+      })
+      .eq("id", sessionId)
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    return data;
+  } catch (error) {
+    console.error("Error undoing session exit form:", error);
+    throw error;
+  }
+}

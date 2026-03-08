@@ -1,13 +1,12 @@
 import { SharedPairing } from "@/types/pairing";
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
+import { supabase } from "@/lib/supabase/client";
 import { useEffect, useState } from "react";
 
 export const usePairing = (pairingId: string) => {
   const [pairing, setPairing] = useState<SharedPairing>();
-  const supabase = createClientComponentClient();
   useEffect(() => {
     (async () => {
-      console.log("Getting Pairing")
+      console.log("Getting Pairing");
       const { data, error } = await supabase
         .rpc("get_pairing_with_profiles", {
           pairing_uuid: pairingId,
@@ -17,8 +16,7 @@ export const usePairing = (pairingId: string) => {
       if (data) {
         setPairing(data as SharedPairing);
       }
-
     })();
-  }, [supabase, pairingId]);
+  }, [pairingId]);
   return { pairing };
 };

@@ -451,3 +451,16 @@ export async function getTutorSessions(
 
   return sessions;
 }
+
+export async function getSessionTimePassed(sessionId: string): Promise<number> {
+  const { data } = await supabase
+    .from("Sessions")
+    .select("date")
+    .single()
+    .throwOnError();
+  if (!data || !data.date) throw new Error("Session Date Not Found");
+  const sessionDate: Date = new Date(data.date);
+  const now: Date = new Date();
+  const diff = now.getTime() - sessionDate.getTime();
+  return diff;
+}
