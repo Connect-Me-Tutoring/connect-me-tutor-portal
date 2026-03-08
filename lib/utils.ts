@@ -187,6 +187,7 @@ export function formatDateUTC(
 export function getSessionTimespan(timeStr: string, duration: number): string {
   const options: Intl.DateTimeFormatOptions = {
     hour: "numeric",
+    minute: "2-digit",
     hour12: true,
     timeZone: "America/New_York",
     // timeZoneName: "short", // To include time zone information

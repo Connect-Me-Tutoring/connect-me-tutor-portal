@@ -432,7 +432,7 @@ export async function getParticipationData(
 
     const sessionStartTime = session.date ? new Date(session.date) : new Date();
     const sessionEndTime = session.duration
-      ? new Date(sessionStartTime.getTime() + session.duration * 60 * 1000)
+      ? new Date(sessionStartTime.getTime() + session.duration * 60 * 60 * 1000)
       : null;
 
     events.forEach((event) => {
@@ -519,7 +519,7 @@ export async function getParticipationData(
         meetingId: session.meeting?.meetingId || "",
         startTime: session.date,
         endTime: sessionEndTime?.toISOString() || null,
-        totalDuration: session.duration || 0,
+        totalDuration: Math.round((session.duration || 0) * 60),
       },
       events,
       participantSummaries,
