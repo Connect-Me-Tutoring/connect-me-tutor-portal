@@ -78,7 +78,7 @@ export default function ChatMessageNotificationEmail({
               fontStyle: "italic",
             }}
           >
-            "{messagePreview}"
+            {`&quot${messagePreview}&quot`}
           </Text>
         </Section>
 
