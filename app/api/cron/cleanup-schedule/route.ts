@@ -1,6 +1,9 @@
 import { NextResponse } from "next/server";
 import { cancelUnsubmittedSEFCron } from "@/lib/actions/session.server.actions";
-import { deleteInactiveEnrollments } from "@/lib/actions/enrollment.server.actions";
+import {
+  deleteInactiveEnrollments,
+  warnInactiveEnrollments,
+} from "@/lib/actions/enrollment.server.actions";
 
 export const dynamic = "force-dynamic";
 
@@ -9,6 +12,10 @@ export async function GET() {
     cancelUnsubmittedSEF: {
       success: false,
       cancelled: 0,
+      error: undefined as string | undefined,
+    },
+    warnInactiveEnrollments: {
+      warned: 0,
       error: undefined as string | undefined,
     },
     deleteInactiveEnrollments: {
@@ -22,7 +29,14 @@ export async function GET() {
   const cancelResult = await cancelUnsubmittedSEFCron();
   results.cancelUnsubmittedSEF = cancelResult;
 
-  // Task 2: Delete inactive enrollments
+  // Task 2: Warn inactive enrollments (3+ weeks missing SEF)
+  const warnResult = await warnInactiveEnrollments();
+  results.warnInactiveEnrollments = {
+    warned: warnResult.length,
+    error: undefined,
+  };
+
+  // Task 3: Delete inactive enrollments (4+ weeks missing SEF)
   const deleteResult = await deleteInactiveEnrollments();
   results.deleteInactiveEnrollments = deleteResult;
 

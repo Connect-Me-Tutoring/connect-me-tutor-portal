@@ -80,7 +80,7 @@
     "zod": "^3.25.76"
   },
   "devDependencies": {
-    "@eslint/js": "^10.0.1",
+    "@eslint/js": "^8.57.0",
     "@swc/cli": "^0.4.0",
     "@swc/core": "^1.7.22",
     "@testing-library/dom": "^10.4.1",

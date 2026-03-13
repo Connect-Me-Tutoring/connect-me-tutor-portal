@@ -3,6 +3,7 @@ import { Availability, Enrollment, Profile, Session } from "@/types";
 import { createAdminClient, createClient } from "../supabase/server";
 import { Table } from "../supabase/tables";
 import {
+  tableToInterfaceEnrollments,
   tableToInterfaceMeetings,
   tableToInterfaceProfiles,
 } from "../type-utils";
@@ -538,10 +539,9 @@ export const sessionTimeFromEnrollment = (
 
 export async function deleteInactiveEnrollments() {
   const supabase = await createClient();
-  const oneMonthAgo = new Date();
-  oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
+  const fourWeeksAgo = subWeeks(new Date(), 4);
 
-  const targetEnrollments = await getEnrollmentsWithMissingSEF(oneMonthAgo, 4);
+  const targetEnrollments = await getEnrollmentsWithMissingSEF(fourWeeksAgo, 4);
 
   if (!targetEnrollments || targetEnrollments.length === 0) {
     return { success: true, error: undefined, deleted: 0 };
@@ -563,7 +563,7 @@ export async function deleteInactiveEnrollments() {
 
 export async function warnInactiveEnrollments() {
   const supabase = await createClient();
-  const threeWeeksAgo = new Date();
+  const threeWeeksAgo = subWeeks(new Date(), 3);
   const targetEnrollments = await getEnrollmentsWithMissingSEF(
     threeWeeksAgo,
     3,
@@ -598,20 +598,8 @@ export async function warnInactiveEnrollments() {
     .throwOnError();
 
   const enrollments: Enrollment[] =
-    data?.map((enrollment: any) => ({
-      createdAt: enrollment.created_at,
-      id: enrollment.id,
-      summary: enrollment.summary,
-      student: tableToInterfaceProfiles(enrollment.student),
-      tutor: tableToInterfaceProfiles(enrollment.tutor),
-      startDate: enrollment.start_date,
-      endDate: enrollment.end_date,
-      availability: enrollment.availability,
-      meetingId: enrollment.meetingId,
-      paused: enrollment.paused,
-      duration: enrollment.duration,
-      frequency: enrollment.frequency,
-    })) ?? [];
+    data?.map((enrollment: any) => tableToInterfaceEnrollments(enrollment)) ??
+    [];
 
   await Promise.all(
     enrollments
