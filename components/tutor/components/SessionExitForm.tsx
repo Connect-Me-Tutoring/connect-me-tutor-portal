@@ -65,7 +65,7 @@ const sessionExitFormDeadline = (currSession: Session) => {
 
   if (isToday(deadlineDate) || daysUntilDeadline === 0) {
     urgencyClass = "bg-red-500 text-white hover:bg-red-600 border-red-500";
-    deadlineText = "SEF Due TODAY";
+    deadlineText = "SEF Due TODAY by 11:59pm EST";
   } else if (isTomorrow(deadlineDate) || daysUntilDeadline === 1) {
     urgencyClass = "bg-orange-500 text-white hover:bg-orange-600 border-orange-500";
     deadlineText = `SEF Due Tomorrow`;
@@ -122,8 +122,11 @@ const SessionExitForm = ({
             </Button>
           </HoverCardTrigger>
           <HoverCardContent>
-            <div className="space-y-1">
-              Session Exit Form will be available after your session
+            <div className="space-y-1 text-sm">
+              <p className="font-medium">Submit by 11:59pm EST</p>
+              <p className="text-muted-foreground">
+                Session Exit Form will be available after your session
+              </p>
             </div>
           </HoverCardContent>
         </HoverCard>
