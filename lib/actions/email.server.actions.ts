@@ -146,6 +146,7 @@ export async function scheduleEmail({
 
     if (result && result.messageId) {
     }
+    console.log(result);
     return result;
   } catch (error) {
     console.error("Unable to schedule email");
