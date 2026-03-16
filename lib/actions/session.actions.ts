@@ -120,6 +120,14 @@ export async function addSessions(
 
     //Set created to avoid duplicates
     const scheduledSessions: Set<string> = await getSessionKeys(sessions);
+
+    // skip enrollments that already have a session this week, even if rescheduled to a different time
+    const enrollmentsWithSessions: Set<string> = new Set(
+      sessions
+        .filter((s) => s.enrollmentId)
+        .map((s) => s.enrollmentId as string)
+    );
+
     // Prepare bulk insert data
     const sessionsToCreate: any[] = [];
 
@@ -139,6 +147,11 @@ export async function addSessions(
 
       //Check if paused over the summer
       if (enrollment.paused) {
+        continue;
+      }
+
+      // already has a session this week, probably rescheduled
+      if (enrollmentsWithSessions.has(id)) {
         continue;
       }
 
