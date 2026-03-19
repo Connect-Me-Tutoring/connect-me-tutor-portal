@@ -860,3 +860,57 @@ export async function addOneSession(
     throw error;
   }
 }
+
+export async function cancelUnsubmittedSEF(profile: Profile) {
+  try {
+    const supabase = await createClient();
+    const now = new Date();
+    const fortyEightHoursAgo = new Date(
+      now.getTime() - 48 * 60 * 60 * 1000,
+    ).toISOString();
+
+    await supabase
+      .from("Sessions")
+      .update({ status: "Complete" })
+      .eq("tutor_id", profile.id)
+      .lt("session_date", fortyEightHoursAgo);
+  } catch (error) {
+    console.error("Unable to cancel unsubmitted SEF");
+  }
+}
+
+export async function cancelUnsubmittedSEFCron() {
+  const supabase = await createClient();
+  const now = new Date();
+  const fortyEightHoursAgo = new Date(
+    now.getTime() - 48 * 60 * 60 * 1000,
+  ).toISOString();
+
+  // First, fetch sessions that need to be cancelled
+  const { data: sessions, error: fetchError } = await supabase
+    .from("Sessions")
+    .select("id")
+    .eq("status", "Active")
+    .lt("session_date", fortyEightHoursAgo);
+
+  if (fetchError) {
+    return { success: false, error: fetchError.message, cancelled: 0 };
+  }
+
+  if (!sessions || sessions.length === 0) {
+    return { success: true, error: undefined, cancelled: 0 };
+  }
+
+  // Then update them
+  const { error: updateError } = await supabase
+    .from("Sessions")
+    .update({ status: "Complete" })
+    .eq("status", "Active")
+    .lt("session_date", fortyEightHoursAgo);
+
+  if (updateError) {
+    return { success: false, error: updateError.message, cancelled: 0 };
+  }
+
+  return { success: true, error: undefined, cancelled: sessions.length };
+}

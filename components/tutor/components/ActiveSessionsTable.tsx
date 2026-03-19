@@ -1,9 +1,6 @@
 import React from "react";
 import { useState } from "react";
-import {
-  formatSessionDate,
-  formatSessionDuration,
-} from "@/lib/utils";
+import { formatSessionDate, formatSessionDuration } from "@/lib/utils";
 import { Session, Meeting } from "@/types";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -39,13 +36,13 @@ import {
 } from "@/components/ui/hover-card";
 import {
   AlertDialog,
-  AlertDialogHeader,
-  AlertDialogTitle,
+  AlertDialogAction,
+  AlertDialogCancel,
   AlertDialogContent,
   AlertDialogDescription,
   AlertDialogFooter,
-  AlertDialogCancel,
-  AlertDialogAction,
+  AlertDialogHeader,
+  AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import {
   Circle,
@@ -61,6 +58,7 @@ import {
   CircleCheckBig,
   CircleX,
   Copy,
+  Ellipsis,
 } from "lucide-react";
 import { format, parseISO, isAfter } from "date-fns";
 import { AlertDialogTrigger } from "@radix-ui/react-alert-dialog";
@@ -69,6 +67,14 @@ import RescheduleForm from "./RescheduleDialog";
 import CancellationForm from "./CancellationForm";
 import { boolean } from "zod";
 import { useDashboardContext } from "@/contexts/dashboardContext";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 interface SessionsTableProps {
   paginatedSessions: Session[];
@@ -93,13 +99,13 @@ interface SessionsTableProps {
   handleReschedule: (
     sessionId: string,
     newDate: string,
-    meetingId: string
+    meetingId: string,
   ) => void;
   handleSessionComplete: (
     session: Session,
     notes: string,
     isQuestionOrConcern: boolean,
-    isFirstSession: boolean
+    isFirstSession: boolean,
   ) => void;
   handlePageChange: (page: number) => void;
   handleRowsPerPageChange: (value: string) => void;
@@ -108,23 +114,9 @@ interface SessionsTableProps {
 
 const ActiveSessionsTable = ({
   paginatedSessions,
-  // filteredSessions,
   meetings,
-  // currentPage,
   totalPages,
-  // rowsPerPage,
-  // selectedSession,
-  // selectedSessionDate,
-  // isDialogOpen,
-  // isSessionExitFormOpen,
-  // notes,
-  // nextClassConfirmed,
-  // setSelectedSession,
-  // setSelectedSessionDate,
-  // setIsDialogOpen,
-  // setIsSessionExitFormOpen,
-  // setNotes,
-  // setNextClassConfirmed,
+  setNextClassConfirmed,
   handleStatusChange,
   handleReschedule,
   handleSessionComplete,
@@ -132,7 +124,7 @@ const ActiveSessionsTable = ({
   handleRowsPerPageChange,
   handleInputChange,
 }: any) => {
-  const TC = useDashboardContext()
+  const TC = useDashboardContext();
   return (
     <>
       <Table>
@@ -202,82 +194,91 @@ const ActiveSessionsTable = ({
                   </>
                 )}
               </TableCell>
-              {/* <TableCell></TableCell> */}
-
-              {/* <TableCell></TableCell> */}
               <TableCell>
                 <SessionExitForm
                   currSession={session}
-                  // isSessionExitFormOpen={isSessionExitFormOpen}
-                  // setIsSessionExitFormOpen={setIsSessionExitFormOpen}
-                  // selectedSession={selectedSession}
-                  // setSelectedSession={setSelectedSession}
-                  // notes={notes}
-                  // setNotes={setNotes}
-                  // nextClassConfirmed={nextClassConfirmed}
-                  // setNextClassConfirmed={setNextClassConfirmed}
+                  setNextClassConfirmed={setNextClassConfirmed}
                   handleSessionComplete={handleSessionComplete}
                   handleStatusChange={handleStatusChange}
                 />
               </TableCell>
               <TableCell className="flex content-center">
-                <Dialog open={TC.isDialogOpen} onOpenChange={TC.setIsDialogOpen}>
-                  <DialogTrigger asChild>
-                    <HoverCard>
-                      <HoverCardTrigger>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => {
-                            TC.setSelectedSession(session);
-                            TC.setIsDialogOpen(true);
-                            TC.setSelectedSessionDate(session.date);
-                          }}
-                        >
-                          <CalendarDays color="#3b82f6" className="h-4 w-4" />
-                        </Button>
-                      </HoverCardTrigger>
-                      <HoverCardContent>
-                        <center>Reschedule Session</center>
-                      </HoverCardContent>
-                    </HoverCard>
-                  </DialogTrigger>
-                  <RescheduleForm
-                    // session={session}
-                    // isDialogOpen={isDialogOpen}
-                    selectedSession={TC.selectedSession}
-                    selectedSessionDate={TC.selectedSessionDate}
-                    meetings={meetings}
-                    // setIsDialogOpen={setIsDialogOpen}
-                    // setSelectedSession={setSelectedSession}
-                    setSelectedSessionDate={TC.setSelectedSessionDate}
-                    handleInputChange={handleInputChange}
-                    handleReschedule={handleReschedule}
-                  />
-                </Dialog>
-
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() =>
-                    (window.location.href =
-                      "https://forms.gle/AC4an7K6NSNumDwKA")
-                  }
-                >
-                  <UserRoundPlus className="h-4 w-4" />
-                </Button>
-                <AlertDialog>
-                  <AlertDialogTrigger asChild>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
                     <Button variant="ghost" size="icon">
-                      <Trash color="#ef4444" className="h-4 w-4" />
+                      <Ellipsis />
                     </Button>
-                  </AlertDialogTrigger>
-                  <CancellationForm
-                    session={session}
-                    handleStatusChange={handleStatusChange}
-                    onClose={() => {}}
-                  />
-                </AlertDialog>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent>
+                    <DropdownMenuGroup>
+                      <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                      <DropdownMenuItem
+                        onClick={() => {
+                          TC.setSelectedSession(session);
+                          TC.setIsDialogOpen(true);
+                          TC.setSelectedSessionDate(session.date);
+                        }}
+                      >
+                        <Dialog
+                          open={TC.isDialogOpen}
+                          onOpenChange={TC.setIsDialogOpen}
+                        >
+                          <RescheduleForm
+                            selectedSession={TC.selectedSession}
+                            selectedSessionDate={TC.selectedSessionDate}
+                            meetings={meetings}
+                            setSelectedSessionDate={TC.setSelectedSessionDate}
+                            handleInputChange={handleInputChange}
+                            handleReschedule={handleReschedule}
+                          />
+                        </Dialog>
+                        <CalendarDays className="h-4 w-4 mr-2" />
+                        Reschedule
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={() =>
+                          (window.location.href =
+                            "https://forms.gle/AC4an7K6NSNumDwKA")
+                        }
+                      >
+                        <UserRoundPlus className="h-4 w-4 mr-2" />
+                        Request Substitute
+                      </DropdownMenuItem>
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <DropdownMenuItem
+                            onSelect={(e) => {
+                              e.preventDefault();
+                            }}
+                          >
+                            <Trash className="h-4 w-4 mr-2" />
+                            Trash
+                          </DropdownMenuItem>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Cancel Session?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              Are you sure you want to cancel this session with{" "}
+                              {session.student?.firstName}{" "}
+                              {session.student?.lastName} on{" "}
+                              {formatSessionDate(session.date)}? This action
+                              cannot be undone.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogAction
+                              onClick={() => handleStatusChange(session)}
+                            >
+                              Confirm Cancellation
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    </DropdownMenuGroup>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </TableCell>
             </TableRow>
           ))}

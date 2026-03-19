@@ -46,38 +46,6 @@ export async function sendScheduledEmailsBeforeSessions(
           return;
         }
 
-        // try {
-        //   const response = await fetch(
-        //     `${process.env.NEXT_PUBLIC_SITE_URL}/api/admin/email/before-sessions/schedule-reminder`,
-        //     {
-        //       method: "POST",
-        //       body: JSON.stringify({ session }),
-        //       headers: {
-        //         "Content-Type": "application/json", // Fixed typo
-        //       },
-        //     },
-        //   );
-
-        //   if (!response.ok) {
-        //     const errorData = await response
-        //       .json()
-        //       .catch(() => ({ message: "Unknown error" }));
-        //     throw new Error(
-        //       errorData.message ||
-        //         `HTTP ${response.status}: Unable to schedule email`,
-        //     );
-        //   }
-
-        //   const data = await response.json();
-        // } catch (sessionError) {
-        //   console.error(
-        //     "Error processing session %s:",
-        //     session.id,
-        //     sessionError,
-        //   );
-        //   // Continue processing other sessions instead of failing entirely
-        // }
-
         try {
           await scheduleReminder({ session: session, type: "Tutor" });
           await scheduleReminder({ session: session, type: "Student" });
@@ -404,26 +372,3 @@ const createSessionNotification = (
       </p>
       `;
 };
-
-// export async function sendPairingEmail(
-//   emailType: "match-accepted" | "pairing-request" | "tutor-match-confirmation",
-//   data: any,
-//   emailTo: string
-// ) {
-//   const allowedEmailTypes: string[] = ["match-accepted"];
-
-//   if (!emailType || !allowedEmailTypes.includes(emailType)) {
-//     throw new Error("Must provide valid email type");
-//   }
-
-//   if (emailType === "match-accepted") {
-//     return await sendTutorMatchingNotificationEmail(data, emailTo);
-//   } else if (emailType == "pairing-request") {
-//     console.log("Sending pairing request email");
-//     return await sendPairingRequestEmail(data, emailTo);
-//   } else if (emailType == "tutor-match-confirmation") {
-//     return await sendPairingConfirmationEmail(data, emailTo);
-//   }
-
-//   throw new Error("Unsupported email type");
-// }

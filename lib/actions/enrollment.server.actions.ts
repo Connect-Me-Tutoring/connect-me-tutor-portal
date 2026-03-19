@@ -1,8 +1,9 @@
 "use server";
-import { Availability, Enrollment, Session } from "@/types";
+import { Availability, Enrollment, Profile, Session } from "@/types";
 import { createAdminClient, createClient } from "../supabase/server";
 import { Table } from "../supabase/tables";
 import {
+  tableToInterfaceEnrollments,
   tableToInterfaceMeetings,
   tableToInterfaceProfiles,
 } from "../type-utils";
@@ -12,6 +13,8 @@ import { addDays, format, subWeeks } from "date-fns";
 import { addOneSession } from "./session.server.actions";
 import { getMeeting } from "./meeting.server.actions";
 import { fromZonedTime } from "date-fns-tz";
+import { Resend } from "resend";
+import RescheduleConfirmationEmail from "@/components/emails/inactve-enrollment-warning";
 
 /* ENROLLMENTS */
 export async function getAllActiveEnrollmentsServer(
@@ -359,32 +362,18 @@ export const updateEnrollment = async (enrollment: Enrollment) => {
   }
 };
 
-export const getEnrollmentsWithMissingSEF = async () => {
+export const getEnrollmentsWithMissingSEF = async (
+  timeProvided: Date,
+  weeksMissingSEF: number,
+) => {
   const supabase = await createClient();
   try {
-    const twoWeeksAgo = subWeeks(new Date(), 2).toISOString();
     const now = new Date().toISOString();
-
     const { data: enrollments } = await supabase
       .from("Enrollments")
       .select(
         `
         id,
-        student_id,
-        tutor_id,
-        availability,
-        student:Profiles!student_id(
-          id,
-          first_name,
-          last_name,
-          email
-        ),
-        tutor:Profiles!tutor_id(
-          id,
-          first_name,
-          last_name,
-          email
-        ),
         sessions:Sessions!enrollment_id!inner(
           id,
           date,
@@ -393,15 +382,15 @@ export const getEnrollmentsWithMissingSEF = async () => {
         `,
       )
       .eq("sessions.status", "Active")
-      .gte("sessions.date", twoWeeksAgo)
+      .gte("sessions.date", timeProvided)
       .lte("sessions.date", now)
       .throwOnError();
 
     const enrollmentsWithTwoMissingSessions = enrollments.filter(
-      (enrollment) => enrollment.sessions.length >= 2,
+      (enrollment) => enrollment.sessions.length >= weeksMissingSEF,
     );
 
-    console.log(enrollmentsWithTwoMissingSessions);
+    return enrollmentsWithTwoMissingSessions;
   } catch (error) {
     console.error("Unable to filter ", error);
     throw error;
@@ -547,3 +536,101 @@ export const sessionTimeFromEnrollment = (
     throw error;
   }
 };
+
+export async function deleteInactiveEnrollments() {
+  const supabase = await createClient();
+  const fourWeeksAgo = subWeeks(new Date(), 4);
+
+  const targetEnrollments = await getEnrollmentsWithMissingSEF(fourWeeksAgo, 4);
+
+  if (!targetEnrollments || targetEnrollments.length === 0) {
+    return { success: true, error: undefined, deleted: 0 };
+  }
+
+  const enrollmentIds = targetEnrollments.map((e) => e.id);
+
+  const { error: deleteError } = await supabase
+    .from("Enrollments")
+    .delete()
+    .in("id", enrollmentIds);
+
+  if (deleteError) {
+    return { success: false, error: deleteError.message, deleted: 0 };
+  }
+
+  return { success: true, error: undefined, deleted: enrollmentIds.length };
+}
+
+export async function warnInactiveEnrollments() {
+  const supabase = await createClient();
+  const threeWeeksAgo = subWeeks(new Date(), 3);
+  const targetEnrollments = await getEnrollmentsWithMissingSEF(
+    threeWeeksAgo,
+    3,
+  );
+
+  if (!targetEnrollments || targetEnrollments.length === 0) {
+    return [];
+  }
+
+  const enrollmentIds = targetEnrollments.map((e) => e.id);
+
+  const { data } = await supabase
+    .from(Table.Enrollments)
+    .select(
+      `
+        id,
+        created_at,
+        summary,
+        student_id,
+        tutor_id,
+        start_date,
+        end_date,
+        availability,
+        meetingId,
+        paused,
+        duration,
+        student:Profiles!student_id(*),
+        tutor:Profiles!tutor_id(*)
+    `,
+    )
+    .in("id", enrollmentIds)
+    .throwOnError();
+
+  const enrollments: Enrollment[] =
+    data?.map((enrollment: any) => tableToInterfaceEnrollments(enrollment)) ??
+    [];
+
+  await Promise.all(
+    enrollments
+      .filter((enrollment) => enrollment.tutor && enrollment.student)
+      .map((enrollment) =>
+        sendInactiveEnrollmentWarning({
+          tutor: enrollment.tutor!,
+          student: enrollment.student!,
+          enrollment: enrollment,
+        }),
+      ),
+  );
+
+  return enrollments;
+}
+
+export async function sendInactiveEnrollmentWarning(params: {
+  tutor: Profile;
+  student: Profile;
+  enrollment: Enrollment;
+}) {
+  try {
+    const { tutor } = params;
+    const resend = new Resend(process.env.RESEND_API_KEY);
+    await resend.emails.send({
+      from: "Connect Me Free Tutoring & Mentoring <reminder@connectmego.app>",
+      to: tutor.email,
+      subject: "Connect Me Inactive Enrollment",
+      html: RescheduleConfirmationEmail(params),
+    });
+  } catch (error) {
+    throw error;
+  }
+}

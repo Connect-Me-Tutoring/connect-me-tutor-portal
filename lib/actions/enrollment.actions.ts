@@ -1,48 +1,10 @@
 "use client";
 // lib/student.actions.ts
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import { supabase } from "@/lib/supabase/client";
-import {
-  Profile,
-  Session,
-  Notification,
-  Event,
-  Enrollment,
-  Meeting,
-  Availability,
-} from "@/types";
-import {
-  deleteScheduledEmailBeforeSessions,
-  sendScheduledEmailsBeforeSessions,
-  updateScheduledEmailBeforeSessions,
-} from "./email.server.actions";
-import { getProfileWithProfileId, getProfileByEmail } from "./user.actions";
-import {
-  addDays,
-  format,
-  parse,
-  parseISO,
-  isBefore,
-  isAfter,
-  areIntervalsOverlapping,
-  addHours,
-  isValid,
-  setHours,
-  setMinutes,
-} from "date-fns"; // Only use date-fns
-import ResetPassword from "@/app/(auth)/set-password/page";
-import { getStudentSessions } from "./student.actions";
-import { date } from "zod";
-import { withCoalescedInvoke } from "next/dist/lib/coalesced-function";
-import toast from "react-hot-toast";
-import { DatabaseIcon } from "lucide-react";
-import { SYSTEM_ENTRYPOINTS } from "next/dist/shared/lib/constants";
+import { Enrollment, Availability } from "@/types";
 import { Table } from "../supabase/tables";
-import { StdioNull } from "node:child_process";
 import { tableToInterfaceProfiles } from "../type-utils";
 import { SharedEnrollment } from "@/types/enrollment";
-import { handleCalculateDuration, isValidUUID } from "../utils";
-// import { getMeeting } from "./meeting.actions";
 
 export async function getEnrollments(
   tutorId: string,

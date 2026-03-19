@@ -119,19 +119,7 @@ const CurrentSessionsTable = () => {
         </TableHeader>
         <TableBody>
           {SC.currentSessions.map((session, index) => (
-            <TableRow
-              key={index}
-
-              // className={
-              //     session.status === "Active"
-              //     ? "bg-blue-200 opacity-20"
-              //     : session.status === "Complete"
-              //     ? "bg-green-200 opacity-50"
-              //     : session.status === "Cancelled"
-              //     ? "bg-red-100 opacity-50 "
-              //     : ""
-              // }
-            >
+            <TableRow key={index}>
               <TableCell>
                 {session.status === "Active" ? (
                   <span className="px-3 py-1 inline-flex items-center rounded-full bg-blue-100 text-blue-800 border border-blue-200">

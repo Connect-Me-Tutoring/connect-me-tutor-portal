@@ -64,7 +64,7 @@ import {
   CircleCheck,
   X,
 } from "lucide-react";
-import { format, parseISO, isAfter } from "date-fns";
+import { format, parseISO, isAfter, addDays } from "date-fns";
 import { AlertDialogTrigger } from "@radix-ui/react-alert-dialog";
 import SessionExitForm from "./SessionExitForm";
 import RescheduleForm from "./RescheduleDialog";
@@ -72,62 +72,9 @@ import CancellationForm from "./CancellationForm";
 import { useRouter } from "next/navigation";
 import { useDashboardContext } from "@/contexts/dashboardContext";
 
-interface CurrentSessionTableProps {
-  currentSessions: Session[];
-  filteredSessions: Session[];
-  meetings: Meeting[];
-  currentPage: number;
-  totalPages: number;
-  rowsPerPage: string;
-  selectedSession: Session | null;
-  selectedSessionDate: string | null;
-  isDialogOpen: boolean;
-  isSessionExitFormOpen: boolean;
-  notes: string;
-  nextClassConfirmed: boolean;
-  setSelectedSession: (session: Session | null) => void;
-  setSelectedSessionDate: (date: string | null) => void;
-  setIsDialogOpen: (open: boolean) => void;
-  setIsSessionExitFormOpen: (open: boolean) => void;
-  setNotes: (notes: string) => void;
-  setNextClassConfirmed: (confirmed: boolean) => void;
-  handleStatusChange: (session: Session) => void;
-  handleReschedule: (
-    sessionId: string,
-    newDate: string,
-    meetingId: string,
-  ) => void;
-  handleSessionComplete: (
-    session: Session,
-    notes: string,
-    isQuestionOrConcern: boolean,
-    isFirstSession: boolean,
-  ) => void;
-  handlePageChange: (page: number) => void;
-  handleRowsPerPageChange: (value: string) => void;
-  handleInputChange: (e: { target: { name: string; value: string } }) => void;
-  handleUndoCancel?: (sessionId: string) => void;
-}
-
 const CurrentSessionsTable = ({
-  // currentSessions,
-  // filteredSessions,
   meetings,
-  // currentPage,
   totalPages,
-  // rowsPerPage,
-  // selectedSession,
-  // selectedSessionDate,
-  // isDialogOpen,
-  // isSessionExitFormOpen,
-  // notes,
-  // nextClassConfirmed,
-  // setSelectedSession,
-  // setSelectedSessionDate,
-  // setIsDialogOpen,
-  // setIsSessionExitFormOpen,
-  // setNotes,
-  // setNextClassConfirmed,
   handleStatusChange,
   handleReschedule,
   handleSessionComplete,
@@ -141,10 +88,31 @@ const CurrentSessionsTable = ({
   const handleRescheduleWithRefresh = async (
     sessionId: string,
     newDate: string,
-    meetingId: string
+    meetingId: string,
   ) => {
     await handleReschedule(sessionId, newDate, meetingId);
     router.refresh();
+  };
+
+  const calculateDeadline = (sessionDate: Date) => {
+    const deadlineDate = addDays(sessionDate, 2);
+    const month: string = String(deadlineDate.getMonth() + 1).padStart(2, "0");
+    const day: string = String(deadlineDate.getDate()).padStart(2, "0");
+
+    const mmdd: string = `${month}/${day}`;
+    return mmdd;
+  };
+
+  const sessionExitFormDeadline = (currSession: Session) => {
+    const date = new Date(currSession.date);
+    const deadlineDay = calculateDeadline(date);
+    return (
+      <>
+        {isAfter(parseISO(currSession.date), Date.now())
+          ? `SEF Due ${deadlineDay} 11:59 pm EST`
+          : `SEF Due ${deadlineDay} 11:59 pm EST`}
+      </>
+    );
   };
 
   const TC = useDashboardContext();
@@ -165,9 +133,7 @@ const CurrentSessionsTable = ({
         </TableHeader>
         <TableBody>
           {TC.currentSessions.map((session, index) => (
-            <TableRow
-              key={index}
-            >
+            <TableRow key={index}>
               <TableCell>
                 {session.status === "Active" ? (
                   <span className="px-3 py-1 inline-flex items-center rounded-full bg-blue-100 text-blue-800 border border-blue-200">

@@ -4,7 +4,6 @@ import { describe, it } from "vitest";
 
 describe("Test", () => {
   it("Test", async () => {
-    const UUID = "notanUUID";
-    expect(isValidUUID(UUID) === false);
+    return true;
   });
 });

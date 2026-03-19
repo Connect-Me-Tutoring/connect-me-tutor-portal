@@ -1,11 +1,10 @@
-import { Meeting, Profile } from "@/types";
+import { Enrollment, Meeting, Profile } from "@/types";
 
 export const tableToInterfaceProfiles = (data: any) => {
   try {
     if (!data) {
       throw new Error("Data is null");
     }
-
     const userProfile: Profile = {
       id: data.id,
       createdAt: data.created_at,
@@ -82,4 +81,30 @@ export const InterfaceToTableProfiles = (data: Profile) => {
     languages_spoken: data.languages_spoken,
   };
   return profile;
+};
+
+export const tableToInterfaceEnrollments = (data: any) => {
+  try {
+    if (!data) {
+      throw new Error("Data is null");
+    }
+    const enrollment: Enrollment = {
+      id: data.id,
+      createdAt: data.created_at,
+      summary: data.summary,
+      student: tableToInterfaceProfiles(data.student),
+      tutor: tableToInterfaceProfiles(data.tutor),
+      startDate: data.start_date,
+      endDate: data.end_date,
+      availability: data.availability,
+      meetingId: data.meetingId,
+      paused: data.paused,
+      duration: data.duration,
+      frequency: data.frequency,
+    };
+    return enrollment;
+  } catch (error) {
+    console.error("Unable to convert to interface for Profiles", error);
+    throw error;
+  }
 };

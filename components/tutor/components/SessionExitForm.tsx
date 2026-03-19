@@ -21,7 +21,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Trash } from "lucide-react";
-import { isAfter, parseISO } from "date-fns";
+import { addDays, isAfter, parseISO, differenceInDays, isToday, isTomorrow } from "date-fns";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
 import CancellationForm from "./CancellationForm";
@@ -41,10 +41,44 @@ interface SessionExitFormProps {
     session: Session,
     notes: string,
     isQuestionOrConcern: boolean,
-    isFirstSession: boolean
+    isFirstSession: boolean,
   ) => void;
   handleStatusChange: (session: Session) => void;
 }
+
+const calculateDeadline = (sessionDate: Date) => {
+  const deadlineDate = addDays(sessionDate, 2);
+  const month: string = String(deadlineDate.getMonth() + 1).padStart(2, "0");
+  const day: string = String(deadlineDate.getDate()).padStart(2, "0");
+
+  const mmdd: string = `${month}/${day}`;
+  return mmdd;
+};
+
+const sessionExitFormDeadline = (currSession: Session) => {
+  const date = new Date(currSession.date);
+  const deadlineDate = addDays(date, 2);
+  const daysUntilDeadline = differenceInDays(deadlineDate, new Date());
+
+  let urgencyClass = "";
+  let deadlineText = "";
+
+  if (isToday(deadlineDate) || daysUntilDeadline === 0) {
+    urgencyClass = "bg-red-500 text-white hover:bg-red-600 border-red-500";
+    deadlineText = "SEF Due TODAY by 11:59pm EST";
+  } else if (isTomorrow(deadlineDate) || daysUntilDeadline === 1) {
+    urgencyClass = "bg-orange-500 text-white hover:bg-orange-600 border-orange-500";
+    deadlineText = `SEF Due Tomorrow`;
+  } else if (daysUntilDeadline <= 2) {
+    urgencyClass = "bg-yellow-500 text-white hover:bg-yellow-600 border-yellow-500";
+    deadlineText = `SEF Due in ${daysUntilDeadline} days`;
+  } else {
+    urgencyClass = "bg-gray-100 text-gray-700 hover:bg-gray-200 border-gray-200";
+    deadlineText = `SEF Due ${calculateDeadline(date)}`;
+  }
+
+  return { urgencyClass, deadlineText };
+};
 
 const SessionExitForm = ({
   currSession,
@@ -59,8 +93,7 @@ const SessionExitForm = ({
   handleSessionComplete,
   handleStatusChange,
 }: any) => {
-
-  const TC = useDashboardContext()
+  const TC = useDashboardContext();
 
   const [isCancellation, setisCancellation] = useState(false);
   const [isFirstSession, setIsFirstSession] = useState(false);
@@ -85,12 +118,15 @@ const SessionExitForm = ({
               }}
               className=""
             >
-              SEF
+              {sessionExitFormDeadline(currSession).deadlineText}
             </Button>
           </HoverCardTrigger>
           <HoverCardContent>
-            <div className="space-y-1">
-              Session Exit Form will be available after your session
+            <div className="space-y-1 text-sm">
+              <p className="font-medium">Submit by 11:59pm EST</p>
+              <p className="text-muted-foreground">
+                Session Exit Form will be available after your session
+              </p>
             </div>
           </HoverCardContent>
         </HoverCard>
@@ -160,11 +196,13 @@ const SessionExitForm = ({
                 TC.selectedSession,
                 TC.notes,
                 isQuestionOrConcern,
-                isFirstSession
+                isFirstSession,
               );
             }
           }}
-          disabled={!TC.notes || (!TC.nextClassConfirmed && !isQuestionOrConcern)}
+          disabled={
+            !TC.notes || (!TC.nextClassConfirmed && !isQuestionOrConcern)
+          }
         >
           Submit
         </Button>

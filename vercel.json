@@ -7,7 +7,11 @@
     },
     {
       "path" : "/api/pairing",
-      "schedule":  "0 9 * * *" 
+      "schedule":  "0 9 * * *"
+    },
+    {
+      "path": "/api/cron/cleanup-schedule",
+      "schedule": "0 0 * * *"
     }
   ],
   "functions": {

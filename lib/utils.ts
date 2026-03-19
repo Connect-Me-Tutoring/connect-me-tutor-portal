@@ -365,7 +365,6 @@ export const handleCalculateDuration = async (
     if (difference < 0) {
       difference += 24;
     }
-
     return difference;
   } catch (error) {
     console.error("Unable to calculate duration", error);

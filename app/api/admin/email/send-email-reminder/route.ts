@@ -2,14 +2,14 @@ import { getProfileByEmail } from "@/lib/actions/user.actions";
 import { Profile } from "@/types";
 import { SupabaseAuthClient } from "@supabase/supabase-js/dist/module/lib/SupabaseAuthClient";
 import { request } from "http";
-import { createClient } from "@/lib/supabase/server"
+import { createClient } from "@/lib/supabase/server";
 import { NextRequest, NextResponse } from "next/server";
 import { Resend } from "resend";
 import { ideahub } from "googleapis/build/src/apis/ideahub";
 import { getSupabase } from "@/lib/supabase-server/serverClient";
 import { Table } from "@/lib/supabase/tables";
 import { isAuthorized, verifyAdmin } from "@/lib/actions/auth.server.actions";
-import { z } from "zod"
+import { z } from "zod";
 
 export const dynamic = "force-dynamic";
 
@@ -19,19 +19,18 @@ const emailSchema = z.object({
   to: z.string().trim(),
   subject: z.string().trim(),
   body: z.string().trim(),
-  sessionId: z.string().trim()
-})
+  sessionId: z.string().trim(),
+});
 
 export async function POST(request: NextRequest) {
   try {
-    // await verifyAdmin()
-    if (!isAuthorized(request)) return; 
-    
+    if (!isAuthorized(request)) return;
+
     const supabase = await createClient();
 
-    const data = await request.json()
+    const data = await request.json();
     const { to, subject, body, sessionId } = emailSchema.parse(data);
- 
+
     const { data: session, error: sessionError } = await supabase
       .from(Table.Sessions)
       .select("*")
@@ -54,7 +53,7 @@ export async function POST(request: NextRequest) {
 
     const recipient: Profile | null = await getProfileByEmail(to);
 
-    if (!recipient) throw new Error("Unable to get recipient details")
+    if (!recipient) throw new Error("Unable to get recipient details");
 
     const { data: notification_settings, error } = await supabase
       .from("user_notification_settings")

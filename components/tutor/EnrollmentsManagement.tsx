@@ -115,9 +115,13 @@ const EnrollmentList = ({
   meetingsPromise: Promise<Meeting[] | null>;
   studentsPromise: Promise<Profile[] | null>;
 }) => {
-  const initialEnrollments = use(enrollmentsPromise);
-  const initialMeetings = use(meetingsPromise);
-  const initialStudents = use(studentsPromise);
+  const combinedPromise = Promise.all([
+    enrollmentsPromise,
+    meetingsPromise,
+    studentsPromise,
+  ]);
+  const [initialEnrollments, initialMeetings, initialStudents] =
+    use(combinedPromise);
 
   const [enrollments, setEnrollments] =
     useState<Enrollment[]>(initialEnrollments);
@@ -639,19 +643,19 @@ const EnrollmentList = ({
   return (
     <>
       <div className="flex space-x-6">
-        <div className="flex-grow bg-white rounded-lg shadow p-6">
-          <div className="flex justify-between items-center mb-4">
+        <div className="flex-grow bg-white rounded-lg shadow p-4 md:p-6">
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 space-y-2 md:space-y-0">
             <div className="flex space-x-2">
               <Input
                 type="text"
                 placeholder="Filter enrollments..."
-                className="w-64"
+                className="w-full md:w-64"
                 value={filterValue}
                 onChange={(e) => setFilterValue(e.target.value)}
               />
               <Dialog open={isAddModalOpen} onOpenChange={setIsAddModalOpen}>
                 <DialogTrigger asChild>
-                  <Button>
+                  <Button className="whitespace-nowrap">
                     <Plus className="mr-2 h-4 w-4" /> Add Enrollment
                   </Button>
                 </DialogTrigger>
@@ -927,72 +931,75 @@ const EnrollmentList = ({
             </div>
           </div>
 
-          <Table>
-            <TableHeader>
-              <TableRow>
-                {[
-                  "Student",
-                  "Tutor",
-                  "Availability",
-                  "Summary",
-                  "Start Date",
-                  "Meeting Link",
-                  "Actions",
-                  "Status",
-                  "Chat",
-                ].map((header) => (
-                  <TableHead className="text-left" key={header}>
-                    {header}
-                  </TableHead>
-                ))}
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {paginatedEnrollments.map((enrollment) => (
-                <TableRow key={enrollment.id}>
-                  <TableCell>
-                    {enrollment.student?.firstName}{" "}
-                    {enrollment.student?.lastName}
-                  </TableCell>
-                  <TableCell>
-                    {enrollment.tutor?.firstName} {enrollment.tutor?.lastName}
-                  </TableCell>
-                  <TableCell className="colspan-[40px]">
-                    <AvailabilityFormat
-                      availability={enrollment.availability}
-                      card={false}
-                    />{" "}
-                  </TableCell>
-                  <TableCell>{enrollment.summary}</TableCell>
-                  <TableCell>
-                    {formatDateUTC(enrollment.startDate, {
-                      includeTime: false,
-                      includeDate: true,
-                    })}
-                  </TableCell>
-                  <TableCell className="text-left">
-                    <TableCell className="text-center">
-                      {(() => {
-                        const meeting = meetings.find(
-                          (m) => String(m.id) === String(enrollment.meetingId),
-                        );
+          {/* table made for desktop viewers above md wide*/}
+          <div className="hidden md:block w-full">
+            <div className="w-full overflow-x-auto rounded-lg border">
+              <Table className="min-w-[1100px]">
+                <TableHeader>
+                  <TableRow>
+                    {[
+                      "Student",
+                      "Tutor",
+                      "Availability",
+                      "Summary",
+                      "Start Date",
+                      "Meeting Link",
+                      "Actions",
+                      "Status",
+                      "Chat",
+                    ].map((header) => (
+                      <TableHead key={header} className="whitespace-nowrap">
+                        {header}
+                      </TableHead>
+                    ))}
+                  </TableRow>
+                </TableHeader>
 
-                        if (!meeting) return "No Meeting Link";
+                <TableBody>
+                  {paginatedEnrollments.map((enrollment) => (
+                    <TableRow key={enrollment.id}>
+                      <TableCell className="whitespace-nowrap">
+                        {enrollment.student?.firstName}{" "}
+                        {enrollment.student?.lastName}
+                      </TableCell>
 
-                        return (
-                          <button
-                            type="button"
-                            onClick={() => handleCopyMeetingLink(meeting.id)}
-                            className="relative inline-flex items-center group cursor-pointer"
-                          >
-                            {/* Text – left aligned, normal state */}
-                            <span className="underline text-black-600 transition-opacity duration-150 group-hover:opacity-0">
-                              {meeting.name}
-                            </span>
+                      <TableCell className="whitespace-nowrap">
+                        {enrollment.tutor?.firstName}{" "}
+                        {enrollment.tutor?.lastName}
+                      </TableCell>
 
-                            {/* Icon – centered over the text, only visible on hover */}
-                            <Copy
-                              className="
+                      <TableCell className="min-w-[180px]">
+                        <AvailabilityFormat
+                          availability={enrollment.availability}
+                          card={false}
+                        />
+                      </TableCell>
+
+                      <TableCell className="min-w-[200px]">
+                        {enrollment.summary}
+                      </TableCell>
+
+                      <TableCell className="whitespace-nowrap">
+                        {formatDateUTC(enrollment.startDate, {
+                          includeTime: false,
+                          includeDate: true,
+                        })}
+                      </TableCell>
+
+                      <TableCell className="whitespace-nowrap">
+                        <button
+                          type="button"
+                          onClick={() =>
+                            handleCopyMeetingLink(enrollment.meetingId)
+                          }
+                          className="relative inline-flex items-center group cursor-pointer"
+                        >
+                          <span className="underline text-black transition-opacity duration-150 group-hover:opacity-0">
+                            Copy Link
+                          </span>
+
+                          <Copy
+                            className="
                               absolute
                               left-1/2 -translate-x-1/2
                               w-4 h-4
@@ -1002,87 +1009,166 @@ const EnrollmentList = ({
                               group-hover:opacity-100
                               pointer-events-none
                             "
-                            />
-                          </button>
-                        );
-                      })()}
-                    </TableCell>
-                  </TableCell>
-                  <TableCell>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => {
-                        setSelectedEnrollment(enrollment);
-                        setIsEditModalOpen(true);
-                      }}
-                    >
-                      <Edit className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => {
-                        setSelectedEnrollment(enrollment);
-                        setIsDeleteModalOpen(true);
-                      }}
-                    >
-                      <Trash className="h-4 w-4" />
-                    </Button>
-                  </TableCell>
-                  <TableCell>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => {
-                        const updatedEnrollment = {
-                          ...enrollment,
-                          summerPaused: !enrollment.paused,
-                        };
-                        handlePausePairingOverSummer(updatedEnrollment);
-                      }}
-                    >
-                      {enrollment.paused ? (
-                        <span className="px-3 py-1 inline-flex items-center rounded-full bg-red-100 text-red-800 border border-red-200">
-                          <TimerOff size={14} className="mr-1" />
-                          Paused
-                        </span>
-                      ) : (
-                        <span className="px-3 py-1 inline-flex items-center rounded-full bg-connect-me-blue-1 text-connect-me-black border border-connect-me-blue-3">
-                          <Timer size={14} className="mr-1" />
-                          Ongoing
-                        </span>
-                      )}
-                    </Button>
-                  </TableCell>
-                  <TableCell>
-                    <Button
-                      className="gap-2"
-                      onClick={() =>
-                        router.push(
-                          `/dashboard/enrollment/${enrollment.id}/chat`,
-                        )
-                      }
-                      variant="outline"
-                    >
-                      View Chat
-                      <MessageCircleIcon />
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+                          />
+                        </button>
+                      </TableCell>
+
+                      <TableCell className="whitespace-nowrap">
+                        <div className="flex gap-2">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => {
+                              setSelectedEnrollment(enrollment);
+                              setIsEditModalOpen(true);
+                            }}
+                          >
+                            <Edit className="h-4 w-4" />
+                          </Button>
+
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => {
+                              setSelectedEnrollment(enrollment);
+                              setIsDeleteModalOpen(true);
+                            }}
+                          >
+                            <Trash className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </TableCell>
+
+                      <TableCell className="whitespace-nowrap">
+                        {enrollment.paused ? "Paused" : "Ongoing"}
+                      </TableCell>
+
+                      <TableCell className="whitespace-nowrap">
+                        <Button
+                          variant="outline"
+                          onClick={() =>
+                            router.push(
+                              `/dashboard/enrollment/${enrollment.id}/chat`,
+                            )
+                          }
+                        >
+                          Chat
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          </div>
+
+          {/* mobile cards for those screens that are smaller than md wide*/}
+          <div className="md:hidden space-y-4">
+            {paginatedEnrollments.map((enrollment) => (
+              <div
+                key={enrollment.id}
+                className="bg-white rounded-xl shadow p-4 space-y-3 border"
+              >
+                <div className="font-semibold text-lg">
+                  {enrollment.student?.firstName} {enrollment.student?.lastName}
+                </div>
+
+                <div className="text-sm text-gray-500">
+                  Tutor: {enrollment.tutor?.firstName}{" "}
+                  {enrollment.tutor?.lastName}
+                </div>
+
+                <AvailabilityFormat
+                  availability={enrollment.availability}
+                  card
+                />
+
+                <div className="text-sm">Summary: {enrollment.summary}</div>
+
+                <div className="text-sm">
+                  Start Date:{" "}
+                  {formatDateUTC(enrollment.startDate, {
+                    includeTime: false,
+                    includeDate: true,
+                  })}
+                </div>
+
+                <div className="text-sm">
+                  Status: {enrollment.paused ? "Paused" : "Ongoing"}
+                </div>
+
+                <div className="flex gap-2 flex-wrap">
+                  <button
+                    type="button"
+                    onClick={() => handleCopyMeetingLink(enrollment.meetingId)}
+                    className="relative inline-flex items-center group cursor-pointer px-3 py-1 text-sm border border-gray-300 rounded-md hover:bg-gray-50"
+                  >
+                    <span className="underline text-black transition-opacity duration-150 group-hover:opacity-0">
+                      Copy Link
+                    </span>
+
+                    <Copy
+                      className="
+                        absolute
+                        left-1/2 -translate-x-1/2
+                        w-4 h-4
+                        text-gray-700
+                        opacity-0
+                        transition-opacity duration-150
+                        group-hover:opacity-100
+                        pointer-events-none
+                      "
+                    />
+                  </button>
+
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => {
+                      setSelectedEnrollment(enrollment);
+                      setIsEditModalOpen(true);
+                    }}
+                  >
+                    Edit
+                  </Button>
+
+                  <Button
+                    size="sm"
+                    variant="destructive"
+                    onClick={() => {
+                      setSelectedEnrollment(enrollment);
+                      setIsDeleteModalOpen(true);
+                    }}
+                  >
+                    Delete
+                  </Button>
+
+                  <Button
+                    size="sm"
+                    onClick={() =>
+                      router.push(`/dashboard/enrollment/${enrollment.id}/chat`)
+                    }
+                  >
+                    Chat
+                  </Button>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Pagination */}
           <div className="flex justify-between mt-4">
             <span>{filteredEnrollments.length} row(s) total.</span>
+
             <div className="flex items-center space-x-2">
               <span>Rows per page</span>
+
               <Select
                 value={rowsPerPage.toString()}
                 onValueChange={handleRowsPerPageChange}
               >
                 <SelectTrigger className="w-[70px]">
-                  <SelectValue placeholder={rowsPerPage.toString()} />
+                  <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
                   {[10, 20, 50].map((value) => (
@@ -1092,42 +1178,45 @@ const EnrollmentList = ({
                   ))}
                 </SelectContent>
               </Select>
-              <span>
-                Page {currentPage} of {totalPages}
-              </span>
-              <div className="flex space-x-1">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => handlePageChange(1)}
-                  disabled={currentPage === 1}
-                >
-                  <ChevronsLeft className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => handlePageChange(currentPage - 1)}
-                  disabled={currentPage === 1}
-                >
-                  <ChevronLeft className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => handlePageChange(currentPage + 1)}
-                  disabled={currentPage === totalPages}
-                >
-                  <ChevronRight className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => handlePageChange(totalPages)}
-                  disabled={currentPage === totalPages}
-                >
-                  <ChevronsRight className="h-4 w-4" />
-                </Button>
+              <div className="flex items-center gap-2">
+                <span className="text-sm">
+                  Page {currentPage} of {totalPages || 1}
+                </span>
+                <div className="flex gap-1">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => handlePageChange(1)}
+                    disabled={currentPage === 1}
+                  >
+                    <ChevronsLeft className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => handlePageChange(currentPage - 1)}
+                    disabled={currentPage === 1}
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => handlePageChange(currentPage + 1)}
+                    disabled={currentPage === totalPages}
+                  >
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
+
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => handlePageChange(totalPages)}
+                    disabled={currentPage === totalPages}
+                  >
+                    <ChevronsRight className="h-4 w-4" />
+                  </Button>
+                </div>
               </div>
             </div>
           </div>
