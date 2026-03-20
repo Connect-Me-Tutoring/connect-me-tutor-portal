@@ -81,7 +81,6 @@ import { Textarea } from "../ui/textarea";
 import { boolean } from "zod";
 import { checkAvailableMeeting } from "@/lib/actions/meeting.actions";
 import { getAllActiveEnrollments } from "@/lib/actions/enrollment.actions";
-import { getEnrollmentsWithMissingSEF } from "@/lib/actions/enrollment.server.actions";
 import { useMutation, useQueries, useQuery } from "@tanstack/react-query";
 import { useQueryClient } from "@tanstack/react-query";
 
@@ -661,15 +660,7 @@ const Schedule = ({
     return { totalSessions, tutorsInvolved };
   };
 
-  const handleGetMissingSEF = async () => {
-    try {
-      await getEnrollmentsWithMissingSEF();
-      toast.success("Printed to console");
-    } catch (error) {
-      console.error(error);
-      toast.error("Please view Dev Console for error");
-    }
-  };
+
 
   return (
     <>
@@ -886,12 +877,6 @@ const Schedule = ({
               </ScrollArea>
             </DialogContent>
           </Dialog>
-          <Button
-            className="bg-connect-me-blue-4"
-            onClick={() => handleGetMissingSEF()}
-          >
-            Function Tester
-          </Button>
 
           {isLoading ? (
             <div className="text-center py-10">

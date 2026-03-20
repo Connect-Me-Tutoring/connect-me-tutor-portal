@@ -109,12 +109,11 @@ const EnrollmentList = ({
   studentsPromise,
   tutorsPromise,
 }: any) => {
-  const combinedPromise = Promise.all([
-    enrollmentsPromise,
-    meetingsPromise,
-    studentsPromise,
-    tutorsPromise,
-  ]);
+  // stable ref so use() doesnt re-suspend on every render
+  const combinedPromise = useMemo(
+    () => Promise.all([enrollmentsPromise, meetingsPromise, studentsPromise, tutorsPromise]),
+    [enrollmentsPromise, meetingsPromise, studentsPromise, tutorsPromise],
+  );
   const [initialEnrollments, initialMeetings, initialStudents, initialTutors] =
     use(combinedPromise);
   const [enrollments, setEnrollments] =
