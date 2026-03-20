@@ -70,7 +70,6 @@ import {
   // checkMeetingsAvailability,
   // isMeetingAvailable,
 } from "@/lib/actions/admin.actions";
-// Add these imports at the top of the file
 import { addOneSession } from "@/lib/actions/session.server.actions";
 import { addHours, areIntervalsOverlapping } from "date-fns";
 
@@ -105,14 +104,19 @@ const Schedule = ({
   initialTutors,
   initialMeetings,
 }: any) => {
-  // changed to use useQueryCLient so cache invalidation actually propogates
   const queryClient = useQueryClient();
   const [currentWeek, setCurrentWeek] = useState(new Date());
-  const [calendarView, setCalendarView] = useState<"day" | "week" | "month">("week"); // day, week, month toggle
-  const [selectedDay, setSelectedDay] = useState(new Date()); // for day view nav
+  const [calendarView, setCalendarView] = useState<"day" | "week" | "month">("week");
+  const [selectedDay, setSelectedDay] = useState(new Date());
+
+  // keep currentWeek in sync when day view crosses week boundary
+  useEffect(() => {
+    if (calendarView === "day") setCurrentWeek(selectedDay);
+  }, [selectedDay, calendarView]);
+
   const weekEnd = endOfWeek(currentWeek).toISOString();
   const weekStart = startOfWeek(currentWeek).toISOString();
-  // query range adapts to view so month view fetches all its sessions
+  // adapts fetch range to whichever view is active
   const queryStart = calendarView === "month" ? startOfWeek(startOfMonth(currentWeek)).toISOString() : weekStart;
   const queryEnd = calendarView === "month" ? endOfWeek(endOfMonth(currentWeek)).toISOString() : weekEnd;
   // const [enrollments, setEnrollments] = useState<Enrollment[]>([]);
@@ -123,8 +127,6 @@ const Schedule = ({
   const [selectedSession, setSelectedSession] = useState<Session | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  //-----Checking Meeting Availability-----
-
   const [isCheckingMeetingAvailability, setIsCheckingMeetingAvailability] =
     useState(false);
   const [meetingAvailabilityMap, setMeetingAvailabilityMap] = useState<
@@ -132,7 +134,6 @@ const Schedule = ({
   >({});
   const [allSessions, setAllSessions] = useState<Session[]>([]);
 
-  //---------------------------------
   const initialMount = useRef(true);
   const [openStudentOptions, setOpenStudentOptions] = useState(false);
   const [openTutorOptions, setOpentTutorOptions] = useState(false);
@@ -215,7 +216,17 @@ const Schedule = ({
     queries: [
       {
         queryKey: ["sessions", queryStart, queryEnd],
-        queryFn: () => getAllSessions(queryStart, queryEnd, "date", true),
+        queryFn: async () => {
+          // weekly chunks to avoid supabase 1000 row cap
+          const fetches: Promise<Session[]>[] = [];
+          let cursor = startOfWeek(new Date(queryStart));
+          const end = new Date(queryEnd);
+          while (cursor <= end) {
+            fetches.push(getAllSessions(cursor.toISOString(), endOfWeek(cursor).toISOString(), "date", true));
+            cursor = addWeeks(cursor, 1);
+          }
+          return (await Promise.all(fetches)).flat();
+        },
       },
       {
         queryKey: ["students"],
@@ -224,10 +235,6 @@ const Schedule = ({
       {
         queryKey: ["tutors"],
         queryFn: () => getAllProfiles("Tutor"),
-      },
-      {
-        queryKey: ["enrollments", weekEnd],
-        queryFn: () => getAllActiveEnrollments(weekEnd),
       },
       {
         queryKey: ["meetings"],
@@ -240,23 +247,13 @@ const Schedule = ({
     sessionsResult,
     studentsResult,
     tutorsResult,
-    enrollmentsResult,
     meetingsResult,
   ] = query;
 
   const sessions = sessionsResult.data || [];
   const students = studentsResult.data || [];
   const tutors = tutorsResult.data || [];
-  const enrollments: Enrollment[] = useMemo(
-    () => enrollmentsResult.data ?? [],
-    [enrollmentsResult.data],
-  );
   const meetings = meetingsResult.data || [];
-  // added enrollment filtering,
-  const activeEnrollmentIds = useMemo(
-    () => new Set(enrollments.map((enrollment: Enrollment) => enrollment.id)),
-    [enrollments],
-  );
 
   let isLoading = sessionsResult.isLoading;
 
@@ -504,7 +501,7 @@ const Schedule = ({
     },
     onSettled: () => {},
   });
-  // refetch all of it before Update Week so new sessions arent created for deleted enrollments
+  // refetch enrollments first so deleted ones dont spawn sessions
   const handleUpdateWeek = async () => {
     const freshEnrollments =
       (await queryClient.fetchQuery({
@@ -515,20 +512,19 @@ const Schedule = ({
     updateWeekMutation.mutate({ enrollments: freshEnrollments });
   };
 
-  // pre-group sessions by day for perf, avoids filtering per cell
+  // groups sessions by day key so cells just do a map lookup
   const sessionsByDay = useMemo(() => {
     const map = new Map<string, Session[]>();
     for (const session of sessions) {
       if (!session?.date) continue;
       try {
-        if (!enrollmentsResult.isLoading && session.enrollmentId && !activeEnrollmentIds.has(session.enrollmentId)) continue;
         const dayKey = format(toZonedTime(parseISO(session.date), "America/New_York"), "yyyy-MM-dd");
         if (!map.has(dayKey)) map.set(dayKey, []);
         map.get(dayKey)!.push(session);
       } catch {}
     }
     return map;
-  }, [sessions, enrollmentsResult.isLoading, activeEnrollmentIds]);
+  }, [sessions]);
 
   const getValidSessionsForDay = (day: Date) => sessionsByDay.get(format(day, "yyyy-MM-dd")) || [];
 
@@ -607,25 +603,18 @@ const Schedule = ({
     setNewSession((prev) => {
       if (!prev) return {} as Session;
 
-      // Create a copy of the previous state
       const updated = { ...prev };
 
       if (name.includes(".")) {
         const [parent, child] = name.split(".");
-
-        // Type guard to ensure parent is a valid key of Session
         if (parent === "student" || parent === "tutor") {
-          // Ensure parent object exists
           const parentObj = (updated[parent] || {}) as Profile;
-
-          // Update the nested property
           updated[parent] = {
             ...parentObj,
             [child]: value,
           };
         }
       } else {
-        // Type guard to ensure name is a valid key of Session
         if (name in updated) {
           (updated as any)[name] = value;
         }
@@ -640,7 +629,6 @@ const Schedule = ({
     end: endOfWeek(currentWeek),
   });
 
-  // nav for all three views
   const goToPrevious = () => {
     if (calendarView === "day") setSelectedDay((d) => subDays(d, 1));
     else if (calendarView === "week") setCurrentWeek((w) => subWeeks(w, 1));
@@ -651,16 +639,14 @@ const Schedule = ({
     else if (calendarView === "week") setCurrentWeek((w) => addWeeks(w, 1));
     else setCurrentWeek((w) => addMonths(w, 1));
   };
-  const goToToday = () => {
-    const today = new Date();
-    setCurrentWeek(today);
-    setSelectedDay(today);
+  // jumps to a specific date, view aware
+  const goToDate = (date: Date) => {
+    setCurrentWeek(date);
+    setSelectedDay(date);
   };
 
-  // hours for the time grid, 7am to 10pm
   const HOURS = Array.from({ length: 16 }, (_, i) => i + 7);
 
-  // figure out which hour row a session falls into
   const getSessionHour = (dateStr: string) => {
     const d = toZonedTime(parseISO(dateStr), "America/New_York");
     return d.getHours();
@@ -670,14 +656,12 @@ const Schedule = ({
     return d.getMinutes();
   };
 
-  // month view helpers
   const monthStart = startOfMonth(currentWeek);
   const monthEnd = endOfMonth(currentWeek);
   const monthCalendarStart = startOfWeek(monthStart);
   const monthCalendarEnd = endOfWeek(monthEnd);
   const monthDays = eachDayOfInterval({ start: monthCalendarStart, end: monthCalendarEnd });
 
-  // memoized stats so we don't recompute every render
   const sessionStats = useMemo(() => ({
     totalSessions: sessions.length,
     tutorsInvolved: new Set(sessions.map((s) => s?.tutor?.id)).size,
@@ -685,7 +669,6 @@ const Schedule = ({
     totalStudents: students.length,
   }), [sessions, students]);
 
-  // session card used in all views
   const SessionCard = ({ session }: { session: Session }) => (
     <div
       onClick={() => {
@@ -713,7 +696,6 @@ const Schedule = ({
     </div>
   );
 
-  // header text for current view
   const getHeaderText = () => {
     if (calendarView === "day") return format(selectedDay, "EEEE, MMMM d, yyyy");
     if (calendarView === "month") return format(currentWeek, "MMMM yyyy");
@@ -724,14 +706,28 @@ const Schedule = ({
     <>
       <Toaster />
       <div className="p-6 bg-gray-50 min-h-screen">
-        {/* top bar */}
         <div className="bg-white rounded-xl shadow-sm p-4 mb-4">
           <div className="flex items-center justify-between flex-wrap gap-3">
-            {/* left side: nav */}
             <div className="flex items-center gap-2">
-              <Button variant="outline" size="sm" onClick={goToToday}>
-                Today
-              </Button>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" size="sm">
+                    Today
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-3" align="start">
+                  <div className="flex flex-col gap-2">
+                    <Button variant="ghost" size="sm" onClick={() => goToDate(new Date())}>Go to today</Button>
+                    <Input
+                      type="date"
+                      onChange={(e) => {
+                        const d = new Date(e.target.value + "T12:00:00");
+                        if (isValid(d)) goToDate(d);
+                      }}
+                    />
+                  </div>
+                </PopoverContent>
+              </Popover>
               <Button variant="ghost" size="icon" onClick={goToPrevious}>
                 <ChevronLeft className="h-4 w-4" />
               </Button>
@@ -743,9 +739,7 @@ const Schedule = ({
               </h2>
             </div>
 
-            {/* right side: view toggle and actions */}
             <div className="flex items-center gap-2">
-              {/* view toggle */}
               <div className="flex bg-gray-100 rounded-lg p-0.5">
                 {(["day", "week", "month"] as const).map((view) => (
                   <button
@@ -912,7 +906,6 @@ const Schedule = ({
             </div>
           </div>
 
-          {/* stats bar */}
           <div className="flex items-center gap-6 mt-3 pt-3 border-t text-sm text-gray-500">
             <span>
               <span className="font-medium text-gray-700">{sessionStats.totalSessions}</span> sessions
@@ -926,7 +919,6 @@ const Schedule = ({
           </div>
         </div>
 
-        {/* loading state */}
         {isLoading ? (
           <div className="bg-white rounded-xl shadow-sm p-10">
             <div className="text-center">
@@ -936,12 +928,10 @@ const Schedule = ({
           </div>
         ) : (
           <>
-            {/* week view, the main google calendar style grid */}
             {calendarView === "week" && (
               <div className="bg-white rounded-xl shadow-sm overflow-hidden">
-                {/* day headers */}
                 <div className="grid grid-cols-[60px_repeat(7,1fr)] border-b">
-                  <div className="border-r" /> {/* spacer for time col */}
+                  <div className="border-r" />
                   {weekDays.map((day) => (
                     <div
                       key={day.toISOString()}
@@ -963,7 +953,6 @@ const Schedule = ({
                   ))}
                 </div>
 
-                {/* time grid - no scroll, all sessions visible */}
                 <div className="grid grid-cols-[60px_repeat(7,1fr)]">
                   {HOURS.map((hour) => (
                     <React.Fragment key={hour}>
@@ -996,11 +985,9 @@ const Schedule = ({
               </div>
             )}
 
-            {/* day view */}
             {calendarView === "day" && (
               <div className="bg-white rounded-xl shadow-sm overflow-hidden">
                 <div className="grid grid-cols-[60px_1fr]">
-                  {/* header */}
                   <div className="border-r border-b" />
                   <div className={cn("py-3 px-4 border-b", isToday(selectedDay) && "bg-blue-50")}>
                     <p className="text-xs text-gray-500 uppercase">{format(selectedDay, "EEEE")}</p>
@@ -1036,10 +1023,8 @@ const Schedule = ({
               </div>
             )}
 
-            {/* month view */}
             {calendarView === "month" && (
               <div className="bg-white rounded-xl shadow-sm overflow-hidden">
-                {/* day of week headers */}
                 <div className="grid grid-cols-7 border-b">
                   {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((d) => (
                     <div key={d} className="text-center py-2 text-xs font-medium text-gray-500 uppercase border-r last:border-r-0">
@@ -1047,7 +1032,6 @@ const Schedule = ({
                     </div>
                   ))}
                 </div>
-                {/* calendar grid */}
                 <div className="grid grid-cols-7">
                   {monthDays.map((day) => {
                     const daySessions = getValidSessionsForDay(day);
@@ -1098,7 +1082,6 @@ const Schedule = ({
           </>
         )}
 
-        {/* session details modal, keeping all existing fields */}
         <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
           <DialogContent>
             <DialogHeader>
