@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useEffect, useMemo, use } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import {
   AlarmClockMinus,
   MessageCircleIcon,
@@ -63,6 +63,7 @@ import {
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
@@ -104,18 +105,12 @@ const durationSchema = z.object({
 });
 
 const EnrollmentList = ({
-  enrollmentsPromise,
-  meetingsPromise,
-  studentsPromise,
-  tutorsPromise,
+  initialEnrollments,
+  initialMeetings,
+  initialStudents,
+  initialTutors,
 }: any) => {
-  // stable ref so use() doesnt re-suspend on every render
-  const combinedPromise = useMemo(
-    () => Promise.all([enrollmentsPromise, meetingsPromise, studentsPromise, tutorsPromise]),
-    [enrollmentsPromise, meetingsPromise, studentsPromise, tutorsPromise],
-  );
-  const [initialEnrollments, initialMeetings, initialStudents, initialTutors] =
-    use(combinedPromise);
+  // data is awaited in server component now, no use() needed
   const [enrollments, setEnrollments] =
     useState<Enrollment[]>(initialEnrollments);
   const [filteredEnrollments, setFilteredEnrollments] =
@@ -642,6 +637,7 @@ const EnrollmentList = ({
                 <DialogContent className="sm:max-w-[500px]">
                   <DialogHeader>
                     <DialogTitle>Add New Enrollment</DialogTitle>
+                    <DialogDescription className="sr-only">add a new enrollment</DialogDescription>
                   </DialogHeader>
                   <ScrollArea className="max-h-[calc(80vh-120px)] pr-4">
                     {" "}
@@ -1177,6 +1173,7 @@ const EnrollmentList = ({
         <DialogContent className="sm:max-w-[500px]">
           <DialogHeader>
             <DialogTitle>Edit Enrollment</DialogTitle>
+            <DialogDescription className="sr-only">edit enrollment details</DialogDescription>
           </DialogHeader>
           <ScrollArea className="max-h-[calc(80vh-120px)] pr-4">
             {" "}
@@ -1497,6 +1494,7 @@ const EnrollmentList = ({
         <DialogContent className="sm:max-w-[500px]">
           <DialogHeader>
             <DialogTitle>Delete Enrollment</DialogTitle>
+            <DialogDescription className="sr-only">confirm enrollment deletion</DialogDescription>
           </DialogHeader>
           <div className="py-4">
             <p>
