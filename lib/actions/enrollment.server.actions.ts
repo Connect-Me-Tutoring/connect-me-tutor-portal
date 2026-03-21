@@ -622,7 +622,7 @@ export async function sendInactiveEnrollmentWarning(params: {
   enrollment: Enrollment;
 }) {
   try {
-    const { tutor, student, enrollment } = params;
+    const { tutor } = params;
     const resend = new Resend(process.env.RESEND_API_KEY);
     await resend.emails.send({
       from: "Connect Me Free Tutoring & Mentoring <reminder@connectmego.app>",
