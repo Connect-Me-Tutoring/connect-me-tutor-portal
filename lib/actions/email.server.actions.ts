@@ -13,6 +13,7 @@ import {
 } from "@/types/email";
 import { createClient } from "../supabase/server";
 import { parseISO, subMinutes } from "date-fns";
+import StudentRescheduleNotificationEmail, { SessionRescheduleEmailProps } from "@/components/emails/student-reschedule-notification";
 
 export const fetchScheduledMessages = async () => {
   const qstash = new Client({ token: process.env.US_EAST_1_QSTASH_TOKEN });
@@ -203,6 +204,25 @@ export async function sendTutorPairingConfirmationEmail(
     to: "ahu@connectmego.org",
     cc: ["", "ahu@connectmego.org"],
     subject: "Confirmed for Tutoring",
+    html: emailHtml,
+  });
+
+  return emailResult;
+}
+
+export async function sendSessionRescheduleEmail(
+  data: SessionRescheduleEmailProps,
+  emailTo: string,
+) {
+  const emailHtml = await render(
+    React.createElement(StudentRescheduleNotificationEmail, data),
+  );
+
+  const emailResult = await resend.emails.send({
+    from: "Connect Me Free Tutoring & Mentoring <notifications@connectmego.app>",
+    to: emailTo,
+    cc: ["ahu@connectmego.org"], // keeping consistent with other email methods for visibility
+    subject: "Your Tutoring Session Has Been Rescheduled",
     html: emailHtml,
   });
 

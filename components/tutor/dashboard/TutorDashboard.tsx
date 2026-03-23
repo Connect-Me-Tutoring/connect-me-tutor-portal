@@ -12,6 +12,9 @@ import toast from "react-hot-toast";
 import { useDashboardContext } from "@/contexts/dashboardContext";
 import { undoSessionExitForm } from "@/lib/actions/tutor.actions";
 import { getSessionTimePassed } from "@/lib/actions/session.actions";
+import { sendSessionRescheduleEmail, updateScheduledEmailBeforeSessions } from "@/lib/actions/email.server.actions";
+import { StudentAnnouncementsRoomId } from "@/constants/chat";
+import { format } from "date-fns";
 
 const TutorDashboard = () => {
   const TC = useDashboardContext();
@@ -84,6 +87,22 @@ const TutorDashboard = () => {
             e.id === updatedSession.id ? updatedSession : e,
           ),
         );
+
+        const formattedDate = format(new Date(newDate), "MMMM d, yyyy");
+        const formattedTime = format(new Date(newDate), "h:mm a");
+
+        if (updatedSession.student?.email) {
+          await sendSessionRescheduleEmail(
+            {
+              studentName: `${updatedSession.student.firstName} ${updatedSession.student.lastName}`,
+              tutorName: `${TC.profile.firstName} ${TC.profile.lastName}`,
+              newDate: formattedDate,
+              newTime: formattedTime,
+              meetingLink: updatedSession.meeting?.link,
+            },
+            updatedSession.student.email,
+          );
+        }
       }
       TC.setSelectedSession(null);
       TC.setIsDialogOpen(false);
