@@ -86,6 +86,7 @@ export default function DashboardLayout({
   const userProfiles: Partial<Profile>[] = use(userProfilesPromise) || []
 
   const [loading, setLoading] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
   // const [profile, setProfile] = useState<{
   //   firstName: string;
   //   lastName: string;
@@ -343,7 +344,6 @@ export default function DashboardLayout({
                 )}
               </Link>
             </div>
-
             {/* Close button (shown when sidebar is open) */}
             {isOpen && (
               <Button
@@ -630,6 +630,44 @@ export default function DashboardLayout({
             </div>
           </div>
         </aside>
+       {mobileOpen && (
+  <div className="fixed inset-0 z-50 flex sm:hidden">
+    <div
+      className="fixed inset-0 bg-black/50"
+      onClick={() => setMobileOpen(false)}
+    />
+
+    <div className="relative w-64 bg-card h-full p-6 z-50">
+      <Button
+        onClick={() => setMobileOpen(false)}
+        variant="ghost"
+        size="icon"
+        className="mb-4"
+      >
+        <ChevronLeft className="h-5 w-5" />
+      </Button>
+
+      <nav className="space-y-2">
+        {(profile.role === "Student"
+          ? studentSidebarItems
+          : profile.role === "Tutor"
+          ? tutorSidebarItems
+          : adminSidebarItems
+        ).map((item) => (
+          <Link
+            key={item.href}
+            href={item.href}
+            onClick={() => setMobileOpen(false)}
+            className="flex items-center gap-3 p-2 rounded:bg-muted"
+          >
+            {item.icon}
+            <span>{item.title}</span>
+          </Link>
+        ))}
+      </nav>
+    </div>
+  </div>
+)}
       </TooltipProvider>
 
       <div className="flex-1 overflow-auto">
@@ -637,6 +675,14 @@ export default function DashboardLayout({
         <header className="bg-background w-full h-16">
           <div className="flex items-center justify-between h-full">
             <div className="flex items-center space-x-8">
+              <Button
+                onClick={() => setMobileOpen(true)}
+                variant="ghost"
+                size="icon"
+                className="sm:hidden"
+              >
+                <PanelLeftOpenIcon className="h-5 w-5" />
+              </Button>
               {!isOpen && (
                 <Button onClick={toggleSidebar} variant="ghost" size="icon">
                   <PanelLeftOpenIcon className="h-4 w-4" />
