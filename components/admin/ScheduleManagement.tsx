@@ -58,7 +58,7 @@ import {
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Circle, Loader2, ChevronDown, Check } from "lucide-react";
+import { Circle, Loader2, ChevronDown, Check, Search, X } from "lucide-react";
 import {
   getAllSessions,
   updateSession,
@@ -126,6 +126,7 @@ const Schedule = ({
   const [loading, setLoading] = useState(false);
   const [selectedSession, setSelectedSession] = useState<Session | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
 
   const [isCheckingMeetingAvailability, setIsCheckingMeetingAvailability] =
     useState(false);
@@ -512,10 +513,46 @@ const Schedule = ({
     updateWeekMutation.mutate({ enrollments: freshEnrollments });
   };
 
-  // groups sessions by day key so cells just do a map lookup
+  const filteredSessions = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase();
+
+    if (!q) {
+      return sessions;
+    }
+
+    return sessions.filter((session) => {
+      const tutorFirst = session.tutor?.firstName?.toLowerCase() ?? "";
+      const tutorLast = session.tutor?.lastName?.toLowerCase() ?? "";
+      const tutorEmail = session.tutor?.email?.toLowerCase() ?? "";
+
+      const studentFirst = session.student?.firstName?.toLowerCase() ?? "";
+      const studentLast = session.student?.lastName?.toLowerCase() ?? "";
+      const studentEmail = session.student?.email?.toLowerCase() ?? "";
+
+      const fields = [
+        tutorFirst,
+        tutorLast,
+        `${tutorFirst} ${tutorLast}`,
+        tutorEmail,
+        studentFirst,
+        studentLast,
+        `${studentFirst} ${studentLast}`,
+        studentEmail,
+      ];
+
+      for (const field of fields) {
+        if (field.includes(q)) {
+          return true;
+        }
+      }
+
+      return false;
+    });
+  }, [sessions, searchQuery]);
+
   const sessionsByDay = useMemo(() => {
     const map = new Map<string, Session[]>();
-    for (const session of sessions) {
+    for (const session of filteredSessions) {
       if (!session?.date) continue;
       try {
         const dayKey = format(toZonedTime(parseISO(session.date), "America/New_York"), "yyyy-MM-dd");
@@ -524,7 +561,7 @@ const Schedule = ({
       } catch {}
     }
     return map;
-  }, [sessions]);
+  }, [filteredSessions]);
 
   const getValidSessionsForDay = (day: Date) => sessionsByDay.get(format(day, "yyyy-MM-dd")) || [];
 
@@ -663,11 +700,11 @@ const Schedule = ({
   const monthDays = eachDayOfInterval({ start: monthCalendarStart, end: monthCalendarEnd });
 
   const sessionStats = useMemo(() => ({
-    totalSessions: sessions.length,
-    tutorsInvolved: new Set(sessions.map((s) => s?.tutor?.id)).size,
-    studentsThisWeek: new Set(sessions.map((s) => s?.student?.id)).size,
+    totalSessions: filteredSessions.length,
+    tutorsInvolved: new Set(filteredSessions.map((s) => s?.tutor?.id)).size,
+    studentsThisWeek: new Set(filteredSessions.map((s) => s?.student?.id)).size,
     totalStudents: students.length,
-  }), [sessions, students]);
+  }), [filteredSessions, students]);
 
   const SessionCard = ({ session }: { session: Session }) => (
     <div
@@ -906,16 +943,36 @@ const Schedule = ({
             </div>
           </div>
 
-          <div className="flex items-center gap-6 mt-3 pt-3 border-t text-sm text-gray-500">
-            <span>
-              <span className="font-medium text-gray-700">{sessionStats.totalSessions}</span> sessions
-            </span>
-            <span>
-              <span className="font-medium text-gray-700">{sessionStats.tutorsInvolved}</span> tutors
-            </span>
-            <span>
-              <span className="font-medium text-gray-700">{sessionStats.studentsThisWeek}</span> / {sessionStats.totalStudents} students
-            </span>
+          <div className="flex items-center gap-3 mt-3 pt-3 border-t">
+            <div className="relative flex-1 max-w-sm">
+              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <Input
+                placeholder="Search tutor, student, or email..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-9 pr-8 h-8 text-sm"
+              />
+              {searchQuery && (
+                <button
+                  onClick={() => setSearchQuery("")}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                >
+                  <X className="h-3.5 w-3.5" />
+                </button>
+              )}
+            </div>
+
+            <div className="flex items-center gap-6 text-sm text-gray-500">
+              <span>
+                <span className="font-medium text-gray-700">{sessionStats.totalSessions}</span> sessions
+              </span>
+              <span>
+                <span className="font-medium text-gray-700">{sessionStats.tutorsInvolved}</span> tutors
+              </span>
+              <span>
+                <span className="font-medium text-gray-700">{sessionStats.studentsThisWeek}</span> / {sessionStats.totalStudents} students
+              </span>
+            </div>
           </div>
         </div>
 
