@@ -82,6 +82,9 @@ import EditTutorForm from "./components/EditTutorForm";
 import { Turret_Road } from "next/font/google";
 import { capitalizeFirstLetter } from "@/lib/utils";
 import { UserAvailabilities } from "../ui/UserAvailabilities";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
+import SessionHistoryPanel from "@/components/admin/SessionHistoryPanel";
+import { History } from "lucide-react";
 
 const TutorList = ({ initialTutors }: any) => {
   const supabase = createClientComponentClient();
@@ -127,6 +130,35 @@ const TutorList = ({ initialTutors }: any) => {
     {},
   );
   const [addingTutor, setAddingTutor] = useState(false);
+
+  const [isHistoryOpen, setIsHistoryOpen] = useState(false);
+  const [historyTutor, setHistoryTutor] = useState<Profile | null>(null);
+  const [historySessions, setHistorySessions] = useState<Session[] | null>(null);
+  const [historyLoading, setHistoryLoading] = useState(false);
+
+  const handleViewTutorHistory = async (tutor: Profile) => {
+    setHistoryTutor(tutor);
+    setIsHistoryOpen(true);
+    setHistoryLoading(true);
+    setHistorySessions(null);
+
+    try {
+      const sessions = await getTutorSessions(
+        tutor.id,
+        undefined,
+        undefined,
+        undefined,
+        "date",
+        false,
+      );
+      setHistorySessions(sessions);
+    } catch (err) {
+      console.error("Failed to fetch tutor session history", err);
+      toast.error("Failed to load session history");
+    } finally {
+      setHistoryLoading(false);
+    }
+  };
 
   const getTutorData = async () => {
     try {
@@ -422,6 +454,7 @@ const TutorList = ({ initialTutors }: any) => {
             <TableHead>Phone Number</TableHead>
             <TableHead>Gender</TableHead>
             <TableHead>Actions</TableHead>
+            <TableHead>History</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -484,6 +517,15 @@ const TutorList = ({ initialTutors }: any) => {
                   </AlertDialogContent>
                 </AlertDialog>
               </TableCell>
+              <TableCell>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => handleViewTutorHistory(tutor)}
+                >
+                  <History className="h-4 w-4" />
+                </Button>
+              </TableCell>
             </TableRow>
           ))}
         </TableBody>
@@ -544,6 +586,25 @@ const TutorList = ({ initialTutors }: any) => {
           </div>
         </div>
       </div>
+      <Sheet open={isHistoryOpen} onOpenChange={setIsHistoryOpen}>
+        <SheetContent side="right" className="w-[420px] sm:max-w-[420px]">
+          <SheetHeader className="sr-only">
+            <SheetTitle>Tutor Session History</SheetTitle>
+            <SheetDescription>Session history for this tutor</SheetDescription>
+          </SheetHeader>
+          <SessionHistoryPanel
+            sessions={historySessions}
+            loading={historyLoading}
+            title="Tutor History"
+            subtitle={
+              historyTutor
+                ? `${historyTutor.firstName} ${historyTutor.lastName}`
+                : ""
+            }
+          />
+        </SheetContent>
+      </Sheet>
+
       <Toaster />
     </>
   );

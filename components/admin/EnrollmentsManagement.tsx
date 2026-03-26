@@ -81,7 +81,7 @@ import {
   updateEnrollment,
 } from "@/lib/actions/enrollment.server.actions";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
-import { Enrollment, Profile, Event, Meeting, Availability } from "@/types";
+import { Enrollment, Profile, Event, Meeting, Availability, Session } from "@/types";
 import toast from "react-hot-toast";
 import AvailabilityFormat from "@/components/student/AvailabilityFormat";
 import AvailabilityForm from "@/components/ui/availability-form";
@@ -94,6 +94,10 @@ import { useRouter } from "next/navigation";
 import { checkAvailableMeetingForEnrollments } from "@/lib/actions/meeting.actions";
 import { formatDateServer } from "@/lib/actions/utils.server.actions";
 import { QueryClient } from "@tanstack/react-query";
+import { getSessionsByEnrollmentId } from "@/lib/actions/session.actions";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
+import SessionHistoryPanel from "@/components/admin/SessionHistoryPanel";
+import { History } from "lucide-react";
 // import Availability from "@/components/student/AvailabilityFormat";
 
 const durationSchema = z.object({
@@ -168,6 +172,28 @@ const EnrollmentList = ({
   const [editHoursError, setEditHoursError] = useState<string | null>(null);
   const [minutesError, setMinutesError] = useState<string | null>(null);
   const [editMinutesError, setEditMinutesError] = useState<string | null>();
+
+  const [isHistoryOpen, setIsHistoryOpen] = useState(false);
+  const [historyEnrollment, setHistoryEnrollment] = useState<Enrollment | null>(null);
+  const [historySessions, setHistorySessions] = useState<Session[] | null>(null);
+  const [historyLoading, setHistoryLoading] = useState(false);
+
+  const handleViewHistory = async (enrollment: Enrollment) => {
+    setHistoryEnrollment(enrollment);
+    setIsHistoryOpen(true);
+    setHistoryLoading(true);
+    setHistorySessions(null);
+
+    try {
+      const sessions = await getSessionsByEnrollmentId(enrollment.id);
+      setHistorySessions(sessions);
+    } catch (err) {
+      console.error("Failed to fetch enrollment history", err);
+      toast.error("Failed to load session history");
+    } finally {
+      setHistoryLoading(false);
+    }
+  };
 
   const [hours, setHours] = useState(1);
   const [minutes, setMinutes] = useState(0);
@@ -971,6 +997,7 @@ const EnrollmentList = ({
                   "Actions",
                   "Status",
                   "Chat",
+                  "History",
                 ].map((header) => (
                   <TableHead key={header}>{header}</TableHead>
                 ))}
@@ -1102,6 +1129,16 @@ const EnrollmentList = ({
                     >
                       View Chat
                       <MessageCircleIcon />
+                    </Button>
+                  </TableCell>
+
+                  <TableCell>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => handleViewHistory(enrollment)}
+                    >
+                      <History className="h-4 w-4" />
                     </Button>
                   </TableCell>
                 </TableRow>
@@ -1515,6 +1552,25 @@ const EnrollmentList = ({
           </div>
         </DialogContent>
       </Dialog>
+      <Sheet open={isHistoryOpen} onOpenChange={setIsHistoryOpen}>
+        <SheetContent side="right" className="w-[420px] sm:max-w-[420px]">
+          <SheetHeader className="sr-only">
+            <SheetTitle>Enrollment Session History</SheetTitle>
+            <SheetDescription>Session history for this enrollment</SheetDescription>
+          </SheetHeader>
+          <SessionHistoryPanel
+            sessions={historySessions}
+            loading={historyLoading}
+            title="Enrollment History"
+            subtitle={
+              historyEnrollment
+                ? `${historyEnrollment.student?.firstName} ${historyEnrollment.student?.lastName} with ${historyEnrollment.tutor?.firstName} ${historyEnrollment.tutor?.lastName}`
+                : ""
+            }
+          />
+        </SheetContent>
+      </Sheet>
+
       {loading && <p>Loading...</p>}
       {error && <p className="text-red-500">Error: {error}</p>}
     </>

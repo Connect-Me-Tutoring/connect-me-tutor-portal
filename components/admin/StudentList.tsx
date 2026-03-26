@@ -54,7 +54,7 @@ import { editProfile } from "@/lib/actions/profile.server.actions"
 import { deleteUser } from "@/lib/actions/auth.server.actions";
 import { addUser } from "@/lib/actions/auth.actions";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
-import { Profile } from "@/types";
+import { Profile, Session } from "@/types";
 import {
   Dialog,
   DialogContent,
@@ -71,6 +71,10 @@ import AddStudentForm from "./components/AddStudentForm";
 import DeleteStudentForm from "./components/DeleteStudentForm";
 import EditStudentForm from "./components/EditStudentForm";
 import { UserAvailabilities } from "../ui/UserAvailabilities";
+import { getStudentSessions } from "@/lib/actions/session.actions";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
+import SessionHistoryPanel from "@/components/admin/SessionHistoryPanel";
+import { History } from "lucide-react";
 
 const getOrdinalSuffix = (num: number): string => {
   if (num === 1) return "st";
@@ -139,6 +143,31 @@ const StudentList = ({ initialStudents }: any) =>
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
     const [addingStudent, setAddingStudent] = useState(false);
+
+    const [isHistoryOpen, setIsHistoryOpen] = useState(false);
+    const [historyStudent, setHistoryStudent] = useState<Profile | null>(null);
+    const [historySessions, setHistorySessions] = useState<Session[] | null>(null);
+    const [historyLoading, setHistoryLoading] = useState(false);
+
+    const handleViewStudentHistory = async (student: Profile) => {
+      setHistoryStudent(student);
+      setIsHistoryOpen(true);
+      setHistoryLoading(true);
+      setHistorySessions(null);
+
+      try {
+        const sessions = await getStudentSessions(
+          student.id,
+          { orderBy: "date", ascending: false },
+        );
+        setHistorySessions(sessions);
+      } catch (err) {
+        console.error("Failed to fetch student session history", err);
+        toast.error("Failed to load session history");
+      } finally {
+        setHistoryLoading(false);
+      }
+    };
 
     const getStudentData = async () => {
       try {
@@ -553,6 +582,7 @@ const StudentList = ({ initialStudents }: any) =>
               <TableHead>Parent Email</TableHead>
               <TableHead>Parent Phone</TableHead>
               <TableHead>Actions</TableHead>
+              <TableHead>History</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -612,6 +642,15 @@ const StudentList = ({ initialStudents }: any) =>
                       </AlertDialogFooter>
                     </AlertDialogContent>
                   </AlertDialog>
+                </TableCell>
+                <TableCell>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => handleViewStudentHistory(student)}
+                  >
+                    <History className="h-4 w-4" />
+                  </Button>
                 </TableCell>
               </TableRow>
             ))}
@@ -674,6 +713,25 @@ const StudentList = ({ initialStudents }: any) =>
             </div>
           </div>
         </div>
+
+        <Sheet open={isHistoryOpen} onOpenChange={setIsHistoryOpen}>
+          <SheetContent side="right" className="w-[420px] sm:max-w-[420px]">
+            <SheetHeader className="sr-only">
+              <SheetTitle>Student Session History</SheetTitle>
+              <SheetDescription>Session history for this student</SheetDescription>
+            </SheetHeader>
+            <SessionHistoryPanel
+              sessions={historySessions}
+              loading={historyLoading}
+              title="Student History"
+              subtitle={
+                historyStudent
+                  ? `${historyStudent.firstName} ${historyStudent.lastName}`
+                  : ""
+              }
+            />
+          </SheetContent>
+        </Sheet>
 
         <Toaster />
       </>

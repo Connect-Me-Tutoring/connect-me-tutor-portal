@@ -477,3 +477,46 @@ export async function getSessionTimePassed(sessionId: string): Promise<number> {
   const diff = now.getTime() - sessionDate.getTime();
   return diff;
 }
+
+export async function getSessionsByEnrollmentId(
+  enrollmentId: string,
+): Promise<Session[]> {
+  const { data, error } = await supabase
+    .from(Table.Sessions)
+    .select(
+      `
+      *,
+      student:Profiles!student_id(*),
+      tutor:Profiles!tutor_id(*),
+      meeting:Meetings!meeting_id(*)
+    `,
+    )
+    .eq("enrollment_id", enrollmentId)
+    .order("date", { ascending: false });
+
+  if (error) {
+    console.error("Error fetching sessions by enrollment:", error.message);
+    throw error;
+  }
+
+  const sessions: Session[] = data
+    .filter((s: any) => s.student && s.tutor)
+    .map((session: any) => ({
+      id: session.id,
+      enrollmentId: session.enrollment_id,
+      createdAt: session.created_at,
+      environment: session.environment,
+      date: session.date,
+      summary: session.summary,
+      meeting: session.meeting ? tableToInterfaceMeetings(session.meeting) : null,
+      student: tableToInterfaceProfiles(session.student),
+      tutor: tableToInterfaceProfiles(session.tutor),
+      status: session.status,
+      session_exit_form: session.session_exit_form,
+      isQuestionOrConcern: Boolean(session.is_question_or_concern),
+      isFirstSession: Boolean(session.is_first_session),
+      duration: session.duration,
+    }));
+
+  return sessions;
+}
