@@ -138,18 +138,14 @@ export default function SessionHistoryPanel({
         )}
       </div>
 
-      <div className="flex items-center gap-3 mb-4 py-2 border-b border-gray-100 text-[12px] font-mono">
-        <span className="text-green-600 font-medium">{counts.completed}</span>
-        <span className="text-gray-400">completed</span>
-        <span className="text-gray-200">|</span>
-        <span className="text-red-500 font-medium">{counts.cancelled}</span>
-        <span className="text-gray-400">cancelled</span>
-        <span className="text-gray-200">|</span>
-        <span className="text-orange-500 font-medium">{counts.uncompleted}</span>
-        <span className="text-gray-400">uncompleted</span>
-        <span className="text-gray-200">|</span>
-        <span className="text-blue-500 font-medium">{counts.upcoming}</span>
-        <span className="text-gray-400">upcoming</span>
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mb-4 py-2 border-b border-gray-100 text-[12px] font-mono">
+        <span><span className="text-green-600 font-medium">{counts.completed}</span> <span className="text-gray-400">completed</span></span>
+        <span className="text-gray-200">·</span>
+        <span><span className="text-red-500 font-medium">{counts.cancelled}</span> <span className="text-gray-400">cancelled</span></span>
+        <span className="text-gray-200">·</span>
+        <span><span className="text-orange-500 font-medium">{counts.uncompleted}</span> <span className="text-gray-400">uncompleted</span></span>
+        <span className="text-gray-200">·</span>
+        <span><span className="text-blue-500 font-medium">{counts.upcoming}</span> <span className="text-gray-400">upcoming</span></span>
       </div>
 
       <div className="text-[11px] text-gray-400 mb-2">
