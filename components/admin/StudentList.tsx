@@ -723,7 +723,7 @@ const StudentList = ({ initialStudents }: any) =>
             <SessionHistoryPanel
               sessions={historySessions}
               loading={historyLoading}
-              title="Student History"
+              title="Student History - Comes from Tutor Filling SEF"
               subtitle={
                 historyStudent
                   ? `${historyStudent.firstName} ${historyStudent.lastName}`
