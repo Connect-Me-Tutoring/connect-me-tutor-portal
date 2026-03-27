@@ -22,7 +22,9 @@ export default function RootLayout({
     <html lang="en">
       <body className={inter.className}>
         <PostHogProvider>
-          {children}
+          <div className="app-scale-shell">
+            {children}
+          </div>
           {/* <SpeedInsights /> */}
         </PostHogProvider>
       </body>
