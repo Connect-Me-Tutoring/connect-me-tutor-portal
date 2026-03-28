@@ -272,7 +272,16 @@ const TutorList = ({ initialTutors }: any) => {
       }
     } catch (error) {
       const err = error as Error;
-      toast.error(`Failed to add tutor: Please Try Again`);
+      console.error("Error adding tutor:", err.message);
+      
+      // Provide more descriptive error messages
+      if (err.message.includes("Email")) {
+        toast.error("Failed to add tutor. Please check the email address and ensure it is valid and unique.");
+      } else if (err.message.includes("required")) {
+        toast.error(`Failed to add tutor. Required field error: ${err.message}`);
+      } else {
+        toast.error(`Failed to add tutor: ${err.message || "Please try again"}`);
+      }
     } finally {
       setAddingTutor(false);
     }
