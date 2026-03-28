@@ -924,7 +924,8 @@ const EnrollmentList = ({
                                 className="flex items-center justify-between"
                                 disabled={
                                   isCheckingMeetingAvailability ||
-                                  !meetingAvailability[meeting.id]
+                                  (!meetingAvailability[meeting.id] &&
+                                    meeting.name !== "Zoom Link HQ")
                                 }
                               >
                                 <span>
