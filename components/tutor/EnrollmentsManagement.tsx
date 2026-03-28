@@ -71,7 +71,6 @@ import {
 import { Label } from "@/components/ui/label";
 import {
   getAllEnrollments,
-  getAllProfiles,
   getMeetings,
   pauseEnrollmentOverSummer,
 } from "@/lib/actions/admin.actions";
@@ -80,27 +79,14 @@ import {
   updateEnrollment,
   addEnrollment,
 } from "@/lib/actions/enrollment.server.actions";
-import {
-  getEnrollments,
-  getOverlappingAvailabilites,
-} from "@/lib/actions/enrollment.actions";
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
+import { getEnrollments } from "@/lib/actions/enrollment.actions";
 import { Enrollment, Profile, Event, Meeting, Availability } from "@/types";
 import toast from "react-hot-toast";
 import AvailabilityFormat from "@/components/student/AvailabilityFormat";
 import AvailabilityForm from "@/components/ui/availability-form";
-import { formatDate } from "@/lib/utils";
-import { normalize } from "path";
-import { set } from "date-fns";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { getProfile } from "@/lib/actions/user.actions";
-import { getTutorStudents } from "@/lib/actions/tutor.actions";
-import { profile } from "console";
 import AvailabilityForm2 from "../ui/availability-form-2";
 import { checkAvailableMeetingForEnrollments } from "@/lib/actions/meeting.actions";
-import { isDeepStrictEqual } from "util";
-import { useProfile } from "@/contexts/profileContext";
 // import EnrollmentForm from "./components/EnrollmentForm";
 // import Availability from "@/components/student/AvailabilityFormat";
 
@@ -115,11 +101,11 @@ const EnrollmentList = ({
   meetingsPromise: Promise<Meeting[] | null>;
   studentsPromise: Promise<Profile[] | null>;
 }) => {
-  const combinedPromise = Promise.all([
-    enrollmentsPromise,
-    meetingsPromise,
-    studentsPromise,
-  ]);
+  const combinedPromise = useMemo(
+    () => Promise.all([enrollmentsPromise, meetingsPromise, studentsPromise]),
+    [enrollmentsPromise, meetingsPromise, studentsPromise],
+  );
+
   const [initialEnrollments, initialMeetings, initialStudents] =
     use(combinedPromise);
 
@@ -904,7 +890,11 @@ const EnrollmentList = ({
                               <SelectItem
                                 key={meeting.id}
                                 value={meeting.id}
-                                disabled={isCheckingMeetingAvailability}
+                                disabled={
+                                  isCheckingMeetingAvailability ||
+                                  (!meetingAvailability[meeting.id] &&
+                                    meeting.name !== "Zoom Link HQ")
+                                }
                                 className="flex items-center justify-between"
                               >
                                 <span>
