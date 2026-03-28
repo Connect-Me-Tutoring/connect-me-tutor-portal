@@ -745,7 +745,7 @@ const Schedule = ({
       <div className="p-6 bg-gray-50 min-h-screen">
         <div className="bg-white rounded-xl shadow-sm p-4 mb-4">
           <div className="flex items-center justify-between flex-wrap gap-3">
-            <div className="flex items-center gap-2">
+            <div className="flex min-w-0 flex-wrap items-center gap-2">
               <Popover>
                 <PopoverTrigger asChild>
                   <Button variant="outline" size="sm">
@@ -771,12 +771,12 @@ const Schedule = ({
               <Button variant="ghost" size="icon" onClick={goToNext}>
                 <ChevronRight className="h-4 w-4" />
               </Button>
-              <h2 className="text-lg font-semibold text-gray-800 ml-2">
+              <h2 className="ml-2 min-w-0 text-base font-semibold text-gray-800 sm:text-lg">
                 {getHeaderText()}
               </h2>
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex w-full flex-wrap items-center gap-2 md:w-auto md:justify-end">
               <div className="flex bg-gray-100 rounded-lg p-0.5">
                 {(["day", "week", "month"] as const).map((view) => (
                   <button
@@ -986,58 +986,61 @@ const Schedule = ({
         ) : (
           <>
             {calendarView === "week" && (
-              <div className="bg-white rounded-xl shadow-sm overflow-hidden">
-                <div className="grid grid-cols-[60px_repeat(7,1fr)] border-b">
-                  <div className="border-r" />
-                  {weekDays.map((day) => (
-                    <div
-                      key={day.toISOString()}
-                      className={cn(
-                        "text-center py-3 border-r last:border-r-0",
-                        isToday(day) && "bg-blue-50"
-                      )}
-                    >
-                      <p className="text-xs text-gray-500 uppercase">{format(day, "EEE")}</p>
-                      <p className={cn(
-                        "text-lg font-semibold",
-                        isToday(day)
-                          ? "bg-blue-600 text-white rounded-full w-8 h-8 flex items-center justify-center mx-auto"
-                          : "text-gray-800"
-                      )}>
-                        {format(day, "d")}
-                      </p>
-                    </div>
-                  ))}
-                </div>
-
-                <div className="grid grid-cols-[60px_repeat(7,1fr)]">
-                  {HOURS.map((hour) => (
-                    <React.Fragment key={hour}>
-                      <div className="border-r border-b min-h-[36px] flex items-start justify-end pr-2 pt-1">
-                        <span className="text-[11px] text-gray-400">
-                          {hour === 0 ? "12:00 AM" : hour < 12 ? `${hour}:00 AM` : hour === 12 ? "12:00 PM" : `${hour - 12}:00 PM`}
-                        </span>
+              <div className="overflow-x-auto rounded-xl bg-white shadow-sm">
+                <div className="min-w-[960px] overflow-hidden rounded-xl">
+                  <div className="grid grid-cols-[56px_repeat(7,minmax(128px,1fr))] border-b">
+                    <div className="border-r" />
+                    {weekDays.map((day) => (
+                      <div
+                        key={day.toISOString()}
+                        className={cn(
+                          "min-w-0 border-r py-3 text-center last:border-r-0",
+                          isToday(day) && "bg-blue-50"
+                        )}
+                      >
+                        <p className="text-xs uppercase text-gray-500">{format(day, "EEE")}</p>
+                        <p className={cn(
+                          "mx-auto flex h-8 w-8 items-center justify-center rounded-full text-lg font-semibold",
+                          isToday(day)
+                            ? "bg-blue-600 text-white"
+                            : "text-gray-800"
+                        )}>
+                          {format(day, "d")}
+                        </p>
                       </div>
-                      {weekDays.map((day) => {
-                        const daySessions = getValidSessionsForDay(day).filter(
-                          (s) => getSessionHour(s.date) === hour
-                        );
-                        return (
-                          <div
-                            key={`${day.toISOString()}-${hour}`}
-                            className={cn(
-                              "border-r border-b last:border-r-0 min-h-[36px] p-[2px] space-y-0.5",
-                              isToday(day) && "bg-blue-50/30"
-                            )}
-                          >
-                            {daySessions.map((session) => (
-                              <SessionCard key={session.id} session={session} />
-                            ))}
-                          </div>
-                        );
-                      })}
-                    </React.Fragment>
-                  ))}
+                    ))}
+                  </div>
+
+                  <div className="grid grid-cols-[56px_repeat(7,minmax(128px,1fr))]">
+                    {HOURS.map((hour) => (
+                      <React.Fragment key={hour}>
+                        <div className="flex min-h-[36px] items-start justify-end border-r border-b pr-2 pt-1">
+                          <span className="text-[11px] text-gray-400">
+                            {hour === 0 ? "12:00 AM" : hour < 12 ? `${hour}:00 AM` : hour === 12 ? "12:00 PM" : `${hour - 12}:00 PM`}
+                          </span>
+                        </div>
+                        {weekDays.map((day) => {
+                          const daySessions = getValidSessionsForDay(day).filter(
+                            (s) => getSessionHour(s.date) === hour
+                          );
+                          return (
+                            <div
+                              key={`${day.toISOString()}-${hour}`}
+                              className={cn(
+                                "min-w-0 space-y-0.5 border-r border-b p-[2px] last:border-r-0",
+                                "min-h-[36px]",
+                                isToday(day) && "bg-blue-50/30"
+                              )}
+                            >
+                              {daySessions.map((session) => (
+                                <SessionCard key={session.id} session={session} />
+                              ))}
+                            </div>
+                          );
+                        })}
+                      </React.Fragment>
+                    ))}
+                  </div>
                 </div>
               </div>
             )}
@@ -1081,58 +1084,60 @@ const Schedule = ({
             )}
 
             {calendarView === "month" && (
-              <div className="bg-white rounded-xl shadow-sm overflow-hidden">
-                <div className="grid grid-cols-7 border-b">
-                  {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((d) => (
-                    <div key={d} className="text-center py-2 text-xs font-medium text-gray-500 uppercase border-r last:border-r-0">
-                      {d}
-                    </div>
-                  ))}
-                </div>
-                <div className="grid grid-cols-7">
-                  {monthDays.map((day) => {
-                    const daySessions = getValidSessionsForDay(day);
-                    return (
-                      <div
-                        key={day.toISOString()}
-                        className={cn(
-                          "border-r border-b last:border-r-0 min-h-[100px] p-1",
-                          !isSameMonth(day, currentWeek) && "bg-gray-50 opacity-50",
-                          isToday(day) && "bg-blue-50"
-                        )}
-                      >
-                        <p className={cn(
-                          "text-xs font-medium mb-1",
-                          isToday(day)
-                            ? "bg-blue-600 text-white rounded-full w-5 h-5 flex items-center justify-center"
-                            : "text-gray-600"
-                        )}>
-                          {format(day, "d")}
-                        </p>
-                        <div className="space-y-0.5">
-                          {daySessions.map((session) => (
-                            <div
-                              key={session.id}
-                              onClick={() => {
-                                setSelectedSession(session);
-                                setIsModalOpen(true);
-                              }}
-                              className={cn(
-                                "text-[10px] px-1 py-0.5 rounded truncate cursor-pointer",
-                                session.status === "Complete"
-                                  ? "bg-green-100 text-green-800"
-                                  : session.status === "Cancelled"
-                                    ? "bg-red-100 text-red-800"
-                                    : "bg-blue-100 text-blue-800"
-                              )}
-                            >
-                              {session.tutor?.firstName} / {session.student?.firstName}
-                            </div>
-                          ))}
-                        </div>
+              <div className="overflow-x-auto rounded-xl bg-white shadow-sm">
+                <div className="min-w-[960px] overflow-hidden rounded-xl">
+                  <div className="grid grid-cols-7 border-b">
+                    {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((d) => (
+                      <div key={d} className="border-r py-2 text-center text-xs font-medium uppercase text-gray-500 last:border-r-0">
+                        {d}
                       </div>
-                    );
-                  })}
+                    ))}
+                  </div>
+                  <div className="grid grid-cols-7">
+                    {monthDays.map((day) => {
+                      const daySessions = getValidSessionsForDay(day);
+                      return (
+                        <div
+                          key={day.toISOString()}
+                          className={cn(
+                            "min-h-[100px] min-w-0 border-r border-b p-1 last:border-r-0",
+                            !isSameMonth(day, currentWeek) && "bg-gray-50 opacity-50",
+                            isToday(day) && "bg-blue-50"
+                          )}
+                        >
+                          <p className={cn(
+                            "mb-1 flex h-5 w-5 items-center justify-center rounded-full text-xs font-medium",
+                            isToday(day)
+                              ? "bg-blue-600 text-white"
+                              : "text-gray-600"
+                          )}>
+                            {format(day, "d")}
+                          </p>
+                          <div className="space-y-0.5">
+                            {daySessions.map((session) => (
+                              <div
+                                key={session.id}
+                                onClick={() => {
+                                  setSelectedSession(session);
+                                  setIsModalOpen(true);
+                                }}
+                                className={cn(
+                                  "cursor-pointer truncate rounded px-1 py-0.5 text-[10px]",
+                                  session.status === "Complete"
+                                    ? "bg-green-100 text-green-800"
+                                    : session.status === "Cancelled"
+                                      ? "bg-red-100 text-red-800"
+                                      : "bg-blue-100 text-blue-800"
+                                )}
+                              >
+                                {session.tutor?.firstName} / {session.student?.firstName}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
                 </div>
               </div>
             )}
