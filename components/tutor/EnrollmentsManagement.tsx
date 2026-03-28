@@ -115,11 +115,11 @@ const EnrollmentList = ({
   meetingsPromise: Promise<Meeting[] | null>;
   studentsPromise: Promise<Profile[] | null>;
 }) => {
-  const combinedPromise = Promise.all([
-    enrollmentsPromise,
-    meetingsPromise,
-    studentsPromise,
-  ]);
+  const combinedPromise = useMemo(
+    () => Promise.all([enrollmentsPromise, meetingsPromise, studentsPromise]),
+    [enrollmentsPromise, meetingsPromise, studentsPromise],
+  );
+
   const [initialEnrollments, initialMeetings, initialStudents] =
     use(combinedPromise);
 
