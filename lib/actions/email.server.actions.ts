@@ -13,10 +13,12 @@ import {
 } from "@/types/email";
 import { createClient } from "../supabase/server";
 import { parseISO, subMinutes } from "date-fns";
-import StudentRescheduleNotificationEmail, { SessionRescheduleEmailProps } from "@/components/emails/student-reschedule-notification";
+import StudentRescheduleNotificationEmail, {
+  SessionRescheduleEmailProps,
+} from "@/components/emails/student-reschedule-notification";
 
 export const fetchScheduledMessages = async () => {
-  const qstash = new Client({ token: process.env.US_EAST_1_QSTASH_TOKEN });
+  const qstash = new Client({ token: process.env.EU_CENTRAL_1_QSTASH_TOKEN });
 
   const messages = await qstash.schedules.list();
   return messages;
@@ -108,7 +110,7 @@ export async function deleteScheduledEmailBeforeSessions(sessionId: string) {
 }
 
 export async function deleteMsg(messageId: string) {
-  const qstash = new Client({ token: process.env.US_EAST_1_QSTASH_TOKEN });
+  const qstash = new Client({ token: process.env.EU_CENTRAL_1_QSTASH_TOKEN });
   try {
     await qstash.messages.delete(messageId);
   } catch (qstashError: any) {
@@ -130,7 +132,7 @@ export async function scheduleEmail({
   sessionId: string;
 }) {
   try {
-    const qstash = new Client({ token: process.env.US_EAST_1_QSTASH_TOKEN });
+    const qstash = new Client({ token: process.env.EU_CENTRAL_1_QSTASH_TOKEN });
     const result = await qstash.publishJSON({
       url: `${process.env.NEXT_PUBLIC_SITE_URL}/api/admin/email/send-email-reminder`,
       notBefore: notBefore,
