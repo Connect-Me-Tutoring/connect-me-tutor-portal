@@ -150,31 +150,36 @@ export async function getSessions(
 
     const { data: sessionData, error: sessionError } = await supabase
       .from(Table.Sessions)
-      .select("*")
+      .select(
+        `*,
+         meeting:Meetings!meeting_id(*),
+          student:Profiles!student_id(*),
+          tutor:Profiles!tutor_id(*)
+        `,
+      )
       .gt("date", start)
       .lt("date", end);
 
     if (sessionError) throw sessionError;
 
-    const sessions: Session[] = await Promise.all(
-      sessionData.map(async (session: any) => ({
+    const sessions: Session[] = sessionData
+      .filter((session: any) => session.student && session.tutor)
+      .map((session: any) => ({
         id: session.id,
         enrollmentId: session.enrollment_id,
         createdAt: session.created_at,
         environment: session.environment,
         date: session.date,
         summary: session.summary,
-        // meetingId: session.meeting_id,
-        meeting: await getMeeting(session.meeting_id),
-        student: await getProfileWithProfileId(session.student_id),
-        tutor: await getProfileWithProfileId(session.tutor_id),
+        meeting: session.meeting,
+        student: tableToInterfaceProfiles(session.student),
+        tutor: tableToInterfaceProfiles(session.tutor),
         status: session.status,
         session_exit_form: session.session_exit_form,
         isQuestionOrConcern: Boolean(session.is_question_or_concern),
         isFirstSession: Boolean(session.is_first_session),
         duration: session.duration,
-      })),
-    );
+      }));
 
     return sessions;
   } catch (error) {
@@ -233,7 +238,7 @@ export async function getAllSessionsServer(
 
     const sessions: Session[] = await Promise.all(
       data
-        .filter((session: any) => session.student & session.tutor)
+        .filter((session: any) => session.student && session.tutor)
         .map(async (session: any) => {
           // Check if tutor and student exist first
           return {

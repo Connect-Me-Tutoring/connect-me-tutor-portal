@@ -40,12 +40,12 @@ export async function sendScheduledEmailsBeforeSessions(
       sessions.map(async (session) => {
         // Check if session has a tutor
         if (!session.tutor) {
-          console.warn(`Session ${session.id} has no tutor assigned`);
+          // console.warn(`Session ${session.id} has no tutor assigned`);
           return;
         }
 
         if (!session.student) {
-          console.warn(`Session ${session.id} has no student assigned`);
+          // console.warn(`Session ${session.id} has no student assigned`);
           return;
         }
 

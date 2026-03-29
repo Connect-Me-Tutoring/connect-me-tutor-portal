@@ -3,9 +3,7 @@ import { Session } from "@/types";
 import { Profile } from "@/types";
 import { createClient } from "@supabase/supabase-js";
 import { addMinutes, subMinutes, parseISO } from "date-fns";
-import {
-  sendScheduledEmailsBeforeSessions,
-} from "@/lib/actions/email.server.actions";
+import { sendScheduledEmailsBeforeSessions } from "@/lib/actions/email.server.actions";
 import { getSessions } from "@/lib/actions/session.server.actions";
 import { addDays } from "date-fns";
 import { verifyAdmin } from "@/lib/actions/auth.server.actions";
@@ -21,14 +19,13 @@ export async function GET(request: NextRequest) {
     const weekLater = addDays(now, 7);
     const sessionsNextWeek: Session[] = await getSessions(
       now.toISOString(),
-      weekLater.toISOString()
+      weekLater.toISOString(),
     );
     // There is a burst rate of 120
     const batchSize = 50;
     const delayBetweenBatches = 1000;
     for (let i = 0; i < sessionsNextWeek.length; i += batchSize) {
       const batch = sessionsNextWeek.slice(i, i + batchSize);
-
       await sendScheduledEmailsBeforeSessions(batch);
       if (i + batchSize < sessionsNextWeek.length) {
         await delay(delayBetweenBatches);
