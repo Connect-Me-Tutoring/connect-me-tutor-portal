@@ -10,15 +10,12 @@ import {
   User,
 } from "@supabase/auth-helpers-nextjs";
 import { getProfile } from "@/lib/actions/user.actions";
-import {
-  updateSession,
-  getMeetings,
-  getAllSessions,
-} from "@/lib/actions/admin.actions";
+import { updateSession, getMeetings } from "@/lib/actions/admin.actions";
 import {
   getTutorSessions,
   recordSessionExitForm,
 } from "@/lib/actions/tutor.actions";
+import { getAllSessions } from "@/lib/actions/session.actions";
 import { rescheduleSession } from "@/lib/actions/session.server.actions";
 import { Session, Profile, Meeting } from "@/types";
 import toast from "react-hot-toast";

@@ -2,24 +2,24 @@ import { PHASE_DEVELOPMENT_SERVER } from "next/dist/shared/lib/constants";
 
 interface Profile {
   id: string;
-  createdAt: string; 
+  createdAt: string;
   role: "Student" | "Tutor" | "Admin";
-  userId: string; 
+  userId: string;
   firstName: string;
   lastName: string;
   age?: string;
   grade?: string;
   gender?: string;
   dateOfBirth?: string | null;
-  startDate: string; 
-  availability: { day: string; startTime: string; endTime: string }[]; 
+  startDate: string;
+  availability: { day: string; startTime: string; endTime: string }[];
   email: string;
   phoneNumber: string;
-  parentName?: string; 
-  parentPhone?: string; 
-  parentEmail?: string; 
+  parentName?: string;
+  parentPhone?: string;
+  parentEmail?: string;
   timeZone: string;
-  subjects_of_interest: string[]; 
+  subjects_of_interest: string[];
   status: "Active" | "Inactive" | "Deleted";
   tutorIds: string[];
   studentNumber: string | null;
@@ -31,17 +31,17 @@ interface Session {
   id: string;
   enrollmentId: string | null;
   createdAt: string;
-  environment: "Virtual" | "In-Person";
   student: Profile | null;
   tutor: Profile | null;
   date: string;
-  summary: string;
   meeting?: Meeting | null;
+  duration: number;
   status: "Active" | "Complete" | "Cancelled" | "Rescheduled";
   session_exit_form: string;
+  summary: string;
   isQuestionOrConcern: boolean;
   isFirstSession: boolean;
-  duration: number;
+  isStandalone: boolean;
 }
 
 interface Meeting {
@@ -56,7 +56,7 @@ interface Meeting {
 interface Notification {
   createdAt: string;
   id: string;
-  summary: string; 
+  summary: string;
   sessionId: string;
   previousDate: string;
   suggestedDate: string;
@@ -85,7 +85,7 @@ interface Enrollment {
   summary: string;
   startDate: string;
   endDate: string | null;
-  availability: Availability[]; 
+  availability: Availability[];
   day?: string | null;
   startTime?: string | null;
   endTime?: string | null;
@@ -107,9 +107,9 @@ interface CreatedProfileData {
   lastName: string;
   age: string;
   grade: string;
-  gender: string,
-  startDate: string,
-  availability: Availability[],
+  gender: string;
+  startDate: string;
+  availability: Availability[];
   email: string;
   parentName: string;
   parentPhone: string;
@@ -117,8 +117,8 @@ interface CreatedProfileData {
   phoneNumber: string;
   timezone: string;
   subjects_of_interest: string[];
-  status: "Active",
-  studentNumber: string
-  languages_spoken: string[], 
+  status: "Active";
+  studentNumber: string;
+  languages_spoken: string[];
   password: string;
 }

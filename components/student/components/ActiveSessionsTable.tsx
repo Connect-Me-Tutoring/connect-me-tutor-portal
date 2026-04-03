@@ -80,13 +80,13 @@ interface SessionsTableProps {
   handleReschedule: (
     sessionId: string,
     newDate: string,
-    meetingId: string
+    meetingId: string,
   ) => void;
   handleSessionComplete: (
     session: Session,
     notes: string,
     isQuestionOrConcern: boolean,
-    isFirstSession: boolean
+    isFirstSession: boolean,
   ) => void;
   handlePageChange: (page: number) => void;
   handleRowsPerPageChange: (value: string) => void;
@@ -118,8 +118,8 @@ const ActiveSessionsTable = ({
   handlePageChange,
   handleRowsPerPageChange,
   handleInputChange,
-} : any) => {
-  const SC = useDashboardContext()
+}: any) => {
+  const SC = useDashboardContext();
   return (
     <>
       <Table>
@@ -166,25 +166,21 @@ const ActiveSessionsTable = ({
                 {session.tutor?.firstName} {session.tutor?.lastName}
               </TableCell>
               <TableCell>
-                {session.environment !== "In-Person" && (
-                  <>
-                    {session?.meeting?.meetingId ? (
-                      <span>
-                        <button
-                          onClick={() =>
-                            (window.location.href = `/meeting/${session?.meeting?.id}`)
-                          }
-                          className="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600"
-                        >
-                          View
-                        </button>
-                      </span>
-                    ) : (
-                      <button className="text-black px-3 py-1 border border-gray-200 rounded">
-                        N/A
-                      </button>
-                    )}
-                  </>
+                {session?.meeting?.meetingId ? (
+                  <span>
+                    <button
+                      onClick={() =>
+                        (window.location.href = `/meeting/${session?.meeting?.id}`)
+                      }
+                      className="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600"
+                    >
+                      View
+                    </button>
+                  </span>
+                ) : (
+                  <button className="text-black px-3 py-1 border border-gray-200 rounded">
+                    N/A
+                  </button>
                 )}
               </TableCell>
               {/* <TableCell></TableCell> */}

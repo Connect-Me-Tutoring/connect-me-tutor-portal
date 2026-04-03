@@ -173,25 +173,21 @@ const ActiveSessionsTable = ({
               </TableCell>
               <TableCell>{formatSessionDuration(session.duration)}</TableCell>
               <TableCell>
-                {session.environment !== "In-Person" && (
-                  <>
-                    {session?.meeting?.meetingId ? (
-                      <span>
-                        <button
-                          onClick={() =>
-                            (window.location.href = `/meeting/${session?.meeting?.id}`)
-                          }
-                          className="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600"
-                        >
-                          View
-                        </button>
-                      </span>
-                    ) : (
-                      <button className="text-black px-3 py-1 border border-gray-200 rounded">
-                        N/A
-                      </button>
-                    )}
-                  </>
+                {session?.meeting?.meetingId ? (
+                  <span>
+                    <button
+                      onClick={() =>
+                        (window.location.href = `/meeting/${session?.meeting?.id}`)
+                      }
+                      className="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600"
+                    >
+                      View
+                    </button>
+                  </span>
+                ) : (
+                  <button className="text-black px-3 py-1 border border-gray-200 rounded">
+                    N/A
+                  </button>
                 )}
               </TableCell>
               <TableCell>

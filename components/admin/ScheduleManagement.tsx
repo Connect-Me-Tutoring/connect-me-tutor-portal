@@ -60,7 +60,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Circle, Loader2, ChevronDown, Check } from "lucide-react";
 import {
-  getAllSessions,
   updateSession,
   getMeetings,
   getAllProfiles,
@@ -70,10 +69,10 @@ import {
   // checkMeetingsAvailability,
   // isMeetingAvailable,
 } from "@/lib/actions/admin.actions";
-import { addOneSession } from "@/lib/actions/session.server.actions";
+import { addStandaloneSession } from "@/lib/actions/session.server.actions";
 import { addHours, areIntervalsOverlapping } from "date-fns";
 
-import { fetchDaySessionsFromSchedule } from "@/lib/actions/session.actions";
+import { getAllSessions } from "@/lib/actions/session.actions";
 import { addSessions } from "@/lib/actions/session.actions";
 import { getProfileWithProfileId } from "@/lib/actions/user.actions";
 import { toast, Toaster } from "react-hot-toast";
@@ -94,19 +93,12 @@ import { getAllActiveEnrollments } from "@/lib/actions/enrollment.actions";
 import { useMutation, useQueries, useQuery } from "@tanstack/react-query";
 import { useQueryClient } from "@tanstack/react-query";
 
-const Schedule = ({
-  initialCurrentWeek,
-  initialCurrWeekStart,
-  initialCurrWeekEnd,
-  initialSessions,
-  initialEnrollments,
-  initialStudents,
-  initialTutors,
-  initialMeetings,
-}: any) => {
+const Schedule = () => {
   const queryClient = useQueryClient();
   const [currentWeek, setCurrentWeek] = useState(new Date());
-  const [calendarView, setCalendarView] = useState<"day" | "week" | "month">("week");
+  const [calendarView, setCalendarView] = useState<"day" | "week" | "month">(
+    "week",
+  );
   const [selectedDay, setSelectedDay] = useState(new Date());
 
   // keep currentWeek in sync when day view crosses week boundary
@@ -117,8 +109,14 @@ const Schedule = ({
   const weekEnd = endOfWeek(currentWeek).toISOString();
   const weekStart = startOfWeek(currentWeek).toISOString();
   // adapts fetch range to whichever view is active
-  const queryStart = calendarView === "month" ? startOfWeek(startOfMonth(currentWeek)).toISOString() : weekStart;
-  const queryEnd = calendarView === "month" ? endOfWeek(endOfMonth(currentWeek)).toISOString() : weekEnd;
+  const queryStart =
+    calendarView === "month"
+      ? startOfWeek(startOfMonth(currentWeek)).toISOString()
+      : weekStart;
+  const queryEnd =
+    calendarView === "month"
+      ? endOfWeek(endOfMonth(currentWeek)).toISOString()
+      : weekEnd;
   // const [enrollments, setEnrollments] = useState<Enrollment[]>([]);
   // const [meetings, setMeetings] = useState<Meeting[]>([]);
   // const [students, setStudents] = useState<Profile[]>([]);
@@ -222,7 +220,14 @@ const Schedule = ({
           let cursor = startOfWeek(new Date(queryStart));
           const end = new Date(queryEnd);
           while (cursor <= end) {
-            fetches.push(getAllSessions(cursor.toISOString(), endOfWeek(cursor).toISOString(), "date", true));
+            fetches.push(
+              getAllSessions(
+                cursor.toISOString(),
+                endOfWeek(cursor).toISOString(),
+                "date",
+                true,
+              ),
+            );
             cursor = addWeeks(cursor, 1);
           }
           return (await Promise.all(fetches)).flat();
@@ -243,12 +248,7 @@ const Schedule = ({
     ],
   });
 
-  const [
-    sessionsResult,
-    studentsResult,
-    tutorsResult,
-    meetingsResult,
-  ] = query;
+  const [sessionsResult, studentsResult, tutorsResult, meetingsResult] = query;
 
   const sessions = sessionsResult.data || [];
   const students = studentsResult.data || [];
@@ -392,53 +392,6 @@ const Schedule = ({
     }
   };
 
-  // const { data: studentsData } = useQuery({
-  //   queryKey: ["students"],
-  //   queryFn: fetchStudents,
-  //   staleTime: 1000 * 60 * 5, // Cache for 5 minutes
-  // });
-
-  // const { data: tutorsData } = useQuery({
-  //   queryKey: ["tutors"],
-  //   queryFn: fetchTutors,
-  //   staleTime: 1000 * 60 * 5, // Cache for 5 minutes
-  // });
-
-  // const { data: sessionsData, isLoading: isLoadingSessions } = useQuery({
-  //   queryKey: ["sessions", currWeekStart, currWeekEnd],
-  //   queryFn: () => fetchSessions(currWeekStart, currWeekEnd),
-  // });
-
-  // const { data: enrollmentsData } = useQuery({
-  //   queryKey: ["enrollments", currWeekEnd],
-  //   queryFn: () => fetchEnrollments(currWeekEnd),
-  // });
-
-  // const { data: meetingsData } = useQuery({
-  //   queryKey: ["meetings"],
-  //   queryFn: () => fetchMeetings(),
-  // });
-
-  // useEffect(() => {
-  //   if (studentsData) setStudents(studentsData);
-  // }, [studentsData]);
-
-  // useEffect(() => {
-  //   if (tutorsData) setTutors(tutorsData);
-  // }, [tutorsData]);
-
-  // useEffect(() => {
-  //   if (sessionsData) setSessions(sessionsData)
-  // }, [sessionsData])
-
-  // useEffect(() => {
-  //   if (enrollmentsData) setEnrollments(enrollmentsData)
-  // }, [enrollmentsData])
-
-  // useEffect(() => {
-  //   if (meetingsData) setMeetings(meetingsData)
-  // }, [meetingsData])
-
   const fetchAllSessionsFromSchedule = async () => {
     try {
       const data = await getAllSessions();
@@ -469,32 +422,12 @@ const Schedule = ({
   const updateWeekMutation = useMutation({
     mutationFn: ({ enrollments }: { enrollments: Enrollment[] }) =>
       addSessions(weekStart, weekEnd, enrollments, sessions),
-    onMutate: async () => {
-      // await queryClient.cancelQueries({ queryKey: ["sessions"] });
-      // const prevSessions: Session[] | undefined = queryClient.getQueryData([
-      //   "sessions",
-      //   weekStart,
-      //   weekEnd,
-      // ]);
-      // await queryClient.setQueryData(
-      //   ["sessions", weekStart, weekEnd],
-      //   (sessions: Session[] | undefined) =>
-      //     sessions && prevSessions ? [...sessions, ...prevSessions] : []
-      // );
-      // return { prevSessions };
-    },
+    onMutate: async () => {},
     onSuccess: (newSessions: Session[]) => {
       queryClient.invalidateQueries({ queryKey: ["sessions"] }); // broad invalidation catches any date range
       toast.success(`${newSessions.length} new sessions added successfully`);
     },
     onError: (error: any, _, context) => {
-      // if (context) {
-      //   queryClient.setQueryData(
-      //     ["sessions", weekStart, weekEnd],
-      //     context.prevSessions
-      //   );
-      // }
-      // console.error("Failed to add sessions:", error);
       error.digest === "4161161223"
         ? toast.error("Please wait until adding new sessions")
         : toast.error(`Failed to add sessions. ${error.message}`);
@@ -518,7 +451,10 @@ const Schedule = ({
     for (const session of sessions) {
       if (!session?.date) continue;
       try {
-        const dayKey = format(toZonedTime(parseISO(session.date), "America/New_York"), "yyyy-MM-dd");
+        const dayKey = format(
+          toZonedTime(parseISO(session.date), "America/New_York"),
+          "yyyy-MM-dd",
+        );
         if (!map.has(dayKey)) map.set(dayKey, []);
         map.get(dayKey)!.push(session);
       } catch {}
@@ -526,7 +462,8 @@ const Schedule = ({
     return map;
   }, [sessions]);
 
-  const getValidSessionsForDay = (day: Date) => sessionsByDay.get(format(day, "yyyy-MM-dd")) || [];
+  const getValidSessionsForDay = (day: Date) =>
+    sessionsByDay.get(format(day, "yyyy-MM-dd")) || [];
 
   const removeSessionMutation = useMutation({
     mutationFn: (sessionId: string) => removeSession(sessionId),
@@ -586,7 +523,7 @@ const Schedule = ({
   const handleAddSession = async () => {
     try {
       if (newSession) {
-        await addOneSession(newSession as Session);
+        await addStandaloneSession(newSession as Session);
       }
       fetchSessions(weekStart, weekEnd);
       toast.success("Added Session");
@@ -660,14 +597,20 @@ const Schedule = ({
   const monthEnd = endOfMonth(currentWeek);
   const monthCalendarStart = startOfWeek(monthStart);
   const monthCalendarEnd = endOfWeek(monthEnd);
-  const monthDays = eachDayOfInterval({ start: monthCalendarStart, end: monthCalendarEnd });
+  const monthDays = eachDayOfInterval({
+    start: monthCalendarStart,
+    end: monthCalendarEnd,
+  });
 
-  const sessionStats = useMemo(() => ({
-    totalSessions: sessions.length,
-    tutorsInvolved: new Set(sessions.map((s) => s?.tutor?.id)).size,
-    studentsThisWeek: new Set(sessions.map((s) => s?.student?.id)).size,
-    totalStudents: students.length,
-  }), [sessions, students]);
+  const sessionStats = useMemo(
+    () => ({
+      totalSessions: sessions.length,
+      tutorsInvolved: new Set(sessions.map((s) => s?.tutor?.id)).size,
+      studentsThisWeek: new Set(sessions.map((s) => s?.student?.id)).size,
+      totalStudents: students.length,
+    }),
+    [sessions, students],
+  );
 
   const SessionCard = ({ session }: { session: Session }) => (
     <div
@@ -681,7 +624,9 @@ const Schedule = ({
           ? "bg-green-50 border-l-green-500 text-green-900"
           : session.status === "Cancelled"
             ? "bg-red-50 border-l-red-500 text-red-900"
-            : "bg-blue-50 border-l-blue-500 text-blue-900"
+            : session.isStandalone
+              ? "bg-purple-50  border-l-purple-500 text-purple-900"
+              : "bg-blue-50 border-l-blue-500 text-blue-900",
       )}
     >
       <p className="font-medium truncate">
@@ -697,7 +642,8 @@ const Schedule = ({
   );
 
   const getHeaderText = () => {
-    if (calendarView === "day") return format(selectedDay, "EEEE, MMMM d, yyyy");
+    if (calendarView === "day")
+      return format(selectedDay, "EEEE, MMMM d, yyyy");
     if (calendarView === "month") return format(currentWeek, "MMMM yyyy");
     return `${format(weekDays[0], "MMM d")} - ${format(weekDays[6], "MMM d, yyyy")}`;
   };
@@ -717,7 +663,13 @@ const Schedule = ({
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-3" align="start">
                   <div className="flex flex-col gap-2">
-                    <Button variant="ghost" size="sm" onClick={() => goToDate(new Date())}>Go to today</Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => goToDate(new Date())}
+                    >
+                      Go to today
+                    </Button>
                     <Input
                       type="date"
                       onChange={(e) => {
@@ -749,7 +701,7 @@ const Schedule = ({
                       "px-3 py-1.5 text-sm font-medium rounded-md transition-colors capitalize",
                       calendarView === view
                         ? "bg-white shadow-sm text-gray-900"
-                        : "text-gray-500 hover:text-gray-700"
+                        : "text-gray-500 hover:text-gray-700",
                     )}
                   >
                     {view}
@@ -775,7 +727,10 @@ const Schedule = ({
 
               <Dialog>
                 <DialogTrigger asChild>
-                  <Button size="sm" className="bg-connect-me-blue-4 hover:bg-connect-me-blue-5">
+                  <Button
+                    size="sm"
+                    className="bg-connect-me-blue-4 hover:bg-connect-me-blue-5"
+                  >
                     Add Session
                   </Button>
                 </DialogTrigger>
@@ -791,7 +746,9 @@ const Schedule = ({
                         selectedId={selectedStudentId}
                         onSelect={(id) => {
                           setSelectedStudentId(id);
-                          handleInputChange({ target: { name: "student.id", value: id } });
+                          handleInputChange({
+                            target: { name: "student.id", value: id },
+                          });
                         }}
                         placeholder="Select a student"
                       />
@@ -801,12 +758,16 @@ const Schedule = ({
                         selectedId={selectedTutorId}
                         onSelect={(id) => {
                           setSelectedTutorId(id);
-                          handleInputChange({ target: { name: "tutor.id", value: id } });
+                          handleInputChange({
+                            target: { name: "tutor.id", value: id },
+                          });
                         }}
                         placeholder="Select a tutor"
                       />
                       <div className="grid grid-cols-4 items-center gap-4">
-                        <Label htmlFor="startDate" className="text-right">Date</Label>
+                        <Label htmlFor="startDate" className="text-right">
+                          Date
+                        </Label>
                         <Input
                           id="startDate"
                           name="startDate"
@@ -818,7 +779,9 @@ const Schedule = ({
                               ...newSession,
                               date: scheduledDate.toISOString(),
                             };
-                            await checkMeetingAvailabilites(updatedSession as Session);
+                            await checkMeetingAvailabilites(
+                              updatedSession as Session,
+                            );
                             setNewSession(updatedSession);
                           }}
                           disabled={isCheckingMeetingAvailability}
@@ -826,13 +789,20 @@ const Schedule = ({
                         />
                       </div>
                       <div className="grid grid-cols-4 items-center gap-4">
-                        <Label htmlFor="duration" className="text-right">Duration</Label>
+                        <Label htmlFor="duration" className="text-right">
+                          Duration
+                        </Label>
                         <div className="col-span-3">
                           <Select
                             onValueChange={(value) => {
                               const duration = parseFloat(value);
-                              const updatedSession: Partial<Session> = { ...newSession, duration };
-                              checkMeetingAvailabilites(updatedSession as Session);
+                              const updatedSession: Partial<Session> = {
+                                ...newSession,
+                                duration,
+                              };
+                              checkMeetingAvailabilites(
+                                updatedSession as Session,
+                              );
                               setNewSession(updatedSession);
                             }}
                           >
@@ -842,12 +812,19 @@ const Schedule = ({
                             <SelectContent>
                               <SelectGroup>
                                 <SelectLabel>Duration</SelectLabel>
-                                {Array.from({ length: 12 }, (_, i) => (i + 1) * 0.25).map((duration) => {
+                                {Array.from(
+                                  { length: 12 },
+                                  (_, i) => (i + 1) * 0.25,
+                                ).map((duration) => {
                                   const minutes = (duration % 1) * 60;
                                   const hours = Math.floor(duration);
                                   return (
-                                    <SelectItem key={duration} value={duration.toString()}>
-                                      {hours} {hours > 1 ? "hours" : "hour"} {minutes} minutes
+                                    <SelectItem
+                                      key={duration}
+                                      value={duration.toString()}
+                                    >
+                                      {hours} {hours > 1 ? "hours" : "hour"}{" "}
+                                      {minutes} minutes
                                     </SelectItem>
                                   );
                                 })}
@@ -862,21 +839,31 @@ const Schedule = ({
                           <Select
                             value={newSession?.meeting?.id || ""}
                             onValueChange={async (value) => {
-                              setNewSession({ ...newSession, meeting: await getMeeting(value) });
+                              setNewSession({
+                                ...newSession,
+                                meeting: await getMeeting(value),
+                              });
                             }}
                           >
                             <SelectTrigger>
                               <SelectValue>
-                                {newSession?.meeting?.name || "Select a meeting"}
+                                {newSession?.meeting?.name ||
+                                  "Select a meeting"}
                               </SelectValue>
                             </SelectTrigger>
                             <SelectContent>
                               {meetings.map((meeting) => (
-                                <SelectItem key={meeting.id} value={meeting.id} className="flex items-center justify-between">
+                                <SelectItem
+                                  key={meeting.id}
+                                  value={meeting.id}
+                                  className="flex items-center justify-between"
+                                >
                                   <span>{meeting.name}</span>
                                   <Circle
                                     className={`w-2 h-2 ml-2 ${
-                                      meetingAvailabilityMap[meeting.id] ? "text-green-500" : "text-red-500"
+                                      meetingAvailabilityMap[meeting.id]
+                                        ? "text-green-500"
+                                        : "text-red-500"
                                     } fill-current`}
                                   />
                                 </SelectItem>
@@ -908,13 +895,22 @@ const Schedule = ({
 
           <div className="flex items-center gap-6 mt-3 pt-3 border-t text-sm text-gray-500">
             <span>
-              <span className="font-medium text-gray-700">{sessionStats.totalSessions}</span> sessions
+              <span className="font-medium text-gray-700">
+                {sessionStats.totalSessions}
+              </span>{" "}
+              sessions
             </span>
             <span>
-              <span className="font-medium text-gray-700">{sessionStats.tutorsInvolved}</span> tutors
+              <span className="font-medium text-gray-700">
+                {sessionStats.tutorsInvolved}
+              </span>{" "}
+              tutors
             </span>
             <span>
-              <span className="font-medium text-gray-700">{sessionStats.studentsThisWeek}</span> / {sessionStats.totalStudents} students
+              <span className="font-medium text-gray-700">
+                {sessionStats.studentsThisWeek}
+              </span>{" "}
+              / {sessionStats.totalStudents} students
             </span>
           </div>
         </div>
@@ -938,16 +934,20 @@ const Schedule = ({
                         key={day.toISOString()}
                         className={cn(
                           "min-w-0 border-r py-3 text-center last:border-r-0",
-                          isToday(day) && "bg-blue-50"
+                          isToday(day) && "bg-blue-50",
                         )}
                       >
-                        <p className="text-xs uppercase text-gray-500">{format(day, "EEE")}</p>
-                        <p className={cn(
-                          "mx-auto flex h-8 w-8 items-center justify-center rounded-full text-lg font-semibold",
-                          isToday(day)
-                            ? "bg-blue-600 text-white"
-                            : "text-gray-800"
-                        )}>
+                        <p className="text-xs uppercase text-gray-500">
+                          {format(day, "EEE")}
+                        </p>
+                        <p
+                          className={cn(
+                            "mx-auto flex h-8 w-8 items-center justify-center rounded-full text-lg font-semibold",
+                            isToday(day)
+                              ? "bg-blue-600 text-white"
+                              : "text-gray-800",
+                          )}
+                        >
                           {format(day, "d")}
                         </p>
                       </div>
@@ -959,24 +959,33 @@ const Schedule = ({
                       <React.Fragment key={hour}>
                         <div className="flex min-h-[36px] items-start justify-end border-r border-b pr-2 pt-1">
                           <span className="text-[11px] text-gray-400">
-                            {hour === 0 ? "12:00 AM" : hour < 12 ? `${hour}:00 AM` : hour === 12 ? "12:00 PM" : `${hour - 12}:00 PM`}
+                            {hour === 0
+                              ? "12:00 AM"
+                              : hour < 12
+                                ? `${hour}:00 AM`
+                                : hour === 12
+                                  ? "12:00 PM"
+                                  : `${hour - 12}:00 PM`}
                           </span>
                         </div>
                         {weekDays.map((day) => {
-                          const daySessions = getValidSessionsForDay(day).filter(
-                            (s) => getSessionHour(s.date) === hour
-                          );
+                          const daySessions = getValidSessionsForDay(
+                            day,
+                          ).filter((s) => getSessionHour(s.date) === hour);
                           return (
                             <div
                               key={`${day.toISOString()}-${hour}`}
                               className={cn(
                                 "min-w-0 space-y-0.5 border-r border-b p-[2px] last:border-r-0",
                                 "min-h-[36px]",
-                                isToday(day) && "bg-blue-50/30"
+                                isToday(day) && "bg-blue-50/30",
                               )}
                             >
                               {daySessions.map((session) => (
-                                <SessionCard key={session.id} session={session} />
+                                <SessionCard
+                                  key={session.id}
+                                  session={session}
+                                />
                               ))}
                             </div>
                           );
@@ -992,29 +1001,51 @@ const Schedule = ({
               <div className="bg-white rounded-xl shadow-sm overflow-hidden">
                 <div className="grid grid-cols-[60px_1fr]">
                   <div className="border-r border-b" />
-                  <div className={cn("py-3 px-4 border-b", isToday(selectedDay) && "bg-blue-50")}>
-                    <p className="text-xs text-gray-500 uppercase">{format(selectedDay, "EEEE")}</p>
-                    <p className={cn(
-                      "text-2xl font-semibold",
-                      isToday(selectedDay) ? "text-blue-600" : "text-gray-800"
-                    )}>
+                  <div
+                    className={cn(
+                      "py-3 px-4 border-b",
+                      isToday(selectedDay) && "bg-blue-50",
+                    )}
+                  >
+                    <p className="text-xs text-gray-500 uppercase">
+                      {format(selectedDay, "EEEE")}
+                    </p>
+                    <p
+                      className={cn(
+                        "text-2xl font-semibold",
+                        isToday(selectedDay)
+                          ? "text-blue-600"
+                          : "text-gray-800",
+                      )}
+                    >
                       {format(selectedDay, "d")}
                     </p>
                   </div>
                 </div>
                 <div className="grid grid-cols-[60px_1fr]">
                   {HOURS.map((hour) => {
-                    const daySessions = getValidSessionsForDay(selectedDay).filter(
-                      (s) => getSessionHour(s.date) === hour
-                    );
+                    const daySessions = getValidSessionsForDay(
+                      selectedDay,
+                    ).filter((s) => getSessionHour(s.date) === hour);
                     return (
                       <React.Fragment key={hour}>
                         <div className="border-r border-b min-h-[36px] flex items-start justify-end pr-2 pt-1">
                           <span className="text-[11px] text-gray-400">
-                            {hour === 0 ? "12:00 AM" : hour < 12 ? `${hour}:00 AM` : hour === 12 ? "12:00 PM" : `${hour - 12}:00 PM`}
+                            {hour === 0
+                              ? "12:00 AM"
+                              : hour < 12
+                                ? `${hour}:00 AM`
+                                : hour === 12
+                                  ? "12:00 PM"
+                                  : `${hour - 12}:00 PM`}
                           </span>
                         </div>
-                        <div className={cn("border-b min-h-[36px] p-[2px] space-y-0.5", isToday(selectedDay) && "bg-blue-50/30")}>
+                        <div
+                          className={cn(
+                            "border-b min-h-[36px] p-[2px] space-y-0.5",
+                            isToday(selectedDay) && "bg-blue-50/30",
+                          )}
+                        >
                           {daySessions.map((session) => (
                             <SessionCard key={session.id} session={session} />
                           ))}
@@ -1030,11 +1061,16 @@ const Schedule = ({
               <div className="overflow-x-auto rounded-xl bg-white shadow-sm">
                 <div className="min-w-[960px] overflow-hidden rounded-xl">
                   <div className="grid grid-cols-7 border-b">
-                    {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((d) => (
-                      <div key={d} className="border-r py-2 text-center text-xs font-medium uppercase text-gray-500 last:border-r-0">
-                        {d}
-                      </div>
-                    ))}
+                    {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map(
+                      (d) => (
+                        <div
+                          key={d}
+                          className="border-r py-2 text-center text-xs font-medium uppercase text-gray-500 last:border-r-0"
+                        >
+                          {d}
+                        </div>
+                      ),
+                    )}
                   </div>
                   <div className="grid grid-cols-7">
                     {monthDays.map((day) => {
@@ -1044,16 +1080,19 @@ const Schedule = ({
                           key={day.toISOString()}
                           className={cn(
                             "min-h-[100px] min-w-0 border-r border-b p-1 last:border-r-0",
-                            !isSameMonth(day, currentWeek) && "bg-gray-50 opacity-50",
-                            isToday(day) && "bg-blue-50"
+                            !isSameMonth(day, currentWeek) &&
+                              "bg-gray-50 opacity-50",
+                            isToday(day) && "bg-blue-50",
                           )}
                         >
-                          <p className={cn(
-                            "mb-1 flex h-5 w-5 items-center justify-center rounded-full text-xs font-medium",
-                            isToday(day)
-                              ? "bg-blue-600 text-white"
-                              : "text-gray-600"
-                          )}>
+                          <p
+                            className={cn(
+                              "mb-1 flex h-5 w-5 items-center justify-center rounded-full text-xs font-medium",
+                              isToday(day)
+                                ? "bg-blue-600 text-white"
+                                : "text-gray-600",
+                            )}
+                          >
                             {format(day, "d")}
                           </p>
                           <div className="space-y-0.5">
@@ -1070,10 +1109,11 @@ const Schedule = ({
                                     ? "bg-green-100 text-green-800"
                                     : session.status === "Cancelled"
                                       ? "bg-red-100 text-red-800"
-                                      : "bg-blue-100 text-blue-800"
+                                      : "bg-blue-100 text-blue-800",
                                 )}
                               >
-                                {session.tutor?.firstName} / {session.student?.firstName}
+                                {session.tutor?.firstName} /{" "}
+                                {session.student?.firstName}
                               </div>
                             ))}
                           </div>
@@ -1098,14 +1138,21 @@ const Schedule = ({
                   <Label>Status</Label>
                   <Select
                     value={selectedSession?.status}
-                    onValueChange={(value: "Active" | "Complete" | "Cancelled") => {
+                    onValueChange={(
+                      value: "Active" | "Complete" | "Cancelled",
+                    ) => {
                       if (value && selectedSession) {
-                        setSelectedSession({ ...selectedSession, status: value });
+                        setSelectedSession({
+                          ...selectedSession,
+                          status: value,
+                        });
                       }
                     }}
                   >
                     <SelectTrigger>
-                      <SelectValue>{selectedSession?.status || "Select status"}</SelectValue>
+                      <SelectValue>
+                        {selectedSession?.status || "Select status"}
+                      </SelectValue>
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="Active">Active</SelectItem>
@@ -1119,8 +1166,13 @@ const Schedule = ({
                   <Select
                     value={selectedSession.tutor?.id}
                     onValueChange={async (value) => {
-                      const selectedTutor = await getProfileWithProfileId(value);
-                      if (selectedTutor) setSelectedSession({ ...selectedSession, tutor: selectedTutor });
+                      const selectedTutor =
+                        await getProfileWithProfileId(value);
+                      if (selectedTutor)
+                        setSelectedSession({
+                          ...selectedSession,
+                          tutor: selectedTutor,
+                        });
                     }}
                   >
                     <SelectTrigger>
@@ -1131,12 +1183,13 @@ const Schedule = ({
                       </SelectValue>
                     </SelectTrigger>
                     <SelectContent>
-                      {tutors.map((tutor) =>
-                        tutor.status !== "Inactive" && (
-                          <SelectItem key={tutor.id} value={tutor.id}>
-                            {tutor.firstName} {tutor.lastName}
-                          </SelectItem>
-                        )
+                      {tutors.map(
+                        (tutor) =>
+                          tutor.status !== "Inactive" && (
+                            <SelectItem key={tutor.id} value={tutor.id}>
+                              {tutor.firstName} {tutor.lastName}
+                            </SelectItem>
+                          ),
                       )}
                     </SelectContent>
                   </Select>
@@ -1146,8 +1199,13 @@ const Schedule = ({
                   <Select
                     value={selectedSession.student?.id}
                     onValueChange={async (value) => {
-                      const selectedStudent = await getProfileWithProfileId(value);
-                      if (selectedStudent) setSelectedSession({ ...selectedSession, student: selectedStudent });
+                      const selectedStudent =
+                        await getProfileWithProfileId(value);
+                      if (selectedStudent)
+                        setSelectedSession({
+                          ...selectedSession,
+                          student: selectedStudent,
+                        });
                     }}
                   >
                     <SelectTrigger>
@@ -1158,12 +1216,13 @@ const Schedule = ({
                       </SelectValue>
                     </SelectTrigger>
                     <SelectContent>
-                      {students.map((student) =>
-                        student.status !== "Inactive" && (
-                          <SelectItem key={student.id} value={student.id}>
-                            {student.firstName} {student.lastName}
-                          </SelectItem>
-                        )
+                      {students.map(
+                        (student) =>
+                          student.status !== "Inactive" && (
+                            <SelectItem key={student.id} value={student.id}>
+                              {student.firstName} {student.lastName}
+                            </SelectItem>
+                          ),
                       )}
                     </SelectContent>
                   </Select>
@@ -1172,10 +1231,16 @@ const Schedule = ({
                   <Label>Date</Label>
                   <Input
                     type="datetime-local"
-                    defaultValue={format(parseISO(selectedSession.date), "yyyy-MM-dd'T'HH:mm")}
+                    defaultValue={format(
+                      parseISO(selectedSession.date),
+                      "yyyy-MM-dd'T'HH:mm",
+                    )}
                     onBlur={(e) => {
                       const scheduledDate = new Date(e.target.value);
-                      setSelectedSession({ ...selectedSession, date: scheduledDate.toISOString() });
+                      setSelectedSession({
+                        ...selectedSession,
+                        date: scheduledDate.toISOString(),
+                      });
                       checkMeetingAvailabilites(selectedSession as Session);
                     }}
                   />
@@ -1185,19 +1250,30 @@ const Schedule = ({
                   <Select
                     value={selectedSession?.meeting?.id || ""}
                     onValueChange={async (value) =>
-                      setSelectedSession({ ...selectedSession, meeting: await getMeeting(value) })
+                      setSelectedSession({
+                        ...selectedSession,
+                        meeting: await getMeeting(value),
+                      })
                     }
                   >
                     <SelectTrigger>
-                      <SelectValue>{selectedSession?.meeting?.name || "Select a meeting"}</SelectValue>
+                      <SelectValue>
+                        {selectedSession?.meeting?.name || "Select a meeting"}
+                      </SelectValue>
                     </SelectTrigger>
                     <SelectContent>
                       {meetings.map((meeting) => (
-                        <SelectItem key={meeting.id} value={meeting.id} className="flex items-center justify-between">
+                        <SelectItem
+                          key={meeting.id}
+                          value={meeting.id}
+                          className="flex items-center justify-between"
+                        >
                           <span>{meeting.name}</span>
                           <Circle
                             className={`w-2 h-2 ml-2 ${
-                              meetingAvailabilityMap[meeting.id] ? "text-green-500" : "text-red-500"
+                              meetingAvailabilityMap[meeting.id]
+                                ? "text-green-500"
+                                : "text-red-500"
                             } fill-current`}
                           />
                         </SelectItem>
@@ -1206,26 +1282,46 @@ const Schedule = ({
                   </Select>
                 </div>
                 <div>
-                  <Label className="text-right">Notes (Only viewable Admin Side)</Label>
+                  <Label className="text-right">
+                    Notes (Only viewable Admin Side)
+                  </Label>
                   <Textarea
                     value={selectedSession?.summary}
-                    onChange={(e) => setSelectedSession({ ...selectedSession, summary: e.target.value })}
+                    onChange={(e) =>
+                      setSelectedSession({
+                        ...selectedSession,
+                        summary: e.target.value,
+                      })
+                    }
                   />
                 </div>
                 {(() => {
-                  const rawSef = (selectedSession as any)?.session_exit_form as string | null | undefined;
+                  const rawSef = (selectedSession as any)?.session_exit_form as
+                    | string
+                    | null
+                    | undefined;
                   const sefFlags: string[] = [];
-                  if ((selectedSession as any)?.isQuestionOrConcern) sefFlags.push("question/concern");
-                  if ((selectedSession as any)?.isFirstSession) sefFlags.push("first session");
-                  if (selectedSession.status === "Cancelled") sefFlags.push("cancelled");
+                  if ((selectedSession as any)?.isQuestionOrConcern)
+                    sefFlags.push("question/concern");
+                  if ((selectedSession as any)?.isFirstSession)
+                    sefFlags.push("first session");
+                  if (selectedSession.status === "Cancelled")
+                    sefFlags.push("cancelled");
                   let sefReasonText = rawSef ?? "";
                   if (rawSef && rawSef.trim().startsWith("{")) {
                     try {
                       const parsed = JSON.parse(rawSef) as any;
-                      sefReasonText = parsed?.reason ?? parsed?.notes ?? parsed?.exitReason ?? rawSef;
-                      const extraFlags = parsed?.boxes ?? parsed?.flags ?? parsed?.options;
+                      sefReasonText =
+                        parsed?.reason ??
+                        parsed?.notes ??
+                        parsed?.exitReason ??
+                        rawSef;
+                      const extraFlags =
+                        parsed?.boxes ?? parsed?.flags ?? parsed?.options;
                       if (Array.isArray(extraFlags)) {
-                        extraFlags.filter((x) => typeof x === "string").forEach((x) => sefFlags.push(x));
+                        extraFlags
+                          .filter((x) => typeof x === "string")
+                          .forEach((x) => sefFlags.push(x));
                       }
                     } catch {
                       // raw text fine
@@ -1234,15 +1330,23 @@ const Schedule = ({
                   return (
                     <div>
                       <Label>SEF Exit Reason</Label>
-                      <Textarea readOnly value={sefReasonText || ""} placeholder="no session exit form yet" />
+                      <Textarea
+                        readOnly
+                        value={sefReasonText || ""}
+                        placeholder="no session exit form yet"
+                      />
                       <p className="text-xs text-gray-500 mt-1">
-                        SEF boxes: {sefFlags.length ? sefFlags.join(", ") : "none"}
+                        SEF boxes:{" "}
+                        {sefFlags.length ? sefFlags.join(", ") : "none"}
                       </p>
                     </div>
                   );
                 })()}
                 <div className="flex flex-col gap-3">
-                  <Link href={`/dashboard/session/${selectedSession.id}/participation`} className="w-full">
+                  <Link
+                    href={`/dashboard/session/${selectedSession.id}/participation`}
+                    className="w-full"
+                  >
                     <Button variant="outline" className="w-full">
                       <Users className="mr-2 h-4 w-4" />
                       View Session Participation
@@ -1262,7 +1366,10 @@ const Schedule = ({
                         "Update Session"
                       )}
                     </Button>
-                    <Button variant="destructive" onClick={() => handleRemoveSession(selectedSession.id)}>
+                    <Button
+                      variant="destructive"
+                      onClick={() => handleRemoveSession(selectedSession.id)}
+                    >
                       Delete Session
                     </Button>
                   </div>

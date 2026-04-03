@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { cancelUnsubmittedSEFCron } from "@/lib/actions/session.server.actions";
 import {
   deleteInactiveEnrollments,
@@ -7,7 +7,11 @@ import {
 
 export const dynamic = "force-dynamic";
 
-export async function GET() {
+export async function GET(req: NextRequest) {
+  const authHeader = req.headers.get("authorization");
+  if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
   const results = {
     cancelUnsubmittedSEF: {
       success: false,

@@ -2,29 +2,14 @@
 import { Enrollment, Meeting, Session } from "@/types";
 import { toast } from "react-hot-toast";
 import { Client } from "@upstash/qstash";
-import { createClient } from "@/lib/supabase/server";
+import { createAdminClient, createClient } from "@/lib/supabase/server";
 import { Profile } from "@/types";
 import { getProfileWithProfileId } from "./user.actions";
 import { getMeeting } from "./meeting.server.actions";
 import { createServerClient } from "../supabase/server";
 import { Table } from "../supabase/tables";
 
-import {
-  addDays,
-  format,
-  parse,
-  parseISO,
-  isBefore,
-  isAfter,
-  areIntervalsOverlapping,
-  addHours,
-  isValid,
-  setHours,
-  setMinutes,
-  startOfWeek,
-  endOfWeek,
-  subDays,
-} from "date-fns"; // Only use date-fns
+import { startOfWeek, endOfWeek, subDays } from "date-fns"; // Only use date-fns
 
 import * as DateFNS from "date-fns-tz";
 const { fromZonedTime } = DateFNS;
@@ -137,6 +122,7 @@ import { scheduleMultipleSessionReminders } from "../twilio";
 import {
   tableToInterfaceMeetings,
   tableToInterfaceProfiles,
+  tableToInterfaceSessions,
 } from "../type-utils";
 import { revalidatePath } from "next/cache";
 import { sendScheduledEmailsBeforeSessions } from "./email.server.actions";
@@ -164,22 +150,7 @@ export async function getSessions(
 
     const sessions: Session[] = sessionData
       .filter((session: any) => session.student && session.tutor)
-      .map((session: any) => ({
-        id: session.id,
-        enrollmentId: session.enrollment_id,
-        createdAt: session.created_at,
-        environment: session.environment,
-        date: session.date,
-        summary: session.summary,
-        meeting: session.meeting,
-        student: tableToInterfaceProfiles(session.student),
-        tutor: tableToInterfaceProfiles(session.tutor),
-        status: session.status,
-        session_exit_form: session.session_exit_form,
-        isQuestionOrConcern: Boolean(session.is_question_or_concern),
-        isFirstSession: Boolean(session.is_first_session),
-        duration: session.duration,
-      }));
+      .map((session: any) => tableToInterfaceSessions(session));
 
     return sessions;
   } catch (error) {
@@ -197,20 +168,7 @@ export async function getAllSessionsServer(
   const supabase = await createClient();
   try {
     let query = supabase.from(Table.Sessions).select(`
-      id,
-      enrollment_id,
-      created_at,
-      environment,
-      student_id,
-      tutor_id,
-      date,
-      summary,
-      meeting_id,
-      status,
-      is_question_or_concern,
-      is_first_session,
-      session_exit_form,
-      duration,
+      *,
       meetings:Meetings!meeting_id(*),
       student:Profiles!student_id(*),
       tutor:Profiles!tutor_id(*)
@@ -239,25 +197,7 @@ export async function getAllSessionsServer(
     const sessions: Session[] = await Promise.all(
       data
         .filter((session: any) => session.student && session.tutor)
-        .map(async (session: any) => {
-          // Check if tutor and student exist first
-          return {
-            id: session.id,
-            enrollmentId: session.enrollment_id,
-            createdAt: session.created_at,
-            environment: session.environment,
-            date: session.date,
-            summary: session.summary,
-            meeting: session.meetings,
-            student: await tableToInterfaceProfiles(session.student),
-            tutor: await tableToInterfaceProfiles(session.tutor),
-            status: session.status,
-            session_exit_form: session.session_exit_form,
-            isQuestionOrConcern: Boolean(session.is_question_or_concern),
-            isFirstSession: Boolean(session.is_first_session),
-            duration: session.duration,
-          };
-        }),
+        .map((session: any): Session => tableToInterfaceSessions(session)),
     );
 
     return sessions;
@@ -281,21 +221,8 @@ export async function getAllSessions(
     const supabase = await createClient();
 
     let query = supabase.from(Table.Sessions).select(`
-      id,
-      enrollment_id,
-      created_at,
-      environment,
-      student_id,
-      tutor_id,
-      date,
-      summary,
-      meeting_id,
-      status,
-      is_question_or_concern,
-      is_first_session,
-      session_exit_form,
-      duration,
-      meetings:Meetings!meeting_id(*),
+      *,
+      meeting:Meetings!meeting_id(*),
       student:Profiles!student_id(*),
       tutor:Profiles!tutor_id(*)
     `);
@@ -322,26 +249,7 @@ export async function getAllSessions(
 
     const sessions: Session[] = data
       .filter((session: any) => session.student && session.tutor)
-      .map((session: any) => ({
-        id: session.id,
-        enrollmentId: session.enrollment_id,
-        createdAt: session.created_at,
-        environment: session.environment,
-        date: session.date,
-        summary: session.summary,
-        // meetingId: session.meeting_id,
-        // meeting: await getMeeting(session.meeting_id),
-        meeting: session.meetings,
-        student: tableToInterfaceProfiles(session.student),
-        tutor: tableToInterfaceProfiles(session.tutor),
-        // student: await getProfileWithProfileId(session.student_id),
-        // tutor: await getProfileWithProfileId(session.tutor_id),
-        status: session.status,
-        session_exit_form: session.session_exit_form,
-        isQuestionOrConcern: Boolean(session.is_question_or_concern),
-        isFirstSession: Boolean(session.is_first_session),
-        duration: session.duration,
-      }));
+      .map((session: any) => tableToInterfaceSessions(session));
 
     return sessions;
   } catch (error) {
@@ -545,21 +453,10 @@ export async function getSessionById(
       .from(Table.Sessions)
       .select(
         `
-        id,
-        enrollment_id,
-        created_at,
-        environment,
-        student_id,
-        tutor_id,
-        date,
-        summary,
-        meeting_id,
-        status,
-        is_question_or_concern,
-        is_first_session,
-        session_exit_form,
-        duration,
-        meetings:Meetings!meeting_id(*)
+        *,
+        tutor:Profiles!tutor_id(*),
+        student:Profiles!student_id(*),
+        meeting:Meetings!meeting_id(*)
       `,
       )
       .eq("id", sessionId)
@@ -575,25 +472,7 @@ export async function getSessionById(
       getProfileWithProfileId(sessionData.tutor_id),
     ]);
 
-    const session: Session = {
-      id: sessionData.id,
-      enrollmentId: sessionData.enrollment_id,
-      createdAt: sessionData.created_at,
-      environment: sessionData.environment,
-      date: sessionData.date,
-      summary: sessionData.summary,
-      meeting:
-        sessionData.meetings && !Array.isArray(sessionData.meetings)
-          ? await getMeeting((sessionData.meetings as any).id)
-          : null,
-      student,
-      tutor,
-      status: sessionData.status,
-      session_exit_form: sessionData.session_exit_form,
-      isQuestionOrConcern: Boolean(sessionData.is_question_or_concern),
-      isFirstSession: Boolean(sessionData.is_first_session),
-      duration: sessionData.duration,
-    };
+    const session: Session = tableToInterfaceSessions(sessionData);
 
     return session;
   } catch (error) {
@@ -658,24 +537,7 @@ export async function getTutorSessions(
   // Map the result to the Session interface
   const sessions: Session[] = data
     .filter((data) => data.meeting && data.student && data.tutor)
-    .map((session: any) => {
-      return {
-        id: session.id,
-        enrollmentId: session.enrollment_id,
-        createdAt: session.created_at,
-        environment: session.environment,
-        date: session.date,
-        summary: session.summary,
-        meeting: tableToInterfaceMeetings(session.meeting),
-        student: tableToInterfaceProfiles(session.student),
-        tutor: tableToInterfaceProfiles(session.tutor),
-        status: session.status,
-        session_exit_form: session.session_exit_form,
-        isQuestionOrConcern: Boolean(session.isQuestionOrConcernO),
-        isFirstSession: Boolean(session.isFirstSession),
-        duration: session.duration,
-      };
-    });
+    .map((session: any) => tableToInterfaceSessions(session));
 
   return sessions;
 }
@@ -738,23 +600,7 @@ export async function getStudentSessions(
     .filter(
       (session) => session.meeting && session.tutor_id && session.student_id,
     )
-    .map((session: any) => ({
-      id: session.id,
-      enrollmentId: session.enrollment_id,
-      createdAt: session.created_at,
-      environment: session.environment,
-      date: session.date,
-      summary: session.summary,
-      // meetingId: session.meeting_id,
-      meeting: tableToInterfaceMeetings(session.meeting),
-      status: session.status,
-      student: tableToInterfaceProfiles(session.student),
-      tutor: tableToInterfaceProfiles(session.tutor),
-      session_exit_form: session.session_exit_form,
-      isQuestionOrConcern: session.isQuestionOrConcern,
-      isFirstSession: session.isFirstSession,
-      duration: session.duration,
-    }));
+    .map((session: any) => tableToInterfaceSessions(session));
 
   return sessions;
 }
@@ -800,7 +646,7 @@ export async function rescheduleSession(
     throw error;
   }
 }
-export async function addOneSession(
+export async function addStandaloneSession(
   session: Session,
   scheduleEmail: boolean = true,
   details?: {
@@ -821,42 +667,25 @@ export async function addOneSession(
       summary: session.summary,
       meeting_id: session.meeting?.id,
       duration: session.duration || 1,
-      environment: session.environment || "Virtual",
+      is_standalone: true,
     };
 
     const { data, error } = await supabase
       .from(Table.Sessions)
       .insert(newSession)
-      .select()
+      .select(
+        `*,
+        tutor:Profiles!tutor_id(*),
+        student:Profiles!student_id(*),
+        meeting:Meetings!meeting_id(*)`,
+      )
       .single();
 
-    const [meeting, student, tutor] = await Promise.all([
-      details?.meeting || (await getMeeting(data.meeting_id)),
-      details?.student || (await getProfileWithProfileId(data.student_id)),
-      details?.tutor || (await getProfileWithProfileId(data.tuotr_id)),
-    ]);
-
     if (error) throw error;
-
     if (!data) toast.error("No Data");
 
     if (data && scheduleEmail) {
-      const addedSession: Session = {
-        id: data.id,
-        enrollmentId: data.enrollment_id,
-        createdAt: data.created_at,
-        environment: data.environment,
-        date: data.date,
-        summary: data.summary,
-        meeting: meeting,
-        student: student,
-        tutor: tutor,
-        status: data.status,
-        session_exit_form: data.session_exit_form || null,
-        isQuestionOrConcern: data.isQuestionOrConcern,
-        isFirstSession: data.isFirstSession,
-        duration: 1, //default //! might fix
-      };
+      const addedSession: Session = tableToInterfaceSessions(data);
 
       sendScheduledEmailsBeforeSessions([addedSession]);
     }
@@ -878,25 +707,27 @@ export async function cancelUnsubmittedSEF(profile: Profile) {
       .from("Sessions")
       .update({ status: "Complete" })
       .eq("tutor_id", profile.id)
-      .lt("session_date", fortyEightHoursAgo);
+      .lt("date", fortyEightHoursAgo);
   } catch (error) {
     console.error("Unable to cancel unsubmitted SEF");
   }
 }
 
 export async function cancelUnsubmittedSEFCron() {
-  const supabase = await createClient();
+  const supabase = await createAdminClient();
   const now = new Date();
   const fortyEightHoursAgo = new Date(
     now.getTime() - 48 * 60 * 60 * 1000,
   ).toISOString();
+
+  const { data: test } = await supabase.from("Sessions").select("*").limit(1);
 
   // First, fetch sessions that need to be cancelled
   const { data: sessions, error: fetchError } = await supabase
     .from("Sessions")
     .select("id")
     .eq("status", "Active")
-    .lt("session_date", fortyEightHoursAgo);
+    .lt("date", fortyEightHoursAgo);
 
   if (fetchError) {
     return { success: false, error: fetchError.message, cancelled: 0 };
@@ -911,7 +742,8 @@ export async function cancelUnsubmittedSEFCron() {
     .from("Sessions")
     .update({ status: "Complete" })
     .eq("status", "Active")
-    .lt("session_date", fortyEightHoursAgo);
+    .eq("is_standalone", false)
+    .lt("date", fortyEightHoursAgo);
 
   if (updateError) {
     return { success: false, error: updateError.message, cancelled: 0 };

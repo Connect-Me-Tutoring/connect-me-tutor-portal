@@ -13,9 +13,9 @@ export async function GET() {
 
     const { data: sessions, error: fetchError } = await supabase
       .from("Sessions")
-      .select("tutor_id, session_date, status")
+      .select("tutor_id, date, status")
       .eq("status", "Active")
-      .lt("session_date", fortyEightHoursAgo);
+      .lt("date", fortyEightHoursAgo);
 
     if (fetchError) {
       console.error("Error fetching sessions to cancel:", fetchError);
@@ -36,7 +36,7 @@ export async function GET() {
       .from("Sessions")
       .update({ status: "Complete" })
       .eq("status", "Active")
-      .lt("session_date", fortyEightHoursAgo);
+      .lt("date", fortyEightHoursAgo);
 
     if (updateError) {
       console.error("Error cancelling sessions:", updateError);

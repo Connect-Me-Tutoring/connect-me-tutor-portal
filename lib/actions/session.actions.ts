@@ -32,12 +32,13 @@ import { withCoalescedInvoke } from "next/dist/lib/coalesced-function";
 import toast from "react-hot-toast";
 import { DatabaseIcon } from "lucide-react";
 import { SYSTEM_ENTRYPOINTS } from "next/dist/shared/lib/constants";
-import { getAllSessions, getMeeting } from "./admin.actions";
+import { getMeeting } from "./admin.actions";
 import { fromZonedTime } from "date-fns-tz";
 import { Table } from "../supabase/tables";
 import {
   tableToInterfaceMeetings,
   tableToInterfaceProfiles,
+  tableToInterfaceSessions,
 } from "../type-utils";
 import { supabase } from "@/lib/supabase/client";
 // import { getMeeting } from "./meeting.actions";
@@ -125,7 +126,7 @@ export async function addSessions(
     const enrollmentsWithSessions: Set<string> = new Set(
       sessions
         .filter((s) => s.enrollmentId)
-        .map((s) => s.enrollmentId as string)
+        .map((s) => s.enrollmentId as string),
     );
 
     // Prepare bulk insert data
@@ -277,28 +278,9 @@ export async function addSessions(
 
       if (data) {
         // Transform returned data to Session objects
-        const sessions: Session[] = data.map((session: any) => ({
-          id: session.id,
-          enrollmentId: session.enrollment_id,
-          createdAt: session.created_at,
-          environment: session.environment,
-          date: session.date,
-          summary: session.summary,
-          meeting: session.meeting,
-          student: session.student,
-          tutor: session.tutor,
-          status: session.status,
-          session_exit_form: session.session_exit_form || null,
-          isQuestionOrConcern: session.isQuestionOrConcern,
-          isFirstSession: session.isFirstSession,
-          duration: session.duration,
-        }));
-
-        // // if (!sessions) return;
-
-        // scheduleMultipleSessionReminders(sessions!);
-
-        // //Schedule emails
+        const sessions: Session[] = data.map((session: any) =>
+          tableToInterfaceSessions(session),
+        );
         return sessions;
       }
     }
@@ -367,23 +349,7 @@ export async function getStudentSessions(
     .filter(
       (session) => session.meeting && session.tutor_id && session.student_id,
     )
-    .map((session: any) => ({
-      id: session.id,
-      enrollmentId: session.enrollment_id,
-      createdAt: session.created_at,
-      environment: session.environment,
-      date: session.date,
-      summary: session.summary,
-      // meetingId: session.meeting_id,
-      meeting: tableToInterfaceMeetings(session.meeting),
-      status: session.status,
-      student: tableToInterfaceProfiles(session.student),
-      tutor: tableToInterfaceProfiles(session.tutor),
-      session_exit_form: session.session_exit_form,
-      isQuestionOrConcern: session.isQuestionOrConcern,
-      isFirstSession: session.isFirstSession,
-      duration: session.duration,
-    }));
+    .map((session: any) => tableToInterfaceSessions(session));
 
   return sessions;
 }
@@ -443,24 +409,7 @@ export async function getTutorSessions(
   // Map the result to the Session interface
   const sessions: Session[] = data
     .filter((data) => data.meeting && data.student && data.tutor)
-    .map((session: any) => {
-      return {
-        id: session.id,
-        enrollmentId: session.enrollment_id,
-        createdAt: session.created_at,
-        environment: session.environment,
-        date: session.date,
-        summary: session.summary,
-        meeting: tableToInterfaceMeetings(session.meeting),
-        student: tableToInterfaceProfiles(session.student),
-        tutor: tableToInterfaceProfiles(session.tutor),
-        status: session.status,
-        session_exit_form: session.session_exit_form,
-        isQuestionOrConcern: Boolean(session.isQuestionOrConcernO),
-        isFirstSession: Boolean(session.isFirstSession),
-        duration: session.duration,
-      };
-    });
+    .map((session: any) => tableToInterfaceSessions(session));
 
   return sessions;
 }
@@ -476,4 +425,47 @@ export async function getSessionTimePassed(sessionId: string): Promise<number> {
   const now: Date = new Date();
   const diff = now.getTime() - sessionDate.getTime();
   return diff;
+}
+
+export async function getAllSessions(
+  startDate?: string,
+  endDate?: string,
+  orderBy?: string,
+  ascending?: boolean,
+): Promise<Session[]> {
+  try {
+    let query = supabase.from(Table.Sessions).select(`
+      *,
+      meetings:Meetings!meeting_id(*),
+      student:Profiles!student_id(*),
+      tutor:Profiles!tutor_id(*)
+    `);
+
+    if (startDate) {
+      query = query.gte("date", startDate);
+    }
+    if (endDate) {
+      query = query.lte("date", endDate);
+    }
+
+    if (orderBy && ascending !== undefined) {
+      query = query.order(orderBy, { ascending });
+    }
+
+    const { data, error } = await query;
+
+    if (error) {
+      console.error("Error fetching student sessions:", error.message);
+      throw error;
+    }
+
+    const sessions: Session[] = data
+      .filter((session: any) => session.student && session.tutor)
+      .map((session: any) => tableToInterfaceSessions(session));
+
+    return sessions;
+  } catch (error) {
+    console.error("Error fetching sessions", error);
+    return [];
+  }
 }

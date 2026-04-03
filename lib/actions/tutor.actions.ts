@@ -30,7 +30,7 @@ export async function getTutorSessions(
   endDate?: string,
   status?: string | string[],
   orderby?: string,
-  ascending?: boolean
+  ascending?: boolean,
 ): Promise<Session[]> {
   let query = supabase
     .from(Table.Sessions)
@@ -40,7 +40,7 @@ export async function getTutorSessions(
      meeting:Meetings!meeting_id(*),
      student:Profiles!student_id(*),
      tutor:Profiles!tutor_id(*)
-    `
+    `,
     )
     .eq("tutor_id", profileId);
 
@@ -76,7 +76,6 @@ export async function getTutorSessions(
       id: session.id,
       enrollmentId: session.enrollment_id,
       createdAt: session.created_at,
-      environment: session.environment,
       date: session.date,
       summary: session.summary,
       meeting: tableToInterfaceMeetings(session.meeting),
@@ -149,7 +148,6 @@ export async function getTutorStudents(tutorId: string) {
   }
 }
 
-
 export async function cancelSession(sessionId: string) {
   const { data, error } = await supabase
     .from(Table.Sessions)
@@ -164,7 +162,10 @@ export async function cancelSession(sessionId: string) {
 }
 
 // changed to allow tutors to restore cancelled sessions back to their original status
-export async function undoCancelSession(sessionId: string, originalStatus: string = "Active") {
+export async function undoCancelSession(
+  sessionId: string,
+  originalStatus: string = "Active",
+) {
   const { data, error } = await supabase
     .from(Table.Sessions)
     .update({
@@ -202,7 +203,7 @@ export async function getTutorAvailability(tutorId: string) {
 //
 export async function updateTutorAvailability(
   tutorId: string,
-  availabilityData: any
+  availabilityData: any,
 ) {
   const { data, error } = await supabase
     .from("tutor_availability")
@@ -222,7 +223,7 @@ export async function getTutorResources() {
 
 export async function logSessionAttendance(
   sessionId: string,
-  attended: boolean
+  attended: boolean,
 ) {
   const { data, error } = await supabase
     .from(Table.Sessions)

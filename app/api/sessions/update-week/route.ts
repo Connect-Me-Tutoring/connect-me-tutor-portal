@@ -12,7 +12,7 @@ export const dynamic = "force-dynamic";
 
 export async function GET() {
   try {
-    await verifyAdmin()
+    await verifyAdmin();
     const newSessions = await handleUpdateWeek();
 
     return NextResponse.json({ newSessions: newSessions }, { status: 200 });
@@ -86,7 +86,7 @@ async function addSessionsServer(
     const enrollmentsWithSessions: Set<string> = new Set(
       sessions
         .filter((s) => s.enrollmentId)
-        .map((s) => s.enrollmentId as string)
+        .map((s) => s.enrollmentId as string),
     );
 
     // Prepare bulk insert data
@@ -246,7 +246,6 @@ const batchInsertSessions = async (sessionsToCreate: Session[]) => {
           id: session.id,
           enrollmentId: session.enrollment_id,
           createdAt: session.created_at,
-          environment: session.environment,
           date: session.date,
           summary: session.summary,
           meeting: session.meeting,
