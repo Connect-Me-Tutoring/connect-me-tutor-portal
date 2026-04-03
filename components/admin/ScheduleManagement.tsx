@@ -624,7 +624,7 @@ const Schedule = () => {
           ? "bg-green-50 border-l-green-500 text-green-900"
           : session.status === "Cancelled"
             ? "bg-red-50 border-l-red-500 text-red-900"
-            : session.isStandalone
+            : session.isStandalone == true
               ? "bg-purple-50  border-l-purple-500 text-purple-900"
               : "bg-blue-50 border-l-blue-500 text-blue-900",
       )}
@@ -653,7 +653,7 @@ const Schedule = () => {
       <Toaster />
       <div className="p-6 bg-gray-50 min-h-screen">
         <div className="bg-white rounded-xl shadow-sm p-4 mb-4">
-          <div className="flex items-center justify-between flex-wrap gap-3">
+          <div className="flex flex-col">
             <div className="flex min-w-0 flex-wrap items-center gap-2">
               <Popover>
                 <PopoverTrigger asChild>
@@ -691,205 +691,223 @@ const Schedule = () => {
               </h2>
             </div>
 
-            <div className="flex w-full flex-wrap items-center gap-2 md:w-auto md:justify-end">
-              <div className="flex bg-gray-100 rounded-lg p-0.5">
-                {(["day", "week", "month"] as const).map((view) => (
-                  <button
-                    key={view}
-                    onClick={() => setCalendarView(view)}
-                    className={cn(
-                      "px-3 py-1.5 text-sm font-medium rounded-md transition-colors capitalize",
-                      calendarView === view
-                        ? "bg-white shadow-sm text-gray-900"
-                        : "text-gray-500 hover:text-gray-700",
-                    )}
-                  >
-                    {view}
-                  </button>
+            <div className="flex items-center justify-between flex-wrap gap-2">
+              <div className="flex flex-wrap items-center gap-3 text-xs text-gray-500">
+                {[
+                  { color: "bg-green-500", label: "Complete" },
+                  { color: "bg-red-500", label: "Cancelled" },
+                  { color: "bg-blue-500", label: "Active" },
+                  { color: "bg-purple-500", label: "Standalone" },
+                ].map(({ color, label }) => (
+                  <span key={label} className="flex items-center gap-1">
+                    <span
+                      className={`inline-block h-2 w-2 rounded-full ${color}`}
+                    />
+                    {label}
+                  </span>
                 ))}
               </div>
 
-              <Button
-                onClick={handleUpdateWeek}
-                disabled={isLoading}
-                size="sm"
-                className="bg-connect-me-blue-3 hover:bg-connect-me-blue-4"
-              >
-                {isLoading ? (
-                  <>
-                    <Loader2 className="mr-1 h-3 w-3 animate-spin" />
-                    Loading
-                  </>
-                ) : (
-                  "Update Week"
-                )}
-              </Button>
+              <div className="flex flex-wrap items-center gap-2">
+                <div className="flex bg-gray-100 rounded-lg p-0.5">
+                  {(["day", "week", "month"] as const).map((view) => (
+                    <button
+                      key={view}
+                      onClick={() => setCalendarView(view)}
+                      className={cn(
+                        "px-3 py-1.5 text-sm font-medium rounded-md transition-colors capitalize",
+                        calendarView === view
+                          ? "bg-white shadow-sm text-gray-900"
+                          : "text-gray-500 hover:text-gray-700",
+                      )}
+                    >
+                      {view}
+                    </button>
+                  ))}
+                </div>
 
-              <Dialog>
-                <DialogTrigger asChild>
-                  <Button
-                    size="sm"
-                    className="bg-connect-me-blue-4 hover:bg-connect-me-blue-5"
-                  >
-                    Add Session
-                  </Button>
-                </DialogTrigger>
-                <DialogContent>
-                  <DialogHeader>
-                    <DialogTitle>Add Session</DialogTitle>
-                  </DialogHeader>
-                  <ScrollArea className="pr-4">
-                    <div className="grid gap-4 py-4">
-                      <ProfileSelector
-                        label="Student"
-                        profiles={students}
-                        selectedId={selectedStudentId}
-                        onSelect={(id) => {
-                          setSelectedStudentId(id);
-                          handleInputChange({
-                            target: { name: "student.id", value: id },
-                          });
-                        }}
-                        placeholder="Select a student"
-                      />
-                      <ProfileSelector
-                        label="Tutor"
-                        profiles={tutors}
-                        selectedId={selectedTutorId}
-                        onSelect={(id) => {
-                          setSelectedTutorId(id);
-                          handleInputChange({
-                            target: { name: "tutor.id", value: id },
-                          });
-                        }}
-                        placeholder="Select a tutor"
-                      />
-                      <div className="grid grid-cols-4 items-center gap-4">
-                        <Label htmlFor="startDate" className="text-right">
-                          Date
-                        </Label>
-                        <Input
-                          id="startDate"
-                          name="startDate"
-                          type="datetime-local"
-                          defaultValue={formatDateForInput(newSession.date)}
-                          onBlur={async (e) => {
-                            const scheduledDate = new Date(e.target.value);
-                            const updatedSession: Partial<Session> = {
-                              ...newSession,
-                              date: scheduledDate.toISOString(),
-                            };
-                            await checkMeetingAvailabilites(
-                              updatedSession as Session,
-                            );
-                            setNewSession(updatedSession);
+                <Button
+                  onClick={handleUpdateWeek}
+                  disabled={isLoading}
+                  size="sm"
+                  className="bg-connect-me-blue-3 hover:bg-connect-me-blue-4"
+                >
+                  {isLoading ? (
+                    <>
+                      <Loader2 className="mr-1 h-3 w-3 animate-spin" />
+                      Loading
+                    </>
+                  ) : (
+                    "Update Week"
+                  )}
+                </Button>
+
+                <Dialog>
+                  <DialogTrigger asChild>
+                    <Button
+                      size="sm"
+                      className="bg-connect-me-blue-4 hover:bg-connect-me-blue-5"
+                    >
+                      Add Session
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>Add Session</DialogTitle>
+                    </DialogHeader>
+                    <ScrollArea className="pr-4">
+                      <div className="grid gap-4 py-4">
+                        <ProfileSelector
+                          label="Student"
+                          profiles={students}
+                          selectedId={selectedStudentId}
+                          onSelect={(id) => {
+                            setSelectedStudentId(id);
+                            handleInputChange({
+                              target: { name: "student.id", value: id },
+                            });
                           }}
-                          disabled={isCheckingMeetingAvailability}
-                          className="col-span-3"
+                          placeholder="Select a student"
                         />
-                      </div>
-                      <div className="grid grid-cols-4 items-center gap-4">
-                        <Label htmlFor="duration" className="text-right">
-                          Duration
-                        </Label>
-                        <div className="col-span-3">
-                          <Select
-                            onValueChange={(value) => {
-                              const duration = parseFloat(value);
+                        <ProfileSelector
+                          label="Tutor"
+                          profiles={tutors}
+                          selectedId={selectedTutorId}
+                          onSelect={(id) => {
+                            setSelectedTutorId(id);
+                            handleInputChange({
+                              target: { name: "tutor.id", value: id },
+                            });
+                          }}
+                          placeholder="Select a tutor"
+                        />
+                        <div className="grid grid-cols-4 items-center gap-4">
+                          <Label htmlFor="startDate" className="text-right">
+                            Date
+                          </Label>
+                          <Input
+                            id="startDate"
+                            name="startDate"
+                            type="datetime-local"
+                            defaultValue={formatDateForInput(newSession.date)}
+                            onBlur={async (e) => {
+                              const scheduledDate = new Date(e.target.value);
                               const updatedSession: Partial<Session> = {
                                 ...newSession,
-                                duration,
+                                date: scheduledDate.toISOString(),
                               };
-                              checkMeetingAvailabilites(
+                              await checkMeetingAvailabilites(
                                 updatedSession as Session,
                               );
                               setNewSession(updatedSession);
                             }}
-                          >
-                            <SelectTrigger className="w-full">
-                              <SelectValue placeholder="Select a time duration" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectGroup>
-                                <SelectLabel>Duration</SelectLabel>
-                                {Array.from(
-                                  { length: 12 },
-                                  (_, i) => (i + 1) * 0.25,
-                                ).map((duration) => {
-                                  const minutes = (duration % 1) * 60;
-                                  const hours = Math.floor(duration);
-                                  return (
-                                    <SelectItem
-                                      key={duration}
-                                      value={duration.toString()}
-                                    >
-                                      {hours} {hours > 1 ? "hours" : "hour"}{" "}
-                                      {minutes} minutes
-                                    </SelectItem>
-                                  );
-                                })}
-                              </SelectGroup>
-                            </SelectContent>
-                          </Select>
+                            disabled={isCheckingMeetingAvailability}
+                            className="col-span-3"
+                          />
                         </div>
-                      </div>
-                      <div className="grid grid-cols-4 items-center gap-4">
-                        <Label className="text-right">Meeting Link</Label>
-                        <div className="col-span-3">
-                          <Select
-                            value={newSession?.meeting?.id || ""}
-                            onValueChange={async (value) => {
-                              setNewSession({
-                                ...newSession,
-                                meeting: await getMeeting(value),
-                              });
-                            }}
-                          >
-                            <SelectTrigger>
-                              <SelectValue>
-                                {newSession?.meeting?.name ||
-                                  "Select a meeting"}
-                              </SelectValue>
-                            </SelectTrigger>
-                            <SelectContent>
-                              {meetings.map((meeting) => (
-                                <SelectItem
-                                  key={meeting.id}
-                                  value={meeting.id}
-                                  className="flex items-center justify-between"
-                                >
-                                  <span>{meeting.name}</span>
-                                  <Circle
-                                    className={`w-2 h-2 ml-2 ${
-                                      meetingAvailabilityMap[meeting.id]
-                                        ? "text-green-500"
-                                        : "text-red-500"
-                                    } fill-current`}
-                                  />
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
+                        <div className="grid grid-cols-4 items-center gap-4">
+                          <Label htmlFor="duration" className="text-right">
+                            Duration
+                          </Label>
+                          <div className="col-span-3">
+                            <Select
+                              onValueChange={(value) => {
+                                const duration = parseFloat(value);
+                                const updatedSession: Partial<Session> = {
+                                  ...newSession,
+                                  duration,
+                                };
+                                checkMeetingAvailabilites(
+                                  updatedSession as Session,
+                                );
+                                setNewSession(updatedSession);
+                              }}
+                            >
+                              <SelectTrigger className="w-full">
+                                <SelectValue placeholder="Select a time duration" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectGroup>
+                                  <SelectLabel>Duration</SelectLabel>
+                                  {Array.from(
+                                    { length: 12 },
+                                    (_, i) => (i + 1) * 0.25,
+                                  ).map((duration) => {
+                                    const minutes = (duration % 1) * 60;
+                                    const hours = Math.floor(duration);
+                                    return (
+                                      <SelectItem
+                                        key={duration}
+                                        value={duration.toString()}
+                                      >
+                                        {hours} {hours > 1 ? "hours" : "hour"}{" "}
+                                        {minutes} minutes
+                                      </SelectItem>
+                                    );
+                                  })}
+                                </SelectGroup>
+                              </SelectContent>
+                            </Select>
+                          </div>
                         </div>
+                        <div className="grid grid-cols-4 items-center gap-4">
+                          <Label className="text-right">Meeting Link</Label>
+                          <div className="col-span-3">
+                            <Select
+                              value={newSession?.meeting?.id || ""}
+                              onValueChange={async (value) => {
+                                setNewSession({
+                                  ...newSession,
+                                  meeting: await getMeeting(value),
+                                });
+                              }}
+                            >
+                              <SelectTrigger>
+                                <SelectValue>
+                                  {newSession?.meeting?.name ||
+                                    "Select a meeting"}
+                                </SelectValue>
+                              </SelectTrigger>
+                              <SelectContent>
+                                {meetings.map((meeting) => (
+                                  <SelectItem
+                                    key={meeting.id}
+                                    value={meeting.id}
+                                    className="flex items-center justify-between"
+                                  >
+                                    <span>{meeting.name}</span>
+                                    <Circle
+                                      className={`w-2 h-2 ml-2 ${
+                                        meetingAvailabilityMap[meeting.id]
+                                          ? "text-green-500"
+                                          : "text-red-500"
+                                      } fill-current`}
+                                    />
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        </div>
+                        <Button
+                          onClick={handleAddSession}
+                          disabled={isCheckingMeetingAvailability}
+                          className="bg-connect-me-blue-3"
+                        >
+                          {isCheckingMeetingAvailability ? (
+                            <>
+                              Checking Meeting Availability
+                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            </>
+                          ) : (
+                            "Add Session"
+                          )}
+                        </Button>
                       </div>
-                      <Button
-                        onClick={handleAddSession}
-                        disabled={isCheckingMeetingAvailability}
-                        className="bg-connect-me-blue-3"
-                      >
-                        {isCheckingMeetingAvailability ? (
-                          <>
-                            Checking Meeting Availability
-                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                          </>
-                        ) : (
-                          "Add Session"
-                        )}
-                      </Button>
-                    </div>
-                  </ScrollArea>
-                </DialogContent>
-              </Dialog>
+                    </ScrollArea>
+                  </DialogContent>
+                </Dialog>
+              </div>
             </div>
           </div>
 
@@ -1109,7 +1127,9 @@ const Schedule = () => {
                                     ? "bg-green-100 text-green-800"
                                     : session.status === "Cancelled"
                                       ? "bg-red-100 text-red-800"
-                                      : "bg-blue-100 text-blue-800",
+                                      : session.isStandalone
+                                        ? "bg-purple-100 text-purple-800"
+                                        : "bg-blue-100 text-blue-800",
                                 )}
                               >
                                 {session.tutor?.firstName} /{" "}

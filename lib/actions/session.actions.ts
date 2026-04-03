@@ -436,7 +436,7 @@ export async function getAllSessions(
   try {
     let query = supabase.from(Table.Sessions).select(`
       *,
-      meetings:Meetings!meeting_id(*),
+      meeting:Meetings!meeting_id(*),
       student:Profiles!student_id(*),
       tutor:Profiles!tutor_id(*)
     `);
@@ -463,6 +463,7 @@ export async function getAllSessions(
       .filter((session: any) => session.student && session.tutor)
       .map((session: any) => tableToInterfaceSessions(session));
 
+    console.log(sessions.length);
     return sessions;
   } catch (error) {
     console.error("Error fetching sessions", error);

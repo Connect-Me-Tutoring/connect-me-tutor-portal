@@ -169,7 +169,7 @@ export async function getAllSessionsServer(
   try {
     let query = supabase.from(Table.Sessions).select(`
       *,
-      meetings:Meetings!meeting_id(*),
+      meeting:Meetings!meeting_id(*),
       student:Profiles!student_id(*),
       tutor:Profiles!tutor_id(*)
     `);
