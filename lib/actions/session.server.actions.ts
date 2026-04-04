@@ -705,7 +705,7 @@ export async function cancelUnsubmittedSEF(profile: Profile) {
 
     await supabase
       .from("Sessions")
-      .update({ status: "Complete" })
+      .update({ status: "Cancelled" })
       .eq("tutor_id", profile.id)
       .lt("date", fortyEightHoursAgo);
   } catch (error) {
@@ -738,7 +738,7 @@ export async function cancelUnsubmittedSEFCron() {
   // Then update them
   const { error: updateError } = await supabase
     .from("Sessions")
-    .update({ status: "Complete" })
+    .update({ status: "Cancelled" })
     .eq("status", "Active")
     .eq("is_standalone", false)
     .lt("date", fortyEightHoursAgo);
