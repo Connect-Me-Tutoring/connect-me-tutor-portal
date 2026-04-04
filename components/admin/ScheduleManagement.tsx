@@ -445,7 +445,7 @@ const Schedule = () => {
     updateWeekMutation.mutate({ enrollments: freshEnrollments });
   };
 
-  // groups sessions by day key so cells just do a map lookup
+  // groups sessions by day key so cells just do a map lookup //
   const sessionsByDay = useMemo(() => {
     const map = new Map<string, Session[]>();
     for (const session of sessions) {
