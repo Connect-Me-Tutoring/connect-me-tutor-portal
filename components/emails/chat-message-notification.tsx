@@ -41,7 +41,7 @@ export default function ChatMessageNotificationEmail({
             <strong>{senderName}</strong> sent you a message:
           </Text>
           <Text className="text-connect-me-black text-base leading-relaxed mt-3 mb-0 italic">
-            "{messagePreview}"
+            {messagePreview}
           </Text>
         </Section>
 
