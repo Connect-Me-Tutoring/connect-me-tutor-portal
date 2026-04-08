@@ -24,79 +24,31 @@ export default function ChatMessageNotificationEmail({
   isPreview = false,
 }: ChatMessageNotificationEmailProps) {
   const EmailContent = () => (
-    <Container style={{ maxWidth: "600px", margin: "0 auto", padding: "20px" }}>
-      <Section
-        style={{
-          backgroundColor: "#0E5B94",
-          color: "#ffffff",
-          padding: "24px",
-          textAlign: "center",
-        }}
-      >
-        <Text style={{ fontSize: "24px", fontWeight: "bold", margin: "0" }}>
+    <Container className="max-w-[600px] mx-auto p-5">
+      <Section className="bg-connect-me-blue-3 text-white p-6 text-center">
+        <Text className="text-2xl font-bold m-0">
           Connect Me Free Tutoring & Mentoring
         </Text>
       </Section>
 
-      <Section style={{ padding: "24px" }}>
-        <Text
-          style={{
-            color: "#040405",
-            fontSize: "16px",
-            lineHeight: "1.6",
-            margin: "0 0 24px 0",
-          }}
-        >
+      <Section className="p-6">
+        <Text className="text-connect-me-black text-base leading-relaxed mb-6 mt-0">
           Hi {recipientName},
         </Text>
 
-        <Section
-          style={{
-            backgroundColor: "#B7E2F2",
-            borderLeft: "4px solid #6AB2D7",
-            padding: "16px",
-            borderRadius: "0 8px 8px 0",
-            margin: "0 0 24px 0",
-          }}
-        >
-          <Text
-            style={{
-              color: "#040405",
-              fontSize: "16px",
-              lineHeight: "1.6",
-              margin: "0",
-            }}
-          >
+        <Section className="bg-connect-me-blue-2 border-l-4 border-connect-me-blue-3 p-4 rounded-r-lg mb-6">
+          <Text className="text-connect-me-black text-base leading-relaxed m-0">
             <strong>{senderName}</strong> sent you a message:
           </Text>
-          <Text
-            style={{
-              color: "#040405",
-              fontSize: "16px",
-              lineHeight: "1.6",
-              margin: "12px 0 0 0",
-              fontStyle: "italic",
-            }}
-          >
-            {`&quot${messagePreview}&quot`}
+          <Text className="text-connect-me-black text-base leading-relaxed mt-3 mb-0 italic">
+            {messagePreview}
           </Text>
         </Section>
 
-        <Text
-          style={{
-            color: "#040405",
-            fontSize: "16px",
-            lineHeight: "1.6",
-            margin: "0",
-          }}
-        >
+        <Text className="text-connect-me-black text-base leading-relaxed m-0">
           <Link
             href={chatRoomUrl}
-            style={{
-              color: "#0E5B94",
-              fontWeight: "bold",
-              textDecoration: "underline",
-            }}
+            className="text-connect-me-blue-3 font-bold underline"
           >
             View the message
           </Link>{" "}
@@ -109,7 +61,7 @@ export default function ChatMessageNotificationEmail({
   return (
     <Html>
       <Head />
-      <Body style={{ fontFamily: "Arial, sans-serif", margin: 0, padding: 0 }}>
+      <Body className="font-sans m-0 p-0">
         <EmailContent />
       </Body>
     </Html>
