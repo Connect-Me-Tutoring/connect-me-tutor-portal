@@ -19,7 +19,7 @@ import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { getUser } from "@/lib/actions/auth.server.actions";
 import { cachedGetUser } from "@/lib/actions/user.server.actions";
-import { cachedGetProfile } from "@/lib/actions/profile.server.actions";
+import { cachedGetProfile } from "@/lib/actions/cache";
 
 export default async function ChatPage() {
   const user = await cachedGetUser();

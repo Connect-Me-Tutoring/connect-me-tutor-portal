@@ -282,7 +282,7 @@ export default function DashboardLayout({
   const handleLogout = async () => {
     await logoutUser();
     toast.success("Successfully logging out");
-    router.push("/");
+    window.location.href = "/";
   };
 
   const handleSwitchProfile = async (newProfileId: string) => {

@@ -10,7 +10,7 @@ import { profile } from "console";
 import { tableToInterfaceProfiles } from "../type-utils";
 import { createPassword } from "../utils";
 import { cachedGetUser } from "./user.server.actions";
-import { cachedGetProfile } from "./profile.server.actions";
+import { cachedGetProfile } from "./cache";
 
 interface UserMetadata {
   email: string;
@@ -214,6 +214,7 @@ export const deleteUser = async (profileId: string) => {
         `,
         )
         .eq("last_active_profile_id", profileId)
+        .eq("user_id", profile.user_id)
         .maybeSingle()
         .throwOnError(),
     ]);

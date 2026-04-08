@@ -3,10 +3,9 @@ import { Inter } from "next/font/google";
 import { redirect } from "next/navigation";
 
 import { cachedGetUser } from "@/lib/actions/user.server.actions";
-import { cachedGetProfile } from "@/lib/actions/profile.server.actions";
+import { cachedGetProfile } from "@/lib/actions/cache";
 import { getStudentSessions } from "@/lib/actions/session.server.actions";
 import { endOfWeek, startOfWeek } from "date-fns";
-import StudentContextProvider from "./studentContextProvider";
 import { getMeetings } from "@/lib/actions/meeting.server.actions";
 const inter = Inter({ subsets: ["latin"] });
 
@@ -20,10 +19,5 @@ export default async function Layout({
 }: {
   children: React.ReactNode;
 }) {
-
-  return (
-    <>
-        {children}
-    </>
-  );
+  return <>{children}</>;
 }

@@ -23,28 +23,18 @@ export async function middleware(req: NextRequest) {
   const path = req.nextUrl.pathname;
 
   const supabase = createMiddlewareClient({ req, res });
-  const {
-    data: { session },
-  } = await supabase.auth.getSession();
-
-  const user = session?.user
-
-  if (user) {
+  const { data } = await supabase.auth.getClaims();
+  if (data?.claims) {
     if (path === "/") {
       return NextResponse.redirect(new URL("/dashboard", req.url));
-    } 
+    }
   }
 
   return res; // keep response as fallback
 }
 
 export const config = {
-  matcher: [
-    "/",
-    "/dashboard/:path*",
-    "/api/:path*",
-    "/meeting/:path*",
-  ],
+  matcher: ["/", "/dashboard/:path*", "/api/:path*", "/meeting/:path*"],
 };
 
 /**

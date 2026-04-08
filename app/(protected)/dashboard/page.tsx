@@ -4,7 +4,7 @@ import StudentDashboard from "@/components/student/StudentDashboard";
 import TutorDashboard from "@/components/tutor/dashboard";
 import SkeletonTable from "@/components/ui/skeleton";
 import { getMeetings } from "@/lib/actions/meeting.server.actions";
-import { cachedGetProfile } from "@/lib/actions/profile.server.actions";
+import { cachedGetProfile } from "@/lib/actions/cache";
 import { getTutorSessions } from "@/lib/actions/session.server.actions";
 import { getStudentSessions } from "@/lib/actions/session.server.actions";
 import { cachedGetUser } from "@/lib/actions/user.server.actions";
@@ -13,6 +13,7 @@ import { endOfWeek, startOfWeek } from "date-fns";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { DashboardContextProvider } from "@/contexts/dashboardContext";
+import { getProfile } from "@/lib/actions/profile.server.actions";
 
 async function TutorDashboardPage({
   profile,

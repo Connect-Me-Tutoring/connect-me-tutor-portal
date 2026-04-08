@@ -1,22 +1,20 @@
 import StudentList from "@/components/tutor/StudentList";
 import { PageLoader } from "@/components/ui/page-loader";
 import SkeletonTable from "@/components/ui/skeleton";
-import {
-  cachedGetProfile,
-  getTutorStudents,
-} from "@/lib/actions/profile.server.actions";
+
+import { cachedGetProfile, cachedGetTutorStudents } from "@/lib/actions/cache";
 import { cachedGetUser } from "@/lib/actions/user.server.actions";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
 
 async function MyStudentsData() {
   const user = await cachedGetUser();
-  if (!user) redirect("/")
+  if (!user) redirect("/");
   const profile = await cachedGetProfile(user.id);
   if (!profile) throw new Error("Profile not found");
-  const students = await getTutorStudents(profile.id);
+  const students = await cachedGetTutorStudents(profile.id);
 
-  return <StudentList key = {profile.id} initialStudents={students} />;
+  return <StudentList key={profile.id} initialStudents={students} />;
 }
 
 export default async function MyStudentsPage() {
@@ -26,7 +24,7 @@ export default async function MyStudentsPage() {
       <div className="flex space-x-6">
         <div className="flex-grow bg-white rounded-lg shadow p-6">
           {" "}
-          <Suspense fallback = {<SkeletonTable />}>
+          <Suspense fallback={<SkeletonTable />}>
             <MyStudentsData />{" "}
           </Suspense>
         </div>

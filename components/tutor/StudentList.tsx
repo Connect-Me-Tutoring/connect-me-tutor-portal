@@ -29,8 +29,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { getProfile } from "@/lib/actions/user.actions";
-import { getTutorStudents } from "@/lib/actions/tutor.actions";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import { Profile } from "@/types";
 import { StudentAnnouncementsRoomId } from "@/constants/chat";
