@@ -23,8 +23,10 @@ export async function middleware(req: NextRequest) {
   const path = req.nextUrl.pathname;
 
   const supabase = createMiddlewareClient({ req, res });
-  const { data } = await supabase.auth.getClaims();
-  if (data?.claims) {
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (user) {
     if (path === "/") {
       return NextResponse.redirect(new URL("/dashboard", req.url));
     }
