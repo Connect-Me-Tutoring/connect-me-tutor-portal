@@ -169,7 +169,9 @@ export async function getAllActiveEnrollments(
   }
 }
 
-export async function getAccountEnrollments(userId: string) {
+export async function getAccountEnrollments(
+  userId: string,
+): Promise<SharedEnrollment[] | null> {
   const { data, error } = await supabase.rpc(
     "get_user_enrollments_with_profiles",
     {
@@ -182,10 +184,47 @@ export async function getAccountEnrollments(userId: string) {
     return null;
   }
 
-  return (data as SharedEnrollment[]) || ([] as SharedEnrollment[]);
+  return (data as SharedEnrollment[]) ?? [];
 }
 
-const sql = `
- SELECT * FROM ${Table.Enrollments} LEFT JOIN ${Table.Profiles} ON ${Table.Profiles}.user_id = some inputted ID  WHERE tutor_id = ${Table.Profiles}.id OR student_id = ${Table.Profiles}.id
- ORDER BY created_at DESC
-`;
+// export async function getAccountEnrollmentsClient(
+//   userId: string,
+// ): Promise<SharedEnrollment[] | null> {
+//   const { data: profile, error: profileError } = await supabase
+//     .from("Profiles")
+//     .select("id")
+//     .eq("user_id", userId)
+//     .single();
+
+//   if (profileError || !profile) {
+//     console.error("Error fetching profile:", profileError);
+//     return null;
+//   }
+
+//   const { data, error } = await supabase
+//     .from("Enrollments")
+//     .select(
+//       `
+//       id,
+//       created_at,
+//       summary,
+//       start_date,
+//       end_date,
+//       availability,
+//       meetingId,
+//       summer_paused,
+//       duration,
+//       student:Profiles!student_id(id, user_id, first_name, last_name, email),
+//       tutor:Profiles!tutor_id(id, user_id, first_name, last_name, email)
+//     `,
+//     )
+//     .or(`student_id.eq.${profile.id},tutor_id.eq.${profile.id}`)
+//     .order("created_at", { ascending: false });
+
+//   if (error) {
+//     console.error("Error fetching enrollments:", error);
+//     return null;
+//   }
+
+//   return (data as SharedEnrollment[]) ?? [];/
+// }

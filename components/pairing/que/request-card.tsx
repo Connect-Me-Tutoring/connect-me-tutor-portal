@@ -36,7 +36,7 @@ interface PairingRequestCardProps {
 export function PairingRequestCard({ userId }: PairingRequestCardProps) {
   const [notes, setNotes] = useState("");
   const [requestType, setRequestType] = useState<"student" | "tutor">(
-    "student"
+    "student",
   );
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -174,7 +174,7 @@ export function PairingRequestCard({ userId }: PairingRequestCardProps) {
             type="submit"
             className="w-full"
             // disabled={isSubmitting}
-            disabled={true}
+            // disabled={true}
             size="lg"
           >
             {isSubmitting ? (

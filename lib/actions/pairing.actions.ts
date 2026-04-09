@@ -4,7 +4,7 @@ import { PairingLog, PairingRequest, SharedPairing } from "@/types/pairing";
 import { createClient } from "@supabase/supabase-js";
 import { getProfile, getProfileRole } from "./user.actions";
 import { supabase } from "../supabase/client";
-import { getAccountEnrollments } from "./enrollment.actions";
+import { getAccountEnrollments, getEnrollments } from "./enrollment.actions";
 import { Table } from "../supabase/tables";
 import { PairingLogSchemaType } from "../pairing/types";
 import { Person } from "@/types/enrollment";
@@ -60,13 +60,15 @@ export const createPairingRequest = async (userId: string, notes: string) => {
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
   );
 
-  const [profile, enrollments] = await Promise.all([
-    getProfile(userId),
-    getAccountEnrollments(userId),
-  ]);
+  // const [profile, enrollments] = await Promise.all([
+  //   getProfile(userId),
+  //   getAccountEnrollments(userId),
+  // ]);
 
-  if (!enrollments) throw new Error("cannot locate account enrollments");
+  const profile = await getProfile(userId);
   if (!profile) throw new Error("failed to validate profile role");
+  const enrollments = await getEnrollments(profile.id);
+  if (!enrollments) throw new Error("cannot locate account enrollments");
 
   const priority = enrollments.length < 1 ? 1 : 2;
 
@@ -78,6 +80,11 @@ export const createPairingRequest = async (userId: string, notes: string) => {
       notes,
     },
   ]);
+
+  if (result.error) {
+    console.error(result.error);
+    throw result.error;
+  }
 
   if (!result.error) {
     supabase.from("pairing_logs").insert([

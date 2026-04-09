@@ -196,15 +196,12 @@ export const getProfileFromUserSettings = async (userId: string) => {
       throw error;
     }
 
-    const profile = data as any;
+    // const profile = data as any;
     // if (profile.user_id !== userId) {
     //   throw new Error(
     //     `User_settings for user ${userId} points to profile owned by ${profile?.user_id}. Refusing to return profile.`,
     //   );
     // }
-
-    console.log("Getting Profile FROM USER SETTINGS");
-
     return tableToInterfaceProfiles(data.profile as any);
   } catch (error) {
     throw error;
