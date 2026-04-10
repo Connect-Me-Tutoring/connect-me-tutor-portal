@@ -69,6 +69,7 @@ import { AlertDialogTrigger } from "@radix-ui/react-alert-dialog";
 import SessionExitForm from "./SessionExitForm";
 import RescheduleForm from "./RescheduleDialog";
 import CancellationForm from "./CancellationForm";
+import EditSessionForm from "./EditSessionForm";
 import { useRouter } from "next/navigation";
 import { useDashboardContext } from "@/contexts/dashboardContext";
 
@@ -228,6 +229,13 @@ const CurrentSessionsTable = ({
                     handleReschedule={handleRescheduleWithRefresh}
                   />
                 </Dialog>
+
+                <EditSessionForm
+                  session={session}
+                  meetings={meetings}
+                  handleStatusChange={handleStatusChange}
+                  isDropdownItem={false}
+                />
 
                 <HoverCard>
                   <HoverCardTrigger>

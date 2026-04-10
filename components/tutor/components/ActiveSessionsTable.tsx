@@ -65,6 +65,7 @@ import { AlertDialogTrigger } from "@radix-ui/react-alert-dialog";
 import SessionExitForm from "./SessionExitForm";
 import RescheduleForm from "./RescheduleDialog";
 import CancellationForm from "./CancellationForm";
+import EditSessionForm from "./EditSessionForm";
 import { boolean } from "zod";
 import { useDashboardContext } from "@/contexts/dashboardContext";
 import {
@@ -208,6 +209,12 @@ const ActiveSessionsTable = ({
                   <DropdownMenuContent>
                     <DropdownMenuGroup>
                       <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                      <EditSessionForm
+                        session={session}
+                        meetings={meetings}
+                        handleStatusChange={handleStatusChange}
+                        isDropdownItem
+                      />
                       <DropdownMenuItem
                         onClick={() => {
                           TC.setSelectedSession(session);
