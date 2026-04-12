@@ -19,12 +19,9 @@ export default async function Layout({
   if (!user) redirect("/");
 
   const profile = await cachedGetProfile(user.id);
-
-  if (!profile || !profile.role) {
-    redirect("/");
-  }
-
-  const userProfiles = getUserProfiles(profile.userId)
+  const userProfiles = profile?.userId
+    ? getUserProfiles(profile.userId)
+    : Promise.resolve([]);
 
   return (
     <>

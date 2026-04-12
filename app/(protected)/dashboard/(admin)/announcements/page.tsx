@@ -67,11 +67,11 @@ export default function AnnouncementsPage() {
 
       <div className="h-full pb-5 ">
         <ChatRoom
-          announcements={true}
-          roomName={`${currentRoom === "tutors" ? "Tutor" : "Student"} Announcements`}
+          type="announcements"
+          roomName={`${currentRoom === "students" ? "Student" : "Tutor"} Announcements`}
           roomId={roomID}
-          // supabaseUrl={supabaseConfig.url}
-          // supabaseKey={supabaseConfig.key}
+          supabaseUrl={config.supabase.url!}
+          supabaseKey={config.supabase.key!}
         />
       </div>
     </main>

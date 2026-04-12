@@ -14,11 +14,13 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
-import { Users, Clock, CheckCircle, XCircle, AlertCircle, LogOut } from "lucide-react";
+import { Users, Clock, CheckCircle, XCircle, AlertCircle } from "lucide-react";
 import {
   createPairingRequest,
+  getProfilePairingQueueState,
   getMyPairingRequest,
   removePairingRequest,
+  setExcludeRejectedTutorsPreference,
   updatePairingRequest,
   type MyPairingRequest,
 } from "@/lib/actions/pairing.actions";
@@ -52,14 +54,23 @@ export function PairingRequestCard({
   const [isLeaving, setIsLeaving] = useState(false);
   const [myRequest, setMyRequest] = useState<MyPairingRequest | null>(null);
   const [isLoadingRequest, setIsLoadingRequest] = useState(true);
+  const [isInQueue, setIsInQueue] = useState(false);
 
   const isStudent = role?.toLowerCase() === "student";
+  const isDraftRequest = myRequest?.status === "draft";
+  const isArchivedRequest = !!myRequest && myRequest.inQueue === false && !isDraftRequest;
 
   const refetch = useCallback(async () => {
-    const req = await getMyPairingRequest(profileId);
+    const [req, queueState] = await Promise.all([
+      getMyPairingRequest(profileId),
+      getProfilePairingQueueState(profileId),
+    ]);
+
     setMyRequest(req ?? null);
+    setIsInQueue(queueState);
     if (req) {
-      setExcludeRejectedTutors(req.excludeRejectedTutors);
+      setNotes(req.notes ?? "");
+      setExcludeRejectedTutors(req.excludeRejectedTutors ?? true);
     }
   }, [profileId]);
 
@@ -67,66 +78,131 @@ export function PairingRequestCard({
     refetch().finally(() => setIsLoadingRequest(false));
   }, [refetch]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const joinQueue = async () => {
     setIsSubmitting(true);
-    const promise = createPairingRequest(userId, notes, excludeRejectedTutors);
-    toast.promise(promise, {
-      success: "Successfully added to pairing queue",
-      loading: "Creating pairing request",
-      error: "Failed to add to pairing queue",
-    });
-    promise
-      .then(() => {
-        setNotes("");
-        return refetch();
-      })
-      .finally(() => setIsSubmitting(false));
+    try {
+      const promise = createPairingRequest(userId, notes, excludeRejectedTutors);
+      toast.promise(promise, {
+        success: "Successfully added to pairing queue",
+        loading: "Creating pairing request",
+        error: "Failed to add to pairing queue",
+      });
+      await promise;
+      setNotes("");
+      await refetch();
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleLeaveQueue = async () => {
     if (!myRequest) return;
     setIsLeaving(true);
-    const promise = removePairingRequest(myRequest.id);
-    toast.promise(promise, {
-      success: "Removed from active queue (your request is saved)",
-      loading: "Leaving queue",
-      error: "Failed to leave queue",
-    });
-    promise
-      .then(refetch)
-      .finally(() => setIsLeaving(false));
+    try {
+      const promise = removePairingRequest(myRequest.id);
+      toast.promise(promise, {
+        success: "Removed from active queue (your request is saved)",
+        loading: "Leaving queue",
+        error: "Failed to leave queue",
+      });
+      await promise;
+      await refetch();
+    } finally {
+      setIsLeaving(false);
+    }
   };
 
   const handleRejoinQueue = async () => {
     if (!myRequest) return;
     setIsSubmitting(true);
-    const promise = createPairingRequest(
-      userId,
-      myRequest.notes ?? "",
-      excludeRejectedTutors,
-    );
-    toast.promise(promise, {
-      success: "You’re back in the pairing queue",
-      loading: "Rejoining queue",
-      error: (e: Error) => e.message || "Failed to rejoin",
-    });
-    promise
-      .then(refetch)
-      .finally(() => setIsSubmitting(false));
+    try {
+      const promise = createPairingRequest(
+        userId,
+        myRequest.notes ?? "",
+        excludeRejectedTutors,
+      );
+      toast.promise(promise, {
+        success: "You’re back in the pairing queue",
+        loading: "Rejoining queue",
+        error: (e: Error) => e.message || "Failed to rejoin",
+      });
+      await promise;
+      await refetch();
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleQueueSwitch = async (checked: boolean) => {
+    if (isLoadingRequest) return;
+    if (checked === isInQueue) return;
+
+    const previousIsInQueue = isInQueue;
+    const previousRequest = myRequest;
+
+    setIsInQueue(checked);
+    if (myRequest) {
+      setMyRequest({
+        ...myRequest,
+        inQueue: checked,
+      });
+    }
+
+    try {
+      if (checked) {
+        if (myRequest?.inQueue) return;
+        if (myRequest && myRequest.inQueue === false) {
+          await handleRejoinQueue();
+          return;
+        }
+        if (!myRequest) {
+          await joinQueue();
+        }
+      } else if (myRequest?.inQueue) {
+        await handleLeaveQueue();
+      }
+    } catch (error) {
+      setIsInQueue(previousIsInQueue);
+      setMyRequest(previousRequest);
+      throw error;
+    }
   };
 
   const handleToggleExcludeRejected = async (checked: boolean) => {
-    if (!myRequest) return;
+    const previousValue = excludeRejectedTutors;
     setExcludeRejectedTutors(checked);
-    const promise = updatePairingRequest(myRequest.id, {
-      exclude_rejected_tutors: checked,
-    });
+    if (myRequest) {
+      setMyRequest({
+        ...myRequest,
+        excludeRejectedTutors: checked,
+      });
+    }
+
+    const promise = myRequest
+      ? updatePairingRequest(myRequest.id, {
+          exclude_rejected_tutors: checked,
+        })
+      : setExcludeRejectedTutorsPreference(userId, checked);
+
     toast.promise(promise, {
       loading: "Updating preference",
       success: "Preference updated",
       error: "Failed to update preference",
     });
+
+    try {
+      await promise;
+      await refetch();
+    } catch (error) {
+      setExcludeRejectedTutors(previousValue);
+      if (myRequest) {
+        setMyRequest({
+          ...myRequest,
+          excludeRejectedTutors: previousValue,
+        });
+      }
+      throw error;
+    }
   };
 
   const getStatusIcon = (status: string) => {
@@ -165,7 +241,34 @@ export function PairingRequestCard({
     );
   }
 
-  if (myRequest && myRequest.inQueue === false) {
+  const queueSwitch = (
+    <div className="rounded-xl border bg-muted/50 p-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      <div className="space-y-1 min-w-0">
+        <Label
+          htmlFor="pairing-queue-switch"
+          className="text-base font-semibold"
+        >
+          In pairing queue
+        </Label>
+        <p className="text-sm text-muted-foreground">
+          {isInQueue
+            ? "You can be matched while this is on. Turn it off to pause without losing your saved details."
+            : isArchivedRequest
+              ? "You left the active queue. Turn this on to rejoin with your saved preferences."
+              : "Turn this on to join the queue. You can add optional notes below first."}
+        </p>
+      </div>
+      <Switch
+        id="pairing-queue-switch"
+        checked={isInQueue}
+        onCheckedChange={handleQueueSwitch}
+        disabled={isLoadingRequest || isSubmitting || isLeaving}
+        className="shrink-0 data-[state=checked]:bg-primary"
+      />
+    </div>
+  );
+
+  if (isArchivedRequest) {
     return (
       <Card className="w-full mx-auto">
         <CardHeader className="space-y-4">
@@ -179,6 +282,7 @@ export function PairingRequestCard({
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
+          {queueSwitch}
           <div className="flex flex-wrap items-center gap-2">
             <Badge variant="secondary" className="capitalize">
               Archived
@@ -191,25 +295,12 @@ export function PairingRequestCard({
               <p className="mt-1 whitespace-pre-wrap">{myRequest.notes}</p>
             </div>
           ) : null}
-          <Button
-            className="w-full"
-            size="lg"
-            onClick={handleRejoinQueue}
-            disabled={isSubmitting}
-          >
-            {isSubmitting ? (
-              <Clock className="mr-2 h-4 w-4 animate-spin" />
-            ) : (
-              <Users className="mr-2 h-4 w-4" />
-            )}
-            Rejoin queue
-          </Button>
         </CardContent>
       </Card>
     );
   }
 
-  if (myRequest) {
+  if (myRequest && !isDraftRequest) {
     return (
       <Card className="w-full mx-auto">
         <CardHeader className="space-y-4">
@@ -222,6 +313,7 @@ export function PairingRequestCard({
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
+          {queueSwitch}
           <div className="flex flex-wrap items-center gap-2">
             <Badge
               className={`${getStatusColor(myRequest.status)} flex items-center gap-1 capitalize`}
@@ -249,21 +341,6 @@ export function PairingRequestCard({
               />
             </div>
           )}
-
-          <Button
-            variant="outline"
-            className="w-full"
-            size="lg"
-            onClick={handleLeaveQueue}
-            disabled={isLeaving}
-          >
-            {isLeaving ? (
-              <Clock className="mr-2 h-4 w-4 animate-spin" />
-            ) : (
-              <LogOut className="mr-2 h-4 w-4" />
-            )}
-            Leave queue
-          </Button>
         </CardContent>
       </Card>
     );
@@ -284,6 +361,7 @@ export function PairingRequestCard({
       </CardHeader>
 
       <CardContent className="space-y-6">
+        {queueSwitch}
         <div className="bg-muted/50 p-4 rounded-lg space-y-3">
           <h3 className="font-semibold text-sm uppercase tracking-wide text-muted-foreground">
             How It Works
@@ -291,7 +369,7 @@ export function PairingRequestCard({
           <div className="space-y-2 text-sm">
             <div className="flex items-start gap-2">
               <Badge variant="outline" className="mt-0.5 text-xs">1</Badge>
-              <span>Submit your pairing request with your preferences and notes</span>
+              <span>Turn on <strong>In pairing queue</strong> above (add optional notes first)</span>
             </div>
             <div className="flex items-start gap-2">
               <Badge variant="outline" className="mt-0.5 text-xs">2</Badge>
@@ -308,7 +386,7 @@ export function PairingRequestCard({
           </div>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
+        <div className="space-y-6">
           <div className="space-y-3">
             <Label htmlFor="notes" className="text-base font-medium">
               Additional Notes
@@ -344,26 +422,7 @@ export function PairingRequestCard({
               />
             </div>
           )}
-
-          <Button
-            type="submit"
-            className="w-full"
-            disabled={isSubmitting}
-            size="lg"
-          >
-            {isSubmitting ? (
-              <>
-                <Clock className="mr-2 h-4 w-4 animate-spin" />
-                Submitting Request...
-              </>
-            ) : (
-              <>
-                <Users className="mr-2 h-4 w-4" />
-                Submit Pairing Request
-              </>
-            )}
-          </Button>
-        </form>
+        </div>
 
         <div className="pt-4 border-t">
           <h4 className="text-sm font-medium mb-3 text-muted-foreground">

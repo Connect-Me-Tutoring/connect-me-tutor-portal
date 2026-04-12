@@ -17,7 +17,9 @@ export const getUser = async () => {
   return user;
 };
 
-export const getProfileFromUserSettings = async (userId: string) => {
+export const getProfileFromUserSettings = async (
+  userId: string
+): Promise<Profile | null> => {
   try {
     const { data, error } = await supabase
       .from("user_settings")
@@ -49,7 +51,7 @@ export const getProfileFromUserSettings = async (userId: string) => {
       `
       )
       .eq("user_id", userId)
-      .single();
+      .maybeSingle();
 
     if (error) {
       console.error("Error fetching profile in getProfile:", error.message);
@@ -57,8 +59,8 @@ export const getProfileFromUserSettings = async (userId: string) => {
       throw error;
     }
 
-    if (!data) {
-      throw new Error("No profile associated with user id")
+    if (!data?.profile) {
+      return null;
     }
 
     return tableToInterfaceProfiles(data.profile as any);
@@ -74,7 +76,7 @@ export const getProfile = async (userId: string): Promise<Profile | null> => {
     return null;
   }
   try {
-    return getProfileFromUserSettings(userId);
+    return await getProfileFromUserSettings(userId);
   } catch (error) {
     console.error("Unexpected error in getProfile:", error);
     return null;
@@ -117,8 +119,12 @@ export const getProfileRole = async (
       `
       )
       .eq("user_id", userId)
-      .single()
+      .maybeSingle()
       .throwOnError();
+
+    if (!data?.profile?.role) {
+      return null;
+    }
 
     const profileRole: { profile: { role: string } } = data as any;
 

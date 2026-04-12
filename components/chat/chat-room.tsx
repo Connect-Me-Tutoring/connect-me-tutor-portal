@@ -5,7 +5,13 @@ import type React from "react";
 import { useState, useEffect, useRef } from "react";
 // import { useToast } from "@/hooks/use-toast"
 import { createClient } from "@supabase/supabase-js";
-import { Send, PaperclipIcon, X, Download, Megaphone } from "lucide-react";
+import {
+  Send,
+  PaperclipIcon,
+  X,
+  Download,
+  Megaphone,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -98,6 +104,10 @@ export function ChatRoom({
     const fetchUsers = async () => {
       try {
         setIsLoadingUsers(true);
+
+        if (!profile) {
+          return;
+        }
 
         if (pairing) {
           const administrators = await fetchAdmins();

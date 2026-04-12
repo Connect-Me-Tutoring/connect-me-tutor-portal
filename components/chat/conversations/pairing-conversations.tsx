@@ -1,7 +1,6 @@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-
 import { SharedPairing } from "@/types/pairing";
 import Link from "next/link";
 import { useMemo } from "react";
@@ -55,7 +54,6 @@ const getLastMessage = (
   );
 };
 
-// Generate avatar URL based on name
 const getAvatarUrl = (name: string): string => {
   return `/placeholder.svg?height=48&width=48&text=${encodeURIComponent(name.charAt(0))}`;
 };
@@ -74,6 +72,7 @@ const formatDate = (dateString: string): string => {
     return `${Math.floor(diffInHours / 24)}d`;
   }
 };
+
 export function ChatList({ pairings, currentUserId, role }: ChatListProps) {
   const clientConversations = useMemo(
     () =>
@@ -89,12 +88,11 @@ export function ChatList({ pairings, currentUserId, role }: ChatListProps) {
           pairingId: pairing.id,
         };
       }),
-    // const d
     [pairings, role]
   );
+
   return (
     <div className="flex flex-col h-screen">
-      {/* Header */}
       <div className="p-4 border-b border-gray-100">
         <h1 className="text-xl font-semibold text-gray-900">Messages</h1>
         <p className="text-sm text-gray-500 mt-1">
@@ -103,7 +101,6 @@ export function ChatList({ pairings, currentUserId, role }: ChatListProps) {
         </p>
       </div>
 
-      {/* Chat List */}
       <div className="flex-1 overflow-y-auto">
         {pairings.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full p-8 text-center">
@@ -133,7 +130,7 @@ export function ChatList({ pairings, currentUserId, role }: ChatListProps) {
           clientConversations.map((conversation) => {
             const lastMessage = getLastMessage(conversation.id);
             const unreadCount = getUnreadCount(conversation.id);
-            const isActive = new Date() > new Date();
+            const isActive = true;
 
             return (
               <Link

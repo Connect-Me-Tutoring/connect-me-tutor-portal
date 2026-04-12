@@ -13,6 +13,7 @@ import { MessageSquare, Shield, Users } from "lucide-react";
 // import { getAccountEnrollments } from "@/lib/actions/enrollments.action";
 import { getAccountPairings } from "@/lib/actions/pairing.server.actions";
 import { getProfileRole } from "@/lib/actions/user.actions";
+import { cachedGetProfile } from "@/lib/actions/profile.server.actions";
 import { createClient, createServerClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { fetchUserAdminConversation } from "@/lib/actions/chat.server.actions";
@@ -24,6 +25,10 @@ export default async function ChatPage() {
   const user = await getUser()
   const userId = user?.id;
   if (!userId) redirect("/");
+  const profile = await cachedGetProfile(userId);
+  if (!profile) {
+    redirect("/dashboard/settings?completeProfile=1");
+  }
 
   const [adminConversationID, pairings, role] = await Promise.all([
     fetchUserAdminConversation(userId),

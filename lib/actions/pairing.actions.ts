@@ -84,6 +84,37 @@ export type MyPairingRequest = {
   inQueue: boolean;
 };
 
+export const getProfilePairingQueueState = async (
+  profileId: string,
+): Promise<boolean> => {
+  if (
+    !process.env.NEXT_PUBLIC_SUPABASE_URL ||
+    !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  ) {
+    throw new Error("Missing Supabase environment variables");
+  }
+
+  const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+  );
+
+  const { data, error } = await supabase
+    .from(Table.PairingRequests)
+    .select("in_queue")
+    .eq("user_id", profileId)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (error) {
+    console.error("getProfilePairingQueueState error", error);
+    return false;
+  }
+
+  return data?.in_queue === true;
+};
+
 export const getMyPairingRequest = async (
   profileId: string,
 ): Promise<MyPairingRequest | null> => {
@@ -161,10 +192,10 @@ export const createPairingRequest = async (
     getAccountEnrollments(userId),
   ]);
 
-  if (!enrollments) throw new Error("cannot locate account enrollments");
   if (!profile) throw new Error("failed to validate profile role");
 
-  const priority = enrollments.length < 1 ? 1 : 2;
+  const enrollmentCount = enrollments?.length ?? 0;
+  const priority = enrollmentCount < 1 ? 1 : 2;
 
   const { data: existing } = await supabase
     .from(Table.PairingRequests)
@@ -275,6 +306,69 @@ export const updatePairingRequest = async (
     .eq("id", requestId);
 
   if (error) throw error;
+};
+
+export const setExcludeRejectedTutorsPreference = async (
+  userId: string,
+  excludeRejectedTutors: boolean,
+) => {
+  if (
+    !process.env.NEXT_PUBLIC_SUPABASE_URL ||
+    !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  ) {
+    throw new Error("Missing Supabase environment variables");
+  }
+
+  const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+  );
+
+  const [profile, enrollments] = await Promise.all([
+    getProfile(userId),
+    getAccountEnrollments(userId),
+  ]);
+
+  if (!profile) throw new Error("failed to validate profile role");
+
+  const { data: existing, error: existingError } = await supabase
+    .from(Table.PairingRequests)
+    .select("id")
+    .eq("user_id", profile.id)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (existingError) throw existingError;
+
+  if (existing?.id) {
+    await updatePairingRequest(existing.id, {
+      exclude_rejected_tutors: excludeRejectedTutors,
+    });
+    return existing.id;
+  }
+
+  const priority = (enrollments?.length ?? 0) < 1 ? 1 : 2;
+
+  const { data, error } = await supabase
+    .from(Table.PairingRequests)
+    .insert([
+      {
+        user_id: profile.id,
+        type: profile.role.toLowerCase(),
+        priority,
+        notes: "",
+        status: "draft",
+        exclude_rejected_tutors: excludeRejectedTutors,
+        in_queue: false,
+      },
+    ])
+    .select("id")
+    .single();
+
+  if (error) throw error;
+
+  return data.id as string;
 };
 
 export const acceptStudentMatch = () => {};

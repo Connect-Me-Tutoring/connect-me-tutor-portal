@@ -19,7 +19,7 @@ export default async function PairingPage() {
         <div className="space-y-6">
           <div className="rounded-lg border bg-card text-card-foreground shadow-sm">
             <div className="p-6">
-              <h2 className="text-xl font-semibold mb-4">Request Pairing</h2>
+              <h2 className="text-xl font-semibold mb-4">Pairing queue and matches</h2>
               <Suspense fallback={<Skeleton className="h-[400px] w-full" />}>
                 <PairingInterface />
               </Suspense>
