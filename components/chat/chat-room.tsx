@@ -4,19 +4,23 @@ import type React from "react";
 
 import { useState, useEffect, useRef } from "react";
 // import { useToast } from "@/hooks/use-toast"
-import { createClient } from "@supabase/supabase-js";
 import { Send, PaperclipIcon, X, Download, Megaphone } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
-import { useParams } from "next/navigation";
 import { useFetchProfile } from "@/hooks/auth";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
-import { useEnrollment } from "@/hooks/enrollments";
-import { fetchAdmins } from "@/lib/actions/chat.server.actions";
+import {
+  fetchAdmins,
+  getChatRoomEmailMutedState,
+  sendChatMessage,
+  setChatRoomEmailMuted,
+} from "@/lib/actions/chat.server.actions";
 import { usePairing } from "@/hooks/pairings";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 
 // Types for our chat components
 export type User = {
@@ -44,8 +48,9 @@ export type Message = {
 export type ChatRoomProps = {
   roomId: string;
   roomName?: string;
-  supabaseUrl: string;
-  supabaseKey: string;
+  /** Legacy props; chat uses the authenticated browser Supabase client. */
+  supabaseUrl?: string;
+  supabaseKey?: string;
   initialMessages?: Message[];
   initialUsers?: User[];
   onSendMessage?: (message: string) => void;
@@ -56,8 +61,6 @@ export type ChatRoomProps = {
 export function ChatRoom({
   roomId,
   roomName,
-  supabaseUrl,
-  supabaseKey,
   initialMessages = [],
   initialUsers = [],
   onSendMessage,
@@ -72,8 +75,9 @@ export function ChatRoom({
   const [uploadingFiles, setUploadingFiles] = useState<{
     [key: string]: number;
   }>({});
+  const [emailMuted, setEmailMuted] = useState(false);
+  const [emailMuteLoading, setEmailMuteLoading] = useState(true);
 
-  // const { enrollment } = useEnrollment(roomId);
   const { pairing } = usePairing(roomId);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -177,6 +181,24 @@ export function ChatRoom({
     };
   }, [pairing, type, profile]);
 
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        setEmailMuteLoading(true);
+        const { muted } = await getChatRoomEmailMutedState(roomId);
+        if (!cancelled) setEmailMuted(muted);
+      } catch (e) {
+        console.error("Error loading chat email mute state:", e);
+      } finally {
+        if (!cancelled) setEmailMuteLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [roomId, profile?.id]);
+
   // Load messages and set up subscriptions
   useEffect(() => {
     let isMounted = true;
@@ -210,7 +232,7 @@ export function ChatRoom({
     const setupSubscription = () => {
       // Subscribe to new messages
       messagesSubscription = supabase
-        .channel("messages")
+        .channel(`messages:${roomId}`)
         .on(
           "postgres_changes",
           {
@@ -254,20 +276,22 @@ export function ChatRoom({
       return;
 
     try {
-      const newMessage = {
-        room_id: roomId,
-        user_id: profile.id,
-        content: messageInput,
-      };
+      const text = messageInput.trim();
+      const result = await sendChatMessage({
+        roomId,
+        roomType: type,
+        content: text,
+      });
 
-      const { error } = await supabase.from("messages").insert([newMessage]);
-
-      if (error) throw error;
+      if (!result.ok) {
+        console.error("sendChatMessage:", result.error);
+        return;
+      }
 
       setMessageInput("");
 
       if (onSendMessage) {
-        onSendMessage(messageInput);
+        onSendMessage(text);
       }
     } catch (error) {
       console.error("Error sending message:", error);
@@ -300,10 +324,9 @@ export function ChatRoom({
         .from("enrollment-chat-files")
         .getPublicUrl(filePath);
 
-      // Create a message with the file attachment
-      const newMessage = {
-        room_id: roomId,
-        user_id: profile.id,
+      const result = await sendChatMessage({
+        roomId,
+        roomType: type,
         content: `Shared a file: ${file.name}`,
         file: {
           name: file.name,
@@ -311,13 +334,9 @@ export function ChatRoom({
           type: file.type,
           size: file.size,
         },
-      };
+      });
 
-      const { error: msgError } = await supabase
-        .from("messages")
-        .insert([newMessage]);
-
-      if (msgError) throw msgError;
+      if (!result.ok) throw new Error(result.error ?? "Failed to send message");
 
       // Remove from uploading files
       setUploadingFiles((prev) => {
@@ -426,9 +445,9 @@ export function ChatRoom({
       <div className="flex-1 flex flex-col">
         {/* Chat header */}
         <div
-          className={`p-4 border-b flex justify-between items-center ${type === "announcements" ? "" : ""}`}
+          className={`p-4 border-b flex flex-col gap-3 sm:flex-row sm:justify-between sm:items-start sm:gap-4`}
         >
-          <div>
+          <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2">
               {type === "announcements" && <Megaphone className="h-5 w-5 " />}
               <h2 className="font-semibold text-lg">
@@ -443,19 +462,42 @@ export function ChatRoom({
                 : `${Object.keys(users).length} participants`}
             </p>
           </div>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => {
-              const modal = document.getElementById("participants-modal");
-              if (modal instanceof HTMLDialogElement) {
-                modal.showModal();
-              }
-            }}
-            className="md:hidden"
-          >
-            {type === "announcements" ? "Viewers" : "Participants"}
-          </Button>
+          <div className="flex flex-wrap items-center gap-3 justify-end shrink-0">
+            <div className="flex items-center gap-2 max-w-[220px] sm:max-w-none">
+              <Switch
+                id={`email-mute-${roomId}`}
+                checked={emailMuted}
+                disabled={emailMuteLoading || !profile}
+                onCheckedChange={async (checked) => {
+                  setEmailMuted(checked);
+                  const res = await setChatRoomEmailMuted(roomId, checked);
+                  if (!res.ok) {
+                    setEmailMuted(!checked);
+                    console.error(res.error);
+                  }
+                }}
+              />
+              <Label
+                htmlFor={`email-mute-${roomId}`}
+                className="text-xs sm:text-sm text-gray-600 cursor-pointer leading-snug"
+              >
+                Mute email notifications for this chat
+              </Label>
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                const modal = document.getElementById("participants-modal");
+                if (modal instanceof HTMLDialogElement) {
+                  modal.showModal();
+                }
+              }}
+              className="md:hidden"
+            >
+              {type === "announcements" ? "Viewers" : "Participants"}
+            </Button>
+          </div>
         </div>
 
         {/* Messages area */}

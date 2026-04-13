@@ -57,6 +57,7 @@ export default async function ChatRoomPage({ params }: Props) {
       <h1 className="text-2xl font-bold mb-6">Tutoring Session</h1>
 
       <ChatRoom
+        type="pairing"
         roomId={params.id}
         supabaseUrl={supabaseConfig.url}
         supabaseKey={supabaseConfig.key}
