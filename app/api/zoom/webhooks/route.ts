@@ -9,7 +9,7 @@ import {
   findMeetingByNormalizedId,
   getActiveSessionFromMeetingID,
 } from "@/lib/actions/session.server.actions";
-import { logEvent, logError } from "@/lib/posthog";
+import { logEvent, logError, serializeForPosthog } from "@/lib/posthog";
 
 // Use a single signing secret for all Zoom webhooks
 const validationSecret = config.zoom.ZOOM_WEBHOOK_SECRET;
@@ -29,9 +29,11 @@ export async function POST(req: NextRequest) {
     body = await req.json();
     await logEvent("zoom_webhook_body_parsed", {
       request_id: requestId,
+      event: body?.event,
       has_payload: !!body?.payload,
       has_event: !!body?.event,
       body_keys: Object.keys(body || {}),
+      payload_json: serializeForPosthog(body?.payload),
     });
   } catch (error) {
     await logError(error, {
@@ -145,6 +147,10 @@ export async function POST(req: NextRequest) {
     has_meeting_number: !!meetingNumber,
     has_session_id: !!sessionId,
     session_id: sessionId,
+    meeting_found: !!meetingRecord,
+    stored_meeting_id: meetingRecord?.meeting_id,
+    internal_meeting_uuid: meetingRecord?.id,
+    payload_object_json: serializeForPosthog(payload?.object),
   });
 
   if (!validationSecret) {
@@ -358,6 +364,7 @@ export async function POST(req: NextRequest) {
         await logEvent("zoom_participant_joined_received", {
           request_id: requestId,
           zoom_meeting_id: zoomMeetingId,
+          meeting_number: meetingNumber,
           account_id: accountId,
           participant_id: participantId,
           participant_name: participantName,
@@ -366,6 +373,7 @@ export async function POST(req: NextRequest) {
           has_participant_id: !!participantId,
           has_participant_name: !!participantName,
           has_participant_email: !!participantEmail,
+          participant_object_json: serializeForPosthog(participant),
         });
 
         try {
@@ -440,6 +448,7 @@ export async function POST(req: NextRequest) {
         await logEvent("zoom_participant_left_received", {
           request_id: requestId,
           zoom_meeting_id: zoomMeetingId,
+          meeting_number: meetingNumber,
           account_id: accountId,
           participant_id: participantUuid,
           participant_name: participantName,
@@ -448,6 +457,7 @@ export async function POST(req: NextRequest) {
           leave_reason: leaveReason,
           has_participant_uuid: !!participantUuid,
           has_participant_name: !!participantName,
+          participant_object_json: serializeForPosthog(participant),
         });
 
         try {
@@ -542,6 +552,7 @@ export async function POST(req: NextRequest) {
         event_type: event,
         zoom_meeting_id: zoomMeetingId,
         account_id: accountId,
+        payload_object_json: serializeForPosthog(payload?.object),
       });
     }
   }

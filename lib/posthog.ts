@@ -3,6 +3,80 @@ import { PostHog } from "posthog-node";
 // Singleton pattern to reuse PostHog client instance
 let posthogClient: PostHog | null = null;
 
+const MAX_JSON_STRING_LENGTH = 24_000;
+
+/** Keys (and substrings) that should never appear verbatim in PostHog JSON blobs */
+const SENSITIVE_KEY_PATTERN =
+  /^(plainToken|encryptedToken|authorization|password|secret|token|apikey|api_key|access_token|refresh_token)$/i;
+
+function isSensitiveKey(key: string): boolean {
+  return SENSITIVE_KEY_PATTERN.test(key) || key.toLowerCase().includes("secret");
+}
+
+/**
+ * Recursively redact sensitive fields before logging (tokens, secrets).
+ */
+export function redactForLogging(value: unknown): unknown {
+  if (value === null || value === undefined) return value;
+  if (typeof value !== "object") return value;
+  if (Array.isArray(value)) return value.map(redactForLogging);
+  const obj = value as Record<string, unknown>;
+  const out: Record<string, unknown> = {};
+  for (const [k, v] of Object.entries(obj)) {
+    if (isSensitiveKey(k)) {
+      out[k] = "[REDACTED]";
+    } else if (v !== null && typeof v === "object") {
+      out[k] = redactForLogging(v);
+    } else {
+      out[k] = v;
+    }
+  }
+  return out;
+}
+
+/**
+ * JSON snapshot safe for PostHog: handles Error, circular refs, truncation.
+ * Use for `*_json` properties so nested activity is visible in the event stream.
+ */
+export function serializeForPosthog(
+  value: unknown,
+  options?: { redact?: boolean },
+): string {
+  const redact = options?.redact !== false;
+  const input = redact ? redactForLogging(value) : value;
+  const seen = new WeakSet<object>();
+
+  try {
+    const json = JSON.stringify(
+      input,
+      (key, val) => {
+        if (val instanceof Error) {
+          return {
+            name: val.name,
+            message: val.message,
+            stack: val.stack,
+          };
+        }
+        if (val !== null && typeof val === "object") {
+          if (seen.has(val as object)) return "[Circular]";
+          seen.add(val as object);
+        }
+        return val;
+      },
+      0,
+    );
+    if (json.length > MAX_JSON_STRING_LENGTH) {
+      return `${json.slice(0, MAX_JSON_STRING_LENGTH)}...[truncated ${json.length - MAX_JSON_STRING_LENGTH} chars]`;
+    }
+    return json;
+  } catch (e) {
+    return JSON.stringify({
+      serialize_error: String(e),
+      fallback: typeof value === "string" ? value.slice(0, 500) : "[unserializable]",
+    });
+  }
+}
+
 /**
  * Get or create PostHog client instance
  * Uses singleton pattern to reuse connection
@@ -42,13 +116,20 @@ export async function logEvent(
     return;
   }
 
+  const ts = new Date().toISOString();
+  const flatProps = {
+    ...properties,
+    timestamp: ts,
+  };
+
   try {
     client.capture({
       distinctId: distinctId || "zoom-webhook",
       event: eventName,
       properties: {
-        ...properties,
-        timestamp: new Date().toISOString(),
+        ...flatProps,
+        // Single searchable blob for PostHog (nested objects are easier to inspect as text)
+        properties_json: serializeForPosthog(flatProps),
       },
     });
 
@@ -61,7 +142,7 @@ export async function logEvent(
 }
 
 /**
- * Log an error event to PostHog
+ * Log an error event to PostHog (full `context` + `error` snapshots as JSON strings)
  */
 export async function logError(
   error: Error | unknown,
@@ -70,13 +151,22 @@ export async function logError(
 ) {
   const errorMessage = error instanceof Error ? error.message : String(error);
   const errorStack = error instanceof Error ? error.stack : undefined;
+  const errorName = error instanceof Error ? error.name : "NonErrorThrow";
+
+  const errorPayload =
+    error instanceof Error
+      ? { name: error.name, message: error.message, stack: error.stack }
+      : { thrown: error };
 
   await logEvent(
     "zoom_webhook_error",
     {
+      ...context,
+      error_name: errorName,
       error_message: errorMessage,
       error_stack: errorStack,
-      ...context,
+      error_json: serializeForPosthog(errorPayload, { redact: false }),
+      context_json: context ? serializeForPosthog(context) : undefined,
     },
     distinctId
   );
