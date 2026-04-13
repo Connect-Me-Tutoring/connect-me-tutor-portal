@@ -1,0 +1,53 @@
+CREATE OR REPLACE FUNCTION extensions.grant_pg_graphql_access()
+ RETURNS event_trigger
+ LANGUAGE plpgsql
+AS $function$
+DECLARE
+    func_is_graphql_resolve bool;
+BEGIN
+    func_is_graphql_resolve = (
+        SELECT n.proname = 'resolve'
+        FROM pg_event_trigger_ddl_commands() AS ev
+        LEFT JOIN pg_catalog.pg_proc AS n
+        ON ev.objid = n.oid
+    );
+
+    IF func_is_graphql_resolve
+    THEN
+        -- Update public wrapper to pass all arguments through to the pg_graphql resolve func
+        DROP FUNCTION IF EXISTS graphql_public.graphql;
+        create or replace function graphql_public.graphql(
+            "operationName" text default null,
+            query text default null,
+            variables jsonb default null,
+            extensions jsonb default null
+        )
+            returns jsonb
+            language sql
+        as $$
+            select graphql.resolve(
+                query := query,
+                variables := coalesce(variables, '{}'),
+                "operationName" := "operationName",
+                extensions := extensions
+            );
+        $$;
+
+        -- This hook executes when `graphql.resolve` is created. That is not necessarily the last
+        -- function in the extension so we need to grant permissions on existing entities AND
+        -- update default permissions to any others that are created after `graphql.resolve`
+        grant usage on schema graphql to postgres, anon, authenticated, service_role;
+        grant select on all tables in schema graphql to postgres, anon, authenticated, service_role;
+        grant execute on all functions in schema graphql to postgres, anon, authenticated, service_role;
+        grant all on all sequences in schema graphql to postgres, anon, authenticated, service_role;
+        alter default privileges in schema graphql grant all on tables to postgres, anon, authenticated, service_role;
+        alter default privileges in schema graphql grant all on functions to postgres, anon, authenticated, service_role;
+        alter default privileges in schema graphql grant all on sequences to postgres, anon, authenticated, service_role;
+
+        -- Allow postgres role to allow granting usage on graphql and graphql_public schemas to custom roles
+        grant usage on schema graphql_public to postgres with grant option;
+        grant usage on schema graphql to postgres with grant option;
+    END IF;
+
+END;
+$function$

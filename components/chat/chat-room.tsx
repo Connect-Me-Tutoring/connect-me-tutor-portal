@@ -702,3 +702,8 @@ export function ChatRoom({
     </div>
   );
 }
+
+
+
+export DATABASE_URL='postgresql://postgres.wlmuulogxfhclsqxrlnq:Ds0ctZMMXP27LS4D@aws-0-us-west-1.pooler.supabase.com:5432/postgres'   # valid host, not e.g. hostname "base"
+npm run dump:rpc
