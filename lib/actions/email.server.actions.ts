@@ -16,11 +16,18 @@ import { parseISO, subMinutes } from "date-fns";
 import StudentRescheduleNotificationEmail, {
   SessionRescheduleEmailProps,
 } from "@/components/emails/student-reschedule-notification";
+import { withRetry } from "@/lib/utils";
 
 export const fetchScheduledMessages = async () => {
   const qstash = new Client({ token: process.env.EU_CENTRAL_1_QSTASH_TOKEN });
 
-  const messages = await qstash.schedules.list();
+  const messages = await withRetry(() => qstash.schedules.list(), {
+    onRetry: (error, attempt) =>
+      console.error(
+        `fetchScheduledMessages attempt ${attempt + 1} failed:`,
+        error,
+      ),
+  });
   return messages;
 };
 
@@ -89,20 +96,31 @@ export async function updateScheduledEmailBeforeSessions(session: Session) {
  */
 export async function deleteScheduledEmailBeforeSessions(sessionId: string) {
   try {
-    const response = await fetch(
-      `${process.env.NEXT_PUBLIC_SITE_URL}/api/admin/email/before-sessions/delete-reminder`,
+    await withRetry(
+      async () => {
+        const response = await fetch(
+          `${process.env.NEXT_PUBLIC_SITE_URL}/api/admin/email/before-sessions/delete-reminder`,
+          {
+            method: "POST",
+            body: JSON.stringify({ sessionId }),
+            headers: {
+              "Content-Type": "application/json",
+            },
+          },
+        );
+
+        if (!response.ok) {
+          throw new Error("Unable to delete scheduled email");
+        }
+      },
       {
-        method: "POST",
-        body: JSON.stringify({ sessionId }),
-        headers: {
-          "Content-Type": "application/json",
-        },
+        onRetry: (error, attempt) =>
+          console.error(
+            `deleteScheduledEmailBeforeSessions attempt ${attempt + 1} failed:`,
+            error,
+          ),
       },
     );
-
-    if (!response.ok) {
-      throw new Error("Unable to delete scheduled email");
-    }
   } catch (error) {
     console.error("Unable to delete message");
     // throw error;
@@ -112,7 +130,10 @@ export async function deleteScheduledEmailBeforeSessions(sessionId: string) {
 export async function deleteMsg(messageId: string) {
   const qstash = new Client({ token: process.env.EU_CENTRAL_1_QSTASH_TOKEN });
   try {
-    await qstash.messages.delete(messageId);
+    await withRetry(() => qstash.messages.delete(messageId), {
+      onRetry: (error, attempt) =>
+        console.error(`deleteMsg attempt ${attempt + 1} failed:`, error),
+    });
   } catch (qstashError: any) {
     console.warn("Failed to delete message from QStash");
   }
@@ -133,19 +154,29 @@ export async function scheduleEmail({
 }) {
   try {
     const qstash = new Client({ token: process.env.EU_CENTRAL_1_QSTASH_TOKEN });
-    const result = await qstash.publishJSON({
-      url: `${process.env.NEXT_PUBLIC_SITE_URL}/api/admin/email/send-email-reminder`,
-      notBefore: notBefore,
-      body: {
-        to: to,
-        subject: subject,
-        body: body,
-        sessionId: sessionId,
+    const result = await withRetry(
+      () =>
+        qstash.publishJSON({
+          url: `${process.env.NEXT_PUBLIC_SITE_URL}/api/admin/email/send-email-reminder`,
+          notBefore: notBefore,
+          body: {
+            to: to,
+            subject: subject,
+            body: body,
+            sessionId: sessionId,
+          },
+          headers: {
+            authorization: `Bearer ${process.env.BEARER_TOKEN}`,
+          },
+        }),
+      {
+        onRetry: (error, attempt) =>
+          console.error(
+            `scheduleEmail attempt ${attempt + 1} failed:`,
+            error,
+          ),
       },
-      headers: {
-        authorization: `Bearer ${process.env.BEARER_TOKEN}`,
-      },
-    });
+    );
 
     if (result && result.messageId) {
     }
@@ -165,13 +196,23 @@ export async function sendStudentPairingConfirmationEmail(
   const emailHtml = await render(
     React.createElement(StudentPairingConfirmationEmail, data),
   );
-  const emailResult = await resend.emails.send({
-    from: "Connect Me Free Tutoring & Mentoring <pairings@connectmego.app>",
-    to: "ahu@connectmego.org",
-    cc: ["ahu@connectmego.org"],
-    subject: "You Have Been Matched!",
-    html: emailHtml,
-  });
+  const emailResult = await withRetry(
+    () =>
+      resend.emails.send({
+        from: "Connect Me Free Tutoring & Mentoring <pairings@connectmego.app>",
+        to: "ahu@connectmego.org",
+        cc: ["ahu@connectmego.org"],
+        subject: "You Have Been Matched!",
+        html: emailHtml,
+      }),
+    {
+      onRetry: (error, attempt) =>
+        console.error(
+          `sendStudentPairingConfirmationEmail attempt ${attempt + 1} failed:`,
+          error,
+        ),
+    },
+  );
 
   return emailResult;
 }
@@ -184,13 +225,23 @@ export async function sendPairingRequestEmail(
     React.createElement(PairingRequestNotificationEmail, data),
   );
 
-  const emailResult = await resend.emails.send({
-    from: "reminder@connectmego.app",
-    to: "ahu@connectmego.org",
-    cc: ["ahu@connectmego.org", "aaronmarsh755@gmail.com"],
-    subject: "Connect Me Pairing Request",
-    html: emailHtml,
-  });
+  const emailResult = await withRetry(
+    () =>
+      resend.emails.send({
+        from: "reminder@connectmego.app",
+        to: "ahu@connectmego.org",
+        cc: ["ahu@connectmego.org", "aaronmarsh755@gmail.com"],
+        subject: "Connect Me Pairing Request",
+        html: emailHtml,
+      }),
+    {
+      onRetry: (error, attempt) =>
+        console.error(
+          `sendPairingRequestEmail attempt ${attempt + 1} failed:`,
+          error,
+        ),
+    },
+  );
   return emailResult;
 }
 
@@ -201,13 +252,23 @@ export async function sendTutorPairingConfirmationEmail(
   const emailHtml = await render(
     React.createElement(TutorPairingConfirmationEmail, data),
   );
-  const emailResult = await resend.emails.send({
-    from: "Connect Me Free Tutoring & Mentoring <confirmation@connectmego.app>",
-    to: "ahu@connectmego.org",
-    cc: ["", "ahu@connectmego.org"],
-    subject: "Confirmed for Tutoring",
-    html: emailHtml,
-  });
+  const emailResult = await withRetry(
+    () =>
+      resend.emails.send({
+        from: "Connect Me Free Tutoring & Mentoring <confirmation@connectmego.app>",
+        to: "ahu@connectmego.org",
+        cc: ["", "ahu@connectmego.org"],
+        subject: "Confirmed for Tutoring",
+        html: emailHtml,
+      }),
+    {
+      onRetry: (error, attempt) =>
+        console.error(
+          `sendTutorPairingConfirmationEmail attempt ${attempt + 1} failed:`,
+          error,
+        ),
+    },
+  );
 
   return emailResult;
 }
@@ -220,13 +281,23 @@ export async function sendSessionRescheduleEmail(
     React.createElement(StudentRescheduleNotificationEmail, data),
   );
 
-  const emailResult = await resend.emails.send({
-    from: "Connect Me Free Tutoring & Mentoring <notifications@connectmego.app>",
-    to: emailTo,
-    cc: ["ahu@connectmego.org"], // keeping consistent with other email methods for visibility
-    subject: "Your Tutoring Session Has Been Rescheduled",
-    html: emailHtml,
-  });
+  const emailResult = await withRetry(
+    () =>
+      resend.emails.send({
+        from: "Connect Me Free Tutoring & Mentoring <notifications@connectmego.app>",
+        to: emailTo,
+        cc: ["ahu@connectmego.org"], // keeping consistent with other email methods for visibility
+        subject: "Your Tutoring Session Has Been Rescheduled",
+        html: emailHtml,
+      }),
+    {
+      onRetry: (error, attempt) =>
+        console.error(
+          `sendSessionRescheduleEmail attempt ${attempt + 1} failed:`,
+          error,
+        ),
+    },
+  );
 
   return emailResult;
 }
@@ -239,12 +310,19 @@ export const sendEmail = async (
 ) => {
   const resend = new Resend(process.env.RESEND_API_KEY);
   try {
-    await resend.emails.send({
-      from: from,
-      to: to,
-      subject: subject,
-      html: body,
-    });
+    await withRetry(
+      () =>
+        resend.emails.send({
+          from: from,
+          to: to,
+          subject: subject,
+          html: body,
+        }),
+      {
+        onRetry: (error, attempt) =>
+          console.error(`sendEmail attempt ${attempt + 1} failed:`, error),
+      },
+    );
   } catch (error) {
     console.error("Unable to send email", error);
     throw error;
@@ -259,12 +337,19 @@ export const sendEmailTest = async (
 ) => {
   const resend = new Resend(process.env.RESEND_API_KEY);
   try {
-    await resend.emails.send({
-      from: from,
-      to: ["amansreejesh9@gmail.com", "ahu@connectmego.org"],
-      subject: subject,
-      html: body,
-    });
+    await withRetry(
+      () =>
+        resend.emails.send({
+          from: from,
+          to: ["amansreejesh9@gmail.com", "ahu@connectmego.org"],
+          subject: subject,
+          html: body,
+        }),
+      {
+        onRetry: (error, attempt) =>
+          console.error(`sendEmailTest attempt ${attempt + 1} failed:`, error),
+      },
+    );
   } catch (error) {
     console.error("Unable to send email", error);
     throw error;
