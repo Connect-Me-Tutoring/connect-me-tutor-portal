@@ -5,11 +5,9 @@ import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
-import {
-  logoutUser,
-} from "@/lib/actions/user.actions";
+import { logoutUser } from "@/lib/actions/user.actions";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useProfile } from "@/contexts/profileContext";
+import { useProfile } from "@/lib/contexts/profileContext";
 import {
   Search,
   Link as LinkIcon,
@@ -83,7 +81,7 @@ export default function DashboardLayout({
   userProfilesPromise: Promise<Partial<Profile>[]>;
 }) {
   // const [role, setRole] = useState<string | null>(null);
-  const userProfiles: Partial<Profile>[] = use(userProfilesPromise) || []
+  const userProfiles: Partial<Profile>[] = use(userProfilesPromise) || [];
 
   const [loading, setLoading] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -288,11 +286,9 @@ export default function DashboardLayout({
   const handleSwitchProfile = async (newProfileId: string) => {
     try {
       if (profile) {
-        await Promise.all([
-          switchProfile(profile?.userId, newProfileId),
-        ]);
-        router.refresh()
-        toast.success("Switched Profile")
+        await Promise.all([switchProfile(profile?.userId, newProfileId)]);
+        router.refresh();
+        toast.success("Switched Profile");
       }
     } catch (error) {
       toast.error("Unable to switch profiles");
@@ -309,9 +305,8 @@ export default function DashboardLayout({
     );
   }
 
-
   if (!profile) {
-    router.push("/")
+    router.push("/");
     return null;
   }
 
@@ -325,7 +320,7 @@ export default function DashboardLayout({
         <aside
           className={cn(
             "hidden sm:flex flex-col h-full bg-card z-30 transition-all duration-300 ease-in-out",
-            isOpen ? "w-56" : "w-16"
+            isOpen ? "w-56" : "w-16",
           )}
         >
           <div className="flex flex-col h-full relative">
@@ -392,7 +387,7 @@ export default function DashboardLayout({
                           variant="ghost"
                           className={cn(
                             "w-full justify-start",
-                            !isOpen && "justify-center px-2"
+                            !isOpen && "justify-center px-2",
                           )}
                         >
                           <Link href="/dashboard/">
@@ -423,7 +418,7 @@ export default function DashboardLayout({
                               pathname === item.href
                                 ? "bg-blue-400/10 text-blue-500"
                                 : "text-primary-dark hover:bg-muted hover:text-foreground",
-                              !isOpen && "justify-center px-2"
+                              !isOpen && "justify-center px-2",
                             )}
                           >
                             <Link href={item.href}>
@@ -462,7 +457,7 @@ export default function DashboardLayout({
                               pathname === item.href
                                 ? "bg-blue-400/10 text-blue-500"
                                 : "text-primary-dark hover:bg-muted hover:text-foreground",
-                              !isOpen && "justify-center px-2"
+                              !isOpen && "justify-center px-2",
                             )}
                           >
                             <Link href={item.href}>
@@ -497,7 +492,7 @@ export default function DashboardLayout({
                               pathname === item.href
                                 ? "bg-blue-400/10 text-blue-500"
                                 : "text-primary-dark hover:bg-muted hover:text-foreground",
-                              !isOpen && "justify-center px-2"
+                              !isOpen && "justify-center px-2",
                             )}
                           >
                             <Link href={item.href}>
@@ -532,7 +527,7 @@ export default function DashboardLayout({
                               pathname === item.href
                                 ? "bg-blue-400/10 text-blue-500"
                                 : "text-primary-dark hover:bg-muted hover:text-foreground",
-                              !isOpen && "justify-center px-2"
+                              !isOpen && "justify-center px-2",
                             )}
                           >
                             <Link href={item.href}>
@@ -565,7 +560,7 @@ export default function DashboardLayout({
                       variant="ghost"
                       className={cn(
                         "w-full justify-start",
-                        !isOpen && "justify-center px-2"
+                        !isOpen && "justify-center px-2",
                       )}
                     >
                       <Link href="/dashboard/settings">
@@ -588,7 +583,7 @@ export default function DashboardLayout({
                     variant="ghost"
                     className={cn(
                       "w-full justify-start",
-                      !isOpen && "justify-center px-2"
+                      !isOpen && "justify-center px-2",
                     )}
                   >
                     <a
@@ -597,7 +592,9 @@ export default function DashboardLayout({
                       rel="noopener noreferrer"
                     >
                       <HelpCircleIcon className="h-5 w-5" />
-                      {isOpen && <span className="ml-3">Tutor Portal Manual</span>}
+                      {isOpen && (
+                        <span className="ml-3">Tutor Portal Manual</span>
+                      )}
                     </a>
                   </Button>
                 </TooltipTrigger>
@@ -613,7 +610,7 @@ export default function DashboardLayout({
                     variant="ghost"
                     className={cn(
                       "w-full justify-start",
-                      !isOpen && "justify-center px-2"
+                      !isOpen && "justify-center px-2",
                     )}
                     onClick={handleLogout}
                   >
@@ -630,44 +627,44 @@ export default function DashboardLayout({
             </div>
           </div>
         </aside>
-       {mobileOpen && (
-  <div className="fixed inset-0 z-50 flex sm:hidden">
-    <div
-      className="fixed inset-0 bg-black/50"
-      onClick={() => setMobileOpen(false)}
-    />
+        {mobileOpen && (
+          <div className="fixed inset-0 z-50 flex sm:hidden">
+            <div
+              className="fixed inset-0 bg-black/50"
+              onClick={() => setMobileOpen(false)}
+            />
 
-    <div className="relative w-64 bg-card h-full p-6 z-50">
-      <Button
-        onClick={() => setMobileOpen(false)}
-        variant="ghost"
-        size="icon"
-        className="mb-4"
-      >
-        <ChevronLeft className="h-5 w-5" />
-      </Button>
+            <div className="relative w-64 bg-card h-full p-6 z-50">
+              <Button
+                onClick={() => setMobileOpen(false)}
+                variant="ghost"
+                size="icon"
+                className="mb-4"
+              >
+                <ChevronLeft className="h-5 w-5" />
+              </Button>
 
-      <nav className="space-y-2">
-        {(profile.role === "Student"
-          ? studentSidebarItems
-          : profile.role === "Tutor"
-          ? tutorSidebarItems
-          : adminSidebarItems
-        ).map((item) => (
-          <Link
-            key={item.href}
-            href={item.href}
-            onClick={() => setMobileOpen(false)}
-            className="flex items-center gap-3 p-2 rounded:bg-muted"
-          >
-            {item.icon}
-            <span>{item.title}</span>
-          </Link>
-        ))}
-      </nav>
-    </div>
-  </div>
-)}
+              <nav className="space-y-2">
+                {(profile.role === "Student"
+                  ? studentSidebarItems
+                  : profile.role === "Tutor"
+                    ? tutorSidebarItems
+                    : adminSidebarItems
+                ).map((item) => (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    onClick={() => setMobileOpen(false)}
+                    className="flex items-center gap-3 p-2 rounded:bg-muted"
+                  >
+                    {item.icon}
+                    <span>{item.title}</span>
+                  </Link>
+                ))}
+              </nav>
+            </div>
+          </div>
+        )}
       </TooltipProvider>
 
       <div className="flex-1 overflow-auto">
@@ -700,7 +697,7 @@ export default function DashboardLayout({
                   </SelectTrigger>
                   <SelectContent>
                     {userProfiles.map((profile) => (
-                      <SelectItem key = {profile.id} value={profile.id || ""}>
+                      <SelectItem key={profile.id} value={profile.id || ""}>
                         {profile.firstName} {profile.lastName}
                       </SelectItem>
                     ))}

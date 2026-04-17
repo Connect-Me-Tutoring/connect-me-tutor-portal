@@ -23,21 +23,23 @@ import {
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import { Profile } from "@/types";
 import toast, { Toaster } from "react-hot-toast";
-import { switchProfile, getProfileUncached } from "@/lib/actions/profile.server.actions";
-import { useProfile } from "@/contexts/profileContext";
+import {
+  switchProfile,
+  getProfileUncached,
+} from "@/lib/actions/profile.server.actions";
+import { useProfile } from "@/lib/contexts/profileContext";
 import { getUserProfiles } from "@/lib/actions/profile.server.actions";
 import { NetworkAccessProfileListInstance } from "twilio/lib/rest/supersim/v1/networkAccessProfile";
 
 interface AccountFormType {
-  firstName: string,
-  lastName: string,
-  phoneNumber: string,
-  age: string,
-  email: string,
-  subjectsOfInterest: string,
-  languagesSpoken: string,
+  firstName: string;
+  lastName: string;
+  phoneNumber: string;
+  age: string;
+  email: string;
+  subjectsOfInterest: string;
+  languagesSpoken: string;
 }
-
 
 export default function SettingsPage({
   profilePromise,
@@ -51,7 +53,7 @@ export default function SettingsPage({
   const { profile, setProfile } = useProfile();
   // changed to initialize from context so current profile is available at render time
   const [lastActiveProfileId, setLastActiveProfileId] = useState<string>(
-    profile?.id || ""
+    profile?.id || "",
   );
   const [userProfiles, setUserProfiles] = useState<Partial<Profile>[]>([]);
   const [isSavingProfile, setIsSavingProfile] = useState(false);
@@ -75,7 +77,7 @@ export default function SettingsPage({
   }));
   // track account status stae for students so they can toggle their own active inactive status in settings without admin help
   const [accountStatus, setAccountStatus] = useState<Profile["status"]>(
-    profile?.status === "Inactive" ? "Inactive" : "Active"
+    profile?.status === "Inactive" ? "Inactive" : "Active",
   );
   const [sessionReminders, setSessionReminders] = useState(false);
   const [sessionEmailNotifications, setSessionEmailNotifications] =
@@ -99,7 +101,7 @@ export default function SettingsPage({
       const userProfiles = await fetchUserInfo();
       if (userProfiles) setUserProfiles(userProfiles);
     };
-    fetchData()
+    fetchData();
   }, []);
 
   useEffect(() => {
@@ -113,7 +115,10 @@ export default function SettingsPage({
       firstName: profile.firstName || "",
       lastName: profile.lastName || "",
       phoneNumber: profile.phoneNumber || "",
-      age: profile.age !== undefined && profile.age !== null ? String(profile.age) : "",
+      age:
+        profile.age !== undefined && profile.age !== null
+          ? String(profile.age)
+          : "",
       email: profile.email || "",
       subjectsOfInterest: Array.isArray((profile as any).subjects_of_interest)
         ? (profile as any).subjects_of_interest.join(", ")
@@ -175,7 +180,7 @@ export default function SettingsPage({
         if (error) throw error;
 
         setSessionEmailNotifications(
-          data.email_tutoring_session_notifications_enabled
+          data.email_tutoring_session_notifications_enabled,
         );
         setSessionTextNotifications(false);
         setWebinarEmailNotifications(data.email_webinar_notifications_enabled);
@@ -183,7 +188,7 @@ export default function SettingsPage({
 
         setSessionReminders(
           data.email_tutoring_session_notifications_enabled ||
-            data.text_tutoring_session_notifications_enabled
+            data.text_tutoring_session_notifications_enabled,
         );
 
         setWebinarReminders(false);
@@ -272,7 +277,7 @@ export default function SettingsPage({
           getProfileWithProfileId(lastActiveProfileId),
         ]);
         setProfile(newProfileData);
-        router.refresh()
+        router.refresh();
       }
       toast.success("Switched Profile");
     } catch (error) {
@@ -454,7 +459,10 @@ export default function SettingsPage({
               {/* students can toggle their own active inactive status here without needing admin intervention to deactivate account */}
               {profile?.role === "Student" && (
                 <div>
-                  <Label htmlFor="account-status" className="text-sm font-medium">
+                  <Label
+                    htmlFor="account-status"
+                    className="text-sm font-medium"
+                  >
                     Account Status
                   </Label>
                   <Select

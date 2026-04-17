@@ -21,11 +21,18 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Trash } from "lucide-react";
-import { addDays, isAfter, parseISO, differenceInDays, isToday, isTomorrow } from "date-fns";
+import {
+  addDays,
+  isAfter,
+  parseISO,
+  differenceInDays,
+  isToday,
+  isTomorrow,
+} from "date-fns";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
 import CancellationForm from "./CancellationForm";
-import { useDashboardContext } from "@/contexts/dashboardContext";
+import { useDashboardContext } from "@/lib/contexts/dashboardContext";
 
 interface SessionExitFormProps {
   currSession: Session;
@@ -67,13 +74,16 @@ const sessionExitFormDeadline = (currSession: Session) => {
     urgencyClass = "bg-red-500 text-white hover:bg-red-600 border-red-500";
     deadlineText = "SEF Due TODAY by 11:59pm EST";
   } else if (isTomorrow(deadlineDate) || daysUntilDeadline === 1) {
-    urgencyClass = "bg-orange-500 text-white hover:bg-orange-600 border-orange-500";
+    urgencyClass =
+      "bg-orange-500 text-white hover:bg-orange-600 border-orange-500";
     deadlineText = `SEF Due Tomorrow`;
   } else if (daysUntilDeadline <= 2) {
-    urgencyClass = "bg-yellow-500 text-white hover:bg-yellow-600 border-yellow-500";
+    urgencyClass =
+      "bg-yellow-500 text-white hover:bg-yellow-600 border-yellow-500";
     deadlineText = `SEF Due in ${daysUntilDeadline} days`;
   } else {
-    urgencyClass = "bg-gray-100 text-gray-700 hover:bg-gray-200 border-gray-200";
+    urgencyClass =
+      "bg-gray-100 text-gray-700 hover:bg-gray-200 border-gray-200";
     deadlineText = `SEF Due ${calculateDeadline(date)}`;
   }
 

@@ -12,7 +12,7 @@ import { Meeting, Profile } from "@/types";
 import { endOfWeek, startOfWeek } from "date-fns";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
-import { DashboardContextProvider } from "@/contexts/dashboardContext";
+import { DashboardContextProvider } from "@/lib/contexts/dashboardContext";
 import { getProfile } from "@/lib/actions/profile.server.actions";
 
 async function TutorDashboardPage({
