@@ -154,30 +154,19 @@ export async function scheduleEmail({
 }) {
   try {
     const qstash = new Client({ token: process.env.EU_CENTRAL_1_QSTASH_TOKEN });
-    const result = await withRetry(
-      () =>
-        qstash.publishJSON({
-          url: `${process.env.NEXT_PUBLIC_SITE_URL}/api/admin/email/send-email-reminder`,
-          notBefore: notBefore,
-          body: {
-            to: to,
-            subject: subject,
-            body: body,
-            sessionId: sessionId,
-          },
-          headers: {
-            authorization: `Bearer ${process.env.BEARER_TOKEN}`,
-          },
-        }),
-      {
-        onRetry: (error, attempt) =>
-          console.error(
-            `scheduleEmail attempt ${attempt + 1} failed:`,
-            error,
-          ),
+    const result = await qstash.publishJSON({
+      url: `${process.env.NEXT_PUBLIC_SITE_URL}/api/admin/email/send-email-reminder`,
+      notBefore: notBefore,
+      body: {
+        to: to,
+        subject: subject,
+        body: body,
+        sessionId: sessionId,
       },
-    );
-
+      headers: {
+        authorization: `Bearer ${process.env.BEARER_TOKEN}`,
+      },
+    });
     if (result && result.messageId) {
     }
     return result;
