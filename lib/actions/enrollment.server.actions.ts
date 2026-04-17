@@ -671,6 +671,7 @@ async function sendEmailHelper(
     await resend.emails.send({
       from: "Connect Me Free Tutoring & mentoring <reminder@connectmego.app>",
       to: tutor.email,
+      cc: [process.env.OPERATIONS_EMAIL!],
       subject: "Inactivating Connect Me Enrollment",
       html: msgTemplate(params),
     });

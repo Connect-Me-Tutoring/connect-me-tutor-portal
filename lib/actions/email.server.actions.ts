@@ -200,8 +200,8 @@ export async function sendStudentPairingConfirmationEmail(
     () =>
       resend.emails.send({
         from: "Connect Me Free Tutoring & Mentoring <pairings@connectmego.app>",
-        to: "ahu@connectmego.org",
-        cc: ["ahu@connectmego.org"],
+        to: process.env.DEV_EMAIL!,
+        cc: [process.env.DEV_EMAIL!, process.env.OPERATIONS_EMAIL!],
         subject: "You Have Been Matched!",
         html: emailHtml,
       }),
@@ -229,8 +229,12 @@ export async function sendPairingRequestEmail(
     () =>
       resend.emails.send({
         from: "reminder@connectmego.app",
-        to: "ahu@connectmego.org",
-        cc: ["ahu@connectmego.org", "aaronmarsh755@gmail.com"],
+        to: process.env.DEV_EMAIL!,
+        cc: [
+          process.env.DEV_EMAIL!,
+          "aaronmarsh755@gmail.com",
+          process.env.OPERATIONS_EMAIL!,
+        ],
         subject: "Connect Me Pairing Request",
         html: emailHtml,
       }),
@@ -256,8 +260,8 @@ export async function sendTutorPairingConfirmationEmail(
     () =>
       resend.emails.send({
         from: "Connect Me Free Tutoring & Mentoring <confirmation@connectmego.app>",
-        to: "ahu@connectmego.org",
-        cc: ["", "ahu@connectmego.org"],
+        to: process.env.DEV_EMAIL!,
+        cc: ["", process.env.DEV_EMAIL!, process.env.OPERATIONS_EMAIL!],
         subject: "Confirmed for Tutoring",
         html: emailHtml,
       }),
@@ -286,7 +290,7 @@ export async function sendSessionRescheduleEmail(
       resend.emails.send({
         from: "Connect Me Free Tutoring & Mentoring <notifications@connectmego.app>",
         to: emailTo,
-        cc: ["ahu@connectmego.org"], // keeping consistent with other email methods for visibility
+        cc: [process.env.DEV_EMAIL!, process.env.OPERATIONS_EMAIL!], // keeping consistent with other email methods for visibility
         subject: "Your Tutoring Session Has Been Rescheduled",
         html: emailHtml,
       }),
@@ -315,6 +319,7 @@ export const sendEmail = async (
         resend.emails.send({
           from: from,
           to: to,
+          cc: [process.env.OPERATIONS_EMAIL!],
           subject: subject,
           html: body,
         }),
@@ -341,7 +346,8 @@ export const sendEmailTest = async (
       () =>
         resend.emails.send({
           from: from,
-          to: ["amansreejesh9@gmail.com", "ahu@connectmego.org"],
+          to: ["amansreejesh9@gmail.com", process.env.DEV_EMAIL!],
+          cc: [process.env.OPERATIONS_EMAIL!],
           subject: subject,
           html: body,
         }),
