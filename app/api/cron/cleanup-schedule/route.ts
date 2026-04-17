@@ -33,14 +33,14 @@ export async function GET(req: NextRequest) {
   const cancelResult = await cancelUnsubmittedSEFCron();
   results.cancelUnsubmittedSEF = cancelResult;
 
-  // Task 2: Warn inactive enrollments (3+ weeks missing SEF)
+  // Task 2: Warn inactive enrollments (5+ weeks missing SEF)
   const warnResult = await warnInactiveEnrollments();
   results.warnInactiveEnrollments = {
     warned: warnResult.length,
     error: undefined,
   };
 
-  // Task 3: Delete inactive enrollments (4+ weeks missing SEF)
+  // Task 3: Delete inactive enrollments (6+ weeks missing SEF)
   const deleteResult = await deleteInactiveEnrollments();
   results.deleteInactiveEnrollments = deleteResult;
 

@@ -345,22 +345,6 @@ const TutorList = ({ initialTutors }: any) => {
     }
   };
 
-  const handleReactivateTutor = async () => {
-    if (selectedTutorId) {
-      try {
-        const data = await reactivateUser(selectedTutorId); // Call deactivateUser function with studentId
-        if (data) {
-          toast.success("Tutor reactivated successfully");
-          setIsReactivateModalOpen(false);
-          setSelectedTutorId(null);
-          getTutorData();
-        }
-      } catch (error) {
-        toast.error("Failed to deactivate student");
-      }
-    }
-  };
-
   return (
     <>
       {" "}
