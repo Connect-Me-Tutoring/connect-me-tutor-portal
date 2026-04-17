@@ -15,3 +15,13 @@ export interface PairingRequestNotificationEmailProps {
   student: Profile;
   isPreview?: boolean;
 }
+
+/** Early check-in after the first one or two tutoring sessions (tutor vs parent copy). */
+export interface EarlySessionCheckInEmailProps {
+  recipientRole: "tutor" | "parent";
+  tutor: Profile;
+  student: Profile;
+  portalUrl?: string;
+  guidebookUrl?: string;
+  isPreview?: boolean;
+}

@@ -46,7 +46,7 @@ import {
   TableCellsMerge,
 } from "lucide-react";
 import { format, parseISO, isAfter } from "date-fns";
-import { useDashboardContext } from "@/contexts/dashboardContext";
+import { useDashboardContext } from "@/lib/contexts/dashboardContext";
 
 interface SessionsTableProps {
   paginatedSessions: Session[];
@@ -72,7 +72,7 @@ const CompletedSessionsTable = ({
   handleRowsPerPageChange,
 }: any) => {
   const [isMeetingNotesOpen, setIsMeetingNotesOpen] = useState(false);
-  const SC = useDashboardContext()
+  const SC = useDashboardContext();
 
   return (
     <>

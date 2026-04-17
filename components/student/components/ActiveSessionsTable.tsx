@@ -55,7 +55,7 @@ import { AlertDialogTrigger } from "@radix-ui/react-alert-dialog";
 // import RescheduleForm from "./RescheduleDialog";
 // import CancellationForm from "./CancellationForm";
 import { boolean } from "zod";
-import { useDashboardContext } from "@/contexts/dashboardContext";
+import { useDashboardContext } from "@/lib/contexts/dashboardContext";
 
 interface SessionsTableProps {
   paginatedSessions: Session[];

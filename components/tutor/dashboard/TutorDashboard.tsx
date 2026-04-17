@@ -9,10 +9,13 @@ import { undoCancelSession } from "@/lib/actions/tutor.actions";
 import { rescheduleSession } from "@/lib/actions/session.server.actions";
 import { Session, Profile, Meeting } from "@/types";
 import toast from "react-hot-toast";
-import { useDashboardContext } from "@/contexts/dashboardContext";
+import { useDashboardContext } from "@/lib/contexts/dashboardContext";
 import { undoSessionExitForm } from "@/lib/actions/tutor.actions";
 import { getSessionTimePassed } from "@/lib/actions/session.actions";
-import { sendSessionRescheduleEmail, updateScheduledEmailBeforeSessions } from "@/lib/actions/email.server.actions";
+import {
+  sendSessionRescheduleEmail,
+  updateScheduledEmailBeforeSessions,
+} from "@/lib/actions/email.server.actions";
 import { StudentAnnouncementsRoomId } from "@/constants/chat";
 import { format } from "date-fns";
 

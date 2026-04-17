@@ -344,9 +344,16 @@ const StudentList = ({ initialStudents }: any) =>
         }
       } catch (error) {
         const err = error as Error;
-        console.error("Error adding student:", error);
-        toast.error("Failed to Add Student.");
-        toast.error(`Failed to Add Student: Please Try Again`);
+        console.error("Error adding student:", err.message);
+        
+        // Provide more descriptive error messages
+        if (err.message.includes("Email")) {
+          toast.error("Failed to add student. Please check the email address and ensure it is valid and unique.");
+        } else if (err.message.includes("required")) {
+          toast.error(`Failed to add student. Required field error: ${err.message}`);
+        } else {
+          toast.error(`Failed to add student: ${err.message || "Please try again"}`);
+        }
       } finally {
         setAddingStudent(false);
       }
@@ -404,13 +411,21 @@ const StudentList = ({ initialStudents }: any) =>
             subjects_of_interest: [],
             status: "Active",
             tutorIds: [],
+            studentNumber: "",
           });
         }
       } catch (error) {
         const err = error as Error;
-        console.error("Error adding student:", error);
-        toast.error("Failed to Add Student.");
-        toast.error(`Failed to Add Student: Please Try Again`);
+        console.error("Error adding student:", err.message);
+        
+        // Provide more descriptive error messages
+        if (err.message.includes("Email")) {
+          toast.error("Failed to add student. Please check the email address and ensure it is valid and unique.");
+        } else if (err.message.includes("required")) {
+          toast.error(`Failed to add student. Required field error: ${err.message}`);
+        } else {
+          toast.error(`Failed to add student: ${err.message || "Please try again"}`);
+        }
       } finally {
         setAddingStudent(false);
       }

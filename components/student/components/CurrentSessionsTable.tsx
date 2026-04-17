@@ -61,7 +61,7 @@ import {
 } from "lucide-react";
 import { format, parseISO, isAfter } from "date-fns";
 import { AlertDialogTrigger } from "@radix-ui/react-alert-dialog";
-import { useDashboardContext } from "@/contexts/dashboardContext";
+import { useDashboardContext } from "@/lib/contexts/dashboardContext";
 // import SessionExitForm from "./SessionExitForm";
 // import RescheduleForm from "./RescheduleDialog";
 // import CancellationForm from "./CancellationForm";

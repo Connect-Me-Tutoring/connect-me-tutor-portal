@@ -70,7 +70,7 @@ import SessionExitForm from "./SessionExitForm";
 import RescheduleForm from "./RescheduleDialog";
 import CancellationForm from "./CancellationForm";
 import { useRouter } from "next/navigation";
-import { useDashboardContext } from "@/contexts/dashboardContext";
+import { useDashboardContext } from "@/lib/contexts/dashboardContext";
 
 const CurrentSessionsTable = ({
   meetings,

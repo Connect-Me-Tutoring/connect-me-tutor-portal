@@ -1,4 +1,5 @@
 import { useState } from "react";
+import toast from "react-hot-toast";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -122,7 +123,62 @@ const AddStudentForm = ({
     return "th";
   };
 
+  // validate required basic form fields
+  const validateBasicForm = (): string | null => {
+    const missingFields: string[] = [];
+
+    if (!newStudent.firstName || newStudent.firstName.trim() === "") {
+      missingFields.push("First Name");
+    }
+    if (!newStudent.lastName || newStudent.lastName.trim() === "") {
+      missingFields.push("Last Name");
+    }
+    if (!newStudent.age || newStudent.age.toString().trim() === "") {
+      missingFields.push("Age");
+    }
+    if (!newStudent.grade || newStudent.grade.trim() === "") {
+      missingFields.push("Grade");
+    }
+    if (!newStudent.gender || newStudent.gender.trim() === "") {
+      missingFields.push("Gender");
+    }
+    if (!newStudent.email || newStudent.email.trim() === "") {
+      missingFields.push("Student Email");
+    }
+    if (!newStudent.startDate || newStudent.startDate.trim() === "") {
+      missingFields.push("Start Date");
+    }
+    if (!newStudent.parentName || newStudent.parentName.trim() === "") {
+      missingFields.push("Parent/Guardian Name");
+    }
+    if (!newStudent.parentPhone || newStudent.parentPhone.trim() === "") {
+      missingFields.push("Parent Phone Number");
+    }
+    if (!newStudent.parentEmail || newStudent.parentEmail.trim() === "") {
+      missingFields.push("Parent Email Address");
+    }
+    if (!newStudent.timeZone || newStudent.timeZone.trim() === "") {
+      missingFields.push("Time Zone");
+    }
+    if (!newStudent.studentNumber || newStudent.studentNumber.trim() === "") {
+      missingFields.push("Student Number");
+    }
+
+    if (missingFields.length > 0) {
+      return `Cannot add student. All Basic Form fields are required. Missing fields: ${missingFields.join(", ")}`;
+    }
+
+    return null;
+  };
+
   const handleEnhancedAddStudent = () => {
+    // validate basic form fields
+    const validationError = validateBasicForm();
+    if (validationError) {
+      toast.error(validationError);
+      return;
+    }
+
     const studentWithExtendedFields = {
       ...newStudent,
       availability,
@@ -191,7 +247,7 @@ const AddStudentForm = ({
               <div className="space-y-4">
                 <div className="grid grid-cols-4 items-center gap-4">
                   <Label htmlFor="studentNumber" className=" text-right">
-                    Student #
+                    Student # 
                   </Label>
                   <Input
                     id="studentNumber"
@@ -411,7 +467,7 @@ const AddStudentForm = ({
                 {/* Personal Information Section */}
                 <div className="space-y-4 pt-2 border-t">
                   <h3 className="text-sm font-semibold text-gray-800 mb-3">
-                    Personal Information
+                    Personal Information (Required)
                   </h3>
 
                   <div className="grid grid-cols-2 gap-4">
@@ -561,7 +617,7 @@ const AddStudentForm = ({
                 {/* Parent Information Section */}
                 <div className="space-y-4 pt-2 border-t">
                   <h3 className="text-sm font-semibold text-gray-800 mb-3">
-                    Parent/Guardian Information
+                    Parent/Guardian Information (Required)
                   </h3>
 
                   <div className="space-y-2">

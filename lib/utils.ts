@@ -475,3 +475,41 @@ export const isValidUUID = (uuid: string): boolean => {
     /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
   return uuidRegex.test(uuid);
 };
+
+export interface RetryOptions {
+  retries?: number;
+  baseDelayMs?: number;
+  maxDelayMs?: number;
+  isRetryable?: (error: unknown, attempt: number) => boolean;
+  onRetry?: (error: unknown, attempt: number) => void;
+}
+
+export async function withRetry<T>(
+  fn: () => Promise<T>,
+  opts: RetryOptions = {},
+): Promise<T> {
+  const {
+    retries = 4,
+    baseDelayMs = 200,
+    maxDelayMs = 2000,
+    isRetryable = () => true,
+    onRetry,
+  } = opts;
+
+  let lastError: unknown;
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    try {
+      return await fn();
+    } catch (error) {
+      lastError = error;
+      if (attempt === retries || !isRetryable(error, attempt)) {
+        throw error;
+      }
+      onRetry?.(error, attempt);
+      const exp = Math.min(maxDelayMs, baseDelayMs * 2 ** attempt);
+      const jittered = exp * (0.5 + Math.random() * 0.5);
+      await new Promise((r) => setTimeout(r, jittered));
+    }
+  }
+  throw lastError;
+}

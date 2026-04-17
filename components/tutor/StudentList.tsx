@@ -34,7 +34,7 @@ import { Profile } from "@/types";
 import { StudentAnnouncementsRoomId } from "@/constants/chat";
 import { UserAvailabilities } from "../ui/UserAvailabilities";
 import DeletePairingForm from "./components/DeletePairingForm";
-import { useProfile } from "@/contexts/profileContext";
+import { useProfile } from "@/lib/contexts/profileContext";
 
 const StudentList = ({ initialStudents }: any) => {
   const supabase = createClientComponentClient();

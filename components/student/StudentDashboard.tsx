@@ -32,9 +32,9 @@ import {
 import { SelectSeparator } from "@radix-ui/react-select";
 import { Description } from "@radix-ui/react-dialog";
 import { getStudentSessions } from "@/lib/actions/student.actions";
-import { useProfile } from "@/contexts/profileContext";
+import { useProfile } from "@/lib/contexts/profileContext";
 import SkeletonTable, { Skeleton } from "../ui/skeleton";
-import { useDashboardContext } from "@/contexts/dashboardContext";
+import { useDashboardContext } from "@/lib/contexts/dashboardContext";
 
 const StudentDashboard = () => {
   const SC = useDashboardContext();

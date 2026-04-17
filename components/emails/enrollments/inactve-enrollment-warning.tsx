@@ -1,5 +1,5 @@
 import { Enrollment, Profile, Session } from "@/types";
-const RescheduleConfirmationEmail = (params: {
+const InactiveEnrollmentWarning = (params: {
   tutor: Profile;
   student: Profile;
   enrollment: Enrollment;
@@ -13,4 +13,4 @@ const RescheduleConfirmationEmail = (params: {
   `;
 };
 
-export default RescheduleConfirmationEmail;
+export default InactiveEnrollmentWarning;

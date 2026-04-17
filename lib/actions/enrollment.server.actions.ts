@@ -14,7 +14,8 @@ import { addStandaloneSession } from "./session.server.actions";
 import { getMeeting } from "./meeting.server.actions";
 import { fromZonedTime } from "date-fns-tz";
 import { Resend } from "resend";
-import RescheduleConfirmationEmail from "@/components/emails/inactve-enrollment-warning";
+import InactiveEnrollmentWarning from "@/components/emails/enrollments/inactve-enrollment-warning";
+import InactiveEnrollmentDeletion from "@/components/emails/enrollments/inactive-enrollment-deletion";
 
 /* ENROLLMENTS */
 export async function getAllActiveEnrollmentsServer(
@@ -538,19 +539,23 @@ export const sessionTimeFromEnrollment = (
 };
 
 export async function deleteInactiveEnrollments() {
-  const supabase = await createAdminClient();
-  const fourWeeksAgo = subWeeks(new Date(), 4);
+  const sixWeeksAgo = subWeeks(new Date(), 6);
 
-  const targetEnrollments = await getEnrollmentsWithMissingSEF(fourWeeksAgo, 4);
+  const enrollments = await inactiveEnrollmentsHelper({
+    deadline: sixWeeksAgo,
+    weeksMissing: 6,
+    emailFn: sendDeleteEnrollmentEmail,
+  });
 
-  if (!targetEnrollments || targetEnrollments.length === 0) {
+  if (enrollments.length === 0) {
     return { success: true, error: undefined, deleted: 0 };
   }
 
-  const enrollmentIds = targetEnrollments.map((e) => e.id);
+  const enrollmentIds = enrollments.map((e) => e.id);
+  const supabase = await createAdminClient();
 
   const { error: deleteError } = await supabase
-    .from("Enrollments")
+    .from(Table.Enrollments)
     .delete()
     .in("id", enrollmentIds);
 
@@ -562,11 +567,28 @@ export async function deleteInactiveEnrollments() {
 }
 
 export async function warnInactiveEnrollments() {
+  const fiveWeeksAgo = subWeeks(new Date(), 5);
+  return await inactiveEnrollmentsHelper({
+    deadline: fiveWeeksAgo,
+    weeksMissing: 5,
+    emailFn: sendInactiveEnrollmentWarning,
+  });
+}
+
+async function inactiveEnrollmentsHelper(params: {
+  deadline: Date;
+  weeksMissing: number;
+  emailFn: (params: {
+    tutor: Profile;
+    student: Profile;
+    enrollment: Enrollment;
+  }) => Promise<void>;
+}) {
   const supabase = await createAdminClient();
-  const threeWeeksAgo = subWeeks(new Date(), 3);
+  const { deadline, weeksMissing, emailFn } = params;
   const targetEnrollments = await getEnrollmentsWithMissingSEF(
-    threeWeeksAgo,
-    3,
+    deadline,
+    weeksMissing,
   );
 
   if (!targetEnrollments || targetEnrollments.length === 0) {
@@ -605,14 +627,13 @@ export async function warnInactiveEnrollments() {
     enrollments
       .filter((enrollment) => enrollment.tutor && enrollment.student)
       .map((enrollment) =>
-        sendInactiveEnrollmentWarning({
+        emailFn({
           tutor: enrollment.tutor!,
           student: enrollment.student!,
           enrollment: enrollment,
         }),
       ),
   );
-
   return enrollments;
 }
 
@@ -621,14 +642,38 @@ export async function sendInactiveEnrollmentWarning(params: {
   student: Profile;
   enrollment: Enrollment;
 }) {
+  await sendEmailHelper(params, InactiveEnrollmentWarning);
+}
+
+export async function sendDeleteEnrollmentEmail(params: {
+  tutor: Profile;
+  student: Profile;
+  enrollment: Enrollment;
+}) {
+  await sendEmailHelper(params, InactiveEnrollmentDeletion);
+}
+
+async function sendEmailHelper(
+  params: {
+    tutor: Profile;
+    student: Profile;
+    enrollment: Enrollment;
+  },
+  msgTemplate: (params: {
+    tutor: Profile;
+    student: Profile;
+    enrollment: Enrollment;
+  }) => string,
+) {
   try {
     const { tutor } = params;
     const resend = new Resend(process.env.RESEND_API_KEY);
     await resend.emails.send({
-      from: "Connect Me Free Tutoring & Mentoring <reminder@connectmego.app>",
+      from: "Connect Me Free Tutoring & mentoring <reminder@connectmego.app>",
       to: tutor.email,
-      subject: "Connect Me Inactive Enrollment",
-      html: RescheduleConfirmationEmail(params),
+      cc: [process.env.OPERATIONS_EMAIL!],
+      subject: "Inactivating Connect Me Enrollment",
+      html: msgTemplate(params),
     });
   } catch (error) {
     throw error;

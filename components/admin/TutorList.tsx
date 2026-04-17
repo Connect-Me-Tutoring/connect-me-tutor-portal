@@ -272,7 +272,16 @@ const TutorList = ({ initialTutors }: any) => {
       }
     } catch (error) {
       const err = error as Error;
-      toast.error(`Failed to add tutor: Please Try Again`);
+      console.error("Error adding tutor:", err.message);
+      
+      // Provide more descriptive error messages
+      if (err.message.includes("Email")) {
+        toast.error("Failed to add tutor. Please check the email address and ensure it is valid and unique.");
+      } else if (err.message.includes("required")) {
+        toast.error(`Failed to add tutor. Required field error: ${err.message}`);
+      } else {
+        toast.error(`Failed to add tutor: ${err.message || "Please try again"}`);
+      }
     } finally {
       setAddingTutor(false);
     }
@@ -341,22 +350,6 @@ const TutorList = ({ initialTutors }: any) => {
         getTutorData();
       } catch (error) {
         toast.error("Failed to edit tutor");
-      }
-    }
-  };
-
-  const handleReactivateTutor = async () => {
-    if (selectedTutorId) {
-      try {
-        const data = await reactivateUser(selectedTutorId); // Call deactivateUser function with studentId
-        if (data) {
-          toast.success("Tutor reactivated successfully");
-          setIsReactivateModalOpen(false);
-          setSelectedTutorId(null);
-          getTutorData();
-        }
-      } catch (error) {
-        toast.error("Failed to deactivate student");
       }
     }
   };
