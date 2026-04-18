@@ -5,11 +5,9 @@ import {
   logZoomMetadata,
   updateParticipantLeaveTime,
 } from "@/lib/actions/zoom.server.actions";
-import {
-  findMeetingByNormalizedId,
-  getActiveSessionFromMeetingID,
-} from "@/lib/actions/session.server.actions";
+import { resolvePortalSessionForZoomMeetingNumber } from "@/lib/actions/session.server.actions";
 import { logEvent, logError, serializeForPosthog } from "@/lib/posthog";
+import { decodeZoomWebhookMeetingUuid } from "@/lib/zoom/meeting-uuid";
 
 // Use a single signing secret for all Zoom webhooks
 const validationSecret = config.zoom.ZOOM_WEBHOOK_SECRET;
@@ -47,8 +45,9 @@ export async function POST(req: NextRequest) {
   const event = body?.event;
 
   // Extract identifying information from the payload
-  // Meeting UUID (primary identifier) - this is the Zoom meeting UUID
+  // Instance UUID: Base64 in the webhook; decode with lib/zoom/meeting-uuid (not the webhook secret)
   const zoomMeetingId = payload?.object?.uuid;
+  const zoomMeetingUuidCanonical = decodeZoomWebhookMeetingUuid(zoomMeetingId);
   // Meeting number - the id field contains the meeting number (e.g., "77608067183")
   const meetingNumberRaw =
     payload?.object?.id || payload?.object?.meeting_number;
@@ -84,9 +83,16 @@ export async function POST(req: NextRequest) {
         meeting_number: meetingNumber,
       });
 
-      meetingRecord = await findMeetingByNormalizedId(meetingNumber);
+      const resolved =
+        await resolvePortalSessionForZoomMeetingNumber(meetingNumber);
 
-      if (meetingRecord) {
+      if (!resolved) {
+        await logEvent("zoom_webhook_meeting_not_found", {
+          request_id: requestId,
+          meeting_number: meetingNumber,
+        });
+      } else {
+        meetingRecord = resolved.meetingRecord;
         await logEvent("zoom_webhook_meeting_found", {
           request_id: requestId,
           meeting_number: meetingNumber,
@@ -94,15 +100,8 @@ export async function POST(req: NextRequest) {
           stored_meeting_id: meetingRecord.meeting_id,
         });
 
-        // Find active session with this meeting ID (closest to current time, in the past)
-        const activeSessions = await getActiveSessionFromMeetingID(
-          meetingRecord.id
-        );
-        // Get the first (most recent) session that is in the past
-        const activeSession = activeSessions?.[0];
-        // console.log("activeSession", activeSession);
-        if (activeSession) {
-          sessionId = activeSession.id;
+        if (resolved.sessionId) {
+          sessionId = resolved.sessionId;
           await logEvent("zoom_webhook_active_session_found", {
             request_id: requestId,
             meeting_number: meetingNumber,
@@ -114,13 +113,9 @@ export async function POST(req: NextRequest) {
             request_id: requestId,
             meeting_number: meetingNumber,
             meeting_id: meetingRecord.id,
+            resolution: "no_session_in_scheduled_window",
           });
         }
-      } else {
-        await logEvent("zoom_webhook_meeting_not_found", {
-          request_id: requestId,
-          meeting_number: meetingNumber,
-        });
       }
     } catch (error) {
       console.error("Error finding meeting/session:", error);
@@ -135,6 +130,7 @@ export async function POST(req: NextRequest) {
   await logEvent("zoom_webhook_identifiers_extracted", {
     request_id: requestId,
     zoom_meeting_id: zoomMeetingId,
+    zoom_meeting_uuid_canonical: zoomMeetingUuidCanonical,
     account_id: accountId,
     account_email: accountEmail,
     meeting_number: meetingNumber,
@@ -376,52 +372,63 @@ export async function POST(req: NextRequest) {
           participant_object_json: serializeForPosthog(participant),
         });
 
-        try {
-          await logEvent("zoom_participant_join_db_start", {
+        if (!sessionId) {
+          // Zoom's payload.object.uuid is base64, not a Postgres UUID, and is not
+          // Sessions.id — only log participation when we resolved an internal session.
+          await logEvent("zoom_participant_join_skipped_no_session", {
             request_id: requestId,
             zoom_meeting_id: zoomMeetingId,
             meeting_number: meetingNumber,
-            session_id: sessionId,
             participant_id: participantId,
             participant_name: participantName,
+            reason:
+              "No portal session matched this meeting number (meeting missing, no active session, or meeting id mismatch)",
           });
+        } else {
+          try {
+            await logEvent("zoom_participant_join_db_start", {
+              request_id: requestId,
+              zoom_meeting_id: zoomMeetingId,
+              meeting_number: meetingNumber,
+              session_id: sessionId,
+              participant_id: participantId,
+              participant_name: participantName,
+            });
 
-          // Use session_id if found, otherwise fall back to zoomMeetingId
-          const logSessionId = sessionId || zoomMeetingId;
+            await logZoomMetadata({
+              session_id: sessionId,
+              participant_id: participantId,
+              name: participantName || "Unknown",
+              email: participantEmail || null,
+              action: "joined",
+              timestamp: joinTime,
+            });
 
-          await logZoomMetadata({
-            session_id: logSessionId,
-            participant_id: participantId,
-            name: participantName || "Unknown",
-            email: participantEmail || null,
-            action: "joined",
-            timestamp: joinTime,
-          });
+            await logEvent("zoom_participant_join_db_success", {
+              request_id: requestId,
+              zoom_meeting_id: zoomMeetingId,
+              meeting_number: meetingNumber,
+              session_id: sessionId,
+              participant_id: participantId,
+              participant_name: participantName,
+            });
 
-          await logEvent("zoom_participant_join_db_success", {
-            request_id: requestId,
-            zoom_meeting_id: zoomMeetingId,
-            meeting_number: meetingNumber,
-            session_id: sessionId,
-            participant_id: participantId,
-            participant_name: participantName,
-          });
-
-          // console.log(
-          //   `✅ Logged join for ${participantName} in meeting ${meetingNumber} (session: ${sessionId || "not found"}, account: ${accountId})`
-          // );
-        } catch (error) {
-          console.error("Error logging participant join:", error);
-          await logError(error, {
-            request_id: requestId,
-            step: "participant_join_db",
-            zoom_meeting_id: zoomMeetingId,
-            meeting_number: meetingNumber,
-            session_id: sessionId,
-            participant_id: participantId,
-            participant_name: participantName,
-            participant_email: participantEmail,
-          });
+            // console.log(
+            //   `✅ Logged join for ${participantName} in meeting ${meetingNumber} (session: ${sessionId || "not found"}, account: ${accountId})`
+            // );
+          } catch (error) {
+            console.error("Error logging participant join:", error);
+            await logError(error, {
+              request_id: requestId,
+              step: "participant_join_db",
+              zoom_meeting_id: zoomMeetingId,
+              meeting_number: meetingNumber,
+              session_id: sessionId,
+              participant_id: participantId,
+              participant_name: participantName,
+              participant_email: participantEmail,
+            });
+          }
         }
       }
       break;
@@ -460,20 +467,33 @@ export async function POST(req: NextRequest) {
           participant_object_json: serializeForPosthog(participant),
         });
 
-        try {
-          if (!participantUuid) {
-            console.warn("⚠️ No participant UUID found in leave event");
-            await logEvent("zoom_participant_left_missing_uuid", {
-              request_id: requestId,
-              zoom_meeting_id: zoomMeetingId,
-              meeting_number: meetingNumber,
-              session_id: sessionId,
-              participant_name: participantName,
-              warning: "No participant UUID found in leave event",
-            });
-            break;
-          }
+        if (!participantUuid) {
+          console.warn("⚠️ No participant UUID found in leave event");
+          await logEvent("zoom_participant_left_missing_uuid", {
+            request_id: requestId,
+            zoom_meeting_id: zoomMeetingId,
+            meeting_number: meetingNumber,
+            session_id: sessionId,
+            participant_name: participantName,
+            warning: "No participant UUID found in leave event",
+          });
+          break;
+        }
 
+        if (!sessionId) {
+          await logEvent("zoom_participant_left_skipped_no_session", {
+            request_id: requestId,
+            zoom_meeting_id: zoomMeetingId,
+            meeting_number: meetingNumber,
+            participant_id: participantUuid,
+            participant_name: participantName,
+            reason:
+              "No portal session matched this meeting number (meeting missing, no active session, or meeting id mismatch)",
+          });
+          break;
+        }
+
+        try {
           await logEvent("zoom_participant_left_db_start", {
             request_id: requestId,
             zoom_meeting_id: zoomMeetingId,
@@ -483,11 +503,8 @@ export async function POST(req: NextRequest) {
             participant_name: participantName,
           });
 
-          // Use session_id if found, otherwise fall back to zoomMeetingId
-          const logSessionId = sessionId || zoomMeetingId;
-
           await updateParticipantLeaveTime(
-            logSessionId,
+            sessionId,
             participantUuid,
             participantName || "Unknown",
             participantEmail || null,
