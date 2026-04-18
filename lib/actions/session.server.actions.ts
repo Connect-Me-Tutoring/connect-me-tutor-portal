@@ -1,4 +1,5 @@
 "use server";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { Enrollment, Meeting, Session } from "@/types";
 import { toast } from "react-hot-toast";
 import { Client } from "@upstash/qstash";
@@ -8,6 +9,12 @@ import { getProfileWithProfileId } from "./user.actions";
 import { getMeeting } from "./meeting.server.actions";
 import { createServerClient } from "../supabase/server";
 import { Table } from "../supabase/tables";
+import { getParticipationBySessionId } from "./zoom.server.actions";
+import {
+  tableToInterfaceSessions,
+} from "../type-utils";
+import { revalidatePath } from "next/cache";
+import { sendScheduledEmailsBeforeSessions } from "./email.server.actions";
 
 import { startOfWeek, endOfWeek, subDays } from "date-fns"; // Only use date-fns
 
@@ -50,6 +57,40 @@ async function isSessioninPastWeek(enrollmentId: string, midWeek: Date) {
  */
 function normalizeMeetingId(meetingId: string): string {
   return meetingId.replace(/\s+/g, "");
+}
+
+/**
+ * Resolve `Meetings` row where the stored Zoom numeric id matches `normalizedSearch`
+ * after whitespace normalization (fast path: DB value equals normalized string).
+ */
+async function findMeetingRecordByNormalizedZoomNumber(
+  supabase: SupabaseClient,
+  normalizedSearch: string,
+): Promise<{ id: string; meeting_id: string } | null> {
+  const { data: exactMatch, error: exactErr } = await supabase
+    .from(Table.Meetings)
+    .select("id, meeting_id")
+    .eq("meeting_id", normalizedSearch)
+    .maybeSingle();
+
+  if (!exactErr && exactMatch?.id) {
+    return exactMatch;
+  }
+
+  const { data: meetings, error } = await supabase
+    .from(Table.Meetings)
+    .select("id, meeting_id");
+
+  if (error) {
+    console.error("Error fetching meetings for Zoom webhook:", error);
+    return null;
+  }
+
+  return (
+    meetings?.find(
+      (m) => normalizeMeetingId(m.meeting_id || "") === normalizedSearch,
+    ) ?? null
+  );
 }
 
 /**
@@ -117,15 +158,87 @@ export async function getActiveSessionFromMeetingID(meetingID: string) {
 
   return data || [];
 }
-import { getParticipationBySessionId } from "./zoom.server.actions";
-import { scheduleMultipleSessionReminders } from "../twilio";
-import {
-  tableToInterfaceMeetings,
-  tableToInterfaceProfiles,
-  tableToInterfaceSessions,
-} from "../type-utils";
-import { revalidatePath } from "next/cache";
-import { sendScheduledEmailsBeforeSessions } from "./email.server.actions";
+
+/** Zoom sends join/leave before the scheduled start; allow attribution slightly early */
+const ZOOM_WEBHOOK_EARLY_JOIN_MS = 45 * 60 * 1000;
+/** Only consider portal sessions whose start time is within this lookback (hours) */
+const ZOOM_WEBHOOK_SESSION_LOOKBACK_HOURS = 24;
+
+export type ZoomWebhookMeetingResolution = {
+  meetingRecord: { id: string; meeting_id: string };
+  sessionId: string | null;
+};
+
+/**
+ * For Zoom webhooks: resolve the portal `Meetings` row by numeric Zoom meeting id
+ * (`payload.object.id`) using normalized `Meetings.meeting_id`, then find an
+ * `Active` `Sessions` row for `Meetings.id` = `Sessions.meeting_id` whose scheduled
+ * window contains the current instant. Sessions are loaded with an inner join to
+ * `Meetings` so rows always match the FK relationship.
+ * Uses the service role so this works without a logged-in user (webhook context).
+ */
+export async function resolvePortalSessionForZoomMeetingNumber(
+  zoomMeetingNumber: string,
+): Promise<ZoomWebhookMeetingResolution | null> {
+  const supabase = await createAdminClient();
+  const normalizedSearch = normalizeMeetingId(zoomMeetingNumber);
+
+  const meetingRecord = await findMeetingRecordByNormalizedZoomNumber(
+    supabase,
+    normalizedSearch,
+  );
+
+  if (!meetingRecord) {
+    return null;
+  }
+
+  const nowMs = Date.now();
+  const lookbackIso = new Date(
+    nowMs - ZOOM_WEBHOOK_SESSION_LOOKBACK_HOURS * 60 * 60 * 1000,
+  ).toISOString();
+
+  const { data: sessions, error: sessionError } = await supabase
+    .from(Table.Sessions)
+    .select(
+      `
+      id,
+      date,
+      duration,
+      meeting_id,
+      status,
+      meeting:Meetings!meeting_id!inner(id, meeting_id)
+    `,
+    )
+    .eq("meeting_id", meetingRecord.id)
+    .eq("status", "Active")
+    .not("date", "is", null)
+    .gte("date", lookbackIso)
+    .order("date", { ascending: false })
+    .limit(40);
+
+  if (sessionError) {
+    console.error("Error fetching sessions for Zoom webhook:", sessionError);
+    return { meetingRecord, sessionId: null };
+  }
+
+  if (!sessions?.length) {
+    return { meetingRecord, sessionId: null };
+  }
+
+  const durationMs = (durationHours: number) =>
+    Math.max(0, Number(durationHours) || 0) * 60 * 60 * 1000;
+
+  for (const s of sessions) {
+    const startMs = new Date(s.date as string).getTime();
+    const endMs = startMs + durationMs(s.duration);
+    const effectiveStart = startMs - ZOOM_WEBHOOK_EARLY_JOIN_MS;
+    if (nowMs >= effectiveStart && nowMs <= endMs) {
+      return { meetingRecord, sessionId: s.id };
+    }
+  }
+
+  return { meetingRecord, sessionId: null };
+}
 
 export async function getSessions(
   start: string,

@@ -141,6 +141,29 @@ export async function logEvent(
   }
 }
 
+function messageFromUnknown(error: unknown): string {
+  if (error instanceof Error) return error.message;
+  if (error && typeof error === "object" && "message" in error) {
+    const m = (error as { message: unknown }).message;
+    if (typeof m === "string") return m;
+  }
+
+  try {
+    return JSON.stringify(error);
+  } catch {
+    return String(error);
+  }
+}
+
+function nameFromUnknown(error: unknown): string {
+  if (error instanceof Error) return error.name;
+  if (error && typeof error === "object" && "code" in error) {
+    const c = (error as { code: unknown }).code;
+    if (typeof c === "string" && c.length > 0) return `Error_${c}`;
+  }
+  return "NonErrorThrow";
+}
+
 /**
  * Log an error event to PostHog (full `context` + `error` snapshots as JSON strings)
  */
@@ -149,9 +172,9 @@ export async function logError(
   context?: Record<string, any>,
   distinctId?: string
 ) {
-  const errorMessage = error instanceof Error ? error.message : String(error);
+  const errorMessage = messageFromUnknown(error);
   const errorStack = error instanceof Error ? error.stack : undefined;
-  const errorName = error instanceof Error ? error.name : "NonErrorThrow";
+  const errorName = nameFromUnknown(error);
 
   const errorPayload =
     error instanceof Error
