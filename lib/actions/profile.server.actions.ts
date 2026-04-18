@@ -243,15 +243,24 @@ export const getTutorStudents = async (tutorId: string) => {
 
     const studentIds = pairings.map((pairing) => pairing.student_id);
 
-    const { data: studentProfiles, error: profileError } = await supabase
-      .from(Table.Profiles)
-      .select("*")
-      .in("id", studentIds);
+    // parallel fetch - saves a round trip
+    const [{ data: studentProfiles, error: profileError }, { data: enrollments }] =
+      await Promise.all([
+        supabase.from(Table.Profiles).select("*").in("id", studentIds),
+        supabase
+          .from(Table.Enrollments)
+          .select("student_id")
+          .eq("tutor_id", tutorId)
+          .eq("paused", false), // only active enrollments matter for sorting
+      ]);
 
     if (profileError) {
       console.error("Error fetching student profile", profileError);
       return null;
     }
+
+    // set of student ids w/ an active enrollment - used to sort below
+    const enrolledIds = new Set((enrollments ?? []).map((e: any) => e.student_id));
 
     // Mapping the fetched data to the Profile object
     const userProfiles: Profile[] = studentProfiles.map((profile: any) => ({
@@ -277,6 +286,13 @@ export const getTutorStudents = async (tutorId: string) => {
       settingsId: profile.settings_id,
       languages_spoken: profile.languages_spoken || [],
     }));
+
+    // enrolled students first, rest after
+    userProfiles.sort((a, b) => {
+      const aEnrolled = enrolledIds.has(a.id) ? 0 : 1;
+      const bEnrolled = enrolledIds.has(b.id) ? 0 : 1;
+      return aEnrolled - bEnrolled;
+    });
 
     return userProfiles;
   } catch (error) {
