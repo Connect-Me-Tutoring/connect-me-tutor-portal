@@ -819,6 +819,20 @@ export async function createEvent(event: Event) {
   }
 }
 
+// batch insert events -- used by multi-select sub hours
+export async function createEventsBatch(events: Event[]) {
+  const rows = events.map((e) => ({
+    date: e.date,
+    summary: e.summary,
+    tutor_id: e.tutorId,
+    hours: e.hours,
+    type: e.type,
+  }));
+
+  const { error } = await supabase.from("Events").insert(rows);
+  if (error) throw error;
+}
+
 export async function removeEvent(eventId: string): Promise<boolean> {
   try {
     // Validate eventId format
