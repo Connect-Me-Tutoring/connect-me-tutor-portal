@@ -27,13 +27,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import {
   HoverCard,
   HoverCardContent,
   HoverCardTrigger,
@@ -59,7 +52,6 @@ import {
   ChevronLeft,
   ChevronRight,
   Trash,
-  CalendarDays,
   UserRoundPlus,
   CircleCheck,
   X,
@@ -67,34 +59,19 @@ import {
 import { format, parseISO, isAfter, addDays } from "date-fns";
 import { AlertDialogTrigger } from "@radix-ui/react-alert-dialog";
 import SessionExitForm from "./SessionExitForm";
-import RescheduleForm from "./RescheduleDialog";
 import CancellationForm from "./CancellationForm";
 import EditSessionForm from "./EditSessionForm";
-import { useRouter } from "next/navigation";
 import { useDashboardContext } from "@/contexts/dashboardContext";
 
 const CurrentSessionsTable = ({
   meetings,
   totalPages,
   handleStatusChange,
-  handleReschedule,
   handleSessionComplete,
   handlePageChange,
   handleRowsPerPageChange,
-  handleInputChange,
   handleUndoCancel,
 }: any) => {
-  const router = useRouter();
-
-  const handleRescheduleWithRefresh = async (
-    sessionId: string,
-    newDate: string,
-    meetingId: string,
-  ) => {
-    await handleReschedule(sessionId, newDate, meetingId);
-    router.refresh();
-  };
-
   const calculateDeadline = (sessionDate: Date) => {
     const deadlineDate = addDays(sessionDate, 2);
     const month: string = String(deadlineDate.getMonth() + 1).padStart(2, "0");
@@ -196,40 +173,6 @@ const CurrentSessionsTable = ({
                 />
               </TableCell>
               <TableCell className="flex content-center">
-                <Dialog
-                  open={TC.isDialogOpen}
-                  onOpenChange={TC.setIsDialogOpen}
-                >
-                  <DialogTrigger asChild>
-                    <HoverCard>
-                      <HoverCardTrigger>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => {
-                            TC.setSelectedSession(session);
-                            TC.setIsDialogOpen(true);
-                            TC.setSelectedSessionDate(session.date);
-                          }}
-                        >
-                          <CalendarDays color="#3b82f6" className="h-4 w-4" />
-                        </Button>
-                      </HoverCardTrigger>
-                      <HoverCardContent>
-                        <center>Reschedule Session</center>
-                      </HoverCardContent>
-                    </HoverCard>
-                  </DialogTrigger>
-                  <RescheduleForm
-                    selectedSession={TC.selectedSession}
-                    selectedSessionDate={TC.selectedSessionDate}
-                    meetings={meetings}
-                    setSelectedSessionDate={TC.setSelectedSessionDate}
-                    handleInputChange={handleInputChange}
-                    handleReschedule={handleRescheduleWithRefresh}
-                  />
-                </Dialog>
-
                 <EditSessionForm
                   session={session}
                   meetings={meetings}

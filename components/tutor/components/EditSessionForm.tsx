@@ -106,6 +106,8 @@ export default function EditSessionForm({
     }
   };
 
+  const durationOptions = Array.from({ length: 12 }, (_, i) => (i + 1) * 0.25);
+
   const TriggerButton = isDropdownItem ? (
     <DropdownMenuItem
       onSelect={(e) => {
@@ -186,6 +188,37 @@ export default function EditSessionForm({
                       />
                     </SelectItem>
                   ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label>Duration</Label>
+              <Select
+                value={editedSession.duration.toString()}
+                onValueChange={(value) => {
+                  const updated = {
+                    ...editedSession,
+                    duration: parseFloat(value),
+                  };
+                  setEditedSession(updated);
+                  areMeetingsAvailable(updated);
+                }}
+                disabled={isChecking || isUpdating}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select a time duration" />
+                </SelectTrigger>
+                <SelectContent>
+                  {durationOptions.map((duration) => {
+                    const minutes = (duration % 1) * 60;
+                    const hours = Math.floor(duration);
+
+                    return (
+                      <SelectItem key={duration} value={duration.toString()}>
+                        {hours} {hours === 1 ? "hour" : "hours"} {minutes} minutes
+                      </SelectItem>
+                    );
+                  })}
                 </SelectContent>
               </Select>
             </div>

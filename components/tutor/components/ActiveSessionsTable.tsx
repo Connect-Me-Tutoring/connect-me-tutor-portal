@@ -23,13 +23,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import {
   HoverCard,
   HoverCardContent,
   HoverCardTrigger,
@@ -52,7 +45,6 @@ import {
   ChevronLeft,
   ChevronRight,
   Trash,
-  CalendarDays,
   UserRoundPlus,
   Clock,
   CircleCheckBig,
@@ -63,7 +55,6 @@ import {
 import { format, parseISO, isAfter } from "date-fns";
 import { AlertDialogTrigger } from "@radix-ui/react-alert-dialog";
 import SessionExitForm from "./SessionExitForm";
-import RescheduleForm from "./RescheduleDialog";
 import CancellationForm from "./CancellationForm";
 import EditSessionForm from "./EditSessionForm";
 import { boolean } from "zod";
@@ -119,11 +110,9 @@ const ActiveSessionsTable = ({
   totalPages,
   setNextClassConfirmed,
   handleStatusChange,
-  handleReschedule,
   handleSessionComplete,
   handlePageChange,
   handleRowsPerPageChange,
-  handleInputChange,
 }: any) => {
   const TC = useDashboardContext();
   return (
@@ -215,29 +204,6 @@ const ActiveSessionsTable = ({
                         handleStatusChange={handleStatusChange}
                         isDropdownItem
                       />
-                      <DropdownMenuItem
-                        onClick={() => {
-                          TC.setSelectedSession(session);
-                          TC.setIsDialogOpen(true);
-                          TC.setSelectedSessionDate(session.date);
-                        }}
-                      >
-                        <Dialog
-                          open={TC.isDialogOpen}
-                          onOpenChange={TC.setIsDialogOpen}
-                        >
-                          <RescheduleForm
-                            selectedSession={TC.selectedSession}
-                            selectedSessionDate={TC.selectedSessionDate}
-                            meetings={meetings}
-                            setSelectedSessionDate={TC.setSelectedSessionDate}
-                            handleInputChange={handleInputChange}
-                            handleReschedule={handleReschedule}
-                          />
-                        </Dialog>
-                        <CalendarDays className="h-4 w-4 mr-2" />
-                        Reschedule
-                      </DropdownMenuItem>
                       <DropdownMenuItem
                         onClick={() =>
                           (window.location.href =
