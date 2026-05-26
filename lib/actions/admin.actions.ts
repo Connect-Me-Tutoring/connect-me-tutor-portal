@@ -594,7 +594,24 @@ export async function removeSession(
   sessionId: string,
   updateEmail: boolean = true,
 ) {
-  // Create a notification for the admin
+  const { error: notificationError } = await supabase
+    .from(Table.Notifications)
+    .delete()
+    .eq("session_id", sessionId);
+
+  if (notificationError) {
+    throw notificationError;
+  }
+
+  const { error: participantEventError } = await supabase
+    .from("zoom_participant_events")
+    .update({ session_id: null })
+    .eq("session_id", sessionId);
+
+  if (participantEventError) {
+    throw participantEventError;
+  }
+
   const { error: eventError } = await supabase
     .from(Table.Sessions)
     .delete()

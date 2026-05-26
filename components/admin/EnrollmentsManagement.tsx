@@ -109,6 +109,63 @@ const durationSchema = z.object({
     .min(0, "Duration must be at least 0"),
 });
 
+const DAYS_OF_WEEK = [
+  "Monday",
+  "Tuesday",
+  "Wednesday",
+  "Thursday",
+  "Friday",
+  "Saturday",
+  "Sunday",
+];
+
+const timeToMinutes = (time?: string | null) => {
+  if (!time) return null;
+
+  const match = /^(\d{1,2}):(\d{2})$/.exec(time);
+  if (!match) return null;
+
+  const hours = Number(match[1]);
+  const minutes = Number(match[2]);
+
+  if (hours < 0 || hours > 23 || minutes < 0 || minutes > 59) {
+    return null;
+  }
+
+  return hours * 60 + minutes;
+};
+
+const enrollmentMatchesTimeFilter = (
+  enrollment: Enrollment,
+  dayFilter: string,
+  startFilter: string,
+  endFilter: string,
+) => {
+  const hasDayFilter = dayFilter !== "all";
+  const filterStart = timeToMinutes(startFilter);
+  const filterEnd = timeToMinutes(endFilter);
+  const hasTimeFilter = filterStart !== null || filterEnd !== null;
+
+  if (!hasDayFilter && !hasTimeFilter) return true;
+
+  const availability = enrollment.availability || [];
+
+  return availability.some((slot) => {
+    if (hasDayFilter && slot.day !== dayFilter) return false;
+    if (!hasTimeFilter) return true;
+
+    const enrollmentStart = timeToMinutes(slot.startTime);
+    const enrollmentEnd = timeToMinutes(slot.endTime);
+    if (enrollmentStart === null || enrollmentEnd === null) return false;
+
+    const rangeStart = filterStart ?? 0;
+    const rangeEnd = filterEnd ?? 24 * 60;
+    if (rangeStart >= rangeEnd) return false;
+
+    return enrollmentStart < rangeEnd && enrollmentEnd > rangeStart;
+  });
+};
+
 const EnrollmentList = ({
   initialEnrollments,
   initialMeetings,
@@ -138,6 +195,9 @@ const EnrollmentList = ({
   const [currentPage, setCurrentPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [filterValue, setFilterValue] = useState("");
+  const [timeFilterDay, setTimeFilterDay] = useState("all");
+  const [timeFilterStart, setTimeFilterStart] = useState("");
+  const [timeFilterEnd, setTimeFilterEnd] = useState("");
   const [tutorSearch, setTutorSearch] = useState("");
   const [studentSearch, setStudentSearch] = useState("");
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -182,8 +242,6 @@ const EnrollmentList = ({
     const filtered = enrollments.filter((enrollment) => {
       const searchTerm = filterValue.toLowerCase().trim();
 
-      if (!searchTerm) return true;
-
       const studentFirstName =
         enrollment.student?.firstName?.toLowerCase() || "";
       const studentLastName = enrollment.student?.lastName?.toLowerCase() || "";
@@ -193,7 +251,8 @@ const EnrollmentList = ({
       const tutorLastName = enrollment.tutor?.lastName?.toLowerCase() || "";
       const tutorEmail = enrollment.tutor?.email?.toLowerCase() || "";
 
-      return (
+      const matchesSearch =
+        !searchTerm ||
         studentFirstName.includes(searchTerm) ||
         studentLastName.includes(searchTerm) ||
         studentEmail.includes(searchTerm) ||
@@ -201,12 +260,21 @@ const EnrollmentList = ({
         tutorLastName.includes(searchTerm) ||
         tutorEmail.includes(searchTerm) ||
         (studentFirstName + " " + studentLastName).includes(searchTerm) ||
-        (tutorFirstName + " " + tutorLastName).includes(searchTerm)
+        (tutorFirstName + " " + tutorLastName).includes(searchTerm);
+
+      return (
+        matchesSearch &&
+        enrollmentMatchesTimeFilter(
+          enrollment,
+          timeFilterDay,
+          timeFilterStart,
+          timeFilterEnd,
+        )
       );
     });
     setFilteredEnrollments(filtered);
     setCurrentPage(1);
-  }, [filterValue, enrollments]);
+  }, [filterValue, enrollments, timeFilterDay, timeFilterStart, timeFilterEnd]);
 
   const studentsMap = useMemo(() => {
     return students.reduce(
@@ -505,8 +573,8 @@ const EnrollmentList = ({
       type === "add"
         ? setNewEnrollment((prev) => ({ ...prev, frequency: value }))
         : setSelectedEnrollment((prev) =>
-          prev ? { ...prev, frequency: value } : null,
-        );
+            prev ? { ...prev, frequency: value } : null,
+          );
     }
   };
 
@@ -529,10 +597,10 @@ const EnrollmentList = ({
     setSelectedEnrollment((prev) =>
       prev
         ? {
-          ...prev,
-          availability,
-          ...scheduleFields,
-        }
+            ...prev,
+            availability,
+            ...scheduleFields,
+          }
         : null,
     );
   };
@@ -657,7 +725,7 @@ const EnrollmentList = ({
       <div className="flex space-x-6">
         <div className="flex-grow bg-white rounded-lg shadow p-6">
           <div className="flex justify-between items-center mb-4">
-            <div className="flex space-x-2">
+            <div className="flex flex-wrap items-center gap-2">
               <Input
                 type="text"
                 placeholder="Filter enrollments..."
@@ -665,6 +733,51 @@ const EnrollmentList = ({
                 value={filterValue}
                 onChange={(e) => setFilterValue(e.target.value)}
               />
+              <Select value={timeFilterDay} onValueChange={setTimeFilterDay}>
+                <SelectTrigger className="w-[140px]" aria-label="Filter by day">
+                  <SelectValue placeholder="Any day" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Any day</SelectItem>
+                  {DAYS_OF_WEEK.map((day) => (
+                    <SelectItem key={day} value={day}>
+                      {day}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Input
+                type="time"
+                aria-label="Filter time from"
+                title="From time"
+                className="w-[120px]"
+                value={timeFilterStart}
+                onChange={(e) => setTimeFilterStart(e.target.value)}
+              />
+              <Input
+                type="time"
+                aria-label="Filter time to"
+                title="To time"
+                className="w-[120px]"
+                value={timeFilterEnd}
+                onChange={(e) => setTimeFilterEnd(e.target.value)}
+              />
+              {(filterValue ||
+                timeFilterDay !== "all" ||
+                timeFilterStart ||
+                timeFilterEnd) && (
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setFilterValue("");
+                    setTimeFilterDay("all");
+                    setTimeFilterStart("");
+                    setTimeFilterEnd("");
+                  }}
+                >
+                  Clear
+                </Button>
+              )}
               <Dialog open={isAddModalOpen} onOpenChange={setIsAddModalOpen}>
                 <DialogTrigger asChild>
                   <Button>
@@ -698,7 +811,7 @@ const EnrollmentList = ({
                               className="col-span-3"
                             >
                               {selectedStudentId &&
-                                studentsMap[selectedStudentId]
+                              studentsMap[selectedStudentId]
                                 ? `${studentsMap[selectedStudentId].firstName} ${studentsMap[selectedStudentId].lastName}`
                                 : "Select a student"}
                               <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
@@ -913,7 +1026,7 @@ const EnrollmentList = ({
                           type="date"
                           value={newEnrollment.startDate}
                           onChange={handleInputChange}
-                        // className="col-span-3"
+                          // className="col-span-3"
                         />
                       </div>
                       <div>
@@ -965,10 +1078,11 @@ const EnrollmentList = ({
                                   {meeting.name} - {meeting.id}
                                 </span>
                                 <Circle
-                                  className={`w-2 h-2 ml-2 ${meetingAvailability[meeting.id]
-                                    ? "text-green-500"
-                                    : "text-red-500"
-                                    } fill-current`}
+                                  className={`w-2 h-2 ml-2 ${
+                                    meetingAvailability[meeting.id]
+                                      ? "text-green-500"
+                                      : "text-red-500"
+                                  } fill-current`}
                                 />
                               </SelectItem>
                             ))}
@@ -1449,7 +1563,7 @@ const EnrollmentList = ({
                     name="summary"
                     value={selectedEnrollment.summary}
                     onChange={handleInputChange}
-                  // className="col-span-3"
+                    // className="col-span-3"
                   />
                 </div>
                 <div className="grid grid-cols-4 items-center gap-4">
@@ -1485,9 +1599,9 @@ const EnrollmentList = ({
                       <SelectValue placeholder="Select a meeting link">
                         {selectedEnrollment.meetingId
                           ? meetings.find(
-                            (meeting) =>
-                              meeting.id === selectedEnrollment.meetingId,
-                          )?.name
+                              (meeting) =>
+                                meeting.id === selectedEnrollment.meetingId,
+                            )?.name
                           : "Select a meeting"}
                       </SelectValue>
                     </SelectTrigger>
@@ -1502,10 +1616,11 @@ const EnrollmentList = ({
                             {meeting.name} - {meeting.id}
                           </span>
                           <Circle
-                            className={`w-2 h-2 ml-2 ${meetingAvailability[meeting.id]
-                              ? "text-green-500"
-                              : "text-red-500"
-                              } fill-current`}
+                            className={`w-2 h-2 ml-2 ${
+                              meetingAvailability[meeting.id]
+                                ? "text-green-500"
+                                : "text-red-500"
+                            } fill-current`}
                           />
                         </SelectItem>
                       ))}
