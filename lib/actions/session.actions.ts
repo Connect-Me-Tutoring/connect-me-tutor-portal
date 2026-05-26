@@ -191,12 +191,12 @@ export async function addSessions(
         }
 
         //Add Seven Days if CurrentDate is last week (Acts as a Modulus to ensure updating current week only)
-        if (currentDate < parseISO(weekStartString)) {
+        if (currentDate < weekStart) {
           currentDate = addDays(currentDate, 7);
         }
 
         //Remove Seven Days if CurrentDate is next week (Acts as a Modulus to ensure updating current week only)
-        if (currentDate > parseISO(weekEndString)) {
+        if (currentDate > weekEnd) {
           currentDate = addDays(currentDate, -7);
         }
 
@@ -471,9 +471,7 @@ export async function getAllSessions(
   }
 }
 
-export async function addOneSession(
-  session: Session
-): Promise<Session | null> {
+export async function addOneSession(session: Session): Promise<Session | null> {
   try {
     const newSession = {
       date: session.date,
@@ -490,16 +488,18 @@ export async function addOneSession(
     const { data, error } = await supabase
       .from(Table.Sessions)
       .insert(newSession)
-      .select(`
+      .select(
+        `
         *,
         tutor:Profiles!tutor_id(*),
         student:Profiles!student_id(*),
         meeting:Meetings!meeting_id(*)
-      `)
+      `,
+      )
       .single();
 
     if (error) throw error;
-    
+
     if (data) {
       return tableToInterfaceSessions(data);
     }
