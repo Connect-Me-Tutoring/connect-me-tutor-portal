@@ -11,6 +11,7 @@ import {
   ChevronLeft,
   ChevronRight,
   RefreshCcw,
+  Download,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import {
@@ -506,6 +507,31 @@ const StudentList = ({ initialStudents }: any) =>
       }
     };
 
+    const handleExportCSV = () => {
+      const headers = ["First Name", "Last Name", "Email"];
+      const csvData = filteredStudents.map((student) => [
+        student.firstName,
+        student.lastName,
+        student.email,
+      ]);
+
+      const csvContent = [
+        headers.join(","),
+        ...csvData.map((row) =>
+          row.map((cell) => `"${(cell || "").replace(/"/g, '""')}"`).join(",")
+        ),
+      ].join("\n");
+
+      const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.setAttribute("href", url);
+      link.setAttribute("download", "students_export.csv");
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    };
+
     return (
       <>
         <div className="flex justify-between items-center mb-4">
@@ -517,6 +543,9 @@ const StudentList = ({ initialStudents }: any) =>
               value={filterValue}
               onChange={(e) => setFilterValue(e.target.value)}
             />
+            <Button variant="outline" onClick={handleExportCSV}>
+              <Download className="mr-2 h-4 w-4" /> Export CSV
+            </Button>
             {/*Add Student*/}
             <AddStudentForm
               newStudent={newStudent}
