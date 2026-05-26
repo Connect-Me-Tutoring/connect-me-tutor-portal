@@ -94,6 +94,11 @@ import { useRouter } from "next/navigation";
 import { checkAvailableMeetingForEnrollments } from "@/lib/actions/meeting.actions";
 import { formatDateServer } from "@/lib/actions/utils.server.actions";
 import { QueryClient } from "@tanstack/react-query";
+import {
+  getEnrollmentAvailability,
+  getEnrollmentSchedule,
+  getEnrollmentScheduleFields,
+} from "@/lib/enrollment-schedule";
 // import Availability from "@/components/student/AvailabilityFormat";
 
 const durationSchema = z.object({
@@ -281,16 +286,18 @@ const EnrollmentList = ({
   ) => {
     try {
       const now = new Date();
+      const enrollSchedule = getEnrollmentSchedule(enroll);
       const new_enrollment_date = new Date(
-        `${enroll.availability[0].day} ${enroll.availability[0].endTime}`,
+        `${enrollSchedule.day} ${enrollSchedule.endTime}`,
       );
       return !enrollments.some((enrollment) => {
         // Skip sessions without dates or meeting IDs
         if (!enrollment?.endDate || !enrollment?.meetingId) return false;
 
         try {
+          const enrollmentSchedule = getEnrollmentSchedule(enrollment);
           const sessionEndTime = new Date(
-            `${enrollment.availability[0].day}, ${enrollment.availability[0].endTime}`,
+            `${enrollmentSchedule.day}, ${enrollmentSchedule.endTime}`,
           );
           sessionEndTime.setHours(sessionEndTime.getHours() + 1.5);
           return (
@@ -498,9 +505,36 @@ const EnrollmentList = ({
       type === "add"
         ? setNewEnrollment((prev) => ({ ...prev, frequency: value }))
         : setSelectedEnrollment((prev) =>
-            prev ? { ...prev, frequency: value } : null,
-          );
+          prev ? { ...prev, frequency: value } : null,
+        );
     }
+  };
+
+  const handleAvailabilityChange = (
+    availability: Availability[],
+    type: "add" | "edit",
+  ) => {
+    const scheduleFields = getEnrollmentScheduleFields({ availability });
+
+    if (type === "add") {
+      setAvailabilityList(availability);
+      setNewEnrollment((prev) => ({
+        ...prev,
+        availability,
+        ...scheduleFields,
+      }));
+      return;
+    }
+
+    setSelectedEnrollment((prev) =>
+      prev
+        ? {
+          ...prev,
+          availability,
+          ...scheduleFields,
+        }
+        : null,
+    );
   };
 
   const handleAddEnrollment = async () => {
@@ -568,6 +602,9 @@ const EnrollmentList = ({
       startDate: "",
       endDate: null,
       availability: [{ day: "", startTime: "", endTime: "" }],
+      day: null,
+      startTime: null,
+      endTime: null,
       meetingId: "",
       paused: false,
       duration: 1,
@@ -661,7 +698,7 @@ const EnrollmentList = ({
                               className="col-span-3"
                             >
                               {selectedStudentId &&
-                              studentsMap[selectedStudentId]
+                                studentsMap[selectedStudentId]
                                 ? `${studentsMap[selectedStudentId].firstName} ${studentsMap[selectedStudentId].lastName}`
                                 : "Select a student"}
                               <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
@@ -801,13 +838,9 @@ const EnrollmentList = ({
                       <AvailabilityForm
                         // availabilityList={newEnrollment.availability}
                         availabilityList={availabilityList} // new enrollment by default will not have an availability
-                        setAvailabilityList={(availability) => {
-                          setAvailabilityList(availability);
-                          setNewEnrollment({
-                            ...newEnrollment,
-                            availability,
-                          });
-                        }}
+                        setAvailabilityList={(availability) =>
+                          handleAvailabilityChange(availability, "add")
+                        }
                       />
                       <div className="grid grid-cols-[80px_1fr] items-center gap-4">
                         {/* <Label htmlFor="duration" className="text-right">
@@ -880,7 +913,7 @@ const EnrollmentList = ({
                           type="date"
                           value={newEnrollment.startDate}
                           onChange={handleInputChange}
-                          // className="col-span-3"
+                        // className="col-span-3"
                         />
                       </div>
                       <div>
@@ -932,11 +965,10 @@ const EnrollmentList = ({
                                   {meeting.name} - {meeting.id}
                                 </span>
                                 <Circle
-                                  className={`w-2 h-2 ml-2 ${
-                                    meetingAvailability[meeting.id]
-                                      ? "text-green-500"
-                                      : "text-red-500"
-                                  } fill-current`}
+                                  className={`w-2 h-2 ml-2 ${meetingAvailability[meeting.id]
+                                    ? "text-green-500"
+                                    : "text-red-500"
+                                    } fill-current`}
                                 />
                               </SelectItem>
                             ))}
@@ -983,7 +1015,7 @@ const EnrollmentList = ({
                   </TableCell>
                   <TableCell className="colspan-[40px]">
                     <AvailabilityFormat
-                      availability={enrollment.availability}
+                      availability={getEnrollmentAvailability(enrollment)}
                       card={false}
                     />{" "}
                   </TableCell>
@@ -1345,11 +1377,13 @@ const EnrollmentList = ({
                   </Popover>
                 </div>
                 <AvailabilityForm
-                  availabilityList={selectedEnrollment?.availability || []} // Default to empty array if undefined
+                  availabilityList={
+                    selectedEnrollment
+                      ? getEnrollmentAvailability(selectedEnrollment)
+                      : []
+                  } // Default to empty array if undefined
                   setAvailabilityList={(availability) =>
-                    handleInputChange({
-                      target: { name: "availability", value: availability },
-                    } as any)
+                    handleAvailabilityChange(availability, "edit")
                   }
                 />
                 <div className="grid grid-cols-[80px_1fr] items-center gap-4">
@@ -1415,7 +1449,7 @@ const EnrollmentList = ({
                     name="summary"
                     value={selectedEnrollment.summary}
                     onChange={handleInputChange}
-                    // className="col-span-3"
+                  // className="col-span-3"
                   />
                 </div>
                 <div className="grid grid-cols-4 items-center gap-4">
@@ -1451,9 +1485,9 @@ const EnrollmentList = ({
                       <SelectValue placeholder="Select a meeting link">
                         {selectedEnrollment.meetingId
                           ? meetings.find(
-                              (meeting) =>
-                                meeting.id === selectedEnrollment.meetingId,
-                            )?.name
+                            (meeting) =>
+                              meeting.id === selectedEnrollment.meetingId,
+                          )?.name
                           : "Select a meeting"}
                       </SelectValue>
                     </SelectTrigger>
@@ -1468,11 +1502,10 @@ const EnrollmentList = ({
                             {meeting.name} - {meeting.id}
                           </span>
                           <Circle
-                            className={`w-2 h-2 ml-2 ${
-                              meetingAvailability[meeting.id]
-                                ? "text-green-500"
-                                : "text-red-500"
-                            } fill-current`}
+                            className={`w-2 h-2 ml-2 ${meetingAvailability[meeting.id]
+                              ? "text-green-500"
+                              : "text-red-500"
+                              } fill-current`}
                           />
                         </SelectItem>
                       ))}

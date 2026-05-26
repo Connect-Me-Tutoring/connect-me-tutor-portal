@@ -10,6 +10,7 @@ import {
   Event,
   Enrollment,
   Meeting,
+  Availability,
 } from "@/types";
 import {
   deleteScheduledEmailBeforeSessions,
@@ -47,12 +48,34 @@ import {
   tableToInterfaceProfiles,
   tableToInterfaceSessions,
 } from "../type-utils";
+import {
+  getEnrollmentAvailability,
+  getEnrollmentSchedule,
+} from "../enrollment-schedule";
 import { createPairingRequest } from "./pairing.actions";
 import { scheduleMultipleSessionReminders } from "../twilio";
 import { removeFutureSessions } from "./enrollment.server.actions";
 // import { getMeeting } from "./meeting.actions";
 
 const { fromZonedTime } = DateFNS;
+
+type EnrollmentTableRow = {
+  availability?: Availability[] | null;
+  created_at?: string | null;
+  day?: string | null;
+  duration?: number | null;
+  end_date?: string | null;
+  end_time?: string | null;
+  frequency?: string | null;
+  id?: string | null;
+  meetingId?: string | null;
+  paused?: boolean | null;
+  start_date?: string | null;
+  start_time?: string | null;
+  student?: unknown;
+  summary?: string | null;
+  tutor?: unknown;
+};
 
 /* PROFILES */
 export async function getAllProfiles(
@@ -445,7 +468,7 @@ export async function getSessionKeys(data?: Session[]) {
 export async function isSingleMeetingAvailable(
   meetingId: string,
   session: Session,
-): Promise<void> {}
+): Promise<void> { }
 
 /**
  * Checks availability of multiple meetings at once
@@ -516,6 +539,7 @@ export async function updateSession(
       tutor,
       student,
       date,
+      duration,
       summary,
       meeting,
       session_exit_form,
@@ -530,6 +554,7 @@ export async function updateSession(
         student_id: student?.id,
         tutor_id: tutor?.id,
         date: date,
+        duration: duration,
         summary: summary,
         meeting_id: meeting?.id,
         session_exit_form: session_exit_form,
@@ -641,6 +666,9 @@ export async function getAllEnrollments(): Promise<Enrollment[] | null> {
         start_date,
         end_date,
         availability,
+        day,
+        start_time,
+        end_time,
         meetingId,
         paused,
         duration,
@@ -663,20 +691,38 @@ export async function getAllEnrollments(): Promise<Enrollment[] | null> {
     // Mapping the fetched data to the Notification object
     const enrollments: Enrollment[] = data
       .filter((enrollment) => enrollment.student && enrollment.tutor)
-      .map((enrollment: any) => ({
-        createdAt: enrollment.created_at,
-        id: enrollment.id,
-        summary: enrollment.summary,
-        student: tableToInterfaceProfiles(enrollment.student),
-        tutor: tableToInterfaceProfiles(enrollment.tutor),
-        startDate: enrollment.start_date,
-        endDate: enrollment.end_date,
-        availability: enrollment.availability,
-        meetingId: enrollment.meetingId,
-        paused: enrollment.paused,
-        duration: enrollment.duration,
-        frequency: enrollment.frequency,
-      }));
+      .map((enrollment) => {
+        const enrollmentRow = enrollment as EnrollmentTableRow;
+        const schedule = getEnrollmentSchedule({
+          availability: enrollmentRow.availability,
+          day: enrollmentRow.day,
+          startTime: enrollmentRow.start_time,
+          endTime: enrollmentRow.end_time,
+        });
+
+        return {
+          createdAt: enrollmentRow.created_at || "",
+          id: enrollmentRow.id || "",
+          summary: enrollmentRow.summary || "",
+          student: tableToInterfaceProfiles(enrollmentRow.student),
+          tutor: tableToInterfaceProfiles(enrollmentRow.tutor),
+          startDate: enrollmentRow.start_date || "",
+          endDate: enrollmentRow.end_date || null,
+          availability: getEnrollmentAvailability({
+            availability: enrollmentRow.availability,
+            day: enrollmentRow.day,
+            startTime: enrollmentRow.start_time,
+            endTime: enrollmentRow.end_time,
+          }),
+          day: schedule.day || null,
+          startTime: schedule.startTime || null,
+          endTime: schedule.endTime || null,
+          meetingId: enrollmentRow.meetingId || "",
+          paused: Boolean(enrollmentRow.paused),
+          duration: enrollmentRow.duration || 0,
+          frequency: enrollmentRow.frequency || "weekly",
+        };
+      });
 
     return enrollments; // Return the array of enrollments
   } catch (error) {
@@ -817,6 +863,20 @@ export async function createEvent(event: Event) {
   if (eventError) {
     throw eventError;
   }
+}
+
+// batch insert events -- used by multi-select sub hours
+export async function createEventsBatch(events: Event[]) {
+  const rows = events.map((e) => ({
+    date: e.date,
+    summary: e.summary,
+    tutor_id: e.tutorId,
+    hours: e.hours,
+    type: e.type,
+  }));
+
+  const { error } = await supabase.from("Events").insert(rows);
+  if (error) throw error;
 }
 
 export async function removeEvent(eventId: string): Promise<boolean> {

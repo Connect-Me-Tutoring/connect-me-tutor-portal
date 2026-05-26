@@ -50,46 +50,50 @@ async function isSessioninPastWeek(enrollmentId: string, midWeek: Date) {
  */
 
 /**
- * Normalize meeting ID by removing spaces for comparison
- * @param meetingId - Meeting ID with or without spaces (e.g., "96691315547" or "966 913 15547")
- * @returns Normalized meeting ID without spaces
+ * Normalize meeting ID by keeping only digits for comparison.
+ * Handles stored or incoming formats with spaces, dashes, etc.
+ * @param meetingId - Meeting ID in any human-formatted style
+ * @returns Digits-only meeting ID
  */
 function normalizeMeetingId(meetingId: string): string {
-  return meetingId.replace(/\s+/g, "");
+  return meetingId.replace(/\D+/g, "");
+}
+
+/**
+ * Format a normalized Zoom meeting number into spaced storage format.
+ * Example: "93034287023" -> "930 3428 7023"
+ */
+function formatMeetingIdForStorage(normalizedMeetingId: string): string {
+  if (!normalizedMeetingId) return "";
+  if (normalizedMeetingId.length <= 3) return normalizedMeetingId;
+  if (normalizedMeetingId.length <= 7) {
+    return `${normalizedMeetingId.slice(0, 3)} ${normalizedMeetingId.slice(3)}`;
+  }
+
+  return `${normalizedMeetingId.slice(0, 3)} ${normalizedMeetingId.slice(3, 7)} ${normalizedMeetingId.slice(7)}`;
 }
 
 /**
  * Resolve `Meetings` row where the stored Zoom numeric id matches `normalizedSearch`
- * after whitespace normalization (fast path: DB value equals normalized string).
+ * after applying the spaced storage format used in the Meetings table.
  */
 async function findMeetingRecordByNormalizedZoomNumber(
   supabase: SupabaseClient,
   normalizedSearch: string,
 ): Promise<{ id: string; meeting_id: string } | null> {
-  const { data: exactMatch, error: exactErr } = await supabase
+  const formattedSearch = formatMeetingIdForStorage(normalizedSearch);
+  const { data: meetingRecord, error } = await supabase
     .from(Table.Meetings)
     .select("id, meeting_id")
-    .eq("meeting_id", normalizedSearch)
+    .eq("meeting_id", formattedSearch)
     .maybeSingle();
 
-  if (!exactErr && exactMatch?.id) {
-    return exactMatch;
-  }
-
-  const { data: meetings, error } = await supabase
-    .from(Table.Meetings)
-    .select("id, meeting_id");
-
   if (error) {
-    console.error("Error fetching meetings for Zoom webhook:", error);
+    console.error("Error fetching meeting for Zoom webhook:", error);
     return null;
   }
 
-  return (
-    meetings?.find(
-      (m) => normalizeMeetingId(m.meeting_id || "") === normalizedSearch,
-    ) ?? null
-  );
+  return meetingRecord ?? null;
 }
 
 /**
@@ -156,6 +160,79 @@ export async function getActiveSessionFromMeetingID(meetingID: string) {
   }
 
   return data || [];
+}
+
+/** Zoom webhook: payload.object → Zoom meeting number → `Meetings` row → `Sessions` row */
+export type ZoomSessionResolution = {
+  /** Zoom `object.id` / `meeting_number` (numeric string) */
+  zoomMeetingNumber: string | undefined;
+  /** Zoom `object.uuid` (often base64) */
+  zoomMeetingUuid: string | undefined;
+  /** `Meetings.id` */
+  meetingsRowId: string | null;
+  /** `Meetings.meeting_id` as stored */
+  storedMeetingId: string | null;
+  /** `Sessions.id` when an active past session matches */
+  appSessionId: string | null;
+};
+
+function zoomSessionResolutionStatus(
+  r: ZoomSessionResolution,
+):
+  | "no_meeting_number_in_payload"
+  | "meeting_not_in_database"
+  | "no_matching_active_session"
+  | "session_resolved" {
+  if (!r.zoomMeetingNumber) return "no_meeting_number_in_payload";
+  if (!r.meetingsRowId) return "meeting_not_in_database";
+  if (!r.appSessionId) return "no_matching_active_session";
+  return "session_resolved";
+}
+
+/**
+ * Map Zoom webhook `payload.object` to app session: meeting number → normalized match on
+ * `Meetings.meeting_id` → `Sessions.meeting_id` = `Meetings.id`.
+ */
+export async function resolveAppSessionFromZoomWebhookObject(
+  payloadObject: Record<string, unknown> | null | undefined,
+): Promise<ZoomSessionResolution> {
+  const raw = payloadObject?.id ?? payloadObject?.meeting_number;
+  const meetingNumber =
+    raw !== undefined && raw !== null ? String(raw) : undefined;
+  const uuidRaw = payloadObject?.uuid;
+  const zoomMeetingUuid =
+    uuidRaw !== undefined && uuidRaw !== null ? String(uuidRaw) : undefined;
+
+  if (!meetingNumber) {
+    return {
+      zoomMeetingNumber: undefined,
+      zoomMeetingUuid,
+      meetingsRowId: null,
+      storedMeetingId: null,
+      appSessionId: null,
+    };
+  }
+
+  const resolved = await resolvePortalSessionForZoomMeetingNumber(
+    meetingNumber,
+  );
+  if (!resolved) {
+    return {
+      zoomMeetingNumber: meetingNumber,
+      zoomMeetingUuid,
+      meetingsRowId: null,
+      storedMeetingId: null,
+      appSessionId: null,
+    };
+  }
+
+  return {
+    zoomMeetingNumber: meetingNumber,
+    zoomMeetingUuid,
+    meetingsRowId: resolved.meetingRecord.id,
+    storedMeetingId: resolved.meetingRecord.meeting_id,
+    appSessionId: resolved.sessionId,
+  };
 }
 
 /** Zoom sends join/leave before the scheduled start; allow attribution slightly early */
@@ -229,10 +306,10 @@ export async function resolvePortalSessionForZoomMeetingNumber(
 
   for (const s of sessions) {
     const startMs = new Date(s.date as string).getTime();
-    const endMs = startMs + durationMs(s.duration);
+    const endMs = startMs + durationMs(s.duration as number);
     const effectiveStart = startMs - ZOOM_WEBHOOK_EARLY_JOIN_MS;
     if (nowMs >= effectiveStart && nowMs <= endMs) {
-      return { meetingRecord, sessionId: s.id };
+      return { meetingRecord, sessionId: s.id as string };
     }
   }
 
