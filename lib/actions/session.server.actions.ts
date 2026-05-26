@@ -134,11 +134,11 @@ async function addSessionsServer(
           continue;
         }
 
-        if (currentDate < parseISO(weekStartString)) {
+        if (currentDate < weekStart) {
           currentDate = addDays(currentDate, 7);
         }
 
-        if (currentDate > parseISO(weekEndString)) {
+        if (currentDate > weekEnd) {
           currentDate = addDays(currentDate, -7);
         }
 
