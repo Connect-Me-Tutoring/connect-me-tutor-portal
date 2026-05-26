@@ -176,12 +176,14 @@ export const deletePairingServer = async (
 
     if (enrollmentIdList.length > 0) {
       const now = new Date().toISOString();
-      await adminSupabase
+      const { error: deleteSessionsError } = await adminSupabase
         .from("Sessions")
         .delete()
         .in("enrollment_id", enrollmentIdList)
         .neq("status", "Complete")
         .gte("date", now);
+
+      if (deleteSessionsError) throw deleteSessionsError;
 
       const { error: deleteEnrollmentsError } = await adminSupabase
         .from("Enrollments")
