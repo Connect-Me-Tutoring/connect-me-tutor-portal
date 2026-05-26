@@ -177,14 +177,18 @@ export const deletePairing = async (tutorId: string, studentId: string) => {
 
     if (enrollments && enrollments.length > 0) {
       const now = new Date().toISOString();
-      for (const enrollment of enrollments) {
-        await supabase
-          .from("Sessions")
-          .delete()
-          .eq("enrollment_id", enrollment.id)
-          .neq("status", "Complete")
-          .gte("date", now);
-      }
+      const enrollmentIds = enrollments
+        .map((enrollment: any) => enrollment.id)
+        .filter(Boolean);
+
+      const { error: deleteSessionsError } = await supabase
+        .from("Sessions")
+        .delete()
+        .in("enrollment_id", enrollmentIds)
+        .neq("status", "Complete")
+        .gte("date", now);
+
+      if (deleteSessionsError) throw deleteSessionsError;
 
       // Delete enrollments
       const { error: deleteEnrollmentsError } = await supabase
