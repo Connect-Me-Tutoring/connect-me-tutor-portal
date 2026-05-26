@@ -56,14 +56,20 @@ export async function addSessionsServer(
 ) {
   try {
     const supabase = await createAdminClient();
-    const weekStart: Date = fromZonedTime(
-      parseISO(weekStartString),
-      "America/New_York",
-    );
-    const weekEnd: Date = fromZonedTime(
-      parseISO(weekEndString),
-      "America/New_York",
-    );
+    const parsedWeekStart = parseISO(weekStartString);
+    const parsedWeekEnd = parseISO(weekEndString);
+
+    if (
+      Number.isNaN(parsedWeekStart.getTime()) ||
+      Number.isNaN(parsedWeekEnd.getTime())
+    ) {
+      throw new Error(
+        `Invalid week range: weekStartString=${weekStartString}, weekEndString=${weekEndString}`,
+      );
+    }
+
+    const weekStart: Date = fromZonedTime(parsedWeekStart, "America/New_York");
+    const weekEnd: Date = fromZonedTime(parsedWeekEnd, "America/New_York");
 
     const scheduledSessions: Set<string> = new Set();
     sessions.forEach((session) => {
