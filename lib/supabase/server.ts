@@ -6,10 +6,11 @@ import {
 import { createServerClient as makeServerClient } from "@supabase/ssr";
 import { createClient as createAdmin } from "@supabase/supabase-js";
 import { cookies, headers } from "next/headers";
+import { Database } from "@/types/database.types";
 
 export async function createServerClient() {
   const cookieStore = await cookies();
-  return makeServerClient(
+  return makeServerClient<Database>(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
@@ -35,7 +36,7 @@ export async function createServerClient() {
 export async function createClient() {
   const cookieStore = await cookies();
 
-  return createServerComponentClient(
+  return createServerComponentClient<Database>(
     {
       cookies: () => cookieStore,
     },
@@ -47,7 +48,7 @@ export async function createClient() {
 }
 
 export async function createAdminClient() {
-  const adminSupabase = createAdmin(
+  const adminSupabase = createAdmin<Database>(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!, // ✅ Server-only environment variable
     {
