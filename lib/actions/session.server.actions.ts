@@ -48,7 +48,7 @@ async function isSessioninPastWeek(enrollmentId: string, midWeek: Date) {
  * @param sessions - Existing sessions to avoid duplicates
  * @returns Newly created sessions
  */
-export async function addSessionsServer(
+async function addSessionsServer(
   weekStartString: string,
   weekEndString: string,
   enrollments: Enrollment[],
