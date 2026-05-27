@@ -10,6 +10,8 @@ RETURNS TABLE(
 )
 LANGUAGE plpgsql
 STABLE
+SECURITY DEFINER
+SET search_path = public
 AS $function$
 DECLARE
   v_requestor_auth_id uuid;
