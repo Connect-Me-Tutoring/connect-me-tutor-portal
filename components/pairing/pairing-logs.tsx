@@ -39,7 +39,14 @@ import type {
   PairingWorkflowPreviewPayload,
 } from "@/types/pairing";
 import { normalizePairingWorkflowPreviewPayload } from "@/lib/pairing/normalizePreviewPayload";
+import type { PairingLogSchemaType } from "@/lib/pairing/types";
 import { filterPairingPreviewLogsForKeys } from "@/lib/pairing/filterPreviewLogs";
+import {
+  mapPreviewPairingLog,
+  mapRpcPairingLog,
+  pairingLogMatchesUserType,
+  type PairingDisplayLog,
+} from "@/lib/pairing/mapDisplayLogs";
 import { to12Hour } from "@/lib/utils";
 import { PairingCommitteeGraphDialog } from "./pairing-committee-graph";
 
@@ -56,22 +63,7 @@ function previewKey(p: PairingMatchPreview): string {
   return `${p.pairing_request_id}:${p.match_profile_id}`;
 }
 
-export type PairingLog = {
-  id: string;
-  type:
-    | "pairing-match"
-    | "pairing-match-rejected"
-    | "pairing-match-accepted"
-    | "pairing-selection-failed";
-  profile?: {
-    firstName: string;
-    lastName: string;
-    role: "student" | "tutor";
-  } | null;
-  message: string;
-  status: string;
-  created_at?: string;
-};
+export type PairingLog = PairingDisplayLog;
 
 const getStatusColor = (status: string) => {
   switch (status.toLowerCase()) {
@@ -225,14 +217,13 @@ export function PairingLogsTable() {
           };
           setPreviewRun(normalized);
           setLogs(
-            normalized.preview.logs.map((log, index) => ({
-              id: `${normalized.runId}-${index}`,
-              type: (log.type as PairingLog["type"]) ?? "pairing-selection-failed",
-              profile: null,
-              message: log.message,
-              status: log.error ? "error" : "ok",
-              created_at: normalized.createdAt,
-            })),
+            normalized.preview.logs.map((log, index) =>
+              mapPreviewPairingLog(
+                log as PairingLogSchemaType,
+                `${normalized.runId}-${index}`,
+                normalized.createdAt,
+              ),
+            ),
           );
         }
       } catch (err) {
@@ -269,8 +260,7 @@ export function PairingLogsTable() {
   // Filter logs based on current filter settings
   const filteredLogs = logs.filter((log) => {
     if (filterType !== "all" && log.type !== filterType) return false;
-    if (filterUserType !== "all" && log?.profile?.role !== filterUserType)
-      return false;
+    if (!pairingLogMatchesUserType(log, filterUserType)) return false;
     if (
       filterStatus !== "all" &&
       log.status.toLowerCase() !== filterStatus.toLowerCase()
@@ -314,14 +304,13 @@ export function PairingLogsTable() {
         setPreviewRun(normalized);
         setError(null);
         setLogs(
-          normalized.preview.logs.map((log, index) => ({
-            id: `${normalized.runId}-${index}`,
-            type: (log.type as PairingLog["type"]) ?? "pairing-selection-failed",
-            profile: null,
-            message: log.message,
-            status: log.error ? "error" : "ok",
-            created_at: normalized.createdAt,
-          })),
+          normalized.preview.logs.map((log, index) =>
+            mapPreviewPairingLog(
+              log as PairingLogSchemaType,
+              `${normalized.runId}-${index}`,
+              normalized.createdAt,
+            ),
+          ),
         );
       } catch {
         setError("Failed to reload saved preview run");

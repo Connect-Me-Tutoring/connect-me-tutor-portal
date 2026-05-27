@@ -1,6 +1,7 @@
 "use client";
 
 import { PairingLog, PairingRequest, SharedPairing } from "@/types/pairing";
+import { mapRpcPairingLog } from "@/lib/pairing/mapDisplayLogs";
 import { createClient } from "@supabase/supabase-js";
 import { getProfile, getProfileRole } from "./user.actions";
 import { supabase } from "../supabase/client";
@@ -505,7 +506,10 @@ export const getPairingLogs = async (
     end_time,
   });
 
-  return logs;
+  if (error) throw error;
+  if (!logs) return [];
+
+  return logs.map(mapRpcPairingLog);
 };
 
 export type IncomingPairingMatch = {
@@ -877,7 +881,6 @@ export const updatePairingMatchStatus = async (
       .from("pairing_matches")
       .update({
         tutor_status: "rejected",
-        rejected_at: new Date().toISOString(),
       })
       .eq("id", matchId)
       .eq("tutor_id", profileId);

@@ -275,15 +275,43 @@ const persistPairingWorkflowResult = async (
   let insertedLogs = 0;
 
   if (matchesToInsert.length > 0) {
-    const { error: matchesError } = await supabase
-      .from("pairing_matches")
-      .insert(matchesToInsert);
+    logDebug(debug, "Inserting pairing matches", {
+      count: matchesToInsert.length,
+      matches: matchesToInsert.map((m) => ({
+        student_id: m.student_id,
+        tutor_id: m.tutor_id,
+        similarity: m.similarity,
+      })),
+    });
 
-    // 23505 is duplicate key error - expected when match already exists, so we ignore it
-    if (matchesError && matchesError.code !== "23505") {
-      console.error("Failed to insert pairing matches:", matchesError);
-    } else {
-      insertedMatches = matchesToInsert.length;
+    // Insert one at a time so a duplicate key (23505) on one pair doesn't
+    // roll back the entire batch — students who have never been matched still land.
+    const results = await Promise.all(
+      matchesToInsert.map((m) =>
+        supabase
+          .from("pairing_matches")
+          .insert({ ...m, tutor_status: "pending" })
+          .select("id, student_id, tutor_id, tutor_status")
+          .single(),
+      ),
+    );
+
+    for (const { data, error } of results) {
+      if (error) {
+        if (error.code === "23505") {
+          logDebug(debug, "Skipped duplicate pairing match (already exists)");
+        } else {
+          console.error("Failed to insert pairing match:", error);
+        }
+      } else {
+        insertedMatches++;
+        logDebug(debug, "Saved pairing match", {
+          id: data?.id,
+          student_id: data?.student_id,
+          tutor_id: data?.tutor_id,
+          tutor_status: data?.tutor_status,
+        });
+      }
     }
   }
 
@@ -300,9 +328,14 @@ const persistPairingWorkflowResult = async (
   }
 
   logDebug(debug, "Persisted pairing workflow result", {
+    attempted: matchesToInsert.length,
     insertedMatches,
     insertedLogs,
   });
+
+  console.log(
+    `[pairing] Saved ${insertedMatches}/${matchesToInsert.length} matches, ${insertedLogs} logs`,
+  );
 
   return { insertedMatches, insertedLogs };
 };
@@ -415,12 +448,15 @@ export const runPairingWorkflow = async (
         logs.push({
           message: `${requestor_profile.first_name} ${requestor_profile.last_name} matched with ${match_profile?.first_name} ${match_profile?.last_name}`,
           type: "pairing-match",
+          role: "student",
           error: false,
           metadata: {
             pairing_request_id: studentReq.pairing_request_id,
             match_profile_id: result.match_profile.id,
             student_id,
             tutor_id,
+            requestor_role: "student",
+            requestor_name: `${requestor_profile.first_name} ${requestor_profile.last_name}`,
           },
         });
 
@@ -445,10 +481,12 @@ export const runPairingWorkflow = async (
             ? `Skipped match for ${requestorName} (tutor previously declined student)`
             : `Failed to find pairing for student ${requestorName}`,
           type: "pairing-selection-failed",
+          role: "student",
           error: true,
           metadata: {
             pairing_request_id: studentReq.pairing_request_id,
             profile_id: studentReq.profile_id,
+            requestor_role: "student",
             requestor_name: requestorName,
           },
         });
@@ -493,12 +531,15 @@ export const runPairingWorkflow = async (
         logs.push({
           message: `Tutor ${result.requestor_profile.first_name} matched with ${result.match_profile.first_name}`,
           type: "pairing-match",
+          role: "tutor",
           error: false,
           metadata: {
             pairing_request_id: tutorReq.pairing_request_id,
             match_profile_id: result.match_profile.id,
             student_id,
             tutor_id,
+            requestor_role: "tutor",
+            requestor_name: `${result.requestor_profile.first_name} ${result.requestor_profile.last_name}`,
           },
         });
       } else {
@@ -515,10 +556,12 @@ export const runPairingWorkflow = async (
         logs.push({
           message: `Failed to find pairing for tutor ${requestorName}`,
           type: "pairing-selection-failed",
+          role: "tutor",
           error: true,
           metadata: {
             pairing_request_id: tutorReq.pairing_request_id,
             profile_id: tutorReq.profile_id,
+            requestor_role: "tutor",
             requestor_name: requestorName,
           },
         });

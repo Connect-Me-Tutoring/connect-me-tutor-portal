@@ -978,6 +978,7 @@ export type Database = {
           student_id: string;
           tutor: Json;
           tutor_id: string;
+          tutor_status: string | null;
         }[];
       };
       get_pairing_requests_with_profiles: {

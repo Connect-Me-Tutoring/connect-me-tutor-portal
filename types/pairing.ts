@@ -75,10 +75,10 @@ export type PairingLog = {
     firstName: string;
     lastName: string;
     role: "student" | "tutor";
-  };
+  } | null;
   message: string;
   status: string;
-  createdAt: string;
+  created_at?: string;
 };
 
 // DATABSE TABLE SCHEMA PairingLog = {
