@@ -33,11 +33,9 @@ export async function createServerClient() {
 
 // Supabase Instances are singleton
 export async function createClient() {
-  const cookieStore = await cookies();
-
   return createServerComponentClient(
     {
-      cookies: () => cookieStore,
+      cookies,
     },
     {
       supabaseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL,
