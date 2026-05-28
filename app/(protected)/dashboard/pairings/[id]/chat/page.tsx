@@ -4,10 +4,11 @@ import { getPairingFromEnrollmentId } from "@/lib/actions/pairing.server.actions
 import { createClient } from "@/lib/supabase/server";
 
 interface Props {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }
 
-export default async function ChatRoomPage({ params }: Props) {
+export default async function ChatRoomPage(props: Props) {
+  const params = await props.params;
   // In a real app, these would come from your authentication system and API
   const currentUser: User = {
     id: "user-1",

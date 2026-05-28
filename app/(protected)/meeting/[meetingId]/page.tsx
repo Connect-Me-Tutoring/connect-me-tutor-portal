@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 // import { useRouter } from "next/router"; // Not used in the provided code, can be removed if not needed elsewhere
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, use } from "react";
 // import axios, { AxiosResponse } from "axios"; // Not used, can be removed
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import { getMeeting } from "@/lib/actions/meeting.actions";
@@ -12,7 +12,7 @@ import { Copy, ExternalLink, Loader2, AlertTriangle } from "lucide-react"; // Ad
 import toast, { Toaster } from "react-hot-toast";
 
 type ParamsProps = {
-  params: { meetingId: string };
+  params: Promise<{ meetingId: string }>;
 };
 
 // interface ZoomResponseData { // This interface is not used, can be removed if not needed for Zoom SDK integration
@@ -22,7 +22,8 @@ type ParamsProps = {
 //   sdkKey: any;
 // }
 
-const MeetingPage = ({ params }: ParamsProps) => {
+const MeetingPage = (props: ParamsProps) => {
+  const params = use(props.params);
   const meetingId = params.meetingId;
   // console.log("MEETING ID", meetingId);
 

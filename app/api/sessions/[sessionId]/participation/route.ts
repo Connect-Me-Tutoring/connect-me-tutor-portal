@@ -2,10 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { getParticipationBySessionId } from "@/lib/actions/zoom.server.actions";
 import { getSessionById } from "@/lib/actions/session.server.actions";
 
-export async function GET(
-  req: NextRequest,
-  { params }: { params: { sessionId: string } }
-) {
+export async function GET(req: NextRequest, props: { params: Promise<{ sessionId: string }> }) {
+  const params = await props.params;
   try {
     const sessionId = params.sessionId;
 
