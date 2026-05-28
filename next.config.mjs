@@ -7,9 +7,9 @@ const nextConfig = {
     ignoreBuildErrors: true,
   },
 
-  // Indicate that these packages should not be bundled by webpack
+  serverExternalPackages: ["sharp", "onnxruntime-node", "twilio"],
+
   experimental: {
-    serverComponentsExternalPackages: ["sharp", "onnxruntime-node", "twilio"],
     esmExternals: true,
   },
 
