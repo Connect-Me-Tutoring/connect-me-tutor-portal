@@ -18,7 +18,7 @@ async function verifyAdminMiddleware(user: User, supabase: SupabaseClient) {
   if (profile.role !== "Admin") throw new Error("Unauthorized error");
 }
 
-export async function middleware(req: NextRequest) {
+export async function proxy(req: NextRequest) {
   const res = NextResponse.next();
   const path = req.nextUrl.pathname;
 
