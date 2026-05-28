@@ -267,7 +267,7 @@ const batchInsertSessions = async (sessionsToCreate: Session[]) => {
   }
 };
 
-export async function getSessionKeys(data?: Session[]) {
+async function getSessionKeys(data?: Session[]) {
   const supabase = await createClient();
   const sessionKeys: Set<string> = new Set();
 

@@ -580,10 +580,10 @@ export const addEnrollment = async (
   }
 };
 
-export const sessionTimeFromEnrollment = (
+export const sessionTimeFromEnrollment = async (
   availability: Availability,
   start: string,
-): string => {
+): Promise<string> => {
   console.log(availability);
   console.log(start);
 
