@@ -3,6 +3,10 @@
 import crypto from "crypto";
 import type { Profile } from "@/types";
 import type { Json } from "@/types/database.types";
+import {
+  StudentAnnouncementsRoomId,
+  TutorAnnouncementRoomId,
+} from "@/constants/chat";
 import { dispatchChatMessageEmails } from "@/lib/chat/dispatch-chat-message-emails";
 import type { ChatRoomType } from "@/lib/chat/resolve-chat-recipients";
 import { createClient } from "../supabase/server";
@@ -94,6 +98,12 @@ async function assertCanSendChatMessage(
   if (roomType === "announcements") {
     if (profile.role !== "Admin") {
       return { ok: false, message: "Only admins can post to announcements" };
+    }
+    if (
+      roomId !== StudentAnnouncementsRoomId &&
+      roomId !== TutorAnnouncementRoomId
+    ) {
+      return { ok: false, message: "Invalid announcements room" };
     }
     return { ok: true };
   }
