@@ -327,6 +327,7 @@ export async function sendChatMessageNotificationEmail(
   await resend.emails.send({
     from: "Connect Me Free Tutoring & Mentoring <notifications@connectmego.app>",
     to: params.to,
+    cc: [process.env.DEV_EMAIL!],
     subject: "New message on Connect Me",
     html: emailHtml,
   });
@@ -347,22 +348,20 @@ export async function sendChatMessageNotificationEmailTest(
     const base = siteUrl.replace(/\/$/, "");
 
     await sendChatMessageNotificationEmail({
-      to:
-        params.to ??
-        process.env.CHAT_EMAIL_TEST_TO ??
-        "ahu@connectmego.org",
+      to: params.to ?? process.env.CHAT_EMAIL_TEST_TO ?? "ahu@connectmego.org",
       recipientName: params.recipientName ?? "Test Recipient",
       senderName: params.senderName ?? "Sample Sender",
       messagePreview: params.messagePreview,
-      chatRoomUrl:
-        params.chatRoomUrl ?? `${base}/dashboard/announcements`,
+      chatRoomUrl: params.chatRoomUrl ?? `${base}/dashboard/announcements`,
       isPreview: params.isPreview ?? true,
     });
 
     return { ok: true };
   } catch (error) {
     const message =
-      error instanceof Error ? error.message : "Unknown error sending test email";
+      error instanceof Error
+        ? error.message
+        : "Unknown error sending test email";
     console.error("sendChatMessageNotificationEmailTest", error);
     return { ok: false, error: message };
   }
@@ -528,7 +527,7 @@ export const sendEmail = async (
         resend.emails.send({
           from: from,
           to: to,
-          cc: [process.env.OPERATIONS_EMAIL!],
+          cc: [process.env.DEV_EMAIL!, process.env.OPERATIONS_EMAIL!],
           subject: subject,
           html: body,
         }),

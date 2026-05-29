@@ -156,7 +156,9 @@ Options:
 
   if (!to || !template) {
     console.error("Error: --to and --template are required.");
-    console.error('Example: npx tsx scripts/send-email.ts --to you@x.com --template chat-message');
+    console.error(
+      "Example: npx tsx scripts/send-email.ts --to you@x.com --template chat-message",
+    );
     process.exit(1);
   }
 
@@ -208,7 +210,11 @@ Options:
         student: mockStudent(),
         tutor: mockTutor(),
         startDate: new Date().toISOString(),
-        availability: { day: "Monday", startTime: "3:00 PM", endTime: "4:00 PM" },
+        availability: {
+          day: "Monday",
+          startTime: "3:00 PM",
+          endTime: "4:00 PM",
+        },
         meeting: mockMeeting(),
       };
       html = await render(
@@ -222,7 +228,11 @@ Options:
         student: mockStudent(),
         tutor: mockTutor(),
         startDate: new Date().toISOString(),
-        availability: { day: "Monday", startTime: "3:00 PM", endTime: "4:00 PM" },
+        availability: {
+          day: "Monday",
+          startTime: "3:00 PM",
+          endTime: "4:00 PM",
+        },
         meeting: mockMeeting(),
       };
       html = await render(
@@ -240,6 +250,7 @@ Options:
   const { data, error } = await resend.emails.send({
     from: DEFAULT_FROM,
     to: [to],
+    cc: [process.env.DEV_EMAIL!],
     subject,
     html,
   });
