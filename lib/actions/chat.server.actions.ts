@@ -192,8 +192,7 @@ export async function sendChatMessage(params: {
   }
 
   const preview =
-    params.content ||
-    (params.file ? `Shared a file: ${params.file.name}` : "");
+    params.content || (params.file ? `Shared a file: ${params.file.name}` : "");
 
   await dispatchChatMessageEmails({
     roomId: params.roomId,
