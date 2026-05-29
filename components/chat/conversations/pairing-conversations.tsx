@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Profile } from "@/types";
 
 import { SharedPairing } from "@/types/pairing";
-import { profile } from "console";
+import { isUuidString } from "@/lib/utils";
 import Link from "next/link";
 import { redirect, useRouter } from "next/navigation";
 import { use, useMemo } from "react";
@@ -87,19 +87,18 @@ export function ChatList({ pairingsPromise, profilePromise }: ChatListProps) {
 
   const clientConversations = useMemo(
     () =>
-      pairings.map((pairing) => {
-        const profile =
-          role === "Student" ? pairing["tutor"] : pairing["student"];
-        return {
-          id: profile.id,
-          name: `${profile.first_name}  ${profile.last_name}`,
-          email: profile.email,
-          //   startDate: pairing.start_date,
-          //   endDate: pairing.end_date,
-          pairingId: pairing.id,
-        };
-      }),
-    // const d
+      pairings
+        .filter((pairing) => isUuidString(pairing.id))
+        .map((pairing) => {
+          const counterparty =
+            role === "Student" ? pairing["tutor"] : pairing["student"];
+          return {
+            counterpartyId: counterparty.id,
+            name: `${counterparty.first_name}  ${counterparty.last_name}`,
+            email: counterparty.email,
+            pairingId: pairing.id,
+          };
+        }),
     [pairings, role],
   );
   return (
@@ -141,14 +140,14 @@ export function ChatList({ pairingsPromise, profilePromise }: ChatListProps) {
           </div>
         ) : (
           clientConversations.map((conversation) => {
-            const lastMessage = getLastMessage(conversation.id);
-            const unreadCount = getUnreadCount(conversation.id);
+            const lastMessage = getLastMessage(conversation.pairingId);
+            const unreadCount = getUnreadCount(conversation.pairingId);
             const isActive = new Date() > new Date();
 
             return (
               <Link
                 href={`/dashboard/pairings/${conversation.pairingId}/chat`}
-                key={conversation.name}
+                key={conversation.pairingId}
                 className="flex items-center p-4 hover:bg-gray-50 cursor-pointer border-b border-gray-50 transition-colors"
               >
                 {/* Tutor Avatar */}

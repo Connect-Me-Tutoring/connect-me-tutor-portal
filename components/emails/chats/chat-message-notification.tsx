@@ -1,3 +1,4 @@
+import React from "react";
 import {
   Html,
   Head,
@@ -62,6 +63,11 @@ export default function ChatMessageNotificationEmail({
     <Html>
       <Head />
       <Body className="font-sans m-0 p-0">
+        {isPreview ? (
+          <Section className="bg-amber-100 text-amber-900 p-2 text-center text-sm m-0">
+            Preview — this is a sample notification, not a live message.
+          </Section>
+        ) : null}
         <EmailContent />
       </Body>
     </Html>

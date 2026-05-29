@@ -14,6 +14,41 @@ export type Database = {
   };
   public: {
     Tables: {
+      chat_room_notification_preferences: {
+        Row: {
+          created_at: string;
+          email_muted: boolean;
+          id: string;
+          profile_id: string;
+          room_id: string;
+          updated_at: string;
+        };
+        Insert: {
+          created_at?: string;
+          email_muted?: boolean;
+          id?: string;
+          profile_id: string;
+          room_id: string;
+          updated_at?: string;
+        };
+        Update: {
+          created_at?: string;
+          email_muted?: boolean;
+          id?: string;
+          profile_id?: string;
+          room_id?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "chat_room_notification_preferences_profile_id_fkey";
+            columns: ["profile_id"];
+            isOneToOne: false;
+            referencedRelation: "Profiles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       conversation_participant: {
         Row: {
           conversation_id: string;
