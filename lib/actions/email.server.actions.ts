@@ -324,13 +324,25 @@ export async function sendChatMessageNotificationEmail(
     }),
   );
 
-  await resend.emails.send({
-    from: "Connect Me Free Tutoring & Mentoring <notifications@connectmego.app>",
-    to: params.to,
-    cc: [process.env.DEV_EMAIL!],
-    subject: "New message on Connect Me",
-    html: emailHtml,
-  });
+  const emailResult = await withRetry(
+    () =>
+      resend.emails.send({
+        from: "Connect Me Free Tutoring & Mentoring <notifications@connectmego.app>",
+        to: params.to,
+        cc: [process.env.DEV_EMAIL!],
+        subject: "New message on Connect Me",
+        html: emailHtml,
+      }),
+    {
+      onRetry: (error, attempt) =>
+        console.error(
+          `sendChatMessageNotificationEmail attempt ${attempt + 1} failed:`,
+          error,
+        ),
+    },
+  );
+
+  return emailResult;
 }
 
 /**

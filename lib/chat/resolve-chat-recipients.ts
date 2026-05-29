@@ -151,7 +151,7 @@ export async function resolveChatRecipientProfiles(
 
     const { data, error } = await admin
       .from("Profiles")
-      .select("id, email, first_name, last_name")
+      .select("id")
       .eq("role", roleFilter);
 
     if (error) {
@@ -159,7 +159,8 @@ export async function resolveChatRecipientProfiles(
       return [];
     }
 
-    return (data ?? []) as ChatRecipientRow[];
+    const ids = (data ?? []).map((profile) => profile.id);
+    return fetchProfilesByIds(admin, ids);
   }
 
   return [];
