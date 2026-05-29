@@ -209,3 +209,31 @@ export async function getParticipationBySessionId(
 
   return (data || []) as ParticipationRecord[];
 }
+
+/**
+ * Count zoom_participant_events rows per portal session id (batch).
+ */
+export async function getParticipantEventCountsBySessionIds(
+  sessionIds: string[],
+): Promise<Record<string, number>> {
+  if (sessionIds.length === 0) {
+    return {};
+  }
+  const { data, error } = await supabase
+    .from("zoom_participant_events")
+    .select("session_id")
+    .in("session_id", sessionIds);
+
+  if (error) {
+    console.error("Error counting zoom participant events:", error);
+    throw error;
+  }
+
+  const counts: Record<string, number> = {};
+  for (const row of data || []) {
+    const sid = (row as { session_id?: string | null }).session_id;
+    if (!sid) continue;
+    counts[sid] = (counts[sid] || 0) + 1;
+  }
+  return counts;
+}

@@ -1364,7 +1364,11 @@ const Schedule = () => {
                 })()}
                 <div className="flex flex-col gap-3">
                   <Link
-                    href={`/dashboard/session/${selectedSession.id}/participation`}
+                    href={`/dashboard/session/${selectedSession.id}/participation${
+                      selectedSession.enrollmentId
+                        ? `?enrollmentId=${selectedSession.enrollmentId}`
+                        : ""
+                    }`}
                     className="w-full"
                   >
                     <Button variant="outline" className="w-full">

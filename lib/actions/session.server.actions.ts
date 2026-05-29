@@ -9,8 +9,13 @@ import { getProfileWithProfileId } from "./user.actions";
 import { getMeeting } from "./meeting.server.actions";
 import { createServerClient } from "../supabase/server";
 import { Table } from "../supabase/tables";
-import { getParticipationBySessionId } from "./zoom.server.actions";
 import {
+  getParticipationBySessionId,
+  getParticipantEventCountsBySessionIds,
+} from "./zoom.server.actions";
+import { normalizeZoomParticipationEvents } from "@/lib/zoom/participation-normalize";
+import {
+  tableToInterfaceEnrollments,
   tableToInterfaceSessions,
 } from "../type-utils";
 import { sendScheduledEmailsBeforeSessions } from "./email.server.actions";
@@ -449,6 +454,127 @@ export async function getAllSessions(
 
 export async function updateSessionParticipantion(meetingID: string) {}
 
+function profileLabelForActivity(p: Profile | null): string {
+  if (!p) return "Unknown";
+  const name = `${p.firstName ?? ""} ${p.lastName ?? ""}`.trim();
+  if (name) return name;
+  if (p.email) return p.email;
+  return "Unknown";
+}
+
+export type EnrollmentActivitySessionRow = {
+  id: string;
+  date: string;
+  status: string | null;
+  meetingTitle: string;
+  meetingId: string;
+  zoomEventCount: number;
+};
+
+export type EnrollmentSessionsActivityData = {
+  enrollment: {
+    id: string;
+    summary: string;
+    frequency: string;
+    paused: boolean;
+    studentName: string;
+    tutorName: string;
+  };
+  sessions: EnrollmentActivitySessionRow[];
+};
+
+/**
+ * Enrollment header plus all portal sessions for that enrollment, with Zoom log counts.
+ */
+export async function getEnrollmentSessionsActivityData(
+  enrollmentId: string,
+): Promise<EnrollmentSessionsActivityData | null> {
+  try {
+    if (!enrollmentId) return null;
+    const supabase = await createClient();
+
+    const { data: enRow, error: enErr } = await supabase
+      .from(Table.Enrollments)
+      .select(
+        `
+        id,
+        summary,
+        frequency,
+        paused,
+        student:Profiles!student_id(*),
+        tutor:Profiles!tutor_id(*)
+      `,
+      )
+      .eq("id", enrollmentId)
+      .single();
+
+    if (enErr || !enRow) {
+      console.error("getEnrollmentSessionsActivityData enrollment:", enErr);
+      return null;
+    }
+
+    if (!enRow.student || !enRow.tutor) {
+      console.error(
+        "getEnrollmentSessionsActivityData: enrollment missing student or tutor",
+      );
+      return null;
+    }
+
+    const en = tableToInterfaceEnrollments(enRow);
+
+    const { data: sessRows, error: sErr } = await supabase
+      .from(Table.Sessions)
+      .select(
+        `
+        id,
+        date,
+        status,
+        meeting:Meetings!meeting_id(name, meeting_id)
+      `,
+      )
+      .eq("enrollment_id", enrollmentId)
+      .order("date", { ascending: false })
+      .limit(150);
+
+    if (sErr) {
+      console.error("getEnrollmentSessionsActivityData sessions:", sErr);
+      throw sErr;
+    }
+
+    const sessionIds = (sessRows || []).map((r: { id: string }) => r.id);
+    const counts = await getParticipantEventCountsBySessionIds(sessionIds);
+
+    const sessions: EnrollmentActivitySessionRow[] = (sessRows || []).map(
+      (r: any) => {
+        const m = Array.isArray(r.meeting) ? r.meeting[0] : r.meeting;
+        return {
+          id: r.id,
+          date: r.date ?? "",
+          status: r.status,
+          meetingTitle: m?.name || "Meeting",
+          meetingId: m?.meeting_id || "",
+          zoomEventCount: counts[r.id] ?? 0,
+        };
+      },
+    );
+
+    return {
+      enrollment: {
+        id: en.id,
+        summary: en.summary,
+        frequency: en.frequency,
+        paused: en.paused,
+        studentName: profileLabelForActivity(en.student),
+        tutorName: profileLabelForActivity(en.tutor),
+      },
+      sessions,
+    };
+  } catch (error) {
+    console.error("getEnrollmentSessionsActivityData:", error);
+    return null;
+  }
+}
+
 export interface ParticipationEvent {
   id: string;
   participantId: string;
@@ -456,6 +582,10 @@ export interface ParticipationEvent {
   email: string;
   action: "joined" | "left";
   timestamp: string;
+  /** Present when join was inferred (e.g. first webhook was a leave). */
+  inferred?: boolean;
+  /** Join timestamp was before the scheduled session start. */
+  joinedBeforeScheduledStart?: boolean;
 }
 
 export interface ParticipationSummary {
@@ -467,11 +597,15 @@ export interface ParticipationSummary {
   currentlyInMeeting: boolean;
   firstJoined: string;
   lastActivity: string;
+  hadInferredJoin?: boolean;
+  joinedBeforeScheduledStart?: boolean;
 }
 
 export interface ParticipationData {
   session: {
     id: string;
+    /** Portal enrollment this session belongs to, if any. */
+    enrollmentId: string | null;
     meetingTitle: string;
     meetingId: string;
     startTime: string;
@@ -480,10 +614,24 @@ export interface ParticipationData {
   };
   events: ParticipationEvent[];
   participantSummaries: ParticipationSummary[];
+  /** Present when `?enrollmentId=` matches this session's enrollment. */
+  enrollmentBreakdown?: {
+    enrollment: {
+      id: string;
+      summary: string;
+      frequency: string;
+      studentName: string;
+      tutorName: string;
+    };
+    sessions: EnrollmentActivitySessionRow[];
+  };
+  /** `?enrollmentId=` was sent but does not match this session (or enrollment missing). */
+  enrollmentQueryMismatch?: boolean;
 }
 
 export async function getParticipationData(
   sessionId: string,
+  enrollmentIdFromSearch?: string | null,
 ): Promise<ParticipationData | null> {
   try {
     if (!sessionId) {
@@ -497,126 +645,22 @@ export async function getParticipationData(
       return null;
     }
 
-    // Get participation records
     const participationRecords = await getParticipationBySessionId(sessionId);
-
-    // Transform participation records into events format
-    // Each record in zoom_participant_events already represents a single action (joined or left)
-    const events: ParticipationEvent[] = participationRecords.map((record) => ({
-      id: record.id,
-      participantId: record.participant_id,
-      name: record.name,
-      email: record.email || "",
-      action: record.action as "joined" | "left",
-      timestamp: record.timestamp,
-    }));
-
-    // Sort events by timestamp
-    events.sort(
-      (a, b) =>
-        new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime(),
-    );
-
-    // Calculate participant summaries
-    const participantMap = new Map<
-      string,
-      {
-        id: string;
-        name: string;
-        email: string;
-        totalDuration: number;
-        joinCount: number;
-        currentlyInMeeting: boolean;
-        firstJoined: string;
-        lastActivity: string;
-      }
-    >();
 
     const sessionStartTime = session.date ? new Date(session.date) : new Date();
     const sessionEndTime = session.duration
       ? new Date(sessionStartTime.getTime() + session.duration * 60 * 60 * 1000)
       : null;
 
-    events.forEach((event) => {
-      if (!participantMap.has(event.participantId)) {
-        participantMap.set(event.participantId, {
-          id: event.participantId,
-          name: event.name,
-          email: event.email,
-          totalDuration: 0,
-          joinCount: 0,
-          currentlyInMeeting: false,
-          firstJoined: event.timestamp,
-          lastActivity: event.timestamp,
-        });
-      }
-
-      const summary = participantMap.get(event.participantId)!;
-      summary.lastActivity = event.timestamp;
-
-      if (event.action === "joined") {
-        summary.joinCount++;
-        summary.currentlyInMeeting = true;
-      } else {
-        summary.currentlyInMeeting = false;
-      }
-    });
-
-    // Calculate durations for each participant
-    participantMap.forEach((summary) => {
-      const userEvents = events.filter((e) => e.participantId === summary.id);
-      let totalDuration = 0;
-      let joinTime: Date | null = null;
-
-      userEvents.forEach((event) => {
-        if (event.action === "joined") {
-          joinTime = new Date(event.timestamp);
-        } else if (event.action === "left" && joinTime) {
-          const leaveTime = new Date(event.timestamp);
-          totalDuration +=
-            (leaveTime.getTime() - joinTime.getTime()) / (1000 * 60);
-          joinTime = null;
-        }
-      });
-
-      // If still in meeting, calculate duration until session end or now
-      if (joinTime !== null && summary.currentlyInMeeting) {
-        const now = new Date();
-        const joinTimeDate = joinTime as Date;
-
-        // Determine the end time: use session end if it exists and is in the past,
-        // otherwise use current time, but never use a time before the join time
-        let endTime: Date;
-        if (sessionEndTime && sessionEndTime >= joinTimeDate) {
-          // Session has ended, use session end time (but not if it's in the future)
-          endTime = sessionEndTime < now ? sessionEndTime : now;
-        } else {
-          // No session end time or it's before join time, use current time
-          endTime = now;
-        }
-
-        // Only calculate if join time is before or equal to end time
-        if (joinTimeDate <= endTime) {
-          const duration =
-            (endTime.getTime() - joinTimeDate.getTime()) / (1000 * 60);
-          // Only add positive durations
-          if (duration > 0) {
-            totalDuration += duration;
-          }
-        }
-      }
-
-      // Ensure totalDuration is never negative
-      summary.totalDuration = Math.max(0, Math.round(totalDuration));
-    });
-
-    const participantSummaries = Array.from(participantMap.values()).sort(
-      (a, b) => b.totalDuration - a.totalDuration,
+    const { events, participantSummaries } = normalizeZoomParticipationEvents(
+      participationRecords,
+      { sessionStart: sessionStartTime, sessionEnd: sessionEndTime },
     );
 
-    return {
+    const base: ParticipationData = {
       session: {
         id: session.id,
+        enrollmentId: session.enrollmentId,
         meetingTitle: session.meeting?.name || "Tutoring Session",
         meetingId: session.meeting?.meetingId || "",
         startTime: session.date,
@@ -625,6 +669,34 @@ export async function getParticipationData(
       },
       events,
       participantSummaries,
+    };
+
+    const q = enrollmentIdFromSearch?.trim();
+    if (!q) {
+      return base;
+    }
+
+    if (!session.enrollmentId || q !== session.enrollmentId) {
+      return { ...base, enrollmentQueryMismatch: true };
+    }
+
+    const activity = await getEnrollmentSessionsActivityData(session.enrollmentId);
+    if (!activity) {
+      return { ...base, enrollmentQueryMismatch: true };
+    }
+
+    return {
+      ...base,
+      enrollmentBreakdown: {
+        enrollment: {
+          id: activity.enrollment.id,
+          summary: activity.enrollment.summary,
+          frequency: activity.enrollment.frequency,
+          studentName: activity.enrollment.studentName,
+          tutorName: activity.enrollment.tutorName,
+        },
+        sessions: activity.sessions,
+      },
     };
   } catch (error) {
     console.error("Error fetching participation data:", error);

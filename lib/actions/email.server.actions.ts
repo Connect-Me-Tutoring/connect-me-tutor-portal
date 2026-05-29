@@ -18,6 +18,9 @@ import { parseISO, subMinutes } from "date-fns";
 import StudentRescheduleNotificationEmail, {
   SessionRescheduleEmailProps,
 } from "@/components/emails/student-reschedule-notification";
+import ChatMessageNotificationEmail, {
+  type ChatMessageNotificationEmailProps,
+} from "@/components/emails/chats/chat-message-notification";
 import { withRetry } from "@/lib/utils";
 import EarlySessionCheckInEmail from "@/components/emails/early-session-check-in-email";
 import { getAllActiveEnrollmentsForCron } from "./enrollment.server.actions";
@@ -303,6 +306,79 @@ export async function sendSessionRescheduleEmail(
   return emailResult;
 }
 
+/** Resend recipient plus props from {@link ChatMessageNotificationEmailProps}. */
+export type SendChatMessageNotificationEmailParams = {
+  to: string;
+} & ChatMessageNotificationEmailProps;
+
+export async function sendChatMessageNotificationEmail(
+  params: SendChatMessageNotificationEmailParams,
+) {
+  const emailHtml = await render(
+    React.createElement(ChatMessageNotificationEmail, {
+      recipientName: params.recipientName,
+      senderName: params.senderName,
+      messagePreview: params.messagePreview,
+      chatRoomUrl: params.chatRoomUrl,
+      isPreview: params.isPreview,
+    }),
+  );
+
+  const emailResult = await withRetry(
+    () =>
+      resend.emails.send({
+        from: "Connect Me Free Tutoring & Mentoring <notifications@connectmego.app>",
+        to: params.to,
+        cc: [process.env.DEV_EMAIL!],
+        subject: "New message on Connect Me",
+        html: emailHtml,
+      }),
+    {
+      onRetry: (error, attempt) =>
+        console.error(
+          `sendChatMessageNotificationEmail attempt ${attempt + 1} failed:`,
+          error,
+        ),
+    },
+  );
+
+  return emailResult;
+}
+
+/**
+ * Sends the chat notification template to a test inbox with a sample message body.
+ * Use for manual QA of `ChatMessageNotificationEmail` without sending a real chat.
+ */
+export async function sendChatMessageNotificationEmailTest(
+  params: { messagePreview: string; to?: string } & Partial<
+    Omit<ChatMessageNotificationEmailProps, "messagePreview">
+  >,
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  try {
+    const siteUrl =
+      process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.connectmego.app";
+    const base = siteUrl.replace(/\/$/, "");
+
+    await sendChatMessageNotificationEmail({
+      to: params.to ?? process.env.CHAT_EMAIL_TEST_TO ?? "ahu@connectmego.org",
+      recipientName: params.recipientName ?? "Test Recipient",
+      senderName: params.senderName ?? "Sample Sender",
+      messagePreview: params.messagePreview,
+      chatRoomUrl: params.chatRoomUrl ?? `${base}/dashboard/announcements`,
+      isPreview: params.isPreview ?? true,
+    });
+
+    return { ok: true };
+  } catch (error) {
+    const message =
+      error instanceof Error
+        ? error.message
+        : "Unknown error sending test email";
+    console.error("sendChatMessageNotificationEmailTest", error);
+    return { ok: false, error: message };
+  }
+}
+
 export async function sendEarlySessionCheckInEmails(now = new Date()) {
   const supabase = await createAdminClient();
   const targetStartDate = formatInTimeZone(
@@ -463,7 +539,7 @@ export const sendEmail = async (
         resend.emails.send({
           from: from,
           to: to,
-          cc: [process.env.OPERATIONS_EMAIL!],
+          cc: [process.env.DEV_EMAIL!, process.env.OPERATIONS_EMAIL!],
           subject: subject,
           html: body,
         }),
