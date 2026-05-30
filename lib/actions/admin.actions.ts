@@ -59,6 +59,9 @@ import { removeFutureSessions } from "./enrollment.server.actions";
 
 const { fromZonedTime } = DateFNS;
 
+const uuidRegex =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
 type EnrollmentTableRow = {
   availability?: Availability[] | null;
   created_at?: string | null;
@@ -960,22 +963,24 @@ export async function getAllNotifications(): Promise<Notification[] | null> {
             notification.student_id,
             notification.tutor_id,
           ])
-          .filter(Boolean),
+          .filter((id: unknown): id is string =>
+            typeof id === "string" && uuidRegex.test(id),
+          ),
       ),
     ];
 
-    const { data: profiles, error: profilesError } = await supabase
-      .from(Table.Profiles)
-      .select("*")
-      .in("id", profileIds);
+    const profiles =
+      profileIds.length > 0
+        ? await supabase.from(Table.Profiles).select("*").in("id", profileIds)
+        : { data: [], error: null };
 
-    if (profilesError) {
-      console.error("Error fetching notification profiles:", profilesError.message);
+    if (profiles.error) {
+      console.error("Error fetching notification profiles:", profiles.error.message);
       return null;
     }
 
     const profilesById = new Map(
-      (profiles ?? []).map((profile: any) => [profile.id, profile]),
+      (profiles.data ?? []).map((profile: any) => [profile.id, profile]),
     );
 
     const notifications: Notification[] = data.map((notification: any) => ({

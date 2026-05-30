@@ -101,8 +101,8 @@ const EmailManager = () => {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {emails.map((email) => (
-                <TableRow key={email.id}>
+              {emails.map((email, index) => (
+                <TableRow key={`${email.id}-${index}`}>
                   <TableCell>
                     {new Date(email.sendDate).toLocaleString()}
                   </TableCell>
