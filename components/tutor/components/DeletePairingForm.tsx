@@ -93,7 +93,7 @@ const DeletePairingForm = ({ tutor, student }: DeletePairingFormProps) => {
 
   return (
     <AlertDialog>
-      <AlertDialogTrigger>
+      <AlertDialogTrigger asChild>
         <Button variant="ghost" size="icon">
           <Trash className="h-4 w-4" color="#ef4444" />
         </Button>
