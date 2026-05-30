@@ -80,7 +80,7 @@ const CancellationForm: React.FC<CancellationFormProps> = ({
               id="studentUnavailableWithoutPriorNotice"
             />
             <Label htmlFor="studentUnavailableWithoutPriorNotice">
-              Student did not attend
+              Student did not attend without prior notice
             </Label>
           </span>
           <span className="space-x-2">
