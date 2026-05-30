@@ -932,7 +932,6 @@ export async function removeEvent(eventId: string): Promise<boolean> {
 /* NOTIFICATIONS */
 export async function getAllNotifications(): Promise<Notification[] | null> {
   try {
-    // Fetch meeting details from Supabase
     const { data, error } = await supabase.from("Notifications").select(`
         id,
         created_at,
@@ -942,23 +941,43 @@ export async function getAllNotifications(): Promise<Notification[] | null> {
         tutor_id,
         student_id,
         status,
-        summary,
-        student:Profiles!student_id(*),
-        tutor:Profiles!tutor_id(*)
+        summary
       `);
 
-    // Check for errors and log them
     if (error) {
       console.error("Error fetching notification details:", error.message);
-      return null; // Returning null here is valid since the function returns Promise<Notification[] | null>
+      return null;
     }
 
-    // Check if data exists
     if (!data) {
-      return null; // Valid return
+      return null;
     }
 
-    // Mapping the fetched data to the Notification object
+    const profileIds = [
+      ...new Set(
+        data
+          .flatMap((notification: any) => [
+            notification.student_id,
+            notification.tutor_id,
+          ])
+          .filter(Boolean),
+      ),
+    ];
+
+    const { data: profiles, error: profilesError } = await supabase
+      .from(Table.Profiles)
+      .select("*")
+      .in("id", profileIds);
+
+    if (profilesError) {
+      console.error("Error fetching notification profiles:", profilesError.message);
+      return null;
+    }
+
+    const profilesById = new Map(
+      (profiles ?? []).map((profile: any) => [profile.id, profile]),
+    );
+
     const notifications: Notification[] = data.map((notification: any) => ({
       createdAt: notification.created_at,
       id: notification.id,
@@ -966,15 +985,19 @@ export async function getAllNotifications(): Promise<Notification[] | null> {
       sessionId: notification.session_id,
       previousDate: notification.previous_date,
       suggestedDate: notification.suggested_date,
-      student: tableToInterfaceProfiles(notification.student_id),
-      tutor: tableToInterfaceProfiles(notification.tutor_id),
+      student: profilesById.has(notification.student_id)
+        ? tableToInterfaceProfiles(profilesById.get(notification.student_id))
+        : null,
+      tutor: profilesById.has(notification.tutor_id)
+        ? tableToInterfaceProfiles(profilesById.get(notification.tutor_id))
+        : null,
       status: notification.status,
     }));
 
-    return notifications; // Return the array of notifications
+    return notifications;
   } catch (error) {
     console.error("Unexpected error in getMeeting:", error);
-    return null; // Valid return
+    return null;
   }
 }
 

@@ -256,10 +256,10 @@ function OTPLogin() {
   );
 }
 
-const OTPForm = async () => {
+const OTPForm = () => {
   return (
     <>
-      <Suspense>
+      <Suspense fallback={null}>
         <OTPLogin />
       </Suspense>
     </>
