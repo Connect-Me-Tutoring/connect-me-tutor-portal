@@ -3,7 +3,7 @@ import { Inter } from "next/font/google";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import "./globals.css";
 import { PostHogProvider } from "../components/PostHogProvider";
-import { ProfileContextProvider } from "@/contexts/profileContext";
+import { ProfileContextProvider } from "@/lib/contexts/profileContext";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 const inter = Inter({ subsets: ["latin"] });
@@ -22,9 +22,7 @@ export default function RootLayout({
     <html lang="en">
       <body className={inter.className}>
         <PostHogProvider>
-          <div className="app-scale-shell">
-            {children}
-          </div>
+          {children}
           {/* <SpeedInsights /> */}
         </PostHogProvider>
       </body>

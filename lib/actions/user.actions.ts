@@ -60,7 +60,15 @@ export const getProfileFromUserSettings = async (userId: string) => {
       throw new Error("No profile associated with user id");
     }
 
-    return tableToInterfaceProfiles(data.profile as any);
+    const profile = data.profile as any;
+    // if (!profile || profile.user_id !== userId) {
+    //   console.error(
+    //     `User_settings for user ${userId} points to profile owned by ${profile?.user_id}. Refusing to return profile.`,
+    //   );
+    //   throw new Error("Profile ownership mismatch");
+    // }
+
+    return tableToInterfaceProfiles(profile);
   } catch (error) {
     throw error;
   }
@@ -147,7 +155,7 @@ export const getProfileRole = async (
 
     const profileRole: { profile: { role: string } | null } = data[0] as any;
 
-    // landle missing profile
+    // handle missing profile
     if (!profileRole || !profileRole.profile) {
       console.warn(
         `User ${userId} has user_settings but no associated profile. User/profile mismatch.`,
@@ -155,7 +163,7 @@ export const getProfileRole = async (
       return null;
     }
 
-    // landle missing role
+    // handle missing role
     if (!profileRole.profile.role) {
       console.warn(`User ${userId} has profile but no role assigned.`);
       return null;

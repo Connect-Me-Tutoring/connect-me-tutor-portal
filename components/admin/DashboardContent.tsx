@@ -55,10 +55,9 @@ const AdminDashboard = () => {
   const [filterValue, setFilterValue] = useState("");
   const [selectedSession, setSelectedSession] = useState<Session | null>(null);
   const [selectedSessionDate, setSelectedSessionDate] = useState<string | null>(
-    null
+    null,
   );
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-
 
   useEffect(() => {
     const filtered = sessions.filter((session) => {
@@ -130,7 +129,7 @@ const AdminDashboard = () => {
 
   const paginatedSessions = filteredSessions.slice(
     (currentPage - 1) * rowsPerPage,
-    currentPage * rowsPerPage
+    currentPage * rowsPerPage,
   );
 
   return (
@@ -158,7 +157,6 @@ const AdminDashboard = () => {
                 <TableHead>Title</TableHead>
                 <TableHead>Tutor</TableHead>
                 <TableHead>Student</TableHead>
-                <TableHead>Location</TableHead>
                 <TableHead>Meeting</TableHead>
                 <TableHead className="w-[50px]"></TableHead>
               </TableRow>
@@ -178,7 +176,10 @@ const AdminDashboard = () => {
                   }
                 >
                   <TableCell>
-                    {formatDateAdmin(session.date, { includeTime: true, includeDate: true})}
+                    {formatDateAdmin(session.date, {
+                      includeTime: true,
+                      includeDate: true,
+                    })}
                   </TableCell>
                   <TableCell className="font-medium">
                     Tutoring Session with Tutor {session.tutor?.firstName}{" "}
@@ -191,25 +192,20 @@ const AdminDashboard = () => {
                   <TableCell>
                     {session.student?.firstName} {session.student?.lastName}
                   </TableCell>
-                  <TableCell>{session.environment}</TableCell>
                   <TableCell>
-                    {session.environment !== "In-Person" && (
-                      <>
-                        {session?.meeting?.meetingId ? (
-                          <button
-                            onClick={() =>
-                              (window.location.href = `/meeting/${session?.meeting?.id}`)
-                            }
-                            className="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600"
-                          >
-                            View Link
-                          </button>
-                        ) : (
-                          <button className="text-black px-3 py-1 border border-gray-200 rounded">
-                            N/A
-                          </button>
-                        )}
-                      </>
+                    {session?.meeting?.meetingId ? (
+                      <button
+                        onClick={() =>
+                          (window.location.href = `/meeting/${session?.meeting?.id}`)
+                        }
+                        className="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600"
+                      >
+                        View Link
+                      </button>
+                    ) : (
+                      <button className="text-black px-3 py-1 border border-gray-200 rounded">
+                        N/A
+                      </button>
                     )}
                   </TableCell>
                   <TableCell>
@@ -250,7 +246,7 @@ const AdminDashboard = () => {
                               selectedSessionDate &&
                               handleReschedule(
                                 selectedSession?.id,
-                                selectedSessionDate
+                                selectedSessionDate,
                               )
                             }
                           >

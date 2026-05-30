@@ -29,6 +29,7 @@ import {
   ChevronsRight,
   ChevronLeft,
   ChevronRight,
+  Download,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -272,7 +273,16 @@ const TutorList = ({ initialTutors }: any) => {
       }
     } catch (error) {
       const err = error as Error;
-      toast.error(`Failed to add tutor: Please Try Again`);
+      console.error("Error adding tutor:", err.message);
+      
+      // Provide more descriptive error messages
+      if (err.message.includes("Email")) {
+        toast.error("Failed to add tutor. Please check the email address and ensure it is valid and unique.");
+      } else if (err.message.includes("required")) {
+        toast.error(`Failed to add tutor. Required field error: ${err.message}`);
+      } else {
+        toast.error(`Failed to add tutor: ${err.message || "Please try again"}`);
+      }
     } finally {
       setAddingTutor(false);
     }
@@ -345,20 +355,29 @@ const TutorList = ({ initialTutors }: any) => {
     }
   };
 
-  const handleReactivateTutor = async () => {
-    if (selectedTutorId) {
-      try {
-        const data = await reactivateUser(selectedTutorId); // Call deactivateUser function with studentId
-        if (data) {
-          toast.success("Tutor reactivated successfully");
-          setIsReactivateModalOpen(false);
-          setSelectedTutorId(null);
-          getTutorData();
-        }
-      } catch (error) {
-        toast.error("Failed to deactivate student");
-      }
-    }
+  const handleExportCSV = () => {
+    const headers = ["First Name", "Last Name", "Email"];
+    const csvData = filteredTutors.map((tutor) => [
+      tutor.firstName,
+      tutor.lastName,
+      tutor.email,
+    ]);
+
+    const csvContent = [
+      headers.join(","),
+      ...csvData.map((row) =>
+        row.map((cell) => `"${(cell || "").replace(/"/g, '""')}"`).join(",")
+      ),
+    ].join("\n");
+
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+    link.setAttribute("download", "tutors_export.csv");
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
   return (
@@ -373,6 +392,9 @@ const TutorList = ({ initialTutors }: any) => {
             value={filterValue}
             onChange={(e) => setFilterValue(e.target.value)}
           />
+          <Button variant="outline" onClick={handleExportCSV}>
+            <Download className="mr-2 h-4 w-4" /> Export CSV
+          </Button>
           {/*Add Tutor*/}
           <AddTutorForm
             newTutor={newTutor}

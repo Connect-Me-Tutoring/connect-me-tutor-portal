@@ -20,7 +20,7 @@ export async function getStudentSessions(
   endDate?: string,
   status?: string | string[],
   orderby?: string,
-  ascending?: boolean
+  ascending?: boolean,
 ): Promise<Session[]> {
   let query = supabase
     .from(Table.Sessions)
@@ -30,7 +30,7 @@ export async function getStudentSessions(
       student:Profiles!student_id(*),
       tutor:Profiles!tutor_id(*),
       meeting:Meetings!meeting_id(*)
-    `
+    `,
     )
     .eq("student_id", profileId);
 
@@ -65,7 +65,6 @@ export async function getStudentSessions(
     id: session.id,
     enrollmentId: session.enrollment_id,
     createdAt: session.created_at,
-    environment: session.environment,
     date: session.date,
     summary: session.summary,
     // meetingId: session.meeting_id,
@@ -85,7 +84,7 @@ export async function getStudentSessions(
 export async function rescheduleSession(
   sessionId: string,
   newDate: string,
-  studentId: string
+  studentId: string,
 ): Promise<void> {
   try {
     // First, get the current session details
@@ -170,7 +169,7 @@ export async function getStudentTutor(studentId: string) {
         `
         *,
         tutors (*)
-      `
+      `,
       )
       .eq("student_id", studentId)
       .single();
@@ -186,7 +185,7 @@ export async function getStudentTutor(studentId: string) {
 export async function submitFeedback(
   sessionId: string,
   feedback: string,
-  rating: number
+  rating: number,
 ) {
   try {
     const { data, error } = await supabase

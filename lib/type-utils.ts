@@ -1,4 +1,8 @@
-import { Enrollment, Meeting, Profile } from "@/types";
+import { Enrollment, Meeting, Profile, Session } from "@/types";
+import {
+  getEnrollmentAvailability,
+  getEnrollmentSchedule,
+} from "./enrollment-schedule";
 
 export const tableToInterfaceProfiles = (data: any) => {
   try {
@@ -88,6 +92,13 @@ export const tableToInterfaceEnrollments = (data: any) => {
     if (!data) {
       throw new Error("Data is null");
     }
+    const schedule = getEnrollmentSchedule({
+      availability: data.availability,
+      day: data.day,
+      startTime: data.start_time,
+      endTime: data.end_time,
+    });
+
     const enrollment: Enrollment = {
       id: data.id,
       createdAt: data.created_at,
@@ -96,7 +107,15 @@ export const tableToInterfaceEnrollments = (data: any) => {
       tutor: tableToInterfaceProfiles(data.tutor),
       startDate: data.start_date,
       endDate: data.end_date,
-      availability: data.availability,
+      availability: getEnrollmentAvailability({
+        availability: data.availability,
+        day: data.day,
+        startTime: data.start_time,
+        endTime: data.end_time,
+      }),
+      day: schedule.day || null,
+      startTime: schedule.startTime || null,
+      endTime: schedule.endTime || null,
       meetingId: data.meetingId,
       paused: data.paused,
       duration: data.duration,
@@ -107,4 +126,25 @@ export const tableToInterfaceEnrollments = (data: any) => {
     console.error("Unable to convert to interface for Profiles", error);
     throw error;
   }
+};
+
+export const tableToInterfaceSessions = (data: any): Session => {
+  if (!data) throw new Error("Data is Null");
+  const sessions: Session = {
+    id: data.id,
+    enrollmentId: data.enrollment_id,
+    createdAt: data.created_at,
+    date: data.date,
+    summary: data.summary,
+    meeting: tableToInterfaceMeetings(data.meeting),
+    status: data.status,
+    student: tableToInterfaceProfiles(data.student),
+    tutor: tableToInterfaceProfiles(data.tutor),
+    session_exit_form: data.session_exit_form,
+    isQuestionOrConcern: data.is_question_or_concern,
+    isFirstSession: data.is_first_session,
+    isStandalone: data.is_standalone,
+    duration: data.duration,
+  };
+  return sessions;
 };

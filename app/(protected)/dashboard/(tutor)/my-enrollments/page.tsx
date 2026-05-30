@@ -4,10 +4,7 @@ import {
   getEnrollments,
 } from "@/lib/actions/enrollment.server.actions";
 import { cachedGetUser } from "@/lib/actions/user.server.actions";
-import {
-  cachedGetProfile,
-  getTutorStudents,
-} from "@/lib/actions/profile.server.actions";
+import { cachedGetProfile, cachedGetTutorStudents } from "@/lib/actions/cache";
 import { createClient } from "@/lib/supabase/server";
 import { Profile } from "@/types";
 import { profile } from "console";
@@ -24,7 +21,7 @@ const fetchUserProfile = async () => {
   if (!profileData) throw new Error("No profile found");
   return profileData;
 };
- 
+
 const fetchEnrollments = async (profile: Profile) => {
   const enrollmentsData = await cachedGetEnrollments(profile.id);
   if (!enrollmentsData) throw new Error("No enrollments found");
@@ -39,12 +36,12 @@ async function MyEnrollmentsData() {
   const profile = await fetchUserProfile();
 
   const sortedEnrollments = fetchEnrollments(profile);
-  const meetings = getMeetings({omit : ["Zoom Link HQ"]});
-  const students = getTutorStudents(profile.id);
+  const meetings = getMeetings({ omit: ["Zoom Link HQ"] });
+  const students = cachedGetTutorStudents(profile.id);
 
   return (
     <EnrollmentsList
-      key = {profile.id}
+      key={profile.id}
       profile={profile}
       enrollmentsPromise={sortedEnrollments}
       meetingsPromise={meetings}

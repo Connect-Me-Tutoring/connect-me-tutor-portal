@@ -33,7 +33,7 @@ interface EditStudentFormProps {
   handleInputChangeForEdit: (
     e: React.ChangeEvent<
       HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
-    >
+    >,
   ) => void;
   handleGradeChangeForEdit: (value: string) => void;
   handleGenderForEdit: (value: string) => void;
@@ -92,7 +92,7 @@ const EditStudentForm = ({
   const updateAvailabilitySlot = (
     index: number,
     field: "day" | "startTime" | "endTime",
-    value: string
+    value: string,
   ) => {
     if (!selectedStudent) return;
 
@@ -127,7 +127,7 @@ const EditStudentForm = ({
     if (!selectedStudent || !selectedStudent.subjects_of_interest) return;
 
     const updated = selectedStudent.subjects_of_interest.filter(
-      (s) => s !== subject
+      (s) => s !== subject,
     );
 
     handleEditProfile("subjects_of_interest", updated);
@@ -150,7 +150,7 @@ const EditStudentForm = ({
     if (!selectedStudent || !selectedStudent.languages_spoken) return;
 
     const updated = selectedStudent.languages_spoken.filter(
-      (l) => l !== language
+      (l) => l !== language,
     );
 
     handleEditProfile("languages_spoken", updated);
@@ -296,7 +296,6 @@ const EditStudentForm = ({
                             <SelectItem value="Kindergarten">
                               Kindergarten
                             </SelectItem>
-                            <SelectItem value="Kindergarten">K</SelectItem>
                             {Array.from({ length: 12 }, (_, i) => (
                               <SelectItem
                                 key={i}
@@ -401,8 +400,10 @@ const EditStudentForm = ({
                         Time Zone
                       </Label>
                       <div className="col-span-3">
-                        
-                        <TimeZoneSelector profile={selectedStudent} handleTimeZone={handleTimeZoneForEdit} />
+                        <TimeZoneSelector
+                          profile={selectedStudent}
+                          handleTimeZone={handleTimeZoneForEdit}
+                        />
                       </div>
                     </div>
                     {/* <div className="grid grid-cols-4 items-center gap-4">
@@ -467,7 +468,7 @@ const EditStudentForm = ({
                                   updateAvailabilitySlot(
                                     index,
                                     "startTime",
-                                    e.target.value
+                                    e.target.value,
                                   )
                                 }
                               />
@@ -480,7 +481,7 @@ const EditStudentForm = ({
                                   updateAvailabilitySlot(
                                     index,
                                     "endTime",
-                                    e.target.value
+                                    e.target.value,
                                   )
                                 }
                               />
@@ -546,7 +547,7 @@ const EditStudentForm = ({
                                     <X className="h-3 w-3" />
                                   </button>
                                 </Badge>
-                              )
+                              ),
                             )}
                           </div>
                         )}
@@ -592,7 +593,7 @@ const EditStudentForm = ({
                                     <X className="h-3 w-3" />
                                   </button>
                                 </Badge>
-                              )
+                              ),
                             )}
                           </div>
                         )}

@@ -68,6 +68,7 @@ export async function POST(request: NextRequest) {
       await resend.emails.send({
         from: "Connect Me Free Tutoring & Mentoring <reminder@connectmego.app>",
         to: to,
+        cc: [process.env.OPERATIONS_EMAIL!],
         subject: subject,
         html: body,
       });

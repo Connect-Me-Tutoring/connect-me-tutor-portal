@@ -11,7 +11,15 @@
     },
     {
       "path": "/api/cron/cleanup-schedule",
-      "schedule": "0 0 * * *"
+      "schedule": "0 4 * * *"
+    },
+    {
+      "path": "/api/cron/send-early-session-check-ins",
+      "schedule": "0 16 * * *"
+    },
+    {
+      "path": "/api/cron/send-early-session-check-ins",
+      "schedule": "0 17 * * *"
     }
   ],
   "functions": {

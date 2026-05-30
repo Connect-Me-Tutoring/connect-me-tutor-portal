@@ -29,14 +29,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { getProfile } from "@/lib/actions/user.actions";
-import { getTutorStudents } from "@/lib/actions/tutor.actions";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import { Profile } from "@/types";
 import { StudentAnnouncementsRoomId } from "@/constants/chat";
 import { UserAvailabilities } from "../ui/UserAvailabilities";
 import DeletePairingForm from "./components/DeletePairingForm";
-import { useProfile } from "@/contexts/profileContext";
+import { useProfile } from "@/lib/contexts/profileContext";
 
 const StudentList = ({ initialStudents }: any) => {
   const supabase = createClientComponentClient();

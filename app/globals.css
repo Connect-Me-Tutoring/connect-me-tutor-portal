@@ -88,18 +88,3 @@
     @apply bg-background text-foreground;
   }
 }
-
-@media (min-width: 1280px) {
-  .app-scale-shell {
-    zoom: var(--app-scale-factor);
-  }
-
-  @supports not (zoom: 1) {
-    .app-scale-shell {
-      min-height: calc(100vh / var(--app-scale-factor));
-      transform: scale(var(--app-scale-factor));
-      transform-origin: top left;
-      width: calc(100% / var(--app-scale-factor));
-    }
-  }
-}
