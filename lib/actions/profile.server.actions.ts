@@ -203,8 +203,6 @@ export const getProfileFromUserSettings = async (userId: string) => {
     //   );
     // }
 
-    console.log("Getting Profile FROM USER SETTINGS");
-
     return tableToInterfaceProfiles(data.profile as any);
   } catch (error) {
     throw error;

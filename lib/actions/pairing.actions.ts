@@ -1,7 +1,6 @@
 "use client";
 
 import { PairingLog, PairingRequest, SharedPairing } from "@/types/pairing";
-import { createClient } from "@supabase/supabase-js";
 import { getProfile, getProfileRole } from "./user.actions";
 import { supabase } from "../supabase/client";
 import { getAccountEnrollments } from "./enrollment.actions";
@@ -35,11 +34,6 @@ export const getAllPairingRequests = async (
     throw new Error("Missing Supabase environment variables");
   }
 
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
-  );
-
   const { data, error } = await supabase.rpc("get_all_pairing_requests", {
     p_type: profileType,
   });
@@ -54,11 +48,6 @@ export const createPairingRequest = async (userId: string, notes: string) => {
   ) {
     throw new Error("Missing Supabase environment variables");
   }
-
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
-  );
 
   const [profile, enrollments] = await Promise.all([
     getProfile(userId),
@@ -119,11 +108,6 @@ export const getPairingLogs = async (
     throw new Error("Missing Supabase environment variables");
   }
 
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
-  );
-
   const { data: logs, error } = await supabase.rpc("get_pairing_logs", {
     start_time,
     end_time,
@@ -150,10 +134,6 @@ export const getIncomingPairingMatches = async (profileId: string) => {
     throw new Error("Missing Supabase environment variables");
   }
 
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
-  );
   const { data, error } = await supabase.rpc(
     "get_pairing_matches_with_profiles",
     {

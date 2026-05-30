@@ -584,9 +584,6 @@ export const sessionTimeFromEnrollment = async (
   availability: Availability,
   start: string,
 ): Promise<string> => {
-  console.log(availability);
-  console.log(start);
-
   const dayMap: Record<string, number> = {
     sunday: 0,
     monday: 1,
@@ -599,12 +596,9 @@ export const sessionTimeFromEnrollment = async (
 
   try {
     const startDate: Date = new Date(start);
-    console.log("Start Date", startDate);
     const startDateWeekDay: number = startDate.getDay();
     const firstSessionWeekDay: number = dayMap[availability.day.toLowerCase()];
 
-    console.log("Start Date Week Day", startDate.getUTCDay());
-    console.log("First session week day", firstSessionWeekDay);
     const additionalDays = firstSessionWeekDay >= startDateWeekDay ? 0 : 7;
     const currentDate: Date = addDays(
       startDate,
