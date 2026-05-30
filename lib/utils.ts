@@ -476,6 +476,18 @@ export const isValidUUID = (uuid: string): boolean => {
   return uuidRegex.test(uuid);
 };
 
+/**
+ * True if `value` is a non-empty UUID-shaped string.
+ * Rejects literal "null"/"undefined" (e.g. from bad URLs like /pairings/null/chat).
+ */
+export function isUuidString(value: string | null | undefined): boolean {
+  if (value == null || value === "") return false;
+  if (value === "null" || value === "undefined") return false;
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+    value,
+  );
+}
+
 export interface RetryOptions {
   retries?: number;
   baseDelayMs?: number;

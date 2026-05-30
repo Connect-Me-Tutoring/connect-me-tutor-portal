@@ -28,6 +28,7 @@ import {
   Circle,
   Loader2,
   Copy,
+  Activity,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -1111,6 +1112,7 @@ const EnrollmentList = ({
                   "Frequency",
                   "Actions",
                   "Status",
+                  "Activity",
                   "Chat",
                 ].map((header) => (
                   <TableHead key={header}>{header}</TableHead>
@@ -1229,6 +1231,14 @@ const EnrollmentList = ({
                           Ongoing
                         </span>
                       )}
+                    </Button>
+                  </TableCell>
+                  <TableCell>
+                    <Button variant="outline" size="sm" className="gap-2" asChild>
+                      <Link href={`/dashboard/enrollments/${enrollment.id}/activity`}>
+                        <Activity className="h-4 w-4" />
+                        Activity
+                      </Link>
                     </Button>
                   </TableCell>
                   <TableCell>

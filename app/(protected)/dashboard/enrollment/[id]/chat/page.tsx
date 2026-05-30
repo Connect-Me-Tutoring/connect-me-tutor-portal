@@ -1,7 +1,8 @@
-import { ChatRoom, type User, type Message } from "@/components/chat/chat-room";
+import { ChatRoom, type Message } from "@/components/chat/chat-room";
 import { config } from "@/config";
 import { getPairingFromEnrollmentId } from "@/lib/actions/pairing.server.actions";
-import { createClient } from "@/lib/supabase/server";
+import { isUuidString } from "@/lib/utils";
+import { notFound } from "next/navigation";
 
 interface Props {
   params: Promise<{ id: string }>;
@@ -9,14 +10,13 @@ interface Props {
 
 export default async function ChatRoomPage(props: Props) {
   const params = await props.params;
-  // In a real app, these would come from your authentication system and API
 
   const mockMessages: Message[] = [];
-  const supabase = await createClient();
-  const user = await supabase.auth.getUser();
-  const userId = user.data.user?.id;
 
-  const pairingId: string = await getPairingFromEnrollmentId(params.id);
+  const pairingId = await getPairingFromEnrollmentId(params.id);
+  if (!isUuidString(pairingId)) {
+    notFound();
+  }
 
   // In a real app, these would come from your environment variables
   const { supabase: supabaseConfig } = config;
