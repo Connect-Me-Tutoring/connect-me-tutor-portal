@@ -124,6 +124,7 @@ export default function TutorMonthlyCheckInEmail({
           }}
         >
           Your feedback helps us ensure the best possible experience for both tutors and students.
+        </Text>
 
         <Text
           style={{
