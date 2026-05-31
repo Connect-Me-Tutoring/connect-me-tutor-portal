@@ -529,7 +529,7 @@ const StudentList = ({ initialStudents }: any) =>
       link.setAttribute("download", "students_export.csv");
       document.body.appendChild(link);
       link.click();
-      document.body.removeChild(link);
+      link.remove();
     };
 
     return (
