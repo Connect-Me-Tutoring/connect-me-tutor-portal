@@ -52,7 +52,7 @@ export default function ParentMonthlyCheckInEmail({
             margin: "0 0 16px 0",
           }}
         >
-          It's been {monthsSinceStart} month{monthsSinceStart !== 1 ? 's' : ''} since {student.firstName} started tutoring sessions with {tutor.firstName} {tutor.lastName}. We hope everything has been going smoothly!
+          It&apos;s been {monthsSinceStart} month{monthsSinceStart !== 1 ? 's' : ''} since {student.firstName} started tutoring sessions with {tutor.firstName} {tutor.lastName}. We hope everything has been going smoothly!
         </Text>
 
         <Section
@@ -83,7 +83,7 @@ export default function ParentMonthlyCheckInEmail({
               margin: "0 0 8px 0",
             }}
           >
-            • How has {student.firstName}'s experience been with the tutoring sessions?
+            • How has {student.firstName}&apos;s experience been with the tutoring sessions?
           </Text>
           <Text
             style={{
@@ -103,7 +103,7 @@ export default function ParentMonthlyCheckInEmail({
               margin: "0 0 8px 0",
             }}
           >
-            • Have you noticed any improvements in {student.firstName}'s academic performance or confidence?
+            • Have you noticed any improvements in {student.firstName}&apos;s academic performance or confidence?
           </Text>
           <Text
             style={{
@@ -113,7 +113,7 @@ export default function ParentMonthlyCheckInEmail({
               margin: "0 0 8px 0",
             }}
           >
-            • Are there any concerns or suggestions you'd like to share?
+            • Are there any concerns or suggestions you&apos;d like to share?
           </Text>
         </Section>
 
@@ -125,7 +125,7 @@ export default function ParentMonthlyCheckInEmail({
             margin: "0 0 16px 0",
           }}
         >
-          Your feedback is invaluable in helping us provide the best possible tutoring experience for your child. Please don't hesitate to contact us with any thought or concerns you may have
+          Your feedback is invaluable in helping us provide the best possible tutoring experience for your child. Please don&apos;t hesitate to contact us with any thought or concerns you may have
         </Text>
 
         <Text
@@ -136,7 +136,7 @@ export default function ParentMonthlyCheckInEmail({
             margin: "0 0 24px 0",
           }}
         >
-          Thank you for being part of the Connect Me community and supporting your child's education!
+          Thank you for being part of the Connect Me community and supporting your child&apos;s education!
         </Text>
 
         <Text
