@@ -50,7 +50,7 @@ export default function TutorMonthlyCheckInEmail({
             margin: "0 0 16px 0",
           }}
         >
-          It's been {monthsSinceStart} month{monthsSinceStart !== 1 ? 's' : ''} since you started tutoring {student.firstName} {student.lastName}. We hope the sessions have been going well!
+          It&apos;s been {monthsSinceStart} month{monthsSinceStart !== 1 ? 's' : ''} since you started tutoring {student.firstName} {student.lastName}. We hope the sessions have been going well!
         </Text>
 
         <Section
@@ -91,7 +91,7 @@ export default function TutorMonthlyCheckInEmail({
               margin: "0 0 8px 0",
             }}
           >
-            • Is {student.firstName} making progress in the subjects you're covering?
+            • Is {student.firstName} making progress in the subjects you&apos;re covering?
           </Text>
           <Text
             style={{
@@ -134,7 +134,7 @@ export default function TutorMonthlyCheckInEmail({
             margin: "0 0 24px 0",
           }}
         >
-          Thank you for your dedication to mentoring and making a difference in {student.firstName}'s education!
+          Thank you for your dedication to mentoring and making a difference in {student.firstName}&apos;s education!
         </Text>
 
         <Text
