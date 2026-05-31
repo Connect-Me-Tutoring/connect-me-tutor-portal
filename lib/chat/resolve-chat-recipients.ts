@@ -79,7 +79,8 @@ async function fetchProfilesByIds(
 
   const withFallback = rows.map((r) => ({
     id: r.id,
-    email: r.email ?? (r.user_id ? userIdToEmail.get(r.user_id) ?? null : null),
+    email:
+      r.email ?? (r.user_id ? (userIdToEmail.get(r.user_id) ?? null) : null),
     first_name: r.first_name,
     last_name: r.last_name,
   }));
@@ -120,8 +121,8 @@ export async function resolveChatRecipientProfiles(
       return [];
     }
 
-    const adminIds = await fetchAdminProfileIds(admin);
-    const ids = [pairing.student_id, pairing.tutor_id, ...adminIds];
+    // const adminIds = await fetchAdminProfileIds(admin);
+    const ids = [pairing.student_id, pairing.tutor_id];
     return fetchProfilesByIds(admin, ids);
   }
 
