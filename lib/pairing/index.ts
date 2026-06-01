@@ -451,6 +451,7 @@ export const runPairingWorkflow = async (
           role: "student",
           error: false,
           metadata: {
+            timestamp: new Date().toISOString(),
             pairing_request_id: studentReq.pairing_request_id,
             match_profile_id: result.match_profile.id,
             student_id,
@@ -484,6 +485,7 @@ export const runPairingWorkflow = async (
           role: "student",
           error: true,
           metadata: {
+            timestamp: new Date().toISOString(),
             pairing_request_id: studentReq.pairing_request_id,
             profile_id: studentReq.profile_id,
             requestor_role: "student",
@@ -534,6 +536,7 @@ export const runPairingWorkflow = async (
           role: "tutor",
           error: false,
           metadata: {
+            timestamp: new Date().toISOString(),
             pairing_request_id: tutorReq.pairing_request_id,
             match_profile_id: result.match_profile.id,
             student_id,
@@ -559,6 +562,7 @@ export const runPairingWorkflow = async (
           role: "tutor",
           error: true,
           metadata: {
+            timestamp: new Date().toISOString(),
             pairing_request_id: tutorReq.pairing_request_id,
             profile_id: tutorReq.profile_id,
             requestor_role: "tutor",

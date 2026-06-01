@@ -43,7 +43,6 @@ import type { PairingLogSchemaType } from "@/lib/pairing/types";
 import { filterPairingPreviewLogsForKeys } from "@/lib/pairing/filterPreviewLogs";
 import {
   mapPreviewPairingLog,
-  mapRpcPairingLog,
   pairingLogMatchesUserType,
   type PairingDisplayLog,
 } from "@/lib/pairing/mapDisplayLogs";
@@ -194,6 +193,14 @@ export function PairingLogsTable() {
   const canShowCompleteGraph = completeGraphPreviews.length > 0;
   const canShowSelectedGraph =
     hasOverlapPreviews && selectedGraphPreviews.length > 0;
+
+  const previewActionLabel = previewRun?.appliedAt
+    ? "Queue Already Saved"
+    : isApplying
+      ? "Saving..."
+      : hasOverlapPreviews
+        ? `Save selected (${selectedKeys.size})`
+        : "Save Queue";
 
   // Load data on component mount and when date filters change
   useEffect(() => {
@@ -454,6 +461,79 @@ export function PairingLogsTable() {
         </Card>
       )}
 
+      {previewRun && (
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between">
+            <CardTitle>
+              Preview Actions ({previewRun.runId.slice(0, 8)})
+            </CardTitle>
+            <div className="flex flex-wrap items-center gap-2">
+              {canShowCompleteGraph && hasOverlapPreviews && (
+                <>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="gap-1.5"
+                    onClick={() => setGraphScope("selected")}
+                    disabled={!canShowSelectedGraph}
+                    title={
+                      !canShowSelectedGraph
+                        ? "Select at least one row in the overlap table"
+                        : undefined
+                    }
+                  >
+                    <Waypoints className="h-4 w-4 shrink-0" />
+                    Selected graph
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="gap-1.5"
+                    onClick={() => setGraphScope("complete")}
+                  >
+                    <Waypoints className="h-4 w-4 shrink-0" />
+                    All proposed
+                  </Button>
+                </>
+              )}
+              {canShowCompleteGraph && !hasOverlapPreviews && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="gap-1.5"
+                  onClick={() => setGraphScope("complete")}
+                >
+                  <Waypoints className="h-4 w-4 shrink-0" />
+                  View proposed graph
+                </Button>
+              )}
+              <Button
+                size="sm"
+                onClick={handleApplyPreviewRun}
+                disabled={
+                  isApplying ||
+                  Boolean(previewRun.appliedAt) ||
+                  (hasOverlapPreviews && selectedKeys.size === 0)
+                }
+              >
+                {previewActionLabel}
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleRefresh}
+                disabled={loading}
+              >
+                {loading ? "Refreshing..." : "Reload Preview"}
+              </Button>
+            </div>
+          </CardHeader>
+        </Card>
+      )}
+
       {previewRun && isLegacyPreview && !previewRun.appliedAt && (
         <Card className="border-amber-200 bg-amber-50">
           <CardContent className="pt-4 text-sm text-amber-900">
@@ -469,33 +549,6 @@ export function PairingLogsTable() {
           <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-2">
             <CardTitle className="text-base">Overlap before save</CardTitle>
             <div className="flex flex-wrap gap-2">
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                className="gap-1.5"
-                onClick={() => setGraphScope("selected")}
-                disabled={!canShowSelectedGraph}
-                title={
-                  !canShowSelectedGraph
-                    ? "Select at least one row in the table below"
-                    : "Student → tutor for matches you will save"
-                }
-              >
-                <Waypoints className="h-4 w-4 shrink-0" />
-                Selected graph
-              </Button>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                className="gap-1.5"
-                onClick={() => setGraphScope("complete")}
-                disabled={!canShowCompleteGraph}
-              >
-                <Waypoints className="h-4 w-4 shrink-0" />
-                All proposed
-              </Button>
               <Button
                 type="button"
                 variant="outline"
@@ -594,328 +647,255 @@ export function PairingLogsTable() {
         </Card>
       )}
 
-      {/* Statistics Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Events</CardTitle>
-            <AlertCircle className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.total}</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
-              Matches Created
-            </CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.matches}</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Accepted</CardTitle>
-            <CheckCircle className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.accepted}</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Rejected</CardTitle>
-            <XCircle className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.rejected}</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Failed</CardTitle>
-            <AlertCircle className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.failed}</div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Filters */}
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle>
-            {previewRun
-              ? `Preview Run Filters (${previewRun.runId.slice(0, 8)})`
-              : "Filters"}
-          </CardTitle>
-          <div className="flex flex-wrap items-center gap-2">
-            {previewRun && canShowCompleteGraph && hasOverlapPreviews && (
-              <>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  className="gap-1.5"
-                  onClick={() => setGraphScope("selected")}
-                  disabled={!canShowSelectedGraph}
-                  title={
-                    !canShowSelectedGraph
-                      ? "Select at least one row in the overlap table"
-                      : undefined
-                  }
-                >
-                  <Waypoints className="h-4 w-4 shrink-0" />
-                  Selected graph
-                </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  className="gap-1.5"
-                  onClick={() => setGraphScope("complete")}
-                >
-                  <Waypoints className="h-4 w-4 shrink-0" />
-                  All proposed
-                </Button>
-              </>
-            )}
-            {previewRun &&
-              canShowCompleteGraph &&
-              !hasOverlapPreviews && (
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  className="gap-1.5"
-                  onClick={() => setGraphScope("complete")}
-                >
-                  <Waypoints className="h-4 w-4 shrink-0" />
-                  View proposed graph
-                </Button>
-              )}
-            {previewRun && (
-              <Button
-                size="sm"
-                onClick={handleApplyPreviewRun}
-                disabled={
-                  isApplying ||
-                  Boolean(previewRun.appliedAt) ||
-                  (hasOverlapPreviews && selectedKeys.size === 0)
-                }
-              >
-                {previewRun.appliedAt
-                  ? "Queue Already Saved"
-                  : isApplying
-                    ? "Saving..."
-                    : hasOverlapPreviews
-                      ? `Save selected (${selectedKeys.size})`
-                      : "Save Queue"}
-              </Button>
-            )}
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleRefresh}
-              disabled={loading}
-            >
-              {loading
-                ? "Refreshing..."
-                : previewRun
-                  ? "Reload Preview"
-                  : "Refresh"}
-            </Button>
+      {!previewRun && (
+        <>
+          {/* Statistics Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Total Events</CardTitle>
+                <AlertCircle className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{stats.total}</div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">
+                  Matches Created
+                </CardTitle>
+                <Users className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{stats.matches}</div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Accepted</CardTitle>
+                <CheckCircle className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{stats.accepted}</div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Rejected</CardTitle>
+                <XCircle className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{stats.rejected}</div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Failed</CardTitle>
+                <AlertCircle className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{stats.failed}</div>
+              </CardContent>
+            </Card>
           </div>
-        </CardHeader>
-        <CardContent>
-          <div className="flex flex-wrap gap-4">
-            {!previewRun && (
-            // {/* Date Range Filter Controls */}
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Date From</label>
-              <div className="relative">
-                <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  type="date"
-                  value={dateFrom}
-                  onChange={(e) => setDateFrom(e.target.value)}
-                  className="pl-10 w-[180px]"
-                />
-              </div>
-            </div>
-            )}
-            {!previewRun && (
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Date To</label>
-              <div className="relative">
-                <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  type="date"
-                  value={dateTo}
-                  onChange={(e) => setDateTo(e.target.value)}
-                  className="pl-10 w-[180px]"
-                />
-              </div>
-            </div>
-            )}
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Event Type</label>
-              <Select value={filterType} onValueChange={setFilterType}>
-                <SelectTrigger className="w-[200px]">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Types</SelectItem>
-                  <SelectItem value="pairing-match">Pairing Match</SelectItem>
-                  <SelectItem value="pairing-match-accepted">
-                    Match Accepted
-                  </SelectItem>
-                  <SelectItem value="pairing-match-rejected">
-                    Match Rejected
-                  </SelectItem>
-                  <SelectItem value="pairing-selection-failed">
-                    Selection Failed
-                  </SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <label className="text-sm font-medium">User Type</label>
-              <Select value={filterUserType} onValueChange={setFilterUserType}>
-                <SelectTrigger className="w-[180px]">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Users</SelectItem>
-                  <SelectItem value="student">Students</SelectItem>
-                  <SelectItem value="tutor">Tutors</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Status</label>
-              <Select value={filterStatus} onValueChange={setFilterStatus}>
-                <SelectTrigger className="w-[180px]">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Statuses</SelectItem>
-                  {uniqueStatuses.map((status) => (
-                    <SelectItem key={status} value={status}>
-                      {status.charAt(0).toUpperCase() + status.slice(1)}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="flex items-end">
-              <Button
-                variant="outline"
-                onClick={() => {
-                  setFilterType("all");
-                  setFilterUserType("all");
-                  setFilterStatus("all");
-                  setDateFrom("");
-                  setDateTo("");
-                }}
-              >
-                Clear Filters
-              </Button>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
 
-      {/* Data Table */}
-      <Card>
-        <CardHeader>
-          <CardTitle>
-            {previewRun
-              ? `Pairing Preview Logs (${filteredLogs.length} events)`
-              : `Pairing Activity Logs (${filteredLogs.length} events)`}
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="rounded-md border">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Timestamp</TableHead>
-                  <TableHead>Type</TableHead>
-                  <TableHead>User</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Message</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {loading ? (
-                  <TableRow>
-                    <TableCell colSpan={5} className="text-center py-8">
-                      <div className="animate-spin h-6 w-6 border-2 border-primary border-t-transparent rounded-full mx-auto mb-2"></div>
-                      Loading...
-                    </TableCell>
-                  </TableRow>
-                ) : filteredLogs.length === 0 ? (
-                  <TableRow>
-                    <TableCell
-                      colSpan={5}
-                      className="text-center py-8 text-muted-foreground"
-                    >
-                      {logs.length === 0
-                        ? "No pairing logs found"
-                        : "No logs match the current filters"}
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  filteredLogs.map((log) => (
-                    <TableRow key={log.id}>
-                      <TableCell className="font-mono text-sm">
-                        {log.created_at
-                          ? new Date(log.created_at).toLocaleString()
-                          : "-"}
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          {getTypeIcon(log.type)}
-                          <span className="capitalize">
-                            {log.type.replace(/-/g, " ")}
-                          </span>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        {log.profile && (
-                          <div className="space-y-1">
-                            <div className="font-medium">
-                              {log.profile.firstName} {log.profile.lastName}
-                            </div>
-                            <Badge variant="outline" className="text-xs">
-                              {log.profile.role}
-                            </Badge>
-                          </div>
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        <Badge className={getStatusColor(log.status)}>
-                          {log.status}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="max-w-md">
-                        <div className="truncate" title={log.message}>
-                          {log.message}
-                        </div>
-                      </TableCell>
+          {/* Filters */}
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <CardTitle>Filters</CardTitle>
+              <div className="flex flex-wrap items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleRefresh}
+                  disabled={loading}
+                >
+                  {loading ? "Refreshing..." : "Refresh"}
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="flex flex-wrap gap-4">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Date From</label>
+                  <div className="relative">
+                    <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      type="date"
+                      value={dateFrom}
+                      onChange={(e) => setDateFrom(e.target.value)}
+                      className="pl-10 w-[180px]"
+                    />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Date To</label>
+                  <div className="relative">
+                    <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      type="date"
+                      value={dateTo}
+                      onChange={(e) => setDateTo(e.target.value)}
+                      className="pl-10 w-[180px]"
+                    />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Event Type</label>
+                  <Select value={filterType} onValueChange={setFilterType}>
+                    <SelectTrigger className="w-[200px]">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Types</SelectItem>
+                      <SelectItem value="pairing-match">Pairing Match</SelectItem>
+                      <SelectItem value="pairing-match-accepted">
+                        Match Accepted
+                      </SelectItem>
+                      <SelectItem value="pairing-match-rejected">
+                        Match Rejected
+                      </SelectItem>
+                      <SelectItem value="pairing-selection-failed">
+                        Selection Failed
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">User Type</label>
+                  <Select
+                    value={filterUserType}
+                    onValueChange={setFilterUserType}
+                  >
+                    <SelectTrigger className="w-[180px]">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Users</SelectItem>
+                      <SelectItem value="student">Students</SelectItem>
+                      <SelectItem value="tutor">Tutors</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Status</label>
+                  <Select value={filterStatus} onValueChange={setFilterStatus}>
+                    <SelectTrigger className="w-[180px]">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Statuses</SelectItem>
+                      {uniqueStatuses.map((status) => (
+                        <SelectItem key={status} value={status}>
+                          {status.charAt(0).toUpperCase() + status.slice(1)}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="flex items-end">
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setFilterType("all");
+                      setFilterUserType("all");
+                      setFilterStatus("all");
+                      setDateFrom("");
+                      setDateTo("");
+                    }}
+                  >
+                    Clear Filters
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Data Table */}
+          <Card>
+            <CardHeader>
+              <CardTitle>{`Pairing Activity Logs (${filteredLogs.length} events)`}</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="rounded-md border">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Timestamp</TableHead>
+                      <TableHead>Type</TableHead>
+                      <TableHead>User</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Message</TableHead>
                     </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
-          </div>
-        </CardContent>
-      </Card>
+                  </TableHeader>
+                  <TableBody>
+                    {loading ? (
+                      <TableRow>
+                        <TableCell colSpan={5} className="text-center py-8">
+                          <div className="animate-spin h-6 w-6 border-2 border-primary border-t-transparent rounded-full mx-auto mb-2"></div>
+                          Loading...
+                        </TableCell>
+                      </TableRow>
+                    ) : filteredLogs.length === 0 ? (
+                      <TableRow>
+                        <TableCell
+                          colSpan={5}
+                          className="text-center py-8 text-muted-foreground"
+                        >
+                          {logs.length === 0
+                            ? "No pairing logs found"
+                            : "No logs match the current filters"}
+                        </TableCell>
+                      </TableRow>
+                    ) : (
+                      filteredLogs.map((log) => (
+                        <TableRow key={log.id}>
+                          <TableCell className="font-mono text-sm">
+                            {log.created_at
+                              ? new Date(log.created_at).toLocaleString()
+                              : "-"}
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex items-center gap-2">
+                              {getTypeIcon(log.type)}
+                              <span className="capitalize">
+                                {log.type.replace(/-/g, " ")}
+                              </span>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            {log.profile && (
+                              <div className="space-y-1">
+                                <div className="font-medium">
+                                  {log.profile.firstName} {log.profile.lastName}
+                                </div>
+                                <Badge variant="outline" className="text-xs">
+                                  {log.profile.role}
+                                </Badge>
+                              </div>
+                            )}
+                          </TableCell>
+                          <TableCell>
+                            <Badge className={getStatusColor(log.status)}>
+                              {log.status}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="max-w-md">
+                            <div className="truncate" title={log.message}>
+                              {log.message}
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
+            </CardContent>
+          </Card>
+        </>
+      )}
     </div>
   
   );

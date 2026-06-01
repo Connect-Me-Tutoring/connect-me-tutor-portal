@@ -233,7 +233,7 @@ export function PairingRequestCard({
 
   if (isLoadingRequest) {
     return (
-      <Card className="w-full mx-auto">
+      <Card className="w-full mx-auto border-0 shadow-none">
         <CardContent className="p-6">
           <p className="text-muted-foreground text-sm">Loading...</p>
         </CardContent>
@@ -242,7 +242,7 @@ export function PairingRequestCard({
   }
 
   const queueSwitch = (
-    <div className="rounded-xl border bg-muted/50 p-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+    <div className="rounded-xl bg-muted/50 p-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
       <div className="space-y-1 min-w-0">
         <Label
           htmlFor="pairing-queue-switch"
@@ -270,7 +270,7 @@ export function PairingRequestCard({
 
   if (isArchivedRequest) {
     return (
-      <Card className="w-full mx-auto">
+      <Card className="w-full mx-auto border-0 shadow-none">
         <CardHeader className="space-y-4">
           <div className="flex items-center gap-2">
             <Users className="h-6 w-6 text-primary" />
@@ -290,7 +290,7 @@ export function PairingRequestCard({
             <Badge variant="outline">Priority {myRequest.priority}</Badge>
           </div>
           {myRequest.notes ? (
-            <div className="rounded-md border bg-muted/30 p-3 text-sm">
+            <div className="rounded-md bg-muted/30 p-3 text-sm">
               <span className="font-medium text-muted-foreground">Saved notes</span>
               <p className="mt-1 whitespace-pre-wrap">{myRequest.notes}</p>
             </div>
@@ -302,7 +302,7 @@ export function PairingRequestCard({
 
   if (myRequest && !isDraftRequest) {
     return (
-      <Card className="w-full mx-auto">
+      <Card className="w-full mx-auto border-0 shadow-none">
         <CardHeader className="space-y-4">
           <div className="flex items-center gap-2">
             <Users className="h-6 w-6 text-primary" />
@@ -325,7 +325,7 @@ export function PairingRequestCard({
           </div>
 
           {isStudent && (
-            <div className="flex items-center justify-between rounded-lg border p-4">
+            <div className="flex items-center justify-between rounded-lg p-4">
               <div className="space-y-0.5">
                 <Label htmlFor="block-rejected" className="text-base">
                   Block tutors who declined me in the past
@@ -347,7 +347,7 @@ export function PairingRequestCard({
   }
 
   return (
-    <Card className="w-full mx-auto">
+    <Card className="w-full mx-auto border-0 shadow-none">
       <CardHeader className="space-y-4">
         <div className="flex items-center gap-2">
           <Users className="h-6 w-6 text-primary" />
@@ -406,7 +406,7 @@ export function PairingRequestCard({
           </div>
 
           {isStudent && (
-            <div className="flex items-center justify-between rounded-lg border p-4">
+            <div className="flex items-center justify-between rounded-lg p-4">
               <div className="space-y-0.5">
                 <Label htmlFor="block-rejected-form" className="text-base">
                   Block tutors who declined me in the past
@@ -424,7 +424,7 @@ export function PairingRequestCard({
           )}
         </div>
 
-        <div className="pt-4 border-t">
+        <div className="pt-4">
           <h4 className="text-sm font-medium mb-3 text-muted-foreground">
             Request Status Examples
           </h4>

@@ -144,13 +144,17 @@ export function mapPreviewPairingLog(
   id: string,
   createdAt: string,
 ): PairingDisplayLog {
+  const metadataTimestamp =
+    typeof log.metadata?.timestamp === "string"
+      ? log.metadata.timestamp
+      : undefined;
   return {
     id,
     type: (log.type as PairingDisplayLog["type"]) ?? "pairing-selection-failed",
     profile: profileFromPreviewLog(log),
     message: log.message,
     status: log.error ? "error" : "ok",
-    created_at: createdAt,
+    created_at: metadataTimestamp ?? createdAt,
   };
 }
 

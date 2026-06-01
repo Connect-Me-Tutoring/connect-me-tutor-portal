@@ -5,6 +5,8 @@ import { Clock, Search, UserRound } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 import { UserAvailabilityList } from "../ui/availability-list";
 import {
   Card,
@@ -27,7 +29,7 @@ import toast from "react-hot-toast";
 export function PairingInterface() {
   const [searchQuery, setSearchQuery] = useState("");
 
-  const { profile } = useFetchProfile();
+  const { profile, loading: isProfileLoading, error: profileError } = useFetchProfile();
 
   const [matchedPairings, setMatchedPairings] = useState<
     IncomingPairingMatch[]
@@ -74,6 +76,50 @@ export function PairingInterface() {
 
   return (
     <div className="space-y-8">
+      {isProfileLoading && (
+        <Card className="border-0 shadow-none">
+          <CardHeader>
+            <CardTitle>Pairing queue status</CardTitle>
+            <CardDescription>Loading your pairing status...</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="rounded-xl bg-muted/50 p-4 flex items-center justify-between gap-4">
+              <div className="space-y-1 min-w-0">
+                <Label className="text-base font-semibold">In pairing queue</Label>
+                <p className="text-sm text-muted-foreground">
+                  We are fetching your profile and queue status.
+                </p>
+              </div>
+              <Switch checked={false} disabled />
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {!isProfileLoading && !profile && (
+        <Card className="border-0 shadow-none">
+          <CardHeader>
+            <CardTitle>Pairing queue status</CardTitle>
+            <CardDescription>
+              {profileError?.message
+                ? "We could not load your profile to show pairing status."
+                : "Sign in to view and control your pairing queue status."}
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="rounded-xl bg-muted/50 p-4 flex items-center justify-between gap-4">
+              <div className="space-y-1 min-w-0">
+                <Label className="text-base font-semibold">In pairing queue</Label>
+                <p className="text-sm text-muted-foreground">
+                  Pairing status is unavailable until your account is loaded.
+                </p>
+              </div>
+              <Switch checked={false} disabled />
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {profile && (
         <PairingRequestCard
           userId={profile.userId}
@@ -104,7 +150,7 @@ export function PairingInterface() {
                   profile.role === "Student" ? "tutor" : "student";
                 const matchedProfile = match[roleFilter];
                 return (
-                  <Card key={match.pairing_match_id}>
+                  <Card key={match.pairing_match_id} className="border-0 shadow-none">
                     <CardHeader className="pb-2">
                       <div className="flex justify-between items-start">
                         <div>
