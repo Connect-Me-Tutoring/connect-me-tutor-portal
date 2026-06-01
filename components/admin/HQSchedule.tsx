@@ -78,6 +78,7 @@ function scheduleToForm(s: WeeklyMeetingSchedule) {
 
 interface Props {
   meetingsPromise: Promise<Meeting[] | null>;
+  enrollmentsPromise: Promise<Enrollment[]>;
 }
 
 interface ZoomLinkSelectProps {
@@ -190,8 +191,9 @@ function EventFormFields({ f, setF, canCheck, availability, idPrefix, meetings }
   );
 }
 
-export default function HQSchedule({ meetingsPromise }: Props) {
+export default function HQSchedule({ meetingsPromise, enrollmentsPromise }: Props) {
   const meetings = use(meetingsPromise) ?? [];
+  const allEnrollments = use(enrollmentsPromise);
 
   const { data: existingSchedules = [] } = useQuery({
     queryKey: ["weekly-meeting-schedules"],
@@ -305,6 +307,17 @@ export default function HQSchedule({ meetingsPromise }: Props) {
 
   const schedulesForDay = (dayName: string) =>
     visibleSchedules.filter((s) => s.dayOfWeek === dayName);
+
+  const visibleEnrollments = useMemo(
+    () =>
+      allEnrollments.filter((e) =>
+        viewMeetingId === "all" ? !!e.meetingId : e.meetingId === viewMeetingId,
+      ),
+    [allEnrollments, viewMeetingId],
+  );
+
+  const enrollmentsForDay = (dayName: string) =>
+    visibleEnrollments.filter((e) => e.day === dayName);
 
   const selectedMeetingName = meetings.find((m) => m.id === viewMeetingId)?.name;
 
@@ -427,11 +440,15 @@ export default function HQSchedule({ meetingsPromise }: Props) {
                       const startHour = parseInt(s.startTime.split(":")[0], 10);
                       return startHour === hour;
                     });
+                    const cellEnrollments = enrollmentsForDay(dayName).filter((e) => {
+                      const startHour = parseInt((e.startTime ?? "").split(":")[0], 10);
+                      return startHour === hour;
+                    });
                     return (
                       <div
                         key={`${day.toISOString()}-${hour}`}
                         className={cn(
-                          "border-r border-b last:border-r-0 min-h-[56px] p-1 relative",
+                          "border-r border-b last:border-r-0 min-h-[56px] p-1 relative space-y-0.5",
                           isToday(day) && "bg-connect-me-blue-1/20",
                         )}
                       >
@@ -450,6 +467,22 @@ export default function HQSchedule({ meetingsPromise }: Props) {
                             </div>
                           );
                         })}
+                        {cellEnrollments.map((e) => (
+                          <div
+                            key={e.id}
+                            className="rounded px-1.5 py-0.5 text-[11px] font-medium bg-amber-50 text-amber-800 border border-amber-200 truncate select-none"
+                          >
+                            <span className="inline-flex items-center gap-1">
+                              <span className="text-[9px] font-semibold uppercase tracking-wide bg-amber-200 text-amber-900 rounded px-1 py-px">Enrollment</span>
+                            </span>
+                            <span className="block truncate">
+                              {e.tutor?.firstName} / {e.student?.firstName}
+                            </span>
+                            <span className="block opacity-60 text-[10px]">
+                              {e.startTime} – {e.endTime}
+                            </span>
+                          </div>
+                        ))}
                       </div>
                     );
                   })}
