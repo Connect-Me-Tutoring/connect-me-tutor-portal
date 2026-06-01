@@ -63,7 +63,8 @@ begin
     update public.pairing_requests
     set
       in_queue = true,
-      status = 'pending'
+      status = 'pending',
+      priority = coalesce(priority, 1)
     where id in (
       select lr.id
       from latest_request lr
@@ -86,6 +87,7 @@ begin
         user_id,
         type,
         status,
+        priority,
         in_queue,
         notes
       )
@@ -99,6 +101,7 @@ begin
         ),
         lower(new.raw_user_meta_data ->> 'role'),
         'pending',
+        1,
         true,
         'Auto-enqueued on account creation'
       );

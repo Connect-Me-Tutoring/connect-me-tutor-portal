@@ -43,7 +43,7 @@ const ensurePairingQueueForNewProfile = async (
 
   const { data: existing, error: existingError } = await supabase
     .from(Table.PairingRequests)
-    .select("id, in_queue")
+    .select("id, in_queue, priority")
     .eq("user_id", profile.id)
     .order("created_at", { ascending: false })
     .limit(1)
@@ -59,6 +59,7 @@ const ensurePairingQueueForNewProfile = async (
           in_queue: true,
           status: "pending",
           type: normalizedRole,
+          priority: existing.priority ?? 1,
         })
         .eq("id", existing.id);
       if (updateError) throw updateError;
@@ -71,6 +72,7 @@ const ensurePairingQueueForNewProfile = async (
       user_id: profile.id,
       type: normalizedRole,
       status: "pending",
+      priority: 1,
       in_queue: true,
       notes: "Auto-enqueued on account creation",
     },
