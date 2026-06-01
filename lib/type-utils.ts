@@ -1,4 +1,5 @@
 import { Enrollment, Meeting, Profile, Session } from "@/types";
+import { WeeklyMeetingSchedule } from "@/types/meeting";
 import {
   getEnrollmentAvailability,
   getEnrollmentSchedule,
@@ -147,4 +148,32 @@ export const tableToInterfaceSessions = (data: any): Session => {
     duration: data.duration,
   };
   return sessions;
+};
+
+export const tableToInterfaceWeeklyMeetingSchedule = (data: any): WeeklyMeetingSchedule => {
+  if (!data) throw new Error("Data is null");
+  return {
+    id: data.id,
+    createdAt: data.created_at,
+    meetingId: data.meeting_id,
+    title: data.title ?? "",
+    description: data.description ?? "",
+    dayOfWeek: data.day_of_week,
+    startTime: data.start_time,
+    endTime: data.end_time,
+  };
+};
+
+export const interfaceToTableWeeklyMeetingSchedule = (data: WeeklyMeetingSchedule) => {
+  if (!data) throw new Error("Data is null");
+  return {
+    id: data.id,
+    created_at: data.createdAt,
+    meeting_id: data.meetingId,
+    title: data.title,
+    description: data.description,
+    day_of_week: data.dayOfWeek,
+    start_time: data.startTime,
+    end_time: data.endTime,
+  };
 };
