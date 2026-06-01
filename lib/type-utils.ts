@@ -150,6 +150,9 @@ export const tableToInterfaceSessions = (data: any): Session => {
   return sessions;
 };
 
+const toHHMM = (t: string | null | undefined): string =>
+  (t ?? "").slice(0, 5);
+
 export const tableToInterfaceWeeklyMeetingSchedule = (data: any): WeeklyMeetingSchedule => {
   if (!data) throw new Error("Data is null");
   return {
@@ -159,8 +162,8 @@ export const tableToInterfaceWeeklyMeetingSchedule = (data: any): WeeklyMeetingS
     title: data.title ?? "",
     description: data.description ?? "",
     dayOfWeek: data.day_of_week,
-    startTime: data.start_time,
-    endTime: data.end_time,
+    startTime: toHHMM(data.start_time),
+    endTime: toHHMM(data.end_time),
   };
 };
 
