@@ -437,14 +437,15 @@ const updateFutureSessions = async (enrollment: Enrollment) => {
     .gte("date", now);
   if (error) throw error;
 };
-
 export const getEnrollmentsWithMissingSEF = async (
   timeProvided: Date,
   weeksMissingSEF: number,
 ) => {
   const supabase = await createAdminClient();
   try {
-    const now = new Date().toISOString();
+    // Fetch all complete sessions for every enrollment.
+    // "Complete" means the session date has passed, whether or not
+    // the tutor actually filled out the SEF.
     const { data: enrollments } = await supabase
       .from("Enrollments")
       .select(
@@ -453,20 +454,40 @@ export const getEnrollmentsWithMissingSEF = async (
         sessions:Sessions!enrollment_id!inner(
           id,
           date,
-          status
+          status,
+          session_exit_form
         )
         `,
       )
-      .in("sessions.status", ["Active", "Cancelled"])
-      .gte("sessions.date", timeProvided.toISOString())
-      .lte("sessions.date", now)
+      .eq("sessions.status", "Complete")
       .throwOnError();
 
-    const enrollmentsWithTwoMissingSessions = enrollments.filter(
-      (enrollment) => enrollment.sessions.length >= weeksMissingSEF,
+    const enrollmentsWithConsecutiveMissingSEF = enrollments.filter(
+      (enrollment) => {
+        // Sort oldest to newest --> checks end of list
+        // checks for the latest sessions that are missing SEFs in a row
+        const sorted = [...enrollment.sessions].sort(
+          (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime(),
+        );
+
+        // Count how many sessions in a row at the end have no SEF filled out
+        let consecutiveMissing = 0;
+
+        for (let i = sorted.length - 1; i >= 0; i--) {
+          if (sorted[i].session_exit_form === null) {
+            consecutiveMissing++;
+          } else {
+            // streak breaks bcz of filled SEF, don't need to go further back in search
+            break;
+          }
+        }
+
+        // Flag this enrollment if the streak hit the threshold (5 for warning, 6 for deletion)
+        return consecutiveMissing >= weeksMissingSEF;
+      },
     );
 
-    return enrollmentsWithTwoMissingSessions;
+    return enrollmentsWithConsecutiveMissingSEF;
   } catch (error) {
     console.error("Unable to filter ", error);
     throw error;
