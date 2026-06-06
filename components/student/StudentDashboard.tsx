@@ -296,7 +296,7 @@ const StudentDashboard = () => {
         <div className="flex space-x-6">
           <div className="flex-grow bg-white rounded-lg shadow p-6">
             <Suspense fallback={<SkeletonTable />}>
-              <CurrentSessionsTable />
+              <CurrentSessionsTable handleStatusChange={handleStatusChange} />
             </Suspense>
           </div>
         </div>
