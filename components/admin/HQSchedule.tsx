@@ -37,7 +37,7 @@ import { getWeeklyMeetingSchedules } from "@/lib/actions/meeting-schedule.client
 import { checkAvailableMeetingForWeeklySchedules } from "@/lib/utils/meeting-schedule.utils";
 import { toast, Toaster } from "react-hot-toast";
 
-const HOURS = Array.from({ length: 15 }, (_, i) => i + 7); // 7am–9pm
+const HOURS = Array.from({ length: 17 }, (_, i) => i + 7); // 7am–11pm
 
 function formatHour(hour: number) {
   if (hour === 0) return "12 AM";
@@ -48,11 +48,12 @@ function formatHour(hour: number) {
 
 const WEEK_DAYS_LABELS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 
-const TIME_OPTIONS = Array.from({ length: 29 }, (_, i) => {
+// 7:00 AM through 12:00 AM (midnight) in 30-minute increments
+const TIME_OPTIONS = Array.from({ length: 35 }, (_, i) => {
   const totalMins = 7 * 60 + i * 30;
   const h = Math.floor(totalMins / 60);
   const m = totalMins % 60;
-  const label = `${h % 12 === 0 ? 12 : h % 12}:${m === 0 ? "00" : m} ${h < 12 ? "AM" : "PM"}`;
+  const label = `${h % 12 === 0 ? 12 : h % 12}:${m === 0 ? "00" : m} ${h % 24 < 12 ? "AM" : "PM"}`;
   return { value: `${String(h).padStart(2, "0")}:${m === 0 ? "00" : m}`, label };
 });
 
@@ -192,7 +193,18 @@ function EventFormFields({ f, setF, canCheck, availability, idPrefix, meetings }
 }
 
 export default function HQSchedule({ meetingsPromise, enrollmentsPromise }: Props) {
-  const meetings = use(meetingsPromise) ?? [];
+  const rawMeetings = use(meetingsPromise) ?? [];
+  // Surface the HQ link at the top of the meeting dropdowns
+  const meetings = useMemo(
+    () =>
+      [...rawMeetings].sort((a, b) => {
+        const aHq = a.name === "Zoom Link HQ";
+        const bHq = b.name === "Zoom Link HQ";
+        if (aHq === bHq) return 0;
+        return aHq ? -1 : 1;
+      }),
+    [rawMeetings],
+  );
   const allEnrollments = use(enrollmentsPromise);
 
   const { data: existingSchedules = [] } = useQuery({

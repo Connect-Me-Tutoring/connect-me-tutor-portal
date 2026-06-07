@@ -213,7 +213,7 @@ export default function DashboardLayout({
       icon: <BookOpenText className="h-5 w-5" />,
     },
     {
-      title: "HQ Schedule",
+      title: "Meeting Schedule",
       href: "/dashboard/hq-schedule",
       icon: <CalendarRange className="h-5 w-5" />,
     },
