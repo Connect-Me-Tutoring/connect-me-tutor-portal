@@ -3,23 +3,23 @@ import SkeletonTable, { SkeletonCard } from "@/components/ui/skeleton";
 import { getAllEnrollments } from "@/lib/actions/enrollment.server.actions";
 import { getMeetings } from "@/lib/actions/meeting.server.actions";
 import { getAllProfiles } from "@/lib/actions/profile.server.actions";
+import { getWeeklyMeetingSchedules } from "@/lib/actions/meeting-schedule.server.actions";
 import { Suspense } from "react";
 
-async function MyEnrollmentsData() {
-  // await data here so client component doesnt need use() which is unstable in react 18
-  const [enrollments, meetings, students, tutors] = await Promise.all([
-    getAllEnrollments(),
-    getMeetings(),
-    getAllProfiles("Student"),
-    getAllProfiles("Tutor"),
-  ]);
+function MyEnrollmentsData() {
+  const enrollmentsPromise = getAllEnrollments();
+  const meetingsPromise = getMeetings();
+  const studentsPromise = getAllProfiles("Student");
+  const tutorsPromise = getAllProfiles("Tutor");
+  const weeklySchedulesPromise = getWeeklyMeetingSchedules();
 
   return (
     <EnrollmentsManager
-      initialEnrollments={enrollments}
-      initialMeetings={meetings}
-      initialStudents={students}
-      initialTutors={tutors}
+      enrollmentsPromise={enrollmentsPromise}
+      meetingsPromise={meetingsPromise}
+      studentsPromise={studentsPromise}
+      tutorsPromise={tutorsPromise}
+      weeklySchedulesPromise={weeklySchedulesPromise}
     />
   );
 }

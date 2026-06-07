@@ -31,7 +31,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { WeeklyMeetingSchedule } from "@/types/meeting";
-import { Meeting } from "@/types";
+import { Meeting, Enrollment } from "@/types";
 import { updateWeeklyMeetingSchedule } from "@/lib/actions/meeting-schedule.server.actions";
 import { getWeeklyMeetingSchedules } from "@/lib/actions/meeting-schedule.client.actions";
 import { checkAvailableMeetingForWeeklySchedules } from "@/lib/utils/meeting-schedule.utils";
@@ -210,7 +210,7 @@ export default function HQSchedule({ meetingsPromise, enrollmentsPromise }: Prop
   const { data: existingSchedules = [] } = useQuery({
     queryKey: ["weekly-meeting-schedules"],
     queryFn: getWeeklyMeetingSchedules,
-    throwOnError: (error) => {
+    useErrorBoundary: (error: Error) => {
       toast.error(`Failed to load schedules: ${error.message}`);
       return false;
     },
@@ -464,21 +464,23 @@ export default function HQSchedule({ meetingsPromise, enrollmentsPromise }: Prop
                           isToday(day) && "bg-connect-me-blue-1/20",
                         )}
                       >
-                        {cellSchedules.map((s) => {
-                          const meeting = meetings.find((m) => m.id === s.meetingId);
-                          return (
-                            <div
-                              key={s.id}
-                              onClick={() => openEdit(s)}
-                              className="rounded px-1.5 py-0.5 text-[11px] font-medium bg-connect-me-blue-1 text-connect-me-blue-5 border border-connect-me-blue-2 truncate cursor-pointer hover:bg-connect-me-blue-2 transition-colors"
-                            >
+                        {cellSchedules.map((s) => (
+                          <div
+                            key={s.id}
+                            onClick={() => openEdit(s)}
+                            className="rounded px-1.5 py-0.5 text-[11px] font-medium bg-connect-me-blue-1 text-connect-me-blue-5 border border-connect-me-blue-2 truncate cursor-pointer hover:bg-connect-me-blue-2 transition-colors"
+                          >
+                            <span className="inline-flex items-center gap-1">
+                              <span className="text-[9px] font-semibold uppercase tracking-wide bg-connect-me-blue-2 text-connect-me-blue-5 rounded px-1 py-px">Meeting</span>
+                            </span>
+                            <span className="block truncate">
                               {s.title}
-                              <span className="block opacity-75 text-[10px]">
-                                {meeting?.name ?? "—"} · {s.startTime} – {s.endTime}
-                              </span>
-                            </div>
-                          );
-                        })}
+                            </span>
+                            <span className="block opacity-60 text-[10px]">
+                              {s.startTime} – {s.endTime}
+                            </span>
+                          </div>
+                        ))}
                         {cellEnrollments.map((e) => (
                           <div
                             key={e.id}
