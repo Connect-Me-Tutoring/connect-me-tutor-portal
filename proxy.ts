@@ -33,6 +33,16 @@ function isCronOrWebhookPath(path: string) {
   );
 }
 
+function withSessionCookies(
+  source: NextResponse,
+  target: NextResponse,
+): NextResponse {
+  source.cookies.getAll().forEach((cookie) => {
+    target.cookies.set(cookie);
+  });
+  return target;
+}
+
 export async function proxy(request: NextRequest) {
   let response = NextResponse.next({
     request,
@@ -68,16 +78,25 @@ export async function proxy(request: NextRequest) {
   } = await supabase.auth.getUser();
 
   if (user && path === "/") {
-    return NextResponse.redirect(new URL("/dashboard", request.url));
+    return withSessionCookies(
+      response,
+      NextResponse.redirect(new URL("/dashboard", request.url)),
+    );
   }
 
   if (!user && !isPublicPath(path) && !isCronOrWebhookPath(path)) {
     if (path.startsWith("/dashboard") || path.startsWith("/meeting")) {
-      return NextResponse.redirect(new URL("/", request.url));
+      return withSessionCookies(
+        response,
+        NextResponse.redirect(new URL("/", request.url)),
+      );
     }
 
     if (isProtectedApiPath(path)) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      return withSessionCookies(
+        response,
+        NextResponse.json({ error: "Unauthorized" }, { status: 401 }),
+      );
     }
   }
 

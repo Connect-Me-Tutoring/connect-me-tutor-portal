@@ -6,7 +6,8 @@ import * as z from "zod";
 import { useRouter } from "next/navigation";
 import toast, { Toaster } from "react-hot-toast";
 import { useState, useEffect, useRef, Suspense } from "react";
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
+import { createClient } from "@/lib/supabase/client";
+import { startNavigationProgress } from "@/components/ui/navigation-progress";
 import { useSearchParams } from "next/navigation";
 import Logo from "@/components/ui/logo"; // Import Logo
 import { Button } from "@/components/ui/button";
@@ -34,7 +35,7 @@ const otpSchema = z.object({
 function OTPLogin() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const supabase = createClientComponentClient();
+  const supabase = createClient();
   const [isLoading, setIsLoading] = useState(false);
   const [otpSent, setOtpSent] = useState(false);
   const [emailForOtp, setEmailForOtp] = useState("");
@@ -127,8 +128,9 @@ function OTPLogin() {
 
       if (session) {
         toast.success("Logged in successfully!");
-        router.push("/dashboard"); // Redirect to dashboard or home
-        router.refresh(); // Refresh server components
+        startNavigationProgress();
+        window.location.assign("/dashboard");
+        return;
       } else {
         toast.error("Failed to verify OTP. Please try again.");
       }
