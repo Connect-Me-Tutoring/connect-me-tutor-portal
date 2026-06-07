@@ -86,9 +86,6 @@ import { Enrollment, Profile, Event, Meeting, Availability } from "@/types";
 import toast from "react-hot-toast";
 import AvailabilityFormat from "@/components/student/AvailabilityFormat";
 import AvailabilityForm from "@/components/ui/availability-form";
-import { formatDate } from "@/lib/utils";
-import { normalize } from "path";
-import { areIntervalsOverlapping, previousDay, set } from "date-fns";
 import { z } from "zod";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -1234,8 +1231,15 @@ const EnrollmentList = ({
                     </Button>
                   </TableCell>
                   <TableCell>
-                    <Button variant="outline" size="sm" className="gap-2" asChild>
-                      <Link href={`/dashboard/enrollments/${enrollment.id}/activity`}>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="gap-2"
+                      asChild
+                    >
+                      <Link
+                        href={`/dashboard/enrollments/${enrollment.id}/activity`}
+                      >
                         <Activity className="h-4 w-4" />
                         Activity
                       </Link>
