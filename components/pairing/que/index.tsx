@@ -53,7 +53,7 @@ export default function PriorityQueue() {
 
     await removePairingRequest(id);
     setPairingRequests((pairingRequests) =>
-      pairingRequests.filter((request) => request.request_id !== id)
+      pairingRequests.filter((request) => request.request_id !== id),
     );
   };
 
@@ -66,7 +66,7 @@ export default function PriorityQueue() {
     }
     (async () => {
       const { data, error } = await getAllPairingRequests(
-        currentView === "students" ? "student" : "tutor"
+        currentView === "students" ? "student" : "tutor",
       );
       if (data) {
         requestsCache.current[currentView] = data;
@@ -75,7 +75,7 @@ export default function PriorityQueue() {
       }
       if (error) {
         toast.error("Failed to load pairing que");
-        console.error("Failed to load pairing queue", error)
+        console.error("Failed to load pairing queue", error);
       }
     })();
   }, [currentView]);
@@ -89,13 +89,13 @@ export default function PriorityQueue() {
               priority: newPriority,
               profile: { ...request.profile, priorityLevel: newPriority },
             }
-          : request
-      )
+          : request,
+      ),
     );
   };
 
   const sortedRequests = [...pairingRequests].sort(
-    (a, b) => a.priority - b.priority
+    (a, b) => a.priority - b.priority,
   );
   const tutors = sortedRequests.filter((r) => r.type === "tutor");
   const students = sortedRequests.filter((r) => r.type === "student");
@@ -242,72 +242,81 @@ export default function PriorityQueue() {
                         </TableCell>
                         <TableCell>
                           <div className="flex flex-wrap gap-1 max-w-48">
-                            {request.profile.availability
-                              .slice(0, 2)
-                              .map((time, index) => (
-                                <Badge
-                                  key={index}
-                                  variant="outline"
-                                  className="text-xs"
-                                >
-                                  {`${time.day}, ${to12Hour(time.startTime)} - ${to12Hour(time.endTime)}`}
+                            {request.profile.availability &&
+                              request.profile.availability
+                                .slice(0, 2)
+                                .map((time, index) => (
+                                  <Badge
+                                    key={index}
+                                    variant="outline"
+                                    className="text-xs"
+                                  >
+                                    {`${time.day}, ${to12Hour(time.startTime)} - ${to12Hour(time.endTime)}`}
+                                  </Badge>
+                                ))}
+                            {request.profile.availability &&
+                              request.profile.availability.length > 2 && (
+                                <Badge variant="outline" className="text-xs">
+                                  +{request.profile.availability.length - 2}{" "}
+                                  more
                                 </Badge>
-                              ))}
-                            {request.profile.availability.length > 2 && (
-                              <Badge variant="outline" className="text-xs">
-                                +{request.profile.availability.length - 2} more
-                              </Badge>
-                            )}
+                              )}
                           </div>
                         </TableCell>
                         <TableCell>
                           <div className="flex flex-wrap gap-1 max-w-48">
-                            {request.profile.subjects_of_interest
-                              .slice(0, 2)
-                              .map((subject, index) => (
-                                <Badge
-                                  key={index}
-                                  variant="secondary"
-                                  className="text-xs"
-                                >
-                                  {subject}
+                            {request.profile.subjects_of_interest &&
+                              request.profile.subjects_of_interest
+                                .slice(0, 2)
+                                .map((subject, index) => (
+                                  <Badge
+                                    key={index}
+                                    variant="secondary"
+                                    className="text-xs"
+                                  >
+                                    {subject}
+                                  </Badge>
+                                ))}
+                            {request.profile.subjects_of_interest &&
+                              request.profile.subjects_of_interest.length >
+                                2 && (
+                                <Badge variant="secondary" className="text-xs">
+                                  +
+                                  {request.profile.subjects_of_interest.length -
+                                    2}{" "}
+                                  more
                                 </Badge>
-                              ))}
-                            {request.profile.subjects_of_interest.length >
-                              2 && (
-                              <Badge variant="secondary" className="text-xs">
-                                +
-                                {request.profile.subjects_of_interest.length -
-                                  2}{" "}
-                                more
-                              </Badge>
-                            )}
+                              )}
                           </div>
                         </TableCell>
                         <TableCell>
-                          {request.profile.languages_spoken && (
-                            <div className="flex flex-wrap gap-1 max-w-32">
-                              {request.profile.languages_spoken
-                                .slice(0, 2)
-                                .map((language, index) => (
+                          {request.profile.languages_spoken &&
+                            request.profile.languages_spoken && (
+                              <div className="flex flex-wrap gap-1 max-w-32">
+                                {request.profile.languages_spoken
+                                  .slice(0, 2)
+                                  .map((language, index) => (
+                                    <Badge
+                                      key={index}
+                                      variant="outline"
+                                      className="text-xs bg-blue-50 text-blue-700 border-blue-200"
+                                    >
+                                      {language}
+                                    </Badge>
+                                  ))}
+                                {request.profile.languages_spoken.length >
+                                  2 && (
                                   <Badge
-                                    key={index}
                                     variant="outline"
                                     className="text-xs bg-blue-50 text-blue-700 border-blue-200"
                                   >
-                                    {language}
+                                    +
+                                    {request.profile.languages_spoken.length -
+                                      2}
                                   </Badge>
-                                ))}
-                              {request.profile.languages_spoken.length > 2 && (
-                                <Badge
-                                  variant="outline"
-                                  className="text-xs bg-blue-50 text-blue-700 border-blue-200"
-                                >
-                                  +{request.profile.languages_spoken.length - 2}
-                                </Badge>
-                              )}
-                            </div>
-                          )}
+                                )}
+                              </div>
+                            )}
                         </TableCell>
                         <TableCell className="text-right">
                           <div className="flex items-center justify-end gap-2">
@@ -316,7 +325,7 @@ export default function PriorityQueue() {
                               onValueChange={(value) =>
                                 updatePriority(
                                   request.request_id,
-                                  Number.parseInt(value)
+                                  Number.parseInt(value),
                                 )
                               }
                             >
@@ -331,7 +340,7 @@ export default function PriorityQueue() {
                             </Select>
 
                             <AlertDialog>
-                              <AlertDialogTrigger>
+                              <AlertDialogTrigger asChild>
                                 <Button
                                   variant="destructive"
                                   size="sm"

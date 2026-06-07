@@ -207,7 +207,6 @@ export const getProfileFromUserSettings = async (userId: string) => {
       console.error("Error details:", error);
       throw error;
     }
-
     return tableToInterfaceProfiles(data.profile as any);
   } catch (error) {
     throw error;
@@ -248,15 +247,17 @@ export const getTutorStudents = async (tutorId: string) => {
     const studentIds = pairings.map((pairing) => pairing.student_id);
 
     // parallel fetch - saves a round trip
-    const [{ data: studentProfiles, error: profileError }, { data: enrollments }] =
-      await Promise.all([
-        supabase.from(Table.Profiles).select("*").in("id", studentIds),
-        supabase
-          .from(Table.Enrollments)
-          .select("student_id")
-          .eq("tutor_id", tutorId)
-          .eq("paused", false), // only active enrollments matter for sorting
-      ]);
+    const [
+      { data: studentProfiles, error: profileError },
+      { data: enrollments },
+    ] = await Promise.all([
+      supabase.from(Table.Profiles).select("*").in("id", studentIds),
+      supabase
+        .from(Table.Enrollments)
+        .select("student_id")
+        .eq("tutor_id", tutorId)
+        .eq("paused", false), // only active enrollments matter for sorting
+    ]);
 
     if (profileError) {
       console.error("Error fetching student profile", profileError);
@@ -264,7 +265,9 @@ export const getTutorStudents = async (tutorId: string) => {
     }
 
     // set of student ids w/ an active enrollment - used to sort below
-    const enrolledIds = new Set((enrollments ?? []).map((e: any) => e.student_id));
+    const enrolledIds = new Set(
+      (enrollments ?? []).map((e: any) => e.student_id),
+    );
 
     // Mapping the fetched data to the Profile object
     const userProfiles: Profile[] = studentProfiles.map((profile: any) => ({

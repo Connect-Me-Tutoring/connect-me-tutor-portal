@@ -198,19 +198,18 @@ export default function EarlySessionCheckInEmail({
                 margin: "0 0 16px 0",
               }}
             >
-              For general questions about the program, you can reply to this
-              email or contact{" "}
+              For general questions about the program, please email{" "}
               <Link
-                href="mailto:ykowalczyk@connectmego.org"
+                href="mailto:operations@connectmego.org"
                 style={{
                   color: "#0E5B94",
                   fontWeight: "bold",
                   textDecoration: "underline",
                 }}
               >
-                ykowalczyk@connectmego.org
-              </Link>
-              .
+                operations@connectmego.org
+              </Link>{" "}
+              with the subject line &quot;Connect Me Question&quot;.
             </Text>
           </>
         )}
@@ -224,7 +223,7 @@ export default function EarlySessionCheckInEmail({
           }}
         >
           {recipientRole === "tutor"
-            ? "If you have any questions, feel free to reach out to us on Discord."
+            ? "If you have any questions, feel free to reach out to us on Discord or contact operations@connectmego.org with the subject line \"Connect Me Tutor Question\"."
             : "Thank you for being part of the Connect Me community."}
         </Text>
 
