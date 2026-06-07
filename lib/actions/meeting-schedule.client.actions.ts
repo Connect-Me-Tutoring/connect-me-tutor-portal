@@ -1,4 +1,5 @@
 import { supabase } from "@/lib/supabase/client";
+import { Enrollment } from "@/types";
 import { WeeklyMeetingSchedule } from "@/types/meeting";
 import { tableToInterfaceWeeklyMeetingSchedule, tableToInterfaceEnrollments } from "@/lib/type-utils";
 
