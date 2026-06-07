@@ -11,10 +11,6 @@ const nextConfig = {
 
   serverExternalPackages: ["sharp", "onnxruntime-node", "twilio"],
 
-  experimental: {
-    esmExternals: true,
-  },
-
   webpack: (config, { isServer }) => {
     if (!isServer) {
       // Don't resolve 'fs', 'net', 'tls' modules on the client-side

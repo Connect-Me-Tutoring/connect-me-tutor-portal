@@ -1,47 +1,45 @@
-import { NextResponse } from "next/server";
-import { NextRequest } from "next/server";
-import {
-  createMiddlewareClient,
-  SupabaseClient,
-  User,
-} from "@supabase/auth-helpers-nextjs";
+import { createServerClient } from "@supabase/ssr";
+import { NextResponse, type NextRequest } from "next/server";
 
-async function verifyAdminMiddleware(user: User, supabase: SupabaseClient) {
-  if (!user) throw new Error("Unauthenticated error");
-  const { data: profile } = await supabase
-    .from("Profiles")
-    .select("role")
-    .eq("user_id", user.id)
-    .single()
-    .throwOnError();
+export async function proxy(request: NextRequest) {
+  let response = NextResponse.next({
+    request,
+  });
 
-  if (profile.role !== "Admin") throw new Error("Unauthorized error");
-}
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        getAll() {
+          return request.cookies.getAll();
+        },
+        setAll(cookiesToSet) {
+          cookiesToSet.forEach(({ name, value }) =>
+            request.cookies.set(name, value),
+          );
+          response = NextResponse.next({
+            request,
+          });
+          cookiesToSet.forEach(({ name, value, options }) =>
+            response.cookies.set(name, value, options),
+          );
+        },
+      },
+    },
+  );
 
-export async function proxy(req: NextRequest) {
-  const res = NextResponse.next();
-  const path = req.nextUrl.pathname;
-
-  const supabase = createMiddlewareClient({ req, res });
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (user) {
-    if (path === "/") {
-      return NextResponse.redirect(new URL("/dashboard", req.url));
-    }
+
+  if (user && request.nextUrl.pathname === "/") {
+    return NextResponse.redirect(new URL("/dashboard", request.url));
   }
 
-  return res; // keep response as fallback
+  return response;
 }
 
 export const config = {
   matcher: ["/", "/dashboard/:path*", "/api/:path*", "/meeting/:path*"],
 };
-
-/**
- * const publicUrls = ["/set-password", "/auth", "/contact"];
-      if (publicUrls.some((url) => path.startsWith(url))) {
-        return res;
-      }
- */
