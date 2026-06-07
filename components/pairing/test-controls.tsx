@@ -1,3 +1,5 @@
+"use client";
+
 import { useRouter } from "next/navigation";
 import { Button } from "../ui/button";
 import axios from "axios";
@@ -9,6 +11,7 @@ import {
 import {
   AlertDialog,
   AlertDialogAction,
+  AlertDialogCancel,
   AlertDialogContent,
   AlertDialogDescription,
   AlertDialogFooter,
@@ -16,7 +19,6 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "../ui/alert-dialog";
-import { AlertDialogCancel } from "@radix-ui/react-alert-dialog";
 
 export function TestingPairingControls() {
   const router = useRouter();
@@ -64,10 +66,6 @@ export function TestingPairingControls() {
         >
           Logs
         </Button>
-
-        {/* <Button onClick={handleResetPairings} variant="destructive" size="sm">
-          Reset all pairing matches
-        </Button> */}
 
         <AlertDialog>
           <AlertDialogTrigger asChild>

@@ -21,6 +21,11 @@ import {
   getEnrollmentSchedule,
   getEnrollmentScheduleForSave,
 } from "../enrollment-schedule";
+import {
+  requireAdmin,
+  requireEnrollmentAccess,
+  requireTutorProfileAccess,
+} from "./authz.server";
 
 type EnrollmentTableRow = {
   availability?: Availability[] | null;
@@ -82,6 +87,7 @@ export async function getAllActiveEnrollmentsServer(
   endOfWeek: string,
 ): Promise<Enrollment[]> {
   try {
+    await requireAdmin();
     const supabase = await createClient();
     // Fetch meeting details from Supabase
     const { data, error } = await supabase
@@ -134,6 +140,7 @@ export async function getAllActiveEnrollmentsServer(
 }
 
 export async function getAllEnrollments(): Promise<Enrollment[] | null> {
+  await requireAdmin();
   const supabase = await createClient();
   try {
     // Fetch meeting details from Supabase
@@ -186,6 +193,7 @@ export async function getAllActiveEnrollments(
   endOfWeek?: string,
 ): Promise<Enrollment[]> {
   try {
+    await requireAdmin();
     const supabase = await createClient();
     // Fetch meeting details from Supabase
     let query = supabase
@@ -290,6 +298,7 @@ export async function getEnrollments(
   tutorId: string,
 ): Promise<Enrollment[] | null> {
   try {
+    await requireTutorProfileAccess(tutorId);
     const supabase = await createClient();
     // Fetch meeting details from Supabase
     const { data, error } = await supabase
@@ -360,6 +369,7 @@ export const removeFutureSessions = async (
 // before, it used createClient() which respects Supabase RLS
 // now tho it uses createAdminCLient() to bypass RLS and guarentee deletion succeeds
 export const removeEnrollment = async (enrollmentId: string) => {
+  await requireEnrollmentAccess(enrollmentId);
   const adminSupabase = await createAdminClient();
   await removeFutureSessions(enrollmentId, adminSupabase);
 
@@ -375,6 +385,7 @@ export const removeEnrollment = async (enrollmentId: string) => {
 };
 
 export const updateEnrollment = async (enrollment: Enrollment) => {
+  await requireEnrollmentAccess(enrollment.id);
   const supabase = await createClient();
   try {
     const { availability, schedule } = getEnrollmentScheduleForSave(enrollment);
@@ -477,6 +488,7 @@ export const addEnrollment = async (
   enrollment: Omit<Enrollment, "id" | "createdAt">,
   sendEmail?: boolean,
 ) => {
+  await requireAdmin();
   const supabase = await createClient();
   try {
     const { availability, schedule } = getEnrollmentScheduleForSave(enrollment);

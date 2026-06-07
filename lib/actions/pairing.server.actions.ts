@@ -13,9 +13,15 @@ import { PairingLogSchemaType } from "../pairing/types";
 import { getSupabase } from "../supabase-server/serverClient";
 import { getOverlappingAvailabilites } from "./enrollment.actions";
 import { formatDateAdmin, to12Hour } from "../utils";
+import {
+  requireAdmin,
+  requireEnrollmentAccess,
+  requireSelfOrAdmin,
+} from "./authz.server";
 
 export const getPairingFromEnrollmentId = async (enrollmentId: string) => {
   try {
+    await requireEnrollmentAccess(enrollmentId);
     const supabase = await createClient();
     const { data, error } = await supabase
       .from("Enrollments")
@@ -32,6 +38,7 @@ export const getPairingFromEnrollmentId = async (enrollmentId: string) => {
 
 export async function getAccountPairings(userId: string) {
   try {
+    await requireSelfOrAdmin(userId);
     const supabase = await createClient();
     const { data, error } = await supabase.rpc(
       "get_user_pairings_with_profiles",
@@ -54,6 +61,7 @@ export async function getAccountPairings(userId: string) {
 
 export const deleteAllPairingRequests = async () => {
   try {
+    await requireAdmin();
     if (
       !process.env.NEXT_PUBLIC_SUPABASE_URL ||
       !process.env.SUPABASE_SERVICE_ROLE_KEY ||
@@ -105,6 +113,7 @@ export const deleteAllPairingRequests = async () => {
 };
 
 export const resetPairingQueues = async () => {
+  await requireAdmin();
   if (
     !process.env.NEXT_PUBLIC_SUPABASE_URL ||
     !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY

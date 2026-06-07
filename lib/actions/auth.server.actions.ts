@@ -9,8 +9,7 @@ import { admin } from "googleapis/build/src/apis/admin";
 import { profile } from "console";
 import { tableToInterfaceProfiles } from "../type-utils";
 import { createPassword } from "../utils";
-import { cachedGetUser } from "./user.server.actions";
-import { cachedGetProfile } from "./cache";
+import { requireAdmin } from "./authz.server";
 
 interface UserMetadata {
   email: string;
@@ -40,11 +39,7 @@ export const isAuthorized = async (request: NextRequest) => {
 };
 
 export const verifyAdmin = async () => {
-  const user = await cachedGetUser();
-  if (!user) throw new Error("Unauthenticated access");
-  const profile = await cachedGetProfile(user.id);
-  if (!profile || profile.role !== "Admin")
-    throw new Error("Unauthorized Access");
+  await requireAdmin();
 };
 
 export const getUser = async () => {
@@ -87,6 +82,7 @@ const inviteUser = async (newProfileData: CreatedProfileData) => {
  */
 
 export const createUser = async (newProfileData: CreatedProfileData) => {
+  await requireAdmin();
   const supabase = await createAdminClient();
   try {
     const { data: prevProfile } = await supabase
@@ -189,6 +185,7 @@ const replaceLastActiveProfile = async (
 };
 
 export const deleteUser = async (profileId: string) => {
+  await requireAdmin();
   const adminSupabase = await createAdminClient();
 
   try {
@@ -252,6 +249,7 @@ export const deleteUser = async (profileId: string) => {
 
 export const createUserWithTempPassword = async (tutor: Partial<Profile>) => {
   try {
+    await requireAdmin();
     const tempPassword = await createPassword();
     const supabase = await createClient();
     const { data, error } = await supabase.auth.admin.createUser({
