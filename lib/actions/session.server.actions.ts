@@ -940,6 +940,13 @@ export async function addStandaloneSession(
     meeting?: Meeting;
   },
 ): Promise<void> {
+  const { profile } = await requireAuthenticatedProfile();
+  if (profile.role !== "Admin") {
+    const tutorId = session.tutor?.id;
+    if (!tutorId || profile.id !== tutorId) {
+      throw new Error("Unauthorized");
+    }
+  }
   const supabase = await createClient();
 
   try {

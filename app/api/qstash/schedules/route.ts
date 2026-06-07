@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { fetchScheduledMessages } from "@/lib/actions/email.server.actions";
+import { verifyAdmin } from "@/lib/actions/auth.server.actions";
 
 export async function GET(request: NextRequest) {
   try {
+    await verifyAdmin();
     const messages = await fetchScheduledMessages();
     
     return NextResponse.json({
