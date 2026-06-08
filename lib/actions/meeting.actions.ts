@@ -1,5 +1,5 @@
 "use client"
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
+import { supabase } from "@/lib/supabase/client";
 import { Profile, Session, Meeting, Enrollment } from "@/types";
 import { getProfileWithProfileId } from "./user.actions";
 import { string } from "zod";
@@ -7,11 +7,6 @@ import { fetchDaySessionsFromSchedule } from "./session.actions";
 import { addHours, areIntervalsOverlapping, isValid, parseISO } from "date-fns";
 import { formatAvailabilityAsDate } from "../utils";
 import { getEnrollmentAvailability } from "../enrollment-schedule";
-
-const supabase = createClientComponentClient({
-  supabaseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL,
-  supabaseKey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
-});
 
 export const MEETING_CONFIG = {
   meetings: [

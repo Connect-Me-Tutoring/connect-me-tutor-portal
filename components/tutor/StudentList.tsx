@@ -29,7 +29,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
+import { createClient } from "@/lib/supabase/client";
 import { Profile } from "@/types";
 import { StudentAnnouncementsRoomId } from "@/constants/chat";
 import { UserAvailabilities } from "../ui/UserAvailabilities";
@@ -37,7 +37,7 @@ import DeletePairingForm from "./components/DeletePairingForm";
 import { useProfile } from "@/lib/contexts/profileContext";
 
 const StudentList = ({ initialStudents }: any) => {
-  const supabase = createClientComponentClient();
+  const supabase = createClient();
   const { profile, setProfile } = useProfile();
   const [students, setStudents] = useState<Profile[]>([]);
   const [filteredStudents, setFilteredStudents] = useState<Profile[]>([]); // New state for filtered students

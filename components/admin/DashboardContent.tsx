@@ -38,13 +38,13 @@ import {
 } from "@/components/ui/dialog";
 import { getProfile } from "@/lib/actions/user.actions";
 import { getAllSessions, rescheduleSession } from "@/lib/actions/admin.actions";
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
+import { createClient } from "@/lib/supabase/client";
 import { Session, Profile } from "@/types";
 import { formatSessionDate, formatDateAdmin } from "@/lib/utils";
 import { time } from "console";
 
 const AdminDashboard = () => {
-  const supabase = createClientComponentClient();
+  const supabase = createClient();
   const [sessions, setSessions] = useState<Session[]>([]);
   const [filteredSessions, setFilteredSessions] = useState<Session[]>([]);
   const [profile, setProfile] = useState<Profile | null>(null);

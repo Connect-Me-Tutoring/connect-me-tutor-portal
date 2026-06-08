@@ -1,5 +1,5 @@
 // lib/student.actions.ts
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
+import { supabase } from "@/lib/supabase/client";
 import { Profile, Session } from "@/types";
 import { getProfileWithProfileId } from "./user.actions";
 import { getMeeting } from "./admin.actions";
@@ -8,11 +8,6 @@ import {
   tableToInterfaceMeetings,
   tableToInterfaceProfiles,
 } from "@/lib/type-utils";
-
-const supabase = createClientComponentClient({
-  supabaseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL,
-  supabaseKey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
-});
 
 export async function getStudentSessions(
   profileId: string,

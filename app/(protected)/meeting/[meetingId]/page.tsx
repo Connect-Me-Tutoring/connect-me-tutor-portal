@@ -4,7 +4,7 @@ import Link from "next/link";
 // import { useRouter } from "next/router"; // Not used in the provided code, can be removed if not needed elsewhere
 import { useEffect, useState, useRef, use } from "react";
 // import axios, { AxiosResponse } from "axios"; // Not used, can be removed
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
+import { createClient } from "@/lib/supabase/client";
 import { getMeeting } from "@/lib/actions/meeting.actions";
 import { Meeting } from "@/types";
 import { Button } from "@/components/ui/button";
@@ -29,7 +29,7 @@ const MeetingPage = (props: ParamsProps) => {
 
   const [meeting, setMeeting] = useState<Meeting | null>(null);
   // const meetingSDKElementRef = useRef<HTMLDivElement>(null); // Not used for Zoom SDK in this version
-  const supabase = createClientComponentClient(); // Supabase client initialized but not used directly in this snippet
+  const supabase = createClient(); // Supabase client initialized but not used directly in this snippet
   const [loading, setLoading] = useState(true); // Start with loading true
   const [error, setError] = useState<string | null>(null); // State for error messages
 

@@ -2,7 +2,6 @@
 import { useEffect, useState } from "react";
 import { getTutorSessions } from "@/lib/actions/tutor.actions";
 import { getEvents } from "@/lib/actions/event.server.actions";
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import { getProfile } from "@/lib/actions/user.actions";
 import {
   Table,
