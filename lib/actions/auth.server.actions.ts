@@ -47,6 +47,17 @@ export const verifyAdmin = async () => {
     throw new Error("Unauthorized Access");
 };
 
+/**
+ * Double check whether or not the route handler is called by a cron job, if it is not then throw an error
+ */
+
+export const verifyCron = async (request: NextRequest) => {
+  const authHeader = request.headers.get("authorization");
+  if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+    throw new Error("Unauthorized cron access");
+  }
+};
+
 export const getUser = async () => {
   const supabase = await createClient();
   const {
