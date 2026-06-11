@@ -8,16 +8,11 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { SharedPairing } from "@/types/pairing";
 import { MessageSquare, Shield, Users } from "lucide-react";
 import { getAccountPairings } from "@/lib/actions/pairing.server.actions";
-import { getProfileRole } from "@/lib/actions/user.actions";
-import { createClient, createServerClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { fetchUserAdminConversation } from "@/lib/actions/chat.server.actions";
-import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import { getUser } from "@/lib/actions/auth.server.actions";
 import { cachedGetUser } from "@/lib/actions/user.server.actions";
 import { cachedGetProfile } from "@/lib/actions/cache";
 

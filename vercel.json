@@ -6,8 +6,8 @@
       "schedule": "30 23 * * 6"
     },
     {
-      "path" : "/api/pairing",
-      "schedule":  "0 9 * * *"
+      "path": "/api/pairing",
+      "schedule": "0 9 * * *"
     },
     {
       "path": "/api/cron/cleanup-schedule",
@@ -16,6 +16,14 @@
     {
       "path": "/api/cron/add-sessions",
       "schedule": "0 0 * * 0"
+    },
+    {
+      "path": "/api/cron/send-early-session-check-ins",
+      "schedule": "0 16 * * *"
+    },
+    {
+      "path": "/api/cron/send-early-session-check-ins",
+      "schedule": "0 17 * * *"
     }
   ],
   "functions": {

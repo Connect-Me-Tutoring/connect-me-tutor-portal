@@ -155,7 +155,7 @@ export const getProfileRole = async (
 
     const profileRole: { profile: { role: string } | null } = data[0] as any;
 
-    // landle missing profile
+    // handle missing profile
     if (!profileRole || !profileRole.profile) {
       console.warn(
         `User ${userId} has user_settings but no associated profile. User/profile mismatch.`,
@@ -163,7 +163,7 @@ export const getProfileRole = async (
       return null;
     }
 
-    // landle missing role
+    // handle missing role
     if (!profileRole.profile.role) {
       console.warn(`User ${userId} has profile but no role assigned.`);
       return null;
