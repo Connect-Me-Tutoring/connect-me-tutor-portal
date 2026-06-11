@@ -68,14 +68,15 @@ import SessionExitForm from "./SessionExitForm";
 import RescheduleForm from "./RescheduleDialog";
 import CancellationForm from "./CancellationForm";
 import toast from "react-hot-toast";
-import { deletePairing } from "@/lib/actions/pairing.actions";
+import { deletePairingServer } from "@/lib/actions/pairing.server.actions";
 
 interface DeletePairingFormProps {
   student: Profile;
   tutor: Profile | null;
+  onRemove?: (studentId: string) => void;
 }
 
-const DeletePairingForm = ({ tutor, student }: DeletePairingFormProps) => {
+const DeletePairingForm = ({ tutor, student, onRemove }: DeletePairingFormProps) => {
   const handleDeletePairing = async (
     tutorId: string | null,
     studentId: string
@@ -84,7 +85,7 @@ const DeletePairingForm = ({ tutor, student }: DeletePairingFormProps) => {
       if (!tutor) throw new Error("No tutor found");
 
       if (tutor && tutorId) {
-        await deletePairing(tutorId, studentId);
+        await deletePairingServer(tutorId, studentId);
       }
     } catch (error) {
       throw error;
@@ -94,16 +95,15 @@ const DeletePairingForm = ({ tutor, student }: DeletePairingFormProps) => {
   return (
     <AlertDialog>
       <AlertDialogTrigger>
-        <Button variant="ghost" size="icon">
+        <Button variant="ghost" size="icon" aria-label="Remove student pairing">
           <Trash className="h-4 w-4" color="#ef4444" />
         </Button>
       </AlertDialogTrigger>
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>Remove Pairing</AlertDialogTitle>
+          <AlertDialogTitle>Remove Student</AlertDialogTitle>
           <AlertDialogDescription>
-            {" "}
-            Note: This actions is irreversible
+            Removing this student will delete the pairing and automatically remove any related enrollments and future sessions. You do not need to delete the enrollments separately.
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
@@ -111,12 +111,15 @@ const DeletePairingForm = ({ tutor, student }: DeletePairingFormProps) => {
           <AlertDialogAction
             onClick={() => {
               if (tutor)
-                handleDeletePairing(tutor?.id, student.id)
-                  .then(() => toast.success("Removed pairing"))
-                  .catch(() => toast.error("Please delete any enrollments"));
+                handleDeletePairing(tutor.id, student.id)
+                  .then(() => {
+                    toast.success("Successfully removed student and deleted related enrollments");
+                    onRemove?.(student.id);
+                  })
+                  .catch(() => toast.error("Failed to remove student"));
             }}
           >
-            Delete
+            Remove Student
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
