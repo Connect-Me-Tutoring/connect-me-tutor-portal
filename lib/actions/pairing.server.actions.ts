@@ -132,6 +132,21 @@ export const deletePairingServer = async (
   try {
     const adminSupabase = await createAdminClient();
 
+    const user = await getUserFromAction();
+    if (!user) throw new Error("Unauthorized");
+
+    const { data: requestorProfile, error: requestorProfileError } =
+      await adminSupabase
+        .from("Profiles")
+        .select("id, role")
+        .eq("user_id", user.id)
+        .single();
+
+    if (requestorProfileError) throw requestorProfileError;
+    if (requestorProfile.role !== "Admin" && requestorProfile.id !== tutorId) {
+      throw new Error("Forbidden");
+    }
+
     const { data: pairings, error: pairingsError } = await adminSupabase
       .from("Pairings")
       .select("id")
