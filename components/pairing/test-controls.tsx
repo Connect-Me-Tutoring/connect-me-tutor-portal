@@ -1,3 +1,5 @@
+"use client";
+
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "../ui/button";
@@ -179,7 +181,7 @@ export function TestingPairingControls() {
         </Button> */}
 
         <AlertDialog>
-          <AlertDialogTrigger>
+          <AlertDialogTrigger asChild>
             <Button variant="destructive" size="sm">
               Reset all pairing matches
             </Button>
@@ -193,9 +195,7 @@ export function TestingPairingControls() {
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
-              <AlertDialogCancel>
-                <Button variant="outline">Back</Button>
-              </AlertDialogCancel>
+              <AlertDialogCancel>Back</AlertDialogCancel>
               <AlertDialogAction onClick={handleResetPairings}>
                 Reset all pairing matches
               </AlertDialogAction>

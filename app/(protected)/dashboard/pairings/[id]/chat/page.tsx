@@ -1,12 +1,17 @@
 import { ChatRoom } from "@/components/chat/chat-room";
 import { config } from "@/config";
+import { isUuidString } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/server";
+import { notFound } from "next/navigation";
 
 interface Props {
   params: { id: string };
 }
 
 export default async function PairingChatRoomPage({ params }: Props) {
+  if (!isUuidString(params.id)) {
+    notFound();
+  }
   const { supabase: supabaseConfig } = config;
 
   const supabase = await createClient();

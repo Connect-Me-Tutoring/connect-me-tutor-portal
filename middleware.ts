@@ -6,6 +6,7 @@ import {
   User,
 } from "@supabase/auth-helpers-nextjs";
 
+//This is a test comment for my pull request
 async function verifyAdminMiddleware(user: User, supabase: SupabaseClient) {
   if (!user) throw new Error("Unauthenticated error");
   const { data: profile } = await supabase

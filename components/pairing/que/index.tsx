@@ -468,14 +468,14 @@ export default function PriorityQueue() {
                         <TableCell>
                           <div className="flex flex-wrap gap-1 max-w-48">
                             {availability.slice(0, 2).map((time, index) => (
-                                <Badge
-                                  key={index}
-                                  variant="outline"
-                                  className="text-xs"
-                                >
-                                  {`${time.day}, ${to12Hour(time.startTime)} - ${to12Hour(time.endTime)}`}
-                                </Badge>
-                              ))}
+                              <Badge
+                                key={index}
+                                variant="outline"
+                                className="text-xs"
+                              >
+                                {`${time.day}, ${to12Hour(time.startTime)} - ${to12Hour(time.endTime)}`}
+                              </Badge>
+                            ))}
                             {availability.length > 2 && (
                               <Badge variant="outline" className="text-xs">
                                 +{availability.length - 2} more
@@ -486,14 +486,14 @@ export default function PriorityQueue() {
                         <TableCell>
                           <div className="flex flex-wrap gap-1 max-w-48">
                             {subjects.slice(0, 2).map((subject, index) => (
-                                <Badge
-                                  key={index}
-                                  variant="secondary"
-                                  className="text-xs"
-                                >
-                                  {subject}
-                                </Badge>
-                              ))}
+                              <Badge
+                                key={index}
+                                variant="secondary"
+                                className="text-xs"
+                              >
+                                {subject}
+                              </Badge>
+                            ))}
                             {subjects.length > 2 && (
                               <Badge variant="secondary" className="text-xs">
                                 +{subjects.length - 2} more
@@ -505,14 +505,14 @@ export default function PriorityQueue() {
                           {languages.length > 0 && (
                             <div className="flex flex-wrap gap-1 max-w-32">
                               {languages.slice(0, 2).map((language, index) => (
-                                  <Badge
-                                    key={index}
-                                    variant="outline"
-                                    className="text-xs bg-blue-50 text-blue-700 border-blue-200"
-                                  >
-                                    {language}
-                                  </Badge>
-                                ))}
+                                <Badge
+                                  key={index}
+                                  variant="outline"
+                                  className="text-xs bg-blue-50 text-blue-700 border-blue-200"
+                                >
+                                  {language}
+                                </Badge>
+                              ))}
                               {languages.length > 2 && (
                                 <Badge
                                   variant="outline"
@@ -546,7 +546,7 @@ export default function PriorityQueue() {
                             </Select>
 
                             <AlertDialog>
-                              <AlertDialogTrigger>
+                              <AlertDialogTrigger asChild>
                                 <Button
                                   variant="destructive"
                                   size="sm"

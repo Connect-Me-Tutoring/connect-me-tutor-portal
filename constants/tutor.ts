@@ -10,7 +10,7 @@ export const tutorResources = [
   },
   {
     title: "826 Digital Library",
-    link: "826digital.com",
+    link: "https://826digital.com/resource-library/",
     subject: "English",
     description:
       "826 has a plethora of ELA lessons, projects, videos, and other educator tools with a huge variety of relevant topics and needed skills",
@@ -19,7 +19,7 @@ export const tutorResources = [
   },
   {
     title: "Hand2Mind",
-    link: " https://www.hand2mind.com/lessons",
+    link: " https://www.hand2mind.com/lessons?srsltid=AfmBOooCstF7edM9hIgoJypZfA32mh-XWIq1etrqoQMt6udVd6-G3yL5",
     subject: "Art, English, Math, Science, Social Studies",
     description:
       "Over 1,000 downloadable worksheets and lesson plans. Perfect for targeted practice, or for when you and your student are working on a personalized plan for any subject!",
@@ -79,15 +79,6 @@ export const tutorResources = [
       "Over 100 free children's stories followed by comprehension exercises, as well as worksheets focused on specific comprehension topics (main idea, sequencing, etc).",
     type: "Activities, Worksheet/practice questions",
     gradeLevel: "K-5",
-  },
-  {
-    title: "Free Story Books",
-    link: "https://www.notion.so/Hand2Mind-110234e7224a816ba96fc187efbbb6e4?pvs=21",
-    subject: "English",
-    description:
-      "Thousands of free online books to practice reading comprehension with your student",
-    type: "Books, Videos",
-    gradeLevel: "6-8, K-5",
   },
   {
     title: "Virtual Labs (PHET) (K-5)",

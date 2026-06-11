@@ -15,6 +15,21 @@ import { logEvent, logError, serializeForPosthog } from "@/lib/posthog";
 // Use a single signing secret for all Zoom webhooks
 const validationSecret = config.zoom.ZOOM_WEBHOOK_SECRET;
 
+function normalizeMeetingNumber(raw: unknown): string | null {
+  if (raw === null || raw === undefined) return null;
+  const digitsOnly = String(raw).replace(/\D/g, "");
+  return digitsOnly.length > 0 ? digitsOnly : null;
+}
+
+function formatMeetingNumberForStorage(normalizedMeetingNumber: string): string {
+  if (!normalizedMeetingNumber) return "";
+  if (normalizedMeetingNumber.length <= 3) return normalizedMeetingNumber;
+  if (normalizedMeetingNumber.length <= 7) {
+    return `${normalizedMeetingNumber.slice(0, 3)} ${normalizedMeetingNumber.slice(3)}`;
+  }
+  return `${normalizedMeetingNumber.slice(0, 3)} ${normalizedMeetingNumber.slice(3, 7)} ${normalizedMeetingNumber.slice(7)}`;
+}
+
 export async function POST(req: NextRequest) {
   const requestId = crypto.randomUUID();
   const startTime = Date.now();
@@ -124,6 +139,7 @@ export async function POST(req: NextRequest) {
     account_id: accountId,
     account_email: accountEmail,
     meeting_number: meetingNumber,
+    meeting_number_spaced: meetingNumberSpaced,
     meeting_number_raw: meetingNumberRaw,
     host_id: hostId,
     host_email: hostEmail,
