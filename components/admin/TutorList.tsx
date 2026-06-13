@@ -80,6 +80,7 @@ import { Combobox } from "@/components/ui/combobox";
 import AddTutorForm from "./components/AddTutorForm";
 import DeleteTutorForm from "./components/DeleteTutorForm";
 import EditTutorForm from "./components/EditTutorForm";
+import ManageTutorSessions from "./components/ManageTutorSessionForm";
 import { Turret_Road } from "next/font/google";
 import { capitalizeFirstLetter } from "@/lib/utils";
 import { UserAvailabilities } from "../ui/UserAvailabilities";
@@ -429,6 +430,7 @@ const TutorList = ({ initialTutors }: any) => {
             handleComplexFieldsForEdit={handleComplexFieldsForEdit}
             handleTimeZoneForEdit={handleTimeZoneForEdit}
           />
+          <ManageTutorSessions tutors={tutors} />
           {/*Edit Page*/}
         </div>
       </div>

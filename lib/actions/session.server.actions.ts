@@ -1188,3 +1188,21 @@ export async function cancelUnsubmittedSEFCron() {
 
   return { success: true, error: undefined, cancelled: sessions.length };
 }
+
+export async function updateSessionsStatus(
+  sessionIds: string[],
+  status: string
+) {
+  try {
+    const supabase = await createAdminClient();
+    const { error } = await supabase
+      .from(Table.Sessions)
+      .update({ status })
+      .in("id", sessionIds);
+
+    if (error) throw error;
+  } catch (error) {
+    console.error("Error updating sessions status:", error);
+    throw error;
+  }
+}
