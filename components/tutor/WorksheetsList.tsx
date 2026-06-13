@@ -1,42 +1,56 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { createClient } from "@supabase/supabase-js";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { supabase } from "@/lib/supabase/client";
+import toast from "react-hot-toast";
+
+interface WorksheetFile {
+  name: string;
+}
 
 const WorksheetsList = () => {
-  const [worksheets, setWorksheets] = useState<any[]>([]);
-  const [filteredWorksheets, setFilteredWorksheets] = useState<any[]>([]);
+  const [worksheets, setWorksheets] = useState<WorksheetFile[]>([]);
+  const [filteredWorksheets, setFilteredWorksheets] = useState<WorksheetFile[]>(
+    [],
+  );
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedTag, setSelectedTag] = useState("all");
+  const [isUploading, setIsUploading] = useState(false);
+  const uploadInputRef = useRef<HTMLInputElement>(null);
 
-  useEffect(() => {
-    const fetchFiles = async () => {
-      const { data, error } = await supabase.storage
-        .from("worksheets")
-        .list("");
-      if (!error && data) {
-        setWorksheets(data);
-      }
-    };
+  const fetchFiles = useCallback(async () => {
+    const { data, error } = await supabase.storage.from("worksheets").list("");
 
-    fetchFiles();
+    if (error) {
+      toast.error("Failed to load worksheets");
+      return;
+    }
+
+    setWorksheets((data ?? []).filter((file): file is WorksheetFile => !!file.name));
   }, []);
 
   useEffect(() => {
-    if (!searchQuery.trim()) {
-      setFilteredWorksheets(worksheets);
-      return;
-    }
+    void fetchFiles();
+  }, [fetchFiles]);
+
+  useEffect(() => {
+    let results = worksheets;
     const query = searchQuery.toLowerCase();
-    const results = worksheets.filter((file) =>
-      file.name.toLowerCase().includes(query),
-    );
+
+    if (query.trim()) {
+      results = results.filter((file) => file.name.toLowerCase().includes(query));
+    }
+
+    if (selectedTag !== "all") {
+      results = results.filter((file) =>
+        getTags(file.name).includes(selectedTag),
+      );
+    }
 
     setFilteredWorksheets(results);
-  }, [searchQuery, worksheets]);
+  }, [searchQuery, selectedTag, worksheets]);
 
   const getTags = (fileName: string): string[] => {
     const name = fileName.toLowerCase();
@@ -49,8 +63,19 @@ const WorksheetsList = () => {
     return tags;
   };
 
+  const getPublicWorksheetUrl = (path: string) => {
+    const { data } = supabase.storage.from("worksheets").getPublicUrl(path);
+    return data.publicUrl;
+  };
+
   const downloadFile = async (path: string) => {
-    const { data } = await supabase.storage.from("worksheets").download(path);
+    const { data, error } = await supabase.storage.from("worksheets").download(path);
+
+    if (error || !data) {
+      toast.error("Failed to download worksheet");
+      return;
+    }
+
     const url = URL.createObjectURL(data);
     const download = document.createElement("a");
     download.href = url;
@@ -59,23 +84,73 @@ const WorksheetsList = () => {
     URL.revokeObjectURL(url);
   };
 
-  useEffect(() => {
-    let results = worksheets;
+  const shareFile = async (path: string) => {
+    const publicUrl = getPublicWorksheetUrl(path);
 
-    if (selectedTag !== "all") {
-      results = results.filter((file) =>
-        getTags(file.name).includes(selectedTag),
-      );
+    if (!publicUrl) {
+      toast.error("Unable to generate worksheet link");
+      return;
     }
 
-    setFilteredWorksheets(results);
-  }, [selectedTag, worksheets]);
+    if (!navigator.clipboard) {
+      toast.error("Clipboard is not supported in this browser");
+      return;
+    }
+
+    navigator.clipboard
+      .writeText(publicUrl)
+      .then(() => toast.success("Worksheet link copied!"))
+      .catch(() => toast.error("Failed to copy worksheet link"));
+  };
+
+  const uploadFile = async () => {
+    const file = uploadInputRef.current?.files?.[0];
+
+    if (!file) {
+      toast.error("Select a worksheet to post");
+      return;
+    }
+
+    setIsUploading(true);
+
+    const sanitizedFileName = file.name.replace(/\s+/g, "-");
+    const filePath = `${Date.now()}-${sanitizedFileName}`;
+    const { error } = await supabase.storage
+      .from("worksheets")
+      .upload(filePath, file, { upsert: false });
+
+    if (error) {
+      toast.error("Failed to post worksheet");
+      setIsUploading(false);
+      return;
+    }
+
+    toast.success("Worksheet posted");
+    if (uploadInputRef.current) {
+      uploadInputRef.current.value = "";
+    }
+    await fetchFiles();
+    setIsUploading(false);
+  };
 
   return (
     <main className="p-8">
       <h1 className="text-3xl font-bold mb-6">Worksheets</h1>
 
-      <div className="space-x-2 mb-6">
+      <div className="flex flex-wrap gap-2 mb-6">
+        <input
+          ref={uploadInputRef}
+          aria-label="Upload worksheet"
+          type="file"
+          accept=".pdf,.doc,.docx,.png,.jpg,.jpeg"
+          className="border rounded px-3 py-2 w-full max-w-md"
+        />
+        <Button type="button" onClick={uploadFile} disabled={isUploading}>
+          {isUploading ? "Posting..." : "Post Worksheet"}
+        </Button>
+      </div>
+
+      <div className="space-y-2 mb-6">
         <input
           type="text"
           placeholder="Search Worksheets"
@@ -117,21 +192,26 @@ const WorksheetsList = () => {
             <CardFooter>
               <div className="flex gap-3 w-full">
                 <Button
-                  className="w-1/2"
+                  className="w-1/3"
                   onClick={() => {
-                    const { data } = supabase.storage
-                      .from("worksheets")
-                      .getPublicUrl(file.name);
-                    window.open(data.publicUrl, "_blank");
+                    const publicUrl = getPublicWorksheetUrl(file.name);
+                    if (!publicUrl) {
+                      toast.error("Unable to open worksheet");
+                      return;
+                    }
+                    window.open(publicUrl, "_blank", "noopener,noreferrer");
                   }}
                 >
                   Open
                 </Button>
                 <Button
-                  className="w-1/2"
+                  className="w-1/3"
                   onClick={() => downloadFile(file.name)}
                 >
                   Download
+                </Button>
+                <Button className="w-1/3" onClick={() => shareFile(file.name)}>
+                  Share
                 </Button>
               </div>
             </CardFooter>
