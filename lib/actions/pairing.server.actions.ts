@@ -246,9 +246,9 @@ Parent Phone: ${studentData.parentPhone}
 
 **Enrollment Information**
 
-**Day:** ${autoEnrollment.availability[0].day} 
-**Start Time:** ${to12Hour(autoEnrollment.availability[0].startTime)} EST 
-**End Time:** ${to12Hour(autoEnrollment.availability[0].endTime)} EST
+**Day:** ${autoEnrollment.day}
+**Start Time:** ${to12Hour(autoEnrollment.startTime ?? "")} EST
+**End Time:** ${to12Hour(autoEnrollment.endTime ?? "")} EST
 
 **First Session Date:** ${formatDateAdmin(autoEnrollment.startDate, { includeTime: true, includeDate: true })}`,
     }),

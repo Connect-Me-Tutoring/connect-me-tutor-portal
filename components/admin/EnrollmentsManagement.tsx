@@ -147,22 +147,20 @@ const enrollmentMatchesTimeFilter = (
 
   if (!hasDayFilter && !hasTimeFilter) return true;
 
-  const availability = enrollment.availability || [];
+  const { day, startTime, endTime } = enrollment;
 
-  return availability.some((slot) => {
-    if (hasDayFilter && slot.day !== dayFilter) return false;
-    if (!hasTimeFilter) return true;
+  if (hasDayFilter && day !== dayFilter) return false;
+  if (!hasTimeFilter) return true;
 
-    const enrollmentStart = timeToMinutes(slot.startTime);
-    const enrollmentEnd = timeToMinutes(slot.endTime);
-    if (enrollmentStart === null || enrollmentEnd === null) return false;
+  const enrollmentStart = timeToMinutes(startTime);
+  const enrollmentEnd = timeToMinutes(endTime);
+  if (enrollmentStart === null || enrollmentEnd === null) return false;
 
-    const rangeStart = filterStart ?? 0;
-    const rangeEnd = filterEnd ?? 24 * 60;
-    if (rangeStart >= rangeEnd) return false;
+  const rangeStart = filterStart ?? 0;
+  const rangeEnd = filterEnd ?? 24 * 60;
+  if (rangeStart >= rangeEnd) return false;
 
-    return enrollmentStart < rangeEnd && enrollmentEnd > rangeStart;
-  });
+  return enrollmentStart < rangeEnd && enrollmentEnd > rangeStart;
 };
 
 const EnrollmentList = ({
@@ -240,7 +238,6 @@ const EnrollmentList = ({
     summary: "",
     startDate: "",
     endDate: null,
-    availability: [{ day: "", startTime: "", endTime: "" }],
     day: null,
     startTime: null,
     endTime: null,
@@ -619,7 +616,6 @@ const EnrollmentList = ({
       setAvailabilityList(availability);
       setNewEnrollment((prev) => ({
         ...prev,
-        availability,
         ...scheduleFields,
       }));
       return;
@@ -629,7 +625,6 @@ const EnrollmentList = ({
       prev
         ? {
             ...prev,
-            availability,
             ...scheduleFields,
           }
         : null,
@@ -700,7 +695,6 @@ const EnrollmentList = ({
       summary: "",
       startDate: "",
       endDate: null,
-      availability: [{ day: "", startTime: "", endTime: "" }],
       day: null,
       startTime: null,
       endTime: null,

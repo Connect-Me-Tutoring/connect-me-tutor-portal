@@ -3,7 +3,11 @@
 import { supabase } from "@/lib/supabase/client";
 import { Enrollment, Availability, Session } from "@/types";
 import { Table } from "../supabase/tables";
-import { tableToInterfaceProfiles, tableToInterfaceMeetings } from "../type-utils";
+import {
+  tableToInterfaceProfiles,
+  tableToInterfaceMeetings,
+  tableToInterfaceEnrollments,
+} from "../type-utils";
 import { SharedEnrollment } from "@/types/enrollment";
 import { addOneSession } from "./session.actions";
 import { handleCalculateDuration, isValidUUID } from "../utils";
@@ -26,7 +30,9 @@ export async function getEnrollments(
         tutor_id,
         start_date,
         end_date,
-        availability,
+        day,
+        start_time,
+        end_time,
         meetingId,
         paused,
         duration,
@@ -45,20 +51,9 @@ export async function getEnrollments(
     // Check if data exists
 
     // Mapping the fetched data to the Notification object
-    const enrollments: Enrollment[] = data.map((enrollment: any) => ({
-      createdAt: enrollment.created_at,
-      id: enrollment.id,
-      summary: enrollment.summary,
-      student: tableToInterfaceProfiles(enrollment.student),
-      tutor: tableToInterfaceProfiles(enrollment.tutor),
-      startDate: enrollment.start_date,
-      endDate: enrollment.end_date,
-      availability: enrollment.availability,
-      meetingId: enrollment.meetingId,
-      paused: enrollment.paused,
-      duration: enrollment.duration,
-      frequency: enrollment.frequency,
-    }));
+    const enrollments: Enrollment[] = data.map((enrollment: any) =>
+      tableToInterfaceEnrollments(enrollment),
+    );
 
     return enrollments; // Return the array of enrollments
   } catch (error) {
@@ -127,7 +122,9 @@ export async function getAllActiveEnrollments(
         tutor_id,
         start_date,
         end_date,
-        availability,
+        day,
+        start_time,
+        end_time,
         meetingId,
         paused,
         duration,
@@ -151,20 +148,9 @@ export async function getAllActiveEnrollments(
     }
 
     // Mapping the fetched data to the Notification object
-    const enrollments: Enrollment[] = data.map((enrollment: any) => ({
-      createdAt: enrollment.created_at,
-      id: enrollment.id,
-      summary: enrollment.summary,
-      student: enrollment.student,
-      tutor: enrollment.tutor,
-      startDate: enrollment.start_date,
-      endDate: enrollment.end_date,
-      availability: enrollment.availability,
-      meetingId: enrollment.meetingId,
-      paused: enrollment.paused,
-      duration: enrollment.duration,
-      frequency: enrollment.frequency,
-    }));
+    const enrollments: Enrollment[] = data.map((enrollment: any) =>
+      tableToInterfaceEnrollments(enrollment),
+    );
 
     return enrollments; // Return the array of enrollments
   } catch (error) {
@@ -230,13 +216,13 @@ export const addEnrollment = async (
   enrollment: Omit<Enrollment, "id" | "createdAt">,
 ) => {
   try {
-    if (enrollment.availability.length === 0) {
+    if (!enrollment.day || !enrollment.startTime || !enrollment.endTime) {
       throw new Error("Please add an availability");
     }
 
     const duration = await handleCalculateDuration(
-      enrollment.availability[0].startTime,
-      enrollment.availability[0].endTime,
+      enrollment.startTime,
+      enrollment.endTime,
     );
 
     if (enrollment.duration <= 0)
@@ -256,7 +242,9 @@ export const addEnrollment = async (
         summary: enrollment.summary,
         start_date: enrollment.startDate,
         end_date: enrollment.endDate,
-        availability: enrollment.availability,
+        day: enrollment.day,
+        start_time: enrollment.startTime,
+        end_time: enrollment.endTime,
         meetingId: enrollment.meetingId,
         duration: duration,
         frequency: enrollment.frequency,
@@ -280,7 +268,11 @@ export const addEnrollment = async (
       const student = tableToInterfaceProfiles(data.student);
       const meeting = tableToInterfaceMeetings(data.meeting);
       const date = sessionTimeFromEnrollment(
-        data.availability[0],
+        {
+          day: data.day,
+          startTime: data.start_time,
+          endTime: data.end_time,
+        },
         data.start_date,
       );
 
@@ -304,19 +296,7 @@ export const addEnrollment = async (
       await addOneSession(firstSession);
     }
 
-    return {
-      createdAt: data?.created_at,
-      id: data?.id,
-      summary: data?.summary,
-      student: data?.student ? tableToInterfaceProfiles(data.student) : null,
-      tutor: data?.tutor ? tableToInterfaceProfiles(data.tutor) : null,
-      startDate: data?.start_date,
-      endDate: data?.end_date,
-      availability: data?.availability,
-      meetingId: data?.meetingId,
-      duration: data?.duration,
-      frequency: data?.frequency,
-    };
+    return tableToInterfaceEnrollments(data);
   } catch (error) {
     throw error;
   }

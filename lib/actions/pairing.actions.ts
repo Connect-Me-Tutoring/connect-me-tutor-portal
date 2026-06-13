@@ -294,34 +294,25 @@ export const getAvailableMeetingLink = async (
   day: string,
 ) => {
   try {
-    // Get all enrollments since we can't easily filter JSON arrays in Supabase
     const { data: allEnrollments, error } = await supabase
       .from("Enrollments")
-      .select("meetingId, availability");
+      .select("meetingId, day, start_time, end_time");
 
     if (error) throw error;
 
-    // Filter in JavaScript for arrays
+    // Filter in JavaScript
     const availableMeetings =
       allEnrollments?.filter((enrollment) => {
-        // Check if this enrollment has any availability slots for the requested day
-        const daySlots = enrollment.availability.filter(
-          (slot: { day: string }) => slot.day === day,
-        );
-
-        if (daySlots.length === 0) {
-          // No availability for this day - consider it available
+        // Not scheduled for the requested day - consider it available
+        if (!enrollment.day || enrollment.day !== day) {
           return true;
         }
 
-        // Check if ALL slots for this day have no overlap with requested time
-        const hasConflict = daySlots.some(
-          (slot: { startTime: string; endTime: string }) => {
-            // Two ranges overlap if: slot.start < end AND slot.end > start
-            const overlap = slot.startTime < end && slot.endTime > start;
-            return overlap;
-          },
-        );
+        // Conflict if the enrollment's slot overlaps the requested time
+        // Two ranges overlap if: slot.start < end AND slot.end > start
+        const hasConflict =
+          (enrollment.start_time ?? "") < end &&
+          (enrollment.end_time ?? "") > start;
 
         // Return true if NO conflict (available)
         return !hasConflict;
@@ -383,7 +374,9 @@ export const getAutomaticEnrollment = async (
       const autoEnrollment: Omit<Enrollment, "id" | "createdAt"> = {
         student: student,
         tutor: tutor,
-        availability: [autoAvailability.availability],
+        day: autoAvailability.availability.day,
+        startTime: autoAvailability.availability.startTime,
+        endTime: autoAvailability.availability.endTime,
         meetingId: autoAvailability.meeting.meetingId,
         paused: false,
         duration: 1,
@@ -468,8 +461,9 @@ export const updatePairingMatchStatus = async (
     //auto select first availability & create enrollment
     if (
       !autoEnrollment ||
-      !autoEnrollment.availability ||
-      autoEnrollment.availability.length <= 0
+      !autoEnrollment.day ||
+      !autoEnrollment.startTime ||
+      !autoEnrollment.endTime
     ) {
       throw new Error("Unable to automatically find availability");
     }
@@ -484,7 +478,11 @@ export const updatePairingMatchStatus = async (
       student: studentData,
       tutor: tutorData,
       startDate: autoEnrollment.startDate,
-      availability: autoEnrollment.availability[0],
+      availability: {
+        day: autoEnrollment.day,
+        startTime: autoEnrollment.startTime,
+        endTime: autoEnrollment.endTime,
+      },
       meeting: meetingData,
     };
 

@@ -101,7 +101,9 @@ export async function addSessionsServer(
         id,
         student,
         tutor,
-        availability,
+        day,
+        startTime,
+        endTime,
         meetingId,
         summary,
         startDate,
@@ -116,14 +118,16 @@ export async function addSessionsServer(
         continue;
       }
 
-      if (!student?.id || !tutor?.id || !availability?.length) {
+      if (!student?.id || !tutor?.id || !day || !startTime || !endTime) {
         continue;
       }
 
-      let { day, startTime, endTime } = availability[0];
-
       if (!startTime || !endTime) {
-        console.error(`Invalid time format in availability:`, availability[0]);
+        console.error(`Invalid time format in schedule:`, {
+          day,
+          startTime,
+          endTime,
+        });
         continue;
       }
 

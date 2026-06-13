@@ -17,7 +17,6 @@ import { Resend } from "resend";
 import InactiveEnrollmentWarning from "@/components/emails/enrollments/inactve-enrollment-warning";
 import InactiveEnrollmentDeletion from "@/components/emails/enrollments/inactive-enrollment-deletion";
 import {
-  getEnrollmentAvailability,
   getEnrollmentSchedule,
   getEnrollmentScheduleForSave,
 } from "../enrollment-schedule";
@@ -61,12 +60,6 @@ const tableEnrollmentToInterface = (
     tutor: profileOrNull(enrollment.tutor),
     startDate: enrollment.start_date || "",
     endDate: enrollment.end_date || null,
-    availability: getEnrollmentAvailability({
-      availability: enrollment.availability,
-      day: enrollment.day,
-      startTime: enrollment.start_time,
-      endTime: enrollment.end_time,
-    }),
     day: schedule.day || null,
     startTime: schedule.startTime || null,
     endTime: schedule.endTime || null,
@@ -255,6 +248,9 @@ export async function getAllActiveEnrollmentsForCron(): Promise<Enrollment[]> {
         start_date,
         end_date,
         availability,
+        day,
+        start_time,
+        end_time,
         meetingId,
         paused,
         duration,

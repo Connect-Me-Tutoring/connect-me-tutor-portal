@@ -48,10 +48,7 @@ import {
   tableToInterfaceProfiles,
   tableToInterfaceSessions,
 } from "../type-utils";
-import {
-  getEnrollmentAvailability,
-  getEnrollmentSchedule,
-} from "../enrollment-schedule";
+import { getEnrollmentSchedule } from "../enrollment-schedule";
 import { createPairingRequest } from "./pairing.actions";
 import { scheduleMultipleSessionReminders } from "../twilio";
 import { removeFutureSessions } from "./enrollment.server.actions";
@@ -725,12 +722,6 @@ export async function getAllEnrollments(): Promise<Enrollment[] | null> {
           tutor: tableToInterfaceProfiles(enrollmentRow.tutor),
           startDate: enrollmentRow.start_date || "",
           endDate: enrollmentRow.end_date || null,
-          availability: getEnrollmentAvailability({
-            availability: enrollmentRow.availability,
-            day: enrollmentRow.day,
-            startTime: enrollmentRow.start_time,
-            endTime: enrollmentRow.end_time,
-          }),
           day: schedule.day || null,
           startTime: schedule.startTime || null,
           endTime: schedule.endTime || null,

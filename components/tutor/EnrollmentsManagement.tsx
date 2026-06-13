@@ -80,6 +80,11 @@ import {
   addEnrollment,
 } from "@/lib/actions/enrollment.server.actions";
 import { getEnrollments } from "@/lib/actions/enrollment.actions";
+import {
+  getEnrollmentAvailability,
+  getEnrollmentSchedule,
+  getEnrollmentScheduleFields,
+} from "@/lib/enrollment-schedule";
 import { Enrollment, Profile, Event, Meeting, Availability } from "@/types";
 import toast from "react-hot-toast";
 import AvailabilityFormat from "@/components/student/AvailabilityFormat";
@@ -129,22 +134,20 @@ const enrollmentMatchesTimeFilter = (
 
   if (!hasDayFilter && !hasTimeFilter) return true;
 
-  const availability = enrollment.availability || [];
+  const { day, startTime, endTime } = enrollment;
 
-  return availability.some((slot) => {
-    if (hasDayFilter && slot.day !== dayFilter) return false;
-    if (!hasTimeFilter) return true;
+  if (hasDayFilter && day !== dayFilter) return false;
+  if (!hasTimeFilter) return true;
 
-    const enrollmentStart = timeToMinutes(slot.startTime);
-    const enrollmentEnd = timeToMinutes(slot.endTime);
-    if (enrollmentStart === null || enrollmentEnd === null) return false;
+  const enrollmentStart = timeToMinutes(startTime);
+  const enrollmentEnd = timeToMinutes(endTime);
+  if (enrollmentStart === null || enrollmentEnd === null) return false;
 
-    const rangeStart = filterStart ?? 0;
-    const rangeEnd = filterEnd ?? 24 * 60;
-    if (rangeStart >= rangeEnd) return false;
+  const rangeStart = filterStart ?? 0;
+  const rangeEnd = filterEnd ?? 24 * 60;
+  if (rangeStart >= rangeEnd) return false;
 
-    return enrollmentStart < rangeEnd && enrollmentEnd > rangeStart;
-  });
+  return enrollmentStart < rangeEnd && enrollmentEnd > rangeStart;
 };
 
 const EnrollmentList = ({
@@ -205,7 +208,9 @@ const EnrollmentList = ({
     summary: "",
     startDate: "",
     endDate: null,
-    availability: [{ day: "", startTime: "", endTime: "" }],
+    day: null,
+    startTime: null,
+    endTime: null,
     meetingId: "",
     paused: false,
     duration: 1,
@@ -330,16 +335,23 @@ const EnrollmentList = ({
     meetings.forEach((meeting) => {
       updatedMeetingAvailability[meeting.id] = true;
     });
-    const [newEnrollmentStartTime, newEnrollmentEndTime] = enroll
-      .availability[0]
-      ? formatAvailabilityAsDate(enroll.availability[0])
-      : [new Date(NaN), new Date(NaN)];
+    const enrollSchedule = getEnrollmentSchedule(enroll);
+    const [newEnrollmentStartTime, newEnrollmentEndTime] =
+      enrollSchedule.day && enrollSchedule.startTime && enrollSchedule.endTime
+        ? formatAvailabilityAsDate(enrollSchedule)
+        : [new Date(NaN), new Date(NaN)];
     for (const enrollment of enrollments) {
-      if (!enrollment?.availability[0] || !enrollment?.meetingId) continue;
+      const schedule = getEnrollmentSchedule(enrollment);
+      if (
+        !schedule.day ||
+        !schedule.startTime ||
+        !schedule.endTime ||
+        !enrollment?.meetingId
+      )
+        continue;
       try {
-        const [existingStartTime, existingEndTime] = formatAvailabilityAsDate(
-          enrollment.availability[0],
-        );
+        const [existingStartTime, existingEndTime] =
+          formatAvailabilityAsDate(schedule);
         const isOverlap =
           (newEnrollmentStartTime.getTime() === existingStartTime.getTime() &&
             newEnrollmentEndTime.getTime() === existingEndTime.getTime()) ||
@@ -390,16 +402,18 @@ const EnrollmentList = ({
   ) => {
     try {
       const now = new Date();
+      const enrollSchedule = getEnrollmentSchedule(enroll);
       const new_enrollment_date = new Date(
-        `${enroll.availability[0].day} ${enroll.availability[0].endTime}`,
+        `${enrollSchedule.day} ${enrollSchedule.endTime}`,
       );
       return !enrollments.some((enrollment) => {
         // Skip sessions without dates or meeting IDs
         if (!enrollment?.endDate || !enrollment?.meetingId) return false;
 
         try {
+          const schedule = getEnrollmentSchedule(enrollment);
           const sessionEndTime = new Date(
-            `${enrollment.availability[0].day}, ${enrollment.availability[0].endTime}`,
+            `${schedule.day}, ${schedule.endTime}`,
           );
           sessionEndTime.setHours(sessionEndTime.getHours() + 1.5);
           return (
@@ -588,7 +602,9 @@ const EnrollmentList = ({
       summary: "",
       startDate: "",
       endDate: null,
-      availability: [{ day: "", startTime: "", endTime: "" }],
+      day: null,
+      startTime: null,
+      endTime: null,
       meetingId: "",
       paused: false,
       duration: 1,
@@ -919,7 +935,7 @@ const EnrollmentList = ({
                             setAvailabilityList(availability);
                             setNewEnrollment({
                               ...newEnrollment,
-                              availability,
+                              ...getEnrollmentScheduleFields({ availability }),
                             });
                           }}
                           openAvailabilities={overlappingAvailabilties}
@@ -932,7 +948,7 @@ const EnrollmentList = ({
                             setAvailabilityList(availability);
                             setNewEnrollment({
                               ...newEnrollment,
-                              availability,
+                              ...getEnrollmentScheduleFields({ availability }),
                             });
                           }}
                         />
@@ -1073,7 +1089,7 @@ const EnrollmentList = ({
 
                       <TableCell className="min-w-[180px]">
                         <AvailabilityFormat
-                          availability={enrollment.availability}
+                          availability={getEnrollmentAvailability(enrollment)}
                           card={false}
                         />
                       </TableCell>
@@ -1182,7 +1198,7 @@ const EnrollmentList = ({
                 </div>
 
                 <AvailabilityFormat
-                  availability={enrollment.availability}
+                  availability={getEnrollmentAvailability(enrollment)}
                   card
                 />
 
@@ -1505,11 +1521,20 @@ const EnrollmentList = ({
                   </Popover>
                 </div>
                 <AvailabilityForm
-                  availabilityList={selectedEnrollment?.availability || []} // Default to empty array if undefined
+                  availabilityList={
+                    selectedEnrollment
+                      ? getEnrollmentAvailability(selectedEnrollment)
+                      : []
+                  } // Default to empty array if undefined
                   setAvailabilityList={(availability) =>
-                    handleInputChange({
-                      target: { name: "availability", value: availability },
-                    } as any)
+                    setSelectedEnrollment((prev) =>
+                      prev
+                        ? {
+                            ...prev,
+                            ...getEnrollmentScheduleFields({ availability }),
+                          }
+                        : prev,
+                    )
                   }
                 />
                 <div className="grid grid-cols-4 items-center gap-4">

@@ -1,9 +1,6 @@
 import { Enrollment, Meeting, Profile, Session } from "@/types";
 import { WeeklyMeetingSchedule } from "@/types/meeting";
-import {
-  getEnrollmentAvailability,
-  getEnrollmentSchedule,
-} from "./enrollment-schedule";
+import { getEnrollmentSchedule } from "./enrollment-schedule";
 
 export const tableToInterfaceProfiles = (data: any) => {
   try {
@@ -108,12 +105,6 @@ export const tableToInterfaceEnrollments = (data: any) => {
       tutor: tableToInterfaceProfiles(data.tutor),
       startDate: data.start_date,
       endDate: data.end_date,
-      availability: getEnrollmentAvailability({
-        availability: data.availability,
-        day: data.day,
-        startTime: data.start_time,
-        endTime: data.end_time,
-      }),
       day: schedule.day || null,
       startTime: schedule.startTime || null,
       endTime: schedule.endTime || null,
