@@ -6,7 +6,10 @@ import CurrentSessionsTable from "../components/CurrentSessionsTable";
 import CompletedSessionsTable from "../components/CompletedSessionsTable";
 import { updateSession } from "@/lib/actions/admin.actions";
 import { undoCancelSession } from "@/lib/actions/tutor.actions";
-import { rescheduleSession } from "@/lib/actions/session.server.actions";
+import {
+  rescheduleSession,
+  cancelSession,
+} from "@/lib/actions/session.server.actions";
 import { Session, Profile, Meeting } from "@/types";
 import toast from "react-hot-toast";
 import { useDashboardContext } from "@/lib/contexts/dashboardContext";
@@ -118,7 +121,11 @@ const TutorDashboard = () => {
 
   const handleStatusChange = async (updatedSession: Session) => {
     try {
-      await updateSession(updatedSession);
+      if (updatedSession.status === "Cancelled") {
+        await cancelSession(updatedSession, "tutor");
+      } else {
+        await updateSession(updatedSession);
+      }
       TC.setCurrentSessions(
         TC.currentSessions.map((e: Session) =>
           e.id === updatedSession.id ? updatedSession : e,
@@ -129,6 +136,7 @@ const TutorDashboard = () => {
           e.id === updatedSession.id ? updatedSession : e,
         ),
       );
+
       toast.success("Session updated successfully");
     } catch (error) {
       console.error("Failed to update session:", error);
