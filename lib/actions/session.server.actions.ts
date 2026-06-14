@@ -24,7 +24,14 @@ import {
   sendTutorSessionCancellationEmail,
 } from "./email.server.actions";
 
-import { startOfWeek, endOfWeek, subDays, format } from "date-fns"; // Only use date-fns
+import {
+  startOfWeek,
+  endOfWeek,
+  subDays,
+  parseISO,
+  format,
+  addDays,
+} from "date-fns"; // Only use date-fns
 
 import * as DateFNS from "date-fns-tz";
 const { fromZonedTime } = DateFNS;
@@ -57,6 +64,184 @@ async function isSessioninPastWeek(enrollmentId: string, midWeek: Date) {
  * @param sessions - Existing sessions to avoid duplicates
  * @returns Newly created sessions
  */
+export async function addSessionsServer(
+  weekStartString: string,
+  weekEndString: string,
+  enrollments: Enrollment[],
+  sessions: Session[],
+) {
+  try {
+    const supabase = await createAdminClient();
+    const parsedWeekStart = parseISO(weekStartString);
+    const parsedWeekEnd = parseISO(weekEndString);
+
+    if (
+      Number.isNaN(parsedWeekStart.getTime()) ||
+      Number.isNaN(parsedWeekEnd.getTime())
+    ) {
+      throw new Error(
+        `Invalid week range: weekStartString=${weekStartString}, weekEndString=${weekEndString}`,
+      );
+    }
+
+    const weekStart: Date = fromZonedTime(parsedWeekStart, "America/New_York");
+    const weekEnd: Date = fromZonedTime(parsedWeekEnd, "America/New_York");
+
+    const scheduledSessions: Set<string> = new Set();
+    sessions.forEach((session) => {
+      if (session.date) {
+        const sessionDate = new Date(session.date);
+        const key = `${session.student?.id}-${session.tutor?.id}-${format(
+          sessionDate,
+          "yyyy-MM-dd-HH:mm",
+        )}`;
+        scheduledSessions.add(key);
+      }
+    });
+
+    const enrollmentsWithSessions: Set<string> = new Set(
+      sessions
+        .filter((s) => s.enrollmentId)
+        .map((s) => s.enrollmentId as string),
+    );
+
+    const sessionsToCreate: any[] = [];
+
+    for (const enrollment of enrollments) {
+      const {
+        id,
+        student,
+        tutor,
+        availability,
+        meetingId,
+        summary,
+        startDate,
+        duration,
+      } = enrollment;
+
+      if (enrollment.paused) {
+        continue;
+      }
+
+      if (enrollmentsWithSessions.has(id)) {
+        continue;
+      }
+
+      if (!student?.id || !tutor?.id || !availability?.length) {
+        continue;
+      }
+
+      let { day, startTime, endTime } = availability[0];
+
+      if (!startTime || !endTime) {
+        console.error(`Invalid time format in availability:`, availability[0]);
+        continue;
+      }
+
+      const startDate_asDate = new Date(startDate);
+      let currentDate = new Date(weekStart);
+      const dayLower = day.toLowerCase();
+
+      while (currentDate <= weekEnd) {
+        const currentDay = format(currentDate, "EEEE").toLowerCase();
+
+        if (currentDay !== dayLower) {
+          currentDate = addDays(currentDate, 1);
+          continue;
+        }
+
+        if (currentDate < weekStart) {
+          currentDate = addDays(currentDate, 7);
+        }
+
+        if (currentDate > weekEnd) {
+          currentDate = addDays(currentDate, -7);
+        }
+
+        try {
+          const [startHour, startMinute] = startTime.split(":").map(Number);
+          const [endHour, endMinute] = endTime.split(":").map(Number);
+
+          if (
+            isNaN(startHour) ||
+            isNaN(startMinute) ||
+            isNaN(endHour) ||
+            isNaN(endMinute)
+          ) {
+            throw new Error(
+              `Invalid time format: start=${startTime}, end=${endTime}`,
+            );
+          }
+
+          const dateString = `${format(currentDate, "yyyy-MM-dd")}T${startTime}:00`;
+          const sessionStartTime = fromZonedTime(
+            dateString,
+            "America/New_York",
+          );
+
+          if (sessionStartTime < startDate_asDate) {
+            throw new Error("Session occurs before start date");
+          }
+
+          const sessionKey = `${student.id}-${tutor.id}-${format(
+            sessionStartTime,
+            "yyyy-MM-dd-HH:mm",
+          )}`;
+
+          if (!scheduledSessions.has(sessionKey)) {
+            sessionsToCreate.push({
+              enrollment_id: id,
+              date: sessionStartTime.toISOString(),
+              student_id: student.id,
+              tutor_id: tutor.id,
+              status: "Active",
+              summary: summary || "",
+              meeting_id: meetingId || null,
+              duration: duration,
+            });
+
+            scheduledSessions.add(sessionKey);
+          }
+        } catch (err) {
+          console.error(
+            "Error processing time for %s %s-%s:",
+            day,
+            startTime,
+            endTime,
+            err,
+          );
+        }
+
+        currentDate = addDays(currentDate, 1);
+      }
+    }
+
+    if (sessionsToCreate.length > 0) {
+      const { data, error } = await supabase
+        .from(Table.Sessions)
+        .insert(sessionsToCreate).select(`
+          *,
+          student:Profiles!student_id(*),
+          tutor:Profiles!tutor_id(*),
+          meeting:Meetings!meeting_id(*)
+          `);
+
+      if (error) throw error;
+
+      if (data) {
+        const createdSessions: Session[] = data.map((session: any) =>
+          tableToInterfaceSessions(session),
+        );
+        return createdSessions;
+      }
+    }
+
+    return [];
+  } catch (error) {
+    console.error("Error creating sessions:", error);
+    throw error;
+  }
+}
 
 /**
  * Normalize meeting ID by keeping only digits for comparison.
@@ -1067,4 +1252,22 @@ export async function cancelUnsubmittedSEFCron() {
   }
 
   return { success: true, error: undefined, cancelled: sessions.length };
+}
+
+export async function updateSessionsStatus(
+  sessionIds: string[],
+  status: string,
+) {
+  try {
+    const supabase = await createAdminClient();
+    const { error } = await supabase
+      .from(Table.Sessions)
+      .update({ status })
+      .in("id", sessionIds);
+
+    if (error) throw error;
+  } catch (error) {
+    console.error("Error updating sessions status:", error);
+    throw error;
+  }
 }
