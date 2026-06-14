@@ -21,6 +21,7 @@ interface CancellationFormProps {
   session: Session;
   handleStatusChange: (session: Session) => void;
   onClose: any;
+  actor?: "tutor" | "student";
 }
 
 type cancellationReasonType =
@@ -36,6 +37,7 @@ const CancellationForm: React.FC<CancellationFormProps> = ({
   session,
   handleStatusChange,
   onClose,
+  actor = "tutor",
 }) => {
   const [otherReason, setOtherReason] = useState<string>("");
   const [cancellationReason, setCancellationReason] =
@@ -52,84 +54,122 @@ const CancellationForm: React.FC<CancellationFormProps> = ({
 
   return (
     <AlertDialogContent>
-      {" "}
-      <AlertDialogHeader>
-        <AlertDialogTitle>Cancel Session</AlertDialogTitle>
-        <AlertDialogDescription>
-          Please provide an explanation for why this session is being cancelled
-        </AlertDialogDescription>
+      {actor === "student" ? (
+        <>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Cancel Session</AlertDialogTitle>
+            <AlertDialogDescription>
+              Please provide a short reason for cancelling this session
+            </AlertDialogDescription>
+            <Textarea
+              placeholder="Write your cancellation reason here..."
+              value={otherReason}
+              onChange={(e) => setOtherReason(e.target.value)}
+            />
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Back</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => {
+                const updatedSession: Session = {
+                  ...session,
+                  status: "Cancelled" as
+                    | "Active"
+                    | "Complete"
+                    | "Cancelled"
+                    | "Rescheduled",
+                  session_exit_form: otherReason,
+                };
+                handleStatusChange(updatedSession);
+                onClose();
+              }}
+            >
+              Submit
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </>
+      ) : (
+        <>
+          {" "}
+          <AlertDialogHeader>
+            <AlertDialogTitle>Cancel Session</AlertDialogTitle>
+            <AlertDialogDescription>
+              Please provide an explanation for why this session is being cancelled
+            </AlertDialogDescription>
 
-        <RadioGroup
-          value={cancellationReason || ""}
-          onValueChange={(value: string | null) =>
-            setCancellationReason(value as cancellationReasonType)
-          }
-        >
-          <span className="space-x-2">
-            <RadioGroupItem
-              value="studentUnavailableWithPriotNotice"
-              id="studentUnavailableWithPriorNotice"
-            />
-            <Label htmlFor="studentUnavailableWithPriorNotice">
-              Student cancelled with prior notice
-            </Label>
-          </span>
-          <span className="space-x-2">
-            <RadioGroupItem
-              value="studentUnavailableWithoutPriorNotice"
-              id="studentUnavailableWithoutPriorNotice"
-            />
-            <Label htmlFor="studentUnavailableWithoutPriorNotice">
-              Student did not attend without prior notice
-            </Label>
-          </span>
-          <span className="space-x-2">
-            <RadioGroupItem
-              value="tutorCancelledWithPriorNotice"
-              id="tutorCancelledWithPriorNotice"
-            />
-            <Label htmlFor="tutorCancelledWithPriorNotice">
-              I am cancelling with prior notice
-            </Label>
-          </span>
-          <span className="space-x-2">
-            <RadioGroupItem value="emergency" id="emergency" />
-            <Label htmlFor="emergency">Last Minute Emergency</Label>
-          </span>
-          <span className="space-x-2">
-            <RadioGroupItem value="other" id="other" />
-            <Label htmlFor="other">Other</Label>
-          </span>
-        </RadioGroup>
-        <Textarea
-          placeholder="Write here..."
-          value={otherReason}
-          onChange={(e) => setOtherReason(e.target.value)}
-          className={isCancellationOther ? "" : "hidden"}
-        ></Textarea>
-      </AlertDialogHeader>
-      <AlertDialogFooter>
-        <AlertDialogCancel>Back</AlertDialogCancel>
-        <AlertDialogAction
-          onClick={(e) => {
-            const updatedSession: Session = {
-              ...session,
-              status: (isCancellationStudentAbsentWithoutPriorNotice
-                ? "Complete"
-                : "Cancelled") as
-                | "Active"
-                | "Complete"
-                | "Cancelled"
-                | "Rescheduled",
-              session_exit_form: isCancellationOther ? otherReason : "",
-            };
-            handleStatusChange(updatedSession);
-            onClose();
-          }}
-        >
-          Submit
-        </AlertDialogAction>
-      </AlertDialogFooter>
+            <RadioGroup
+              value={cancellationReason || ""}
+              onValueChange={(value: string | null) =>
+                setCancellationReason(value as cancellationReasonType)
+              }
+            >
+              <span className="space-x-2">
+                <RadioGroupItem
+                  value="studentUnavailableWithPriotNotice"
+                  id="studentUnavailableWithPriorNotice"
+                />
+                <Label htmlFor="studentUnavailableWithPriorNotice">
+                  Student cancelled with prior notice
+                </Label>
+              </span>
+              <span className="space-x-2">
+                <RadioGroupItem
+                  value="studentUnavailableWithoutPriorNotice"
+                  id="studentUnavailableWithoutPriorNotice"
+                />
+                <Label htmlFor="studentUnavailableWithoutPriorNotice">
+                  Student did not attend without prior notice
+                </Label>
+              </span>
+              <span className="space-x-2">
+                <RadioGroupItem
+                  value="tutorCancelledWithPriorNotice"
+                  id="tutorCancelledWithPriorNotice"
+                />
+                <Label htmlFor="tutorCancelledWithPriorNotice">
+                  I am cancelling with prior notice
+                </Label>
+              </span>
+              <span className="space-x-2">
+                <RadioGroupItem value="emergency" id="emergency" />
+                <Label htmlFor="emergency">Last Minute Emergency</Label>
+              </span>
+              <span className="space-x-2">
+                <RadioGroupItem value="other" id="other" />
+                <Label htmlFor="other">Other</Label>
+              </span>
+            </RadioGroup>
+            <Textarea
+              placeholder="Write here..."
+              value={otherReason}
+              onChange={(e) => setOtherReason(e.target.value)}
+              className={isCancellationOther ? "" : "hidden"}
+            ></Textarea>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Back</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => {
+                const updatedSession: Session = {
+                  ...session,
+                  status: (isCancellationStudentAbsentWithoutPriorNotice
+                    ? "Complete"
+                    : "Cancelled") as
+                    | "Active"
+                    | "Complete"
+                    | "Cancelled"
+                    | "Rescheduled",
+                  session_exit_form: isCancellationOther ? otherReason : "",
+                };
+                handleStatusChange(updatedSession);
+                onClose();
+              }}
+            >
+              Submit
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </>
+      )}
     </AlertDialogContent>
   );
 };

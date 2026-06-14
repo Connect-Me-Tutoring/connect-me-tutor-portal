@@ -18,9 +18,20 @@ import {
   tableToInterfaceEnrollments,
   tableToInterfaceSessions,
 } from "../type-utils";
-import { sendScheduledEmailsBeforeSessions } from "./email.server.actions";
+import {
+  sendScheduledEmailsBeforeSessions,
+  sendStudentSessionCancellationEmail,
+  sendTutorSessionCancellationEmail,
+} from "./email.server.actions";
 
-import { startOfWeek, endOfWeek, subDays, parseISO, format, addDays } from "date-fns"; // Only use date-fns
+import {
+  startOfWeek,
+  endOfWeek,
+  subDays,
+  parseISO,
+  format,
+  addDays,
+} from "date-fns"; // Only use date-fns
 
 import * as DateFNS from "date-fns-tz";
 const { fromZonedTime } = DateFNS;
@@ -345,6 +356,59 @@ export async function getActiveSessionFromMeetingID(meetingID: string) {
   return data || [];
 }
 
+export async function cancelSession(
+  session: Session,
+  actor: "tutor" | "student",
+) {
+  const supabase = await createServerClient();
+
+  const { error } = await supabase
+    .from(Table.Sessions)
+    .update({
+      status: "Cancelled",
+      session_exit_form: session.session_exit_form ?? null,
+    })
+    .eq("id", session.id);
+
+  if (error) {
+    console.error("Error cancelling session:", error);
+    throw error;
+  }
+
+  try {
+    const sessionDate = session.date
+      ? format(new Date(session.date), "MMMM d, yyyy")
+      : "";
+    const sessionTime = session.date
+      ? format(new Date(session.date), "h:mm a")
+      : "";
+    const studentName =
+      `${session.student?.firstName ?? ""} ${session.student?.lastName ?? ""}`.trim() ||
+      "Student";
+    const tutorName =
+      `${session.tutor?.firstName ?? ""} ${session.tutor?.lastName ?? ""}`.trim() ||
+      "Your Tutor";
+    const reason = session.session_exit_form || undefined;
+
+    if (actor === "tutor" && session.student?.email) {
+      await sendStudentSessionCancellationEmail(
+        { studentName, tutorName, sessionDate, sessionTime, reason },
+        session.student.email,
+      );
+    } else if (actor === "student" && session.tutor?.email) {
+      // Student cancelled -> notify the tutor.
+      await sendTutorSessionCancellationEmail(
+        { tutorName, studentName, sessionDate, sessionTime, reason },
+        session.tutor.email,
+      );
+    }
+  } catch (emailError) {
+    console.error("Failed to send cancellation email:", emailError);
+  }
+
+  return { ...session, status: "Cancelled" as const };
+}
+
 /** Zoom webhook: payload.object → Zoom meeting number → `Meetings` row → `Sessions` row */
 export type ZoomSessionResolution = {
   /** Zoom `object.id` / `meeting_number` (numeric string) */
@@ -396,9 +460,8 @@ export async function resolveAppSessionFromZoomWebhookObject(
     };
   }
 
-  const resolved = await resolvePortalSessionForZoomMeetingNumber(
-    meetingNumber,
-  );
+  const resolved =
+    await resolvePortalSessionForZoomMeetingNumber(meetingNumber);
   if (!resolved) {
     return {
       zoomMeetingNumber: meetingNumber,
@@ -858,7 +921,9 @@ export async function getParticipationData(
       return { ...base, enrollmentQueryMismatch: true };
     }
 
-    const activity = await getEnrollmentSessionsActivityData(session.enrollmentId);
+    const activity = await getEnrollmentSessionsActivityData(
+      session.enrollmentId,
+    );
     if (!activity) {
       return { ...base, enrollmentQueryMismatch: true };
     }
@@ -1187,4 +1252,22 @@ export async function cancelUnsubmittedSEFCron() {
   }
 
   return { success: true, error: undefined, cancelled: sessions.length };
+}
+
+export async function updateSessionsStatus(
+  sessionIds: string[],
+  status: string,
+) {
+  try {
+    const supabase = await createAdminClient();
+    const { error } = await supabase
+      .from(Table.Sessions)
+      .update({ status })
+      .in("id", sessionIds);
+
+    if (error) throw error;
+  } catch (error) {
+    console.error("Error updating sessions status:", error);
+    throw error;
+  }
 }
