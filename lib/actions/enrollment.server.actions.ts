@@ -360,10 +360,9 @@ export const removeFutureSessions = async (
 // before, it used createClient() which respects Supabase RLS
 // now tho it uses createAdminCLient() to bypass RLS and guarentee deletion succeeds
 export const removeEnrollment = async (enrollmentId: string) => {
-  const adminSupabase = await createAdminClient();
-  await removeFutureSessions(enrollmentId, adminSupabase);
-
   const supabase = await createClient();
+  await removeFutureSessions(enrollmentId, supabase);
+
 
   const { data: deleteEnrollmentData, error: deleteEnrollmentError } =
     await supabase.from("Enrollments").delete().eq("id", enrollmentId);

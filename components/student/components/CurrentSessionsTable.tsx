@@ -61,6 +61,7 @@ import {
 } from "lucide-react";
 import { format, parseISO, isAfter } from "date-fns";
 import { AlertDialogTrigger } from "@radix-ui/react-alert-dialog";
+import CancellationForm from "../../tutor/components/CancellationForm";
 import { useDashboardContext } from "@/lib/contexts/dashboardContext";
 // import SessionExitForm from "./SessionExitForm";
 // import RescheduleForm from "./RescheduleDialog";
@@ -102,7 +103,11 @@ interface CurrentSessionTableProps {
   handleInputChange: (e: { target: { name: string; value: string } }) => void;
 }
 
-const CurrentSessionsTable = () => {
+const CurrentSessionsTable = ({
+  handleStatusChange,
+}: {
+  handleStatusChange: (session: Session) => void;
+}) => {
   const SC = useDashboardContext();
 
   return (
@@ -116,6 +121,7 @@ const CurrentSessionsTable = () => {
             <TableHead>Tutor</TableHead>
             <TableHead>Meeting</TableHead>
             <TableHead>Feedback</TableHead>
+            <TableHead>Actions</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -175,6 +181,23 @@ const CurrentSessionsTable = () => {
               Provide Feedback
             </a>
           </TableCell>
+              <TableCell>
+                {session.status === "Active" ? (
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button variant="ghost" size="icon">
+                        <Trash className="h-4 w-4" color="#ef4444" />
+                      </Button>
+                    </AlertDialogTrigger>
+                    <CancellationForm
+                      session={session}
+                      handleStatusChange={handleStatusChange}
+                      onClose={() => {}}
+                      actor="student"
+                    />
+                  </AlertDialog>
+                ) : null}
+              </TableCell>
             </TableRow>
           ))}
         </TableBody>

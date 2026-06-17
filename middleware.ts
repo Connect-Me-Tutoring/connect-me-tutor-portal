@@ -6,6 +6,7 @@ import {
   User,
 } from "@supabase/auth-helpers-nextjs";
 
+//This is a test comment for my pull request
 async function verifyAdminMiddleware(user: User, supabase: SupabaseClient) {
   if (!user) throw new Error("Unauthenticated error");
   const { data: profile } = await supabase
@@ -26,13 +27,15 @@ export async function middleware(req: NextRequest) {
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (user) {
-    if (path === "/") {
-      return NextResponse.redirect(new URL("/dashboard", req.url));
-    }
+  if (!user && path.startsWith("/dashboard")) {
+    return NextResponse.redirect(new URL("/", req.url));
   }
 
-  return res; // keep response as fallback
+  if (user && path === "/") {
+    return NextResponse.redirect(new URL("/dashboard", req.url));
+  }
+
+  return res;
 }
 
 export const config = {

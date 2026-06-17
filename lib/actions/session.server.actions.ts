@@ -18,9 +18,20 @@ import {
   tableToInterfaceEnrollments,
   tableToInterfaceSessions,
 } from "../type-utils";
-import { sendScheduledEmailsBeforeSessions } from "./email.server.actions";
+import {
+  sendScheduledEmailsBeforeSessions,
+  sendStudentSessionCancellationEmail,
+  sendTutorSessionCancellationEmail,
+} from "./email.server.actions";
 
-import { startOfWeek, endOfWeek, subDays } from "date-fns"; // Only use date-fns
+import {
+  startOfWeek,
+  endOfWeek,
+  subDays,
+  parseISO,
+  format,
+  addDays,
+} from "date-fns"; // Only use date-fns
 
 import * as DateFNS from "date-fns-tz";
 const { fromZonedTime } = DateFNS;
@@ -53,6 +64,184 @@ async function isSessioninPastWeek(enrollmentId: string, midWeek: Date) {
  * @param sessions - Existing sessions to avoid duplicates
  * @returns Newly created sessions
  */
+export async function addSessionsServer(
+  weekStartString: string,
+  weekEndString: string,
+  enrollments: Enrollment[],
+  sessions: Session[],
+) {
+  try {
+    const supabase = await createClient();
+    const parsedWeekStart = parseISO(weekStartString);
+    const parsedWeekEnd = parseISO(weekEndString);
+
+    if (
+      Number.isNaN(parsedWeekStart.getTime()) ||
+      Number.isNaN(parsedWeekEnd.getTime())
+    ) {
+      throw new Error(
+        `Invalid week range: weekStartString=${weekStartString}, weekEndString=${weekEndString}`,
+      );
+    }
+
+    const weekStart: Date = fromZonedTime(parsedWeekStart, "America/New_York");
+    const weekEnd: Date = fromZonedTime(parsedWeekEnd, "America/New_York");
+
+    const scheduledSessions: Set<string> = new Set();
+    sessions.forEach((session) => {
+      if (session.date) {
+        const sessionDate = new Date(session.date);
+        const key = `${session.student?.id}-${session.tutor?.id}-${format(
+          sessionDate,
+          "yyyy-MM-dd-HH:mm",
+        )}`;
+        scheduledSessions.add(key);
+      }
+    });
+
+    const enrollmentsWithSessions: Set<string> = new Set(
+      sessions
+        .filter((s) => s.enrollmentId)
+        .map((s) => s.enrollmentId as string),
+    );
+
+    const sessionsToCreate: any[] = [];
+
+    for (const enrollment of enrollments) {
+      const {
+        id,
+        student,
+        tutor,
+        availability,
+        meetingId,
+        summary,
+        startDate,
+        duration,
+      } = enrollment;
+
+      if (enrollment.paused) {
+        continue;
+      }
+
+      if (enrollmentsWithSessions.has(id)) {
+        continue;
+      }
+
+      if (!student?.id || !tutor?.id || !availability?.length) {
+        continue;
+      }
+
+      let { day, startTime, endTime } = availability[0];
+
+      if (!startTime || !endTime) {
+        console.error(`Invalid time format in availability:`, availability[0]);
+        continue;
+      }
+
+      const startDate_asDate = new Date(startDate);
+      let currentDate = new Date(weekStart);
+      const dayLower = day.toLowerCase();
+
+      while (currentDate <= weekEnd) {
+        const currentDay = format(currentDate, "EEEE").toLowerCase();
+
+        if (currentDay !== dayLower) {
+          currentDate = addDays(currentDate, 1);
+          continue;
+        }
+
+        if (currentDate < weekStart) {
+          currentDate = addDays(currentDate, 7);
+        }
+
+        if (currentDate > weekEnd) {
+          currentDate = addDays(currentDate, -7);
+        }
+
+        try {
+          const [startHour, startMinute] = startTime.split(":").map(Number);
+          const [endHour, endMinute] = endTime.split(":").map(Number);
+
+          if (
+            isNaN(startHour) ||
+            isNaN(startMinute) ||
+            isNaN(endHour) ||
+            isNaN(endMinute)
+          ) {
+            throw new Error(
+              `Invalid time format: start=${startTime}, end=${endTime}`,
+            );
+          }
+
+          const dateString = `${format(currentDate, "yyyy-MM-dd")}T${startTime}:00`;
+          const sessionStartTime = fromZonedTime(
+            dateString,
+            "America/New_York",
+          );
+
+          if (sessionStartTime < startDate_asDate) {
+            throw new Error("Session occurs before start date");
+          }
+
+          const sessionKey = `${student.id}-${tutor.id}-${format(
+            sessionStartTime,
+            "yyyy-MM-dd-HH:mm",
+          )}`;
+
+          if (!scheduledSessions.has(sessionKey)) {
+            sessionsToCreate.push({
+              enrollment_id: id,
+              date: sessionStartTime.toISOString(),
+              student_id: student.id,
+              tutor_id: tutor.id,
+              status: "Active",
+              summary: summary || "",
+              meeting_id: meetingId || null,
+              duration: duration,
+            });
+
+            scheduledSessions.add(sessionKey);
+          }
+        } catch (err) {
+          console.error(
+            "Error processing time for %s %s-%s:",
+            day,
+            startTime,
+            endTime,
+            err,
+          );
+        }
+
+        currentDate = addDays(currentDate, 1);
+      }
+    }
+
+    if (sessionsToCreate.length > 0) {
+      const { data, error } = await supabase
+        .from(Table.Sessions)
+        .insert(sessionsToCreate).select(`
+          *,
+          student:Profiles!student_id(*),
+          tutor:Profiles!tutor_id(*),
+          meeting:Meetings!meeting_id(*)
+          `);
+
+      if (error) throw error;
+
+      if (data) {
+        const createdSessions: Session[] = data.map((session: any) =>
+          tableToInterfaceSessions(session),
+        );
+        return createdSessions;
+      }
+    }
+
+    return [];
+  } catch (error) {
+    console.error("Error creating sessions:", error);
+    throw error;
+  }
+}
 
 /**
  * Normalize meeting ID by keeping only digits for comparison.
@@ -167,6 +356,59 @@ export async function getActiveSessionFromMeetingID(meetingID: string) {
   return data || [];
 }
 
+export async function cancelSession(
+  session: Session,
+  actor: "tutor" | "student",
+) {
+  const supabase = await createServerClient();
+
+  const { error } = await supabase
+    .from(Table.Sessions)
+    .update({
+      status: "Cancelled",
+      session_exit_form: session.session_exit_form ?? null,
+    })
+    .eq("id", session.id);
+
+  if (error) {
+    console.error("Error cancelling session:", error);
+    throw error;
+  }
+
+  try {
+    const sessionDate = session.date
+      ? format(new Date(session.date), "MMMM d, yyyy")
+      : "";
+    const sessionTime = session.date
+      ? format(new Date(session.date), "h:mm a")
+      : "";
+    const studentName =
+      `${session.student?.firstName ?? ""} ${session.student?.lastName ?? ""}`.trim() ||
+      "Student";
+    const tutorName =
+      `${session.tutor?.firstName ?? ""} ${session.tutor?.lastName ?? ""}`.trim() ||
+      "Your Tutor";
+    const reason = session.session_exit_form || undefined;
+
+    if (actor === "tutor" && session.student?.email) {
+      await sendStudentSessionCancellationEmail(
+        { studentName, tutorName, sessionDate, sessionTime, reason },
+        session.student.email,
+      );
+    } else if (actor === "student" && session.tutor?.email) {
+      // Student cancelled -> notify the tutor.
+      await sendTutorSessionCancellationEmail(
+        { tutorName, studentName, sessionDate, sessionTime, reason },
+        session.tutor.email,
+      );
+    }
+  } catch (emailError) {
+    console.error("Failed to send cancellation email:", emailError);
+  }
+
+  return { ...session, status: "Cancelled" as const };
+}
+
 /** Zoom webhook: payload.object → Zoom meeting number → `Meetings` row → `Sessions` row */
 export type ZoomSessionResolution = {
   /** Zoom `object.id` / `meeting_number` (numeric string) */
@@ -218,9 +460,8 @@ export async function resolveAppSessionFromZoomWebhookObject(
     };
   }
 
-  const resolved = await resolvePortalSessionForZoomMeetingNumber(
-    meetingNumber,
-  );
+  const resolved =
+    await resolvePortalSessionForZoomMeetingNumber(meetingNumber);
   if (!resolved) {
     return {
       zoomMeetingNumber: meetingNumber,
@@ -680,7 +921,9 @@ export async function getParticipationData(
       return { ...base, enrollmentQueryMismatch: true };
     }
 
-    const activity = await getEnrollmentSessionsActivityData(session.enrollmentId);
+    const activity = await getEnrollmentSessionsActivityData(
+      session.enrollmentId,
+    );
     if (!activity) {
       return { ...base, enrollmentQueryMismatch: true };
     }
@@ -1009,4 +1252,22 @@ export async function cancelUnsubmittedSEFCron() {
   }
 
   return { success: true, error: undefined, cancelled: sessions.length };
+}
+
+export async function updateSessionsStatus(
+  sessionIds: string[],
+  status: string,
+) {
+  try {
+    const supabase = await createClient();
+    const { error } = await supabase
+      .from(Table.Sessions)
+      .update({ status })
+      .in("id", sessionIds);
+
+    if (error) throw error;
+  } catch (error) {
+    console.error("Error updating sessions status:", error);
+    throw error;
+  }
 }

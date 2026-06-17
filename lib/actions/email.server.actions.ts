@@ -18,6 +18,12 @@ import { parseISO, subMinutes } from "date-fns";
 import StudentRescheduleNotificationEmail, {
   SessionRescheduleEmailProps,
 } from "@/components/emails/student-reschedule-notification";
+import StudentSessionCancellationNotificationEmail, {
+  StudentSessionCancellationEmailProps,
+} from "@/components/emails/student-session-cancellation-notification";
+import TutorSessionCancellationNotificationEmail, {
+  TutorSessionCancellationEmailProps,
+} from "@/components/emails/tutor-session-cancellation-notification";
 import ChatMessageNotificationEmail, {
   type ChatMessageNotificationEmailProps,
 } from "@/components/emails/chats/chat-message-notification";
@@ -298,6 +304,64 @@ export async function sendSessionRescheduleEmail(
       onRetry: (error, attempt) =>
         console.error(
           `sendSessionRescheduleEmail attempt ${attempt + 1} failed:`,
+          error,
+        ),
+    },
+  );
+
+  return emailResult;
+}
+
+export async function sendStudentSessionCancellationEmail(
+  data: StudentSessionCancellationEmailProps,
+  emailTo: string,
+) {
+  const emailHtml = await render(
+    React.createElement(StudentSessionCancellationNotificationEmail, data),
+  );
+
+  const emailResult = await withRetry(
+    () =>
+      resend.emails.send({
+        from: "Connect Me Free Tutoring & Mentoring <notifications@connectmego.app>",
+        to: emailTo,
+        cc: ["", process.env.DEV_EMAIL!, process.env.OPERATIONS_EMAIL!], // keeping consistent with other email methods for visibility
+        subject: "Your Tutoring Session Has Been Cancelled",
+        html: emailHtml,
+      }),
+    {
+      onRetry: (error, attempt) =>
+        console.error(
+          `sendStudentSessionCancellationEmail attempt ${attempt + 1} failed:`,
+          error,
+        ),
+    },
+  );
+
+  return emailResult;
+}
+
+export async function sendTutorSessionCancellationEmail(
+  data: TutorSessionCancellationEmailProps,
+  emailTo: string,
+) {
+  const emailHtml = await render(
+    React.createElement(TutorSessionCancellationNotificationEmail, data),
+  );
+
+  const emailResult = await withRetry(
+    () =>
+      resend.emails.send({
+        from: "Connect Me Free Tutoring & Mentoring <notifications@connectmego.app>",
+        to: emailTo,
+        cc: ["", process.env.DEV_EMAIL!, process.env.OPERATIONS_EMAIL!], // keeping consistent with other email methods for visibility
+        subject: "A Tutoring Session Has Been Cancelled",
+        html: emailHtml,
+      }),
+    {
+      onRetry: (error, attempt) =>
+        console.error(
+          `sendTutorSessionCancellationEmail attempt ${attempt + 1} failed:`,
           error,
         ),
     },

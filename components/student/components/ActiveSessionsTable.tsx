@@ -30,6 +30,16 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import {
+  AlertDialog,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogCancel,
+  AlertDialogAction,
+} from "@/components/ui/alert-dialog";
+import {
   HoverCard,
   HoverCardContent,
   HoverCardTrigger,
@@ -51,6 +61,7 @@ import {
 } from "lucide-react";
 import { format, parseISO, isAfter } from "date-fns";
 import { AlertDialogTrigger } from "@radix-ui/react-alert-dialog";
+import CancellationForm from "../../tutor/components/CancellationForm";
 // import SessionExitForm from "./SessionExitForm";
 // import RescheduleForm from "./RescheduleDialog";
 // import CancellationForm from "./CancellationForm";
@@ -131,6 +142,7 @@ const ActiveSessionsTable = ({
             <TableHead>Tutor</TableHead>
             <TableHead>Meeting</TableHead>
             <TableHead>Feedback</TableHead>
+            <TableHead>Actions</TableHead>
             {/* <TableHead>Reschedule</TableHead> */}
             {/* <TableHead>Request Substitute</TableHead> */}
           </TableRow>
@@ -194,6 +206,23 @@ const ActiveSessionsTable = ({
               Provide Feedback
             </a>
           </TableCell>
+              <TableCell>
+                {session.status === "Active" ? (
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button variant="ghost" size="icon">
+                        <Trash className="h-4 w-4" color="#ef4444" />
+                      </Button>
+                    </AlertDialogTrigger>
+                    <CancellationForm
+                      session={session}
+                      handleStatusChange={handleStatusChange}
+                      onClose={() => {}}
+                      actor="student"
+                    />
+                  </AlertDialog>
+                ) : null}
+              </TableCell>
               {/* <TableCell></TableCell> */}
 
               {/* <TableCell></TableCell> */}

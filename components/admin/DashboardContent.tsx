@@ -36,8 +36,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { getProfile } from "@/lib/actions/user.actions";
-import { getAllSessions, rescheduleSession } from "@/lib/actions/admin.actions";
+import { rescheduleSession } from "@/lib/actions/admin.actions";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import { Session, Profile } from "@/types";
 import { formatSessionDate, formatDateAdmin } from "@/lib/utils";
@@ -85,15 +84,6 @@ const AdminDashboard = () => {
         tutorFullName.includes(searchTerm)
       );
     });
-    // }) (
-    //   (session) =>
-    //     session.tutor?.firstName
-    //       .toLowerCase()
-    //       .includes(filterValue.toLowerCase()) ||
-    //     session.tutor?.lastName
-    //       .toLowerCase()
-    //       .includes(filterValue.toLowerCase())
-    // );
     setFilteredSessions(filtered);
     setCurrentPage(1);
   }, [filterValue, sessions]);
@@ -120,10 +110,8 @@ const AdminDashboard = () => {
       await rescheduleSession(sessionId, newDate);
       setSelectedSession(null);
       setIsDialogOpen(false);
-      // You might want to show a success message to the user here
     } catch (error) {
       console.error("Error requesting session reschedule:", error);
-      // You might want to show an error message to the user here
     }
   };
 
