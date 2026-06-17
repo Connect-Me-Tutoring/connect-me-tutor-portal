@@ -130,6 +130,7 @@ const ActiveSessionsTable = ({
             <TableHead>Title</TableHead>
             <TableHead>Tutor</TableHead>
             <TableHead>Meeting</TableHead>
+            <TableHead>Feedback</TableHead>
             {/* <TableHead>Reschedule</TableHead> */}
             {/* <TableHead>Request Substitute</TableHead> */}
           </TableRow>
@@ -183,6 +184,16 @@ const ActiveSessionsTable = ({
                   </button>
                 )}
               </TableCell>
+          <TableCell>
+            <a 
+              href="https://docs.google.com/forms/d/1YPS8angPHS1HEyDn6ub2d5iEsfjuvi0N_Yr7YevaSIc/viewform?edit_requested=true#responses" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="inline-flex items-center justify-center px-4 py-2 bg-orange-500 text-white rounded-md hover:bg-orange-600 transition-colors text-sm font-medium"
+            >
+              Provide Feedback
+            </a>
+          </TableCell>
               {/* <TableCell></TableCell> */}
 
               {/* <TableCell></TableCell> */}
