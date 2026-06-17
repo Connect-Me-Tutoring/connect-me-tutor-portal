@@ -27,13 +27,15 @@ export async function middleware(req: NextRequest) {
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (user) {
-    if (path === "/") {
-      return NextResponse.redirect(new URL("/dashboard", req.url));
-    }
+  if (!user && path.startsWith("/dashboard")) {
+    return NextResponse.redirect(new URL("/", req.url));
   }
 
-  return res; // keep response as fallback
+  if (user && path === "/") {
+    return NextResponse.redirect(new URL("/dashboard", req.url));
+  }
+
+  return res;
 }
 
 export const config = {

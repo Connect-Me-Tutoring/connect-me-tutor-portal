@@ -98,6 +98,7 @@ const inviteUser = async (newProfileData: CreatedProfileData) => {
  */
 
 export const createUser = async (newProfileData: CreatedProfileData) => {
+  await verifyAdmin();
   const supabase = await createAdminClient();
   try {
     const { data: prevProfile } = await supabase
@@ -200,6 +201,7 @@ const replaceLastActiveProfile = async (
 };
 
 export const deleteUser = async (profileId: string) => {
+  await verifyAdmin();
   const adminSupabase = await createAdminClient();
 
   try {
@@ -262,6 +264,7 @@ export const deleteUser = async (profileId: string) => {
 };
 
 export const createUserWithTempPassword = async (tutor: Partial<Profile>) => {
+  await verifyAdmin();
   try {
     const tempPassword = await createPassword();
     const supabase = await createClient();
