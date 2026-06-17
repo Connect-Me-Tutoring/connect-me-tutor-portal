@@ -146,7 +146,7 @@ const SessionExitForm = ({
           <DialogTitle className="flex items-center justify-between">
             Session Exit Form
             <AlertDialog>
-              <AlertDialogTrigger>
+              <AlertDialogTrigger asChild>
                 <Button variant="outline">The session did not happen</Button>
               </AlertDialogTrigger>
               {TC.selectedSession ? (

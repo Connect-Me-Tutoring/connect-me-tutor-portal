@@ -23,6 +23,7 @@ import {
 } from "../enrollment-schedule";
 import {
   requireAdmin,
+  requireAuthenticatedProfile,
   requireEnrollmentAccess,
   requireTutorProfileAccess,
 } from "./authz.server";
@@ -488,7 +489,15 @@ export const addEnrollment = async (
   enrollment: Omit<Enrollment, "id" | "createdAt">,
   sendEmail?: boolean,
 ) => {
-  await requireAdmin();
+  const tutorId = enrollment.tutor?.id;
+  const auth = tutorId
+    ? await requireTutorProfileAccess(tutorId)
+    : await requireAuthenticatedProfile();
+  const enrollmentTutorId =
+    tutorId || (auth.profile.role === "Tutor" ? auth.profile.id : "");
+
+  if (!enrollmentTutorId) throw new Error("Please select a Tutor");
+
   const supabase = await createClient();
   try {
     const { availability, schedule } = getEnrollmentScheduleForSave(enrollment);
@@ -515,7 +524,7 @@ export const addEnrollment = async (
       .from(Table.Enrollments)
       .insert({
         student_id: enrollment.student?.id,
-        tutor_id: enrollment.tutor?.id,
+        tutor_id: enrollmentTutorId,
         summary: enrollment.summary,
         start_date: enrollment.startDate,
         end_date: enrollment.endDate,

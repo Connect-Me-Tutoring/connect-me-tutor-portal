@@ -60,6 +60,11 @@ const { fromZonedTime } = DateFNS;
 const uuidRegex =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
+const chunkArray = <T,>(items: T[], size: number) =>
+  Array.from({ length: Math.ceil(items.length / size) }, (_, index) =>
+    items.slice(index * size, index * size + size),
+  );
+
 type EnrollmentTableRow = {
   availability?: Availability[] | null;
   created_at?: string | null;
@@ -967,18 +972,27 @@ export async function getAllNotifications(): Promise<Notification[] | null> {
       ),
     ];
 
-    const profiles =
-      profileIds.length > 0
-        ? await supabase.from(Table.Profiles).select("*").in("id", profileIds)
-        : { data: [], error: null };
+    const profileRows = [];
 
-    if (profiles.error) {
-      console.error("Error fetching notification profiles:", profiles.error.message);
-      return null;
+    for (const profileIdChunk of chunkArray(profileIds, 50)) {
+      const { data: profiles, error: profilesError } = await supabase
+        .from(Table.Profiles)
+        .select("*")
+        .in("id", profileIdChunk);
+
+      if (profilesError) {
+        console.warn(
+          "Unable to load notification profiles:",
+          profilesError.message,
+        );
+        continue;
+      }
+
+      profileRows.push(...(profiles ?? []));
     }
 
     const profilesById = new Map(
-      (profiles.data ?? []).map((profile: any) => [profile.id, profile]),
+      profileRows.map((profile: any) => [profile.id, profile]),
     );
 
     const notifications: Notification[] = data.map((notification: any) => ({
