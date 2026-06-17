@@ -71,7 +71,7 @@ export async function addSessionsServer(
   sessions: Session[],
 ) {
   try {
-    const supabase = await createAdminClient();
+    const supabase = await createClient();
     const parsedWeekStart = parseISO(weekStartString);
     const parsedWeekEnd = parseISO(weekEndString);
 
@@ -1259,7 +1259,7 @@ export async function updateSessionsStatus(
   status: string,
 ) {
   try {
-    const supabase = await createAdminClient();
+    const supabase = await createClient();
     const { error } = await supabase
       .from(Table.Sessions)
       .update({ status })

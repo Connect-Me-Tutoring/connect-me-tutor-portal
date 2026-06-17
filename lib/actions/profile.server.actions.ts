@@ -8,6 +8,7 @@ import axios from "axios";
 import { getSupabase } from "../supabase-server/serverClient";
 import { revalidatePath } from "next/cache";
 import { tableToInterfaceProfiles } from "../type-utils";
+import { verifyAdmin } from "./auth.server.actions";
 
 export const switchProfile = async (userId: string, profileId: string) => {
   try {
@@ -63,7 +64,7 @@ export async function getAllProfiles(
   status?: string | null,
 ): Promise<Profile[] | null> {
   const supabase = await createClient();
-
+  await verifyAdmin();
   try {
     const profileFields = `
       id,
