@@ -24,3 +24,13 @@ export const getUser = async () => {
 };
 
 export const cachedGetUser = cache(getUser);
+
+export const getProfileRole = async (userId: string): Promise<string | null> => {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("user_settings")
+    .select("profile:Profiles!last_active_profile_id(role)")
+    .eq("user_id", userId)
+    .single();
+  return (data?.profile as any)?.role ?? null;
+};
