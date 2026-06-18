@@ -12,6 +12,7 @@ import {
   Link as LinkIcon,
   LogOut,
   Calendar,
+  CalendarRange,
   Bell,
   Home,
   CirclePlus,
@@ -209,6 +210,11 @@ export default function DashboardLayout({
       title: "Enrollments",
       href: "/dashboard/enrollments",
       icon: <BookOpenText className="h-5 w-5" />,
+    },
+    {
+      title: "Meeting Schedule",
+      href: "/dashboard/hq-schedule",
+      icon: <CalendarRange className="h-5 w-5" />,
     },
     {
       title: "Hours Manager",

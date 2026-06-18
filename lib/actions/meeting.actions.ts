@@ -1,6 +1,7 @@
-"use client"
+"use client";
 import { supabase } from "@/lib/supabase/client";
 import { Profile, Session, Meeting, Enrollment } from "@/types";
+import { WeeklyMeetingSchedule } from "@/types/meeting";
 import { getProfileWithProfileId } from "./user.actions";
 import { string } from "zod";
 import { fetchDaySessionsFromSchedule } from "./session.actions";
@@ -45,7 +46,7 @@ export async function getMeeting(meetingId: string): Promise<Meeting | null> {
           password,
           created_at,
           name
-        `
+        `,
       )
       .eq("id", meetingId)
       .single();
@@ -80,11 +81,10 @@ export async function getMeeting(meetingId: string): Promise<Meeting | null> {
 
 export const checkAvailableMeeting = async (
   session: Session,
-  meetings: Meeting[]
+  meetings: Meeting[],
 ): Promise<{ [key: string]: boolean }> => {
   try {
-
-    const requestedDate: Date = parseISO(session.date)
+    const requestedDate: Date = parseISO(session.date);
     const sessionsToSearch: Session[] | undefined =
       await fetchDaySessionsFromSchedule(requestedDate);
     const updatedMeetingAvailability: { [key: string]: boolean } = {};
@@ -99,7 +99,7 @@ export const checkAvailableMeeting = async (
     const requestedSessionStartTime = requestedDate;
     const requestedSessionEndTime = addHours(
       requestedSessionStartTime,
-      session.duration
+      session.duration,
     );
 
     meetings.forEach((meeting) => {
@@ -120,10 +120,10 @@ export const checkAvailableMeeting = async (
                   end: existingSession.date
                     ? addHours(
                         parseISO(existingSession.date),
-                        existingSession.duration
+                        existingSession.duration,
                       )
                     : new Date(),
-                }
+                },
               )
             );
           })
@@ -139,7 +139,8 @@ export const checkAvailableMeeting = async (
 export const checkAvailableMeetingForEnrollments = async (
   enroll: Omit<Enrollment, "id" | "createdAt">,
   enrollments: Enrollment[],
-  meetings: Meeting[]
+  meetings: Meeting[],
+  weeklySchedules: WeeklyMeetingSchedule[] = [],
 ) => {
   const updatedMeetingAvailability: { [key: string]: boolean } = {};
   meetings.forEach((meeting) => {
@@ -148,34 +149,49 @@ export const checkAvailableMeetingForEnrollments = async (
   const newEnrollmentAvailability = getEnrollmentAvailability(enroll);
   const [newEnrollmentStartTime, newEnrollmentEndTime] =
     newEnrollmentAvailability[0]
-    ? formatAvailabilityAsDate(newEnrollmentAvailability[0])
-    : [new Date(NaN), new Date(NaN)];
+      ? formatAvailabilityAsDate(newEnrollmentAvailability[0])
+      : [new Date(NaN), new Date(NaN)];
+  const newRange = {
+    start: newEnrollmentStartTime.getTime(),
+    end: newEnrollmentEndTime.getTime(),
+  };
   for (const enrollment of enrollments) {
     const enrollmentAvailability = getEnrollmentAvailability(enrollment);
     if (!enrollmentAvailability[0] || !enrollment?.meetingId) continue;
     try {
       const [existingStartTime, existingEndTime] = formatAvailabilityAsDate(
-        enrollmentAvailability[0]
+        enrollmentAvailability[0],
       );
-      const isOverlap = areIntervalsOverlapping(
-        {
-          start: newEnrollmentStartTime.getTime(),
-          end: newEnrollmentEndTime.getTime(),
-        },
-        {
-          start: existingStartTime.getTime(),
-          end: existingEndTime.getTime(),
-        }
-      );
+      const isOverlap = areIntervalsOverlapping(newRange, {
+        start: existingStartTime.getTime(),
+        end: existingEndTime.getTime(),
+      });
       if (updatedMeetingAvailability[enrollment.meetingId]) {
         updatedMeetingAvailability[enrollment.meetingId] = !isOverlap;
-        if (isOverlap) {
-        }
       }
     } catch (error) {
       updatedMeetingAvailability[enrollment.meetingId] = false;
     }
   }
+  for (const schedule of weeklySchedules) {
+    if (!schedule.meetingId) continue;
+    if (!updatedMeetingAvailability[schedule.meetingId]) continue;
+    try {
+      const [scheduleStart, scheduleEnd] = formatAvailabilityAsDate({
+        day: schedule.dayOfWeek,
+        startTime: schedule.startTime,
+        endTime: schedule.endTime,
+      });
+      const isOverlap = areIntervalsOverlapping(newRange, {
+        start: scheduleStart.getTime(),
+        end: scheduleEnd.getTime(),
+      });
+      if (isOverlap) {
+        updatedMeetingAvailability[schedule.meetingId] = false;
+      }
+    } catch (error) {
+      updatedMeetingAvailability[schedule.meetingId] = false;
+    }
+  }
   return updatedMeetingAvailability;
 };
-

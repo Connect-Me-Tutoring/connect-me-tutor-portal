@@ -74,7 +74,6 @@ export async function getAllProfiles(
 ): Promise<Profile[] | null> {
   await requireAdmin();
   const supabase = await createClient();
-
   try {
     const profileFields = `
       id,
