@@ -23,6 +23,7 @@ export const createAdminConversation = async (user_id: string) => {
   );
 
   const profileData = await getProfileFromUserSettings(user_id);
+  if (!profileData) return null;
   const profile_id = profileData.id;
 
   if (createdConversationID) return createdConversationID;
@@ -56,6 +57,7 @@ export async function fetchUserAdminConversation(
   const supabase = await createClient();
   try {
     const profile = await getProfileFromUserSettings(userId);
+    if (!profile) return null;
 
     const profileId = profile.id;
 

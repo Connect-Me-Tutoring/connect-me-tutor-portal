@@ -1,7 +1,8 @@
 "use client";
 
 import { use, useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -29,7 +30,6 @@ import {
 } from "@/lib/actions/profile.server.actions";
 import { useProfile } from "@/lib/contexts/profileContext";
 import { getUserProfiles } from "@/lib/actions/profile.server.actions";
-import { NetworkAccessProfileListInstance } from "twilio/lib/rest/supersim/v1/networkAccessProfile";
 
 interface AccountFormType {
   firstName: string;
@@ -50,7 +50,9 @@ export default function SettingsPage({
 
   const supabase = createClientComponentClient();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { profile, setProfile } = useProfile();
+  const showCompleteProfileBanner = searchParams.get("completeProfile") === "1";
   // changed to initialize from context so current profile is available at render time
   const [lastActiveProfileId, setLastActiveProfileId] = useState<string>(
     profile?.id || "",
@@ -149,11 +151,11 @@ export default function SettingsPage({
       if (!user) throw new Error("No user found");
 
       const profileData = await getProfile(user.id);
-      if (!profileData) throw new Error("No profile found");
-
-      // changed to refresh profile after page load so the context stays current
-      setProfile(profileData);
-      setLastActiveProfileId(profileData.id);
+      if (profileData) {
+        // changed to refresh profile after page load so the context stays current
+        setProfile(profileData);
+        setLastActiveProfileId(profileData.id);
+      }
       return user.id;
     } catch (error) {
       console.error("Error fetching user:", error);
@@ -291,6 +293,15 @@ export default function SettingsPage({
       <Toaster />{" "}
       <main className="p-8 max-w-4xl mx-auto">
         <div className="space-y-12">
+          {showCompleteProfileBanner && (
+            <Alert className="border-amber-200 bg-amber-50 text-amber-900">
+              <AlertDescription>
+                You must complete your profile first before using the rest of
+                the dashboard.
+              </AlertDescription>
+            </Alert>
+          )}
+
           {/* Switch Profiles Section */}
           <section className="bg-white rounded-lg border p-6">
             <h1 className="text-2xl font-bold mb-6">Profiles</h1>

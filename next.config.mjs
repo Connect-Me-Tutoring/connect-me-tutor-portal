@@ -1,5 +1,7 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  output: "standalone",
+
   typescript: {
     // !! WARN !!
     // This allows production builds to successfully complete

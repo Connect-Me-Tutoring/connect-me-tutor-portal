@@ -105,6 +105,10 @@ export function ChatRoom({
       try {
         setIsLoadingUsers(true);
 
+        if (!profile) {
+          return;
+        }
+
         if (pairing) {
           const administrators = await fetchAdmins();
 

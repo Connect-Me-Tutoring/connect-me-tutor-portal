@@ -1,0 +1,106 @@
+{
+  "requestor_role": "tutor",
+  "requestor_subjects": ["math", "science"],
+  "limit": 10,
+  "candidates": [
+    {
+      "id": "s1",
+      "role": "student",
+      "priority": 1,
+      "subjects": ["math", "reading", "algebra", "geometry"],
+      "first_name": "Alex",
+      "last_name": "One",
+      "email": "student01@example.com"
+    },
+    {
+      "id": "s2",
+      "role": "student",
+      "priority": 2,
+      "subjects": ["science", "biology", "chemistry"],
+      "first_name": "Blair",
+      "last_name": "Two",
+      "email": "student02@example.com"
+    },
+    {
+      "id": "s3",
+      "role": "student",
+      "priority": 1,
+      "subjects": ["math", "science", "physics", "computer_science"],
+      "first_name": "Casey",
+      "last_name": "Three",
+      "email": "student03@example.com"
+    },
+    {
+      "id": "s4",
+      "role": "student",
+      "priority": 3,
+      "subjects": ["history", "social_studies", "art"],
+      "first_name": "Drew",
+      "last_name": "Four",
+      "email": "student04@example.com"
+    },
+    {
+      "id": "s5",
+      "role": "student",
+      "priority": 2,
+      "subjects": ["algebra"],
+      "first_name": "Eden",
+      "last_name": "Five",
+      "email": "student05@example.com"
+    },
+    {
+      "id": "s6",
+      "role": "student",
+      "priority": 1,
+      "subjects": ["reading", "writing", "spanish"],
+      "first_name": "Flo",
+      "last_name": "Six",
+      "email": "student06@example.com"
+    },
+    {
+      "id": "s7",
+      "role": "student",
+      "priority": 2,
+      "subjects": ["earth_science", "math", "biology"],
+      "first_name": "Gray",
+      "last_name": "Seven",
+      "email": "student07@example.com"
+    },
+    {
+      "id": "s8",
+      "role": "student",
+      "priority": 3,
+      "subjects": ["music", "theater"],
+      "first_name": "Harper",
+      "last_name": "Eight",
+      "email": "student08@example.com"
+    },
+    {
+      "id": "s9",
+      "role": "student",
+      "priority": 1,
+      "subjects": ["math", "science"],
+      "first_name": "Indigo",
+      "last_name": "Nine",
+      "email": "student09@example.com"
+    },
+    {
+      "id": "s10",
+      "role": "student",
+      "priority": 2,
+      "subjects": ["physics", "math", "calculus"],
+      "first_name": "Jules",
+      "last_name": "Ten",
+      "email": "student10@example.com"
+    },
+    {
+      "id": "noise_tutor",
+      "role": "tutor",
+      "priority": 1,
+      "subjects": ["math", "science"],
+      "first_name": "Should",
+      "last_name": "Drop",
+      "email": "noise@example.com"
+    }
+  ]
+}
