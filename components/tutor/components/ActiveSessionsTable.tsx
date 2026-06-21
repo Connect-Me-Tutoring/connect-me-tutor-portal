@@ -116,16 +116,16 @@ const ActiveSessionsTable = ({
 }: any) => {
   const TC = useDashboardContext();
   const markSessionComplete = async (
-      updatedSession: Session,
-      notes: string,
-      isQuestionOrConcern: boolean,
-      isFirstSession: boolean
+    updatedSession: Session,
+    notes: string,
+    isQuestionOrConcern: boolean,
+    isFirstSession: boolean,
   ) => {
     await handleSessionComplete(
-        updatedSession,
-        notes,
-        isQuestionOrConcern,
-        isFirstSession
+      updatedSession,
+      notes,
+      isQuestionOrConcern,
+      isFirstSession,
     );
     try {
       await fetch("/api/send-feedback-email", {
@@ -139,7 +139,7 @@ const ActiveSessionsTable = ({
     } catch (emailError) {
       console.error("Failed to send feedback email:", emailError);
     }
-  }
+  };
   return (
     <>
       <Table>
@@ -209,14 +209,7 @@ const ActiveSessionsTable = ({
                 <SessionExitForm
                   currSession={session}
                   setNextClassConfirmed={setNextClassConfirmed}
-                  handleSessionComplete={
-                markSessionComplete(
-                    updatedSession,
-                    notes,
-                    isQuestionOrConcern,
-                    isFirstSession,
-                    )
-                }
+                  handleSessionComplete={markSessionComplete}
                   handleStatusChange={handleStatusChange}
                 />
               </TableCell>
