@@ -40,14 +40,15 @@ const Worksheets = async () => {
         const path = prefix ? `${prefix}/${file.name}` : file.name;
 
         if (isWorksheetFile(file)) {
-          const [collection = "Ungrouped"] = path.split("/");
+          const [collection = ""] = path.split("/");
+
+          if (collection === file.name) return Promise.resolve([]);
 
           return Promise.resolve([
             {
               name: file.name,
               path,
-              collection:
-                collection === file.name ? "Ungrouped" : collection,
+              collection,
               updatedAt: file.updated_at ?? file.created_at ?? null,
               size:
                 typeof file.metadata?.size === "number"
@@ -68,7 +69,7 @@ const Worksheets = async () => {
   const worksheets = await listWorksheets();
 
   return (
-    <main className="min-h-screen bg-[#f7f4ec] px-4 py-6 text-[#211f1c] sm:px-6 lg:px-8">
+    <main className="min-h-screen bg-gray-50 p-4 text-gray-900 md:p-8">
       <WorksheetsList worksheets={worksheets} />
     </main>
   );
