@@ -272,7 +272,7 @@ const styles = StyleSheet.create({
 // Chunk tutors into groups that fit on a page
 const chunkTutors = (
   tutors: Profile[],
-  maxPerPage: number = 15
+  maxPerPage: number = 15,
 ): Profile[][] => {
   const chunks: Profile[][] = [];
   for (let i = 0; i < tutors.length; i += maxPerPage) {
@@ -661,10 +661,10 @@ const HoursPDFDocument: React.FC<{ data: HoursPDFData }> = ({ data }) => {
       const hasSessionHours = allTimeView
         ? (allTimeSessionHours[tutor.id] || 0) > 0
         : Object.values(weeklySessionHours[tutor.id] || {}).some(
-            (hours) => hours > 0
+            (hours) => hours > 0,
           );
       const hasEventHours = Object.values(eventHoursData[tutor.id] || {}).some(
-        (hours) => hours > 0
+        (hours) => hours > 0,
       );
       return hasSessionHours || hasEventHours;
     });
@@ -693,7 +693,7 @@ const HoursPDFDocument: React.FC<{ data: HoursPDFData }> = ({ data }) => {
 
     const totalEventHoursSum = Object.values(totalEventHours).reduce(
       (sum, hours) => sum + (hours || 0),
-      0
+      0,
     );
 
     return {
@@ -828,7 +828,7 @@ const HoursPDFDocument: React.FC<{ data: HoursPDFData }> = ({ data }) => {
                     {allTimeView
                       ? (allTimeHours[stats.topPerformer?.id] || 0).toFixed(1)
                       : (monthlyHours[stats.topPerformer?.id] || 0).toFixed(
-                          1
+                          1,
                         )}{" "}
                     hours
                   </Text>
@@ -838,7 +838,7 @@ const HoursPDFDocument: React.FC<{ data: HoursPDFData }> = ({ data }) => {
                   <View style={styles.insightBullet} />
                   <Text style={styles.insightText}>
                     {Math.round(
-                      (stats.activeTutors / filteredTutors.length) * 100
+                      (stats.activeTutors / filteredTutors.length) * 100,
                     )}
                     % of tutors are actively contributing hours
                   </Text>
@@ -849,7 +849,7 @@ const HoursPDFDocument: React.FC<{ data: HoursPDFData }> = ({ data }) => {
                   <Text style={styles.insightText}>
                     Event activities account for{" "}
                     {Math.round(
-                      (stats.totalEventHours / stats.totalHours) * 100
+                      (stats.totalEventHours / stats.totalHours) * 100,
                     )}
                     % of total hours
                   </Text>
@@ -861,7 +861,7 @@ const HoursPDFDocument: React.FC<{ data: HoursPDFData }> = ({ data }) => {
           {/* Footer - on every page */}
           <View style={styles.footer}>
             <Text style={styles.footerText}>
-              ConnectMe Tutoring - Hours Report
+              Connect Me Tutoring - Hours Report
             </Text>
             <Text style={styles.footerText}>
               Report Period:{" "}

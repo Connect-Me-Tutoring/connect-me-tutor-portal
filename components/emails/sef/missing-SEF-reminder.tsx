@@ -1,15 +1,11 @@
-
 /**
- * 
+ *
  * @returns SEF reminder email
  */
 
-import { Profile } from "@/types"
+import { Profile } from "@/types";
 
-export const missingSEFReminderEmail = (
-  tutor: Profile,
-  student: Profile
-) => {
+export const missingSEFReminderEmail = (tutor: Profile, student: Profile) => {
   return `
     <p>
       Hi ${tutor.firstName},<br><br>
@@ -22,7 +18,7 @@ export const missingSEFReminderEmail = (
       are still marked as incomplete.<br><br>
 
       Please visit
-      <a href="https://www.connectmego.app/">ConnectMe Tutor Portal</a>
+      <a href="https://www.connectmego.app/">Connect Me Tutor Portal</a>
       and submit the required SEFs as soon as possible.<br><br>
 
       If you have any questions, feel free to reach out to us on Discord.<br><br>
