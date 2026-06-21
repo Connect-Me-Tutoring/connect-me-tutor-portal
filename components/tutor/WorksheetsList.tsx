@@ -5,7 +5,7 @@ import type { WorksheetResource } from "@/app/(protected)/dashboard/(tutor)/work
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/lib/supabase/client";
-import { Download, FileText, FolderOpen, Search } from "lucide-react";
+import { Download, ExternalLink, FileText, FolderOpen, Search } from "lucide-react";
 
 const allCategories = "All categories";
 const allCollections = "All grades";
@@ -25,21 +25,6 @@ const cleanTitle = (name: string) =>
     .replace(/^\d+\.\s*/, "")
     .replace(/\s+/g, " ")
     .trim();
-
-const formatSize = (size: number | null) => {
-  if (!size) return "PDF";
-  if (size < 1024 * 1024) return `${Math.round(size / 1024)} KB`;
-  return `${(size / (1024 * 1024)).toFixed(1)} MB`;
-};
-
-const formatDate = (date: string | null) => {
-  if (!date) return "Recently added";
-  return new Intl.DateTimeFormat("en", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  }).format(new Date(date));
-};
 
 const getCollectionSortIndex = (collection: string) => {
   const index = gradeOrder.indexOf(collection);
@@ -279,22 +264,31 @@ const WorksheetsList = ({ worksheets }: { worksheets: WorksheetResource[] }) => 
                         <div className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-base text-gray-500">
                           <span>{worksheet.category}</span>
                           <span>{worksheet.collection}</span>
-                          <span>{formatSize(worksheet.size)}</span>
-                          <span>{formatDate(worksheet.updatedAt)}</span>
                         </div>
                       </div>
                     </div>
                   </button>
 
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => downloadWorksheet(worksheet)}
-                    className="h-11 justify-center gap-2 text-base sm:w-36"
-                  >
-                    <Download className="h-5 w-5" />
-                    Download
-                  </Button>
+                  <div className="flex flex-col gap-2 sm:flex-row sm:justify-end">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => openWorksheet(worksheet.path)}
+                      className="h-11 justify-center gap-2 text-base sm:w-28"
+                    >
+                      <ExternalLink className="h-5 w-5" />
+                      Open
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => downloadWorksheet(worksheet)}
+                      className="h-11 justify-center gap-2 text-base sm:w-36"
+                    >
+                      <Download className="h-5 w-5" />
+                      Download
+                    </Button>
+                  </div>
                 </article>
               ))}
             </div>
