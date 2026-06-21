@@ -28,6 +28,7 @@ import {
   tableToInterfaceSessions,
 } from "../type-utils";
 import {
+  deleteScheduledEmailBeforeSessions,
   sendScheduledEmailsBeforeSessions,
   sendStudentSessionCancellationEmail,
   sendTutorSessionCancellationEmail,
@@ -369,9 +370,24 @@ export async function cancelSession(
   session: Session,
   actor: "tutor" | "student",
 ) {
-  const supabase = await createServerClient();
+  const authSupabase = await createClient();
+  const adminSupabase = await createAdminClient();
 
-  const { error } = await supabase
+  const { data: existingSession, error: existingSessionError } =
+    await authSupabase
+      .from(Table.Sessions)
+      .select("id, tutor_id, student_id")
+      .eq("id", session.id)
+      .single();
+
+  if (existingSessionError || !existingSession) {
+    console.error("Error loading session before cancellation:", existingSessionError);
+    throw existingSessionError ?? new Error("Session not found");
+  }
+
+  await requireSessionAccess(existingSession);
+
+  const { error } = await adminSupabase
     .from(Table.Sessions)
     .update({
       status: "Cancelled",
@@ -416,6 +432,39 @@ export async function cancelSession(
   }
 
   return { ...session, status: "Cancelled" as const };
+}
+
+export async function removeSessionServer(
+  sessionId: string,
+  updateEmail: boolean = true,
+) {
+  await requireAdmin();
+  const supabase = await createAdminClient();
+
+  const { error: notificationError } = await supabase
+    .from(Table.Notifications)
+    .delete()
+    .eq("session_id", sessionId);
+
+  if (notificationError) throw notificationError;
+
+  const { error: participantEventError } = await supabase
+    .from("zoom_participant_events")
+    .update({ session_id: null })
+    .eq("session_id", sessionId);
+
+  if (participantEventError) throw participantEventError;
+
+  const { error: sessionError } = await supabase
+    .from(Table.Sessions)
+    .delete()
+    .eq("id", sessionId);
+
+  if (sessionError) throw sessionError;
+
+  if (updateEmail) {
+    await deleteScheduledEmailBeforeSessions(sessionId);
+  }
 }
 
 /** Zoom webhook: payload.object → Zoom meeting number → `Meetings` row → `Sessions` row */
