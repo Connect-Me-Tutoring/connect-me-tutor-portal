@@ -73,7 +73,7 @@ function profileFromPreviewLog(
     normalizeRole(meta?.requestor_role as string | undefined);
   if (!role) {
     if (log.type === "pairing-match" && log.message.startsWith("Tutor ")) {
-      const tutorRole: "tutor" = "tutor";
+      const tutorRole = "tutor" as const;
       const m = log.message.match(
         /^Tutor\s+(.+?)\s+matched with\s+(.+)$/i,
       );
@@ -83,7 +83,7 @@ function profileFromPreviewLog(
       }
     }
     if (log.type === "pairing-match") {
-      const studentRole: "student" = "student";
+      const studentRole = "student" as const;
       const m = log.message.match(/^(.+?)\s+matched with\s+(.+)$/i);
       if (m) {
         const { firstName, lastName } = splitDisplayName(m[1]);
