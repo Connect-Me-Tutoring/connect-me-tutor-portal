@@ -13,9 +13,16 @@ import { PairingLogSchemaType } from "../pairing/types";
 import { getSupabase } from "../supabase-server/serverClient";
 import { getOverlappingAvailabilites } from "./enrollment.actions";
 import { formatDateAdmin, to12Hour } from "../utils";
+import {
+  requireAdmin,
+  requireEnrollmentAccess,
+  requireSelfOrAdmin,
+} from "./authz.server";
+import { getPairingRejectionCooldown } from "../pairing/rejection-config";
 
 export const getPairingFromEnrollmentId = async (enrollmentId: string) => {
   try {
+    await requireEnrollmentAccess(enrollmentId);
     const supabase = await createClient();
     const { data, error } = await supabase
       .from("Enrollments")
@@ -32,6 +39,7 @@ export const getPairingFromEnrollmentId = async (enrollmentId: string) => {
 
 export async function getAccountPairings(userId: string) {
   try {
+    await requireSelfOrAdmin(userId);
     const supabase = await createClient();
     const { data, error } = await supabase.rpc(
       "get_user_pairings_with_profiles",
@@ -54,6 +62,7 @@ export async function getAccountPairings(userId: string) {
 
 export const deleteAllPairingRequests = async () => {
   try {
+    await requireAdmin();
     if (
       !process.env.NEXT_PUBLIC_SUPABASE_URL ||
       !process.env.SUPABASE_SERVICE_ROLE_KEY ||
@@ -104,7 +113,46 @@ export const deleteAllPairingRequests = async () => {
   }
 };
 
+/**
+ * Tutors to exclude from matching: rejected this student while cooldown applies.
+ * Uses PAIRING_REJECTION_COOLDOWN_DAYS (never / -1 = always exclude; N = days since rejection).
+ */
+export const getRejectedTutorIdsForStudent = async (
+  studentProfileId: string,
+): Promise<string[]> => {
+  const supabase = await createClient();
+  const cooldown = getPairingRejectionCooldown();
+
+  const { data, error } = await supabase
+    .from("pairing_matches")
+    .select("tutor_id, rejected_at, created_at")
+    .eq("student_id", studentProfileId)
+    .eq("tutor_status", "rejected");
+
+  if (error) {
+    console.error("getRejectedTutorIdsForStudent error", error);
+    return [];
+  }
+  if (!data?.length) return [];
+
+  if (cooldown === "never") {
+    return data.map((row) => row.tutor_id as string);
+  }
+
+  const cutoffMs = Date.now() - cooldown * 24 * 60 * 60 * 1000;
+  return data
+    .filter((row) => {
+      const raw =
+        (row as { rejected_at?: string | null; created_at?: string })
+          .rejected_at ?? (row as { created_at?: string }).created_at;
+      if (!raw) return true;
+      return new Date(raw).getTime() >= cutoffMs;
+    })
+    .map((row) => row.tutor_id as string);
+};
+
 export const resetPairingQueues = async () => {
+  await requireAdmin();
   if (
     !process.env.NEXT_PUBLIC_SUPABASE_URL ||
     !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
@@ -161,7 +209,6 @@ export const deletePairingServer = async (
 
     const enrollmentIds = new Set<string>();
 
-   
     const { data: matchingEnrollments, error: matchingEnrollmentsError } =
       await adminSupabase
         .from("Enrollments")

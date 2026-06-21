@@ -1,6 +1,7 @@
 "use client";
 
 import { PairingLog, PairingRequest, SharedPairing } from "@/types/pairing";
+import { mapRpcPairingLog } from "@/lib/pairing/mapDisplayLogs";
 import { createClient } from "@supabase/supabase-js";
 import { getProfile, getProfileRole } from "./user.actions";
 import { supabase } from "../supabase/client";
@@ -35,19 +36,245 @@ export const getAllPairingRequests = async (
     throw new Error("Missing Supabase environment variables");
   }
 
+  const { data, error } = await supabase.rpc("get_all_pairing_requests", {
+    p_type: profileType,
+  });
+
+  if (error || !data?.length) {
+    return { data: (data ?? null) as PairingRequest[] | null, error };
+  }
+
+  const hasRenderableProfileData = (profile: Record<string, any>) =>
+    Boolean(
+      profile.email ??
+      profile.firstName ??
+      profile.first_name ??
+      profile.lastName ??
+      profile.last_name,
+    );
+
+  const rows = (data as Record<string, any>[]).map((row) => {
+    const profile = (row.profile ?? {}) as Record<string, any>;
+    return {
+      ...row,
+      userId: row.userId ?? row.user_id ?? "",
+      profile: {
+        ...profile,
+        firstName:
+          profile.firstName ?? profile.first_name ?? profile.firstname ?? "",
+        lastName:
+          profile.lastName ?? profile.last_name ?? profile.lastname ?? "",
+        availability: Array.isArray(profile.availability)
+          ? profile.availability
+          : [],
+        subjects_of_interest: Array.isArray(profile.subjects_of_interest)
+          ? profile.subjects_of_interest
+          : [],
+        languages_spoken: Array.isArray(profile.languages_spoken)
+          ? profile.languages_spoken
+          : [],
+      },
+    };
+  }) as PairingRequest[];
+
+  const missingProfileIds = Array.from(
+    new Set(
+      rows
+        .filter(
+          (row) =>
+            !hasRenderableProfileData(row.profile as Record<string, any>),
+        )
+        .map((row) => row.userId)
+        .filter((id): id is string => Boolean(id)),
+    ),
+  );
+
+  if (missingProfileIds.length > 0) {
+    const [profilesByIdResult, profilesByUserIdResult] = await Promise.all([
+      supabase
+        .from(Table.Profiles)
+        .select(
+          "id, user_id, email, first_name, last_name, availability, subjects_of_interest, languages_spoken",
+        )
+        .in("id", missingProfileIds),
+      supabase
+        .from(Table.Profiles)
+        .select(
+          "id, user_id, email, first_name, last_name, availability, subjects_of_interest, languages_spoken",
+        )
+        .in("user_id", missingProfileIds),
+    ]);
+
+    const fallbackProfiles = [
+      ...(profilesByIdResult.data ?? []),
+      ...(profilesByUserIdResult.data ?? []),
+    ] as Array<{
+      id: string;
+      user_id: string | null;
+      email: string | null;
+      first_name: string | null;
+      last_name: string | null;
+      availability: unknown[] | null;
+      subjects_of_interest: string[] | null;
+      languages_spoken: string[] | null;
+    }>;
+
+    const fallbackByKey = new Map<string, (typeof fallbackProfiles)[number]>();
+    for (const profile of fallbackProfiles) {
+      fallbackByKey.set(profile.id, profile);
+      if (profile.user_id) fallbackByKey.set(profile.user_id, profile);
+    }
+
+    for (const row of rows) {
+      if (hasRenderableProfileData(row.profile as Record<string, any>))
+        continue;
+      const fallback = fallbackByKey.get(row.userId);
+      if (!fallback) continue;
+      row.profile = {
+        ...row.profile,
+        email: row.profile.email ?? fallback.email ?? "",
+        firstName: row.profile.firstName ?? fallback.first_name ?? "",
+        lastName: row.profile.lastName ?? fallback.last_name ?? "",
+        availability: Array.isArray(row.profile.availability)
+          ? row.profile.availability
+          : Array.isArray(fallback.availability)
+            ? fallback.availability
+            : [],
+        subjects_of_interest: Array.isArray(row.profile.subjects_of_interest)
+          ? row.profile.subjects_of_interest
+          : Array.isArray(fallback.subjects_of_interest)
+            ? fallback.subjects_of_interest
+            : [],
+        languages_spoken: Array.isArray(row.profile.languages_spoken)
+          ? row.profile.languages_spoken
+          : Array.isArray(fallback.languages_spoken)
+            ? fallback.languages_spoken
+            : [],
+      } as PairingRequest["profile"];
+    }
+  }
+
+  const ids = rows.map((r) => r.request_id);
+  const { data: queueRows, error: queueErr } = await supabase
+    .from(Table.PairingRequests)
+    .select("id, in_queue")
+    .in("id", ids);
+
+  if (queueErr || !queueRows?.length) {
+    return { data: rows, error };
+  }
+
+  const activeIds = new Set(
+    queueRows
+      .filter((r) => (r as { in_queue?: boolean }).in_queue !== false)
+      .map((r) => r.id as string),
+  );
+
+  return {
+    data: rows.filter((r) => activeIds.has(r.request_id)),
+    error: null,
+  };
+};
+
+export type MyPairingRequest = {
+  id: string;
+  request_id: string;
+  type: "student" | "tutor";
+  status: string;
+  priority: number;
+  notes: string | null;
+  createdAt: string;
+  excludeRejectedTutors: boolean;
+  /** false = left queue (archived); row kept for history */
+  inQueue: boolean;
+};
+
+export const getProfilePairingQueueState = async (
+  profileId: string,
+): Promise<boolean> => {
+  if (
+    !process.env.NEXT_PUBLIC_SUPABASE_URL ||
+    !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  ) {
+    throw new Error("Missing Supabase environment variables");
+  }
+
   const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
   );
 
-  const { data, error } = await supabase.rpc("get_all_pairing_requests", {
-    p_type: profileType,
-  });
+  const { data, error } = await supabase
+    .from(Table.PairingRequests)
+    .select("in_queue")
+    .eq("user_id", profileId)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
 
-  return { data: data as PairingRequest[], error };
+  if (error) {
+    console.error("getProfilePairingQueueState error", error);
+    return false;
+  }
+
+  return data?.in_queue === true;
 };
 
-export const createPairingRequest = async (userId: string, notes: string) => {
+export const getMyPairingRequest = async (
+  profileId: string,
+): Promise<MyPairingRequest | null> => {
+  if (
+    !process.env.NEXT_PUBLIC_SUPABASE_URL ||
+    !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  ) {
+    throw new Error("Missing Supabase environment variables");
+  }
+
+  const { data, error } = await supabase
+    .from(Table.PairingRequests)
+    .select(
+      "id, type, status, priority, notes, created_at, exclude_rejected_tutors, in_queue",
+    )
+    .eq("user_id", profileId)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (error) {
+    console.error("getMyPairingRequest error", error);
+    return null;
+  }
+  if (!data) return null;
+
+  const row = data as {
+    id: string;
+    type: string;
+    status: string | null;
+    priority: number | null;
+    notes: string | null;
+    created_at: string | null;
+    exclude_rejected_tutors: boolean | null;
+    in_queue?: boolean | null;
+  };
+
+  return {
+    id: row.id,
+    request_id: row.id,
+    type: row.type as "student" | "tutor",
+    status: row.status ?? "pending",
+    priority: row.priority ?? 2,
+    notes: row.notes ?? null,
+    createdAt: row.created_at ?? new Date().toISOString(),
+    excludeRejectedTutors: row.exclude_rejected_tutors ?? true,
+    inQueue: row.in_queue !== false,
+  };
+};
+
+export const createPairingRequest = async (
+  userId: string,
+  notes: string,
+  excludeRejectedTutors: boolean = true,
+) => {
   if (
     !process.env.NEXT_PUBLIC_SUPABASE_URL ||
     !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
@@ -65,10 +292,54 @@ export const createPairingRequest = async (userId: string, notes: string) => {
     getAccountEnrollments(userId),
   ]);
 
-  if (!enrollments) throw new Error("cannot locate account enrollments");
   if (!profile) throw new Error("failed to validate profile role");
 
-  const priority = enrollments.length < 1 ? 1 : 2;
+  const enrollmentCount = enrollments?.length ?? 0;
+  const priority = enrollmentCount < 1 ? 1 : 2;
+
+  const { data: existing } = await supabase
+    .from(Table.PairingRequests)
+    .select("id, in_queue")
+    .eq("user_id", profile.id)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  const existingRow = existing as {
+    id: string;
+    in_queue?: boolean | null;
+  } | null;
+
+  if (existingRow?.id) {
+    if (existingRow.in_queue !== false) {
+      throw new Error("You are already in the pairing queue.");
+    }
+
+    const { error: upErr } = await supabase
+      .from(Table.PairingRequests)
+      .update({
+        in_queue: true,
+        notes,
+        priority,
+        exclude_rejected_tutors: excludeRejectedTutors,
+        status: "pending",
+      })
+      .eq("id", existingRow.id);
+
+    if (upErr) throw upErr;
+
+    supabase.from("pairing_logs").insert([
+      {
+        type: "pairing-que-entered",
+        message: `${profile.firstName} ${profile.lastName} has rejoined the pairing queue.`,
+        error: false,
+        metadata: {
+          profile_id: profile.id,
+        },
+      } as PairingLogSchemaType,
+    ]);
+    return;
+  }
 
   const result = await supabase.from(Table.PairingRequests).insert([
     {
@@ -76,6 +347,8 @@ export const createPairingRequest = async (userId: string, notes: string) => {
       type: profile.role.toLowerCase(),
       priority,
       notes,
+      exclude_rejected_tutors: excludeRejectedTutors,
+      in_queue: true,
     },
   ]);
 
@@ -93,17 +366,117 @@ export const createPairingRequest = async (userId: string, notes: string) => {
   }
 };
 
+/** Archives the request (in_queue = false); row and notes are kept. */
 export const removePairingRequest = async (id: string) => {
   try {
     const { error } = await supabase
       .from("pairing_requests")
-      .delete()
+      .update({ in_queue: false })
       .eq("id", id);
     if (error) throw error;
   } catch (error) {
-    console.error("Unable to remove pairing request", error);
+    console.error("Unable to archive pairing request", error);
     throw error;
   }
+};
+
+export const updatePairingRequest = async (
+  requestId: string,
+  updates: {
+    notes?: string;
+    exclude_rejected_tutors?: boolean;
+    priority?: number;
+  },
+) => {
+  if (
+    !process.env.NEXT_PUBLIC_SUPABASE_URL ||
+    !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  ) {
+    throw new Error("Missing Supabase environment variables");
+  }
+
+  const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+  );
+
+  const payload: Record<string, unknown> = {};
+  if (updates.notes !== undefined) payload.notes = updates.notes;
+  if (updates.exclude_rejected_tutors !== undefined)
+    payload.exclude_rejected_tutors = updates.exclude_rejected_tutors;
+  if (updates.priority !== undefined) payload.priority = updates.priority;
+
+  if (Object.keys(payload).length === 0) return;
+
+  const { error } = await supabase
+    .from("pairing_requests")
+    .update(payload)
+    .eq("id", requestId);
+
+  if (error) throw error;
+};
+
+export const setExcludeRejectedTutorsPreference = async (
+  userId: string,
+  excludeRejectedTutors: boolean,
+) => {
+  if (
+    !process.env.NEXT_PUBLIC_SUPABASE_URL ||
+    !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  ) {
+    throw new Error("Missing Supabase environment variables");
+  }
+
+  const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+  );
+
+  const [profile, enrollments] = await Promise.all([
+    getProfile(userId),
+    getAccountEnrollments(userId),
+  ]);
+
+  if (!profile) throw new Error("failed to validate profile role");
+
+  const { data: existing, error: existingError } = await supabase
+    .from(Table.PairingRequests)
+    .select("id")
+    .eq("user_id", profile.id)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (existingError) throw existingError;
+
+  if (existing?.id) {
+    await updatePairingRequest(existing.id, {
+      exclude_rejected_tutors: excludeRejectedTutors,
+    });
+    return existing.id;
+  }
+
+  const priority = (enrollments?.length ?? 0) < 1 ? 1 : 2;
+
+  const { data, error } = await supabase
+    .from(Table.PairingRequests)
+    .insert([
+      {
+        user_id: profile.id,
+        type: profile.role.toLowerCase(),
+        priority,
+        notes: "",
+        status: "draft",
+        exclude_rejected_tutors: excludeRejectedTutors,
+        in_queue: false,
+      },
+    ])
+    .select("id")
+    .single();
+
+  if (error) throw error;
+
+  return data.id as string;
 };
 
 export const acceptStudentMatch = () => {};
@@ -119,27 +492,24 @@ export const getPairingLogs = async (
     throw new Error("Missing Supabase environment variables");
   }
 
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
-  );
-
   const { data: logs, error } = await supabase.rpc("get_pairing_logs", {
     start_time,
     end_time,
   });
 
-  return logs;
+  if (error) throw error;
+  if (!logs) return [];
+
+  return logs.map(mapRpcPairingLog);
 };
 
 export type IncomingPairingMatch = {
   tutor: Person & ProfilePairingMetadata;
   student: Person & ProfilePairingMetadata;
-  // tutor: Profile;
-  // student: Profile;
   tutor_id: string;
   pairing_match_id: string;
   created_at: string;
+  tutor_status?: string | null;
 };
 
 export const getIncomingPairingMatches = async (profileId: string) => {
@@ -150,10 +520,6 @@ export const getIncomingPairingMatches = async (profileId: string) => {
     throw new Error("Missing Supabase environment variables");
   }
 
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
-  );
   const { data, error } = await supabase.rpc(
     "get_pairing_matches_with_profiles",
     {
@@ -161,12 +527,16 @@ export const getIncomingPairingMatches = async (profileId: string) => {
     },
   );
 
-  return data;
+  if (error || !data) return data;
+
+  const list = data as IncomingPairingMatch[];
+  return list.filter(
+    (m) => m.tutor_status !== "rejected" && m.tutor_status !== "accepted",
+  );
 };
 
 export const deletePairing = async (tutorId: string, studentId: string) => {
   try {
-    
     const { data: enrollments, error: enrollmentsError } = await supabase
       .from("Enrollments")
       .select("id")
@@ -303,29 +673,33 @@ export const getAvailableMeetingLink = async (
 
     // Filter in JavaScript for arrays
     const availableMeetings =
-      allEnrollments?.filter((enrollment) => {
-        // Check if this enrollment has any availability slots for the requested day
-        const daySlots = enrollment.availability.filter(
-          (slot: { day: string }) => slot.day === day,
-        );
+      allEnrollments?.filter(
+        (enrollment: {
+          availability: { day: string; startTime: string; endTime: string }[];
+        }) => {
+          // Check if this enrollment has any availability slots for the requested day
+          const daySlots = enrollment.availability.filter(
+            (slot: { day: string }) => slot.day === day,
+          );
 
-        if (daySlots.length === 0) {
-          // No availability for this day - consider it available
-          return true;
-        }
+          if (daySlots.length === 0) {
+            // No availability for this day - consider it available
+            return true;
+          }
 
-        // Check if ALL slots for this day have no overlap with requested time
-        const hasConflict = daySlots.some(
-          (slot: { startTime: string; endTime: string }) => {
-            // Two ranges overlap if: slot.start < end AND slot.end > start
-            const overlap = slot.startTime < end && slot.endTime > start;
-            return overlap;
-          },
-        );
+          // Check if ALL slots for this day have no overlap with requested time
+          const hasConflict = daySlots.some(
+            (slot: { startTime: string; endTime: string }) => {
+              // Two ranges overlap if: slot.start < end AND slot.end > start
+              const overlap = slot.startTime < end && slot.endTime > start;
+              return overlap;
+            },
+          );
 
-        // Return true if NO conflict (available)
-        return !hasConflict;
-      }) || [];
+          // Return true if NO conflict (available)
+          return !hasConflict;
+        },
+      ) || [];
 
     return availableMeetings.length > 0 ? availableMeetings[0] : null;
   } catch (error) {
@@ -408,28 +782,34 @@ export const updatePairingMatchStatus = async (
   status: "accepted" | "rejected",
   enrollment: Enrollment | null = null,
 ) => {
-  const updateResponse = await supabase
-    .from("pairing_matches")
-    .update({ tutor_status: status })
-    .eq("id", matchId)
-    .eq("tutor_id", profileId);
-  if (updateResponse.error) {
-  }
-
   let autoEnrollment: Omit<Enrollment, "id" | "createdAt"> | null | undefined =
     null;
 
-  const { data, error } = await supabase
+  const { data: pmRaw, error: pmError } = await supabase
     .rpc("get_pairing_match", {
       match_id: matchId,
     })
     .single();
 
-  if (error) return console.error(error);
-  const pairingMatch = data as IncomingPairingMatch;
+  if (pmError || !pmRaw) {
+    console.error("get_pairing_match", pmError);
+    return;
+  }
+
+  const pairingMatch = pmRaw as IncomingPairingMatch;
   const { student, tutor } = pairingMatch;
 
   if (status === "accepted") {
+    const acceptUpdate = await supabase
+      .from("pairing_matches")
+      .update({ tutor_status: "accepted" })
+      .eq("id", matchId)
+      .eq("tutor_id", profileId);
+    if (acceptUpdate.error) {
+      console.error(acceptUpdate.error);
+      return;
+    }
+
     const studentData: Profile | null = await getProfileWithProfileId(
       student.id,
     );
@@ -519,24 +899,25 @@ export const updatePairingMatchStatus = async (
     ]);
 
     await sendPairingAlertToWebhook(tutorData, studentData, autoEnrollment);
-  }
-  //reset tutor and student status to be auto placed in que
-  else if (status === "rejected") {
-    const { data, error } = await supabase
+  } else if (status === "rejected") {
+    const rejectUpdate = await supabase
+      .from("pairing_matches")
+      .update({
+        tutor_status: "rejected",
+      })
+      .eq("id", matchId)
+      .eq("tutor_id", profileId);
+
+    if (rejectUpdate.error) throw rejectUpdate.error;
+
+    const { error: reqErr } = await supabase
       .from("pairing_requests")
       .update({
         status: "pending",
       })
       .in("user_id", [student.id, tutor.id]);
 
-    if (error) throw error;
-
-    const { error: deleteMatchError } = await supabase
-      .from("pairing_matches")
-      .delete()
-      .eq("id", matchId);
-
-    if (deleteMatchError) throw deleteMatchError;
+    if (reqErr) throw reqErr;
 
     await supabase.from("pairing_logs").insert([
       {

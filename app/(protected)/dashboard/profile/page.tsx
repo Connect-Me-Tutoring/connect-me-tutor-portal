@@ -35,7 +35,7 @@ import {
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { updateProfile } from "@/lib/actions/user.actions";
 import { updateProfileDetails } from "@/lib/actions/profile.actions";
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
+import { createClient } from "@/lib/supabase/client";
 import { useFetchProfile } from "@/hooks/auth";
 
 interface UpdateProfileInput {
@@ -91,7 +91,7 @@ export default function ProfileUpdateForm() {
     }
   }, [initialData]);
 
-  const supabase = createClientComponentClient();
+  const supabase = createClient();
 
   const addAvailabilitySlot = () => {
     setAvailability([

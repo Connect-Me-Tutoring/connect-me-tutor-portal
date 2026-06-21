@@ -94,7 +94,7 @@ const DeletePairingForm = ({ tutor, student, onRemove }: DeletePairingFormProps)
 
   return (
     <AlertDialog>
-      <AlertDialogTrigger>
+      <AlertDialogTrigger asChild>
         <Button variant="ghost" size="icon" aria-label="Remove student pairing">
           <Trash className="h-4 w-4" color="#ef4444" />
         </Button>

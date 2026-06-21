@@ -115,6 +115,31 @@ const ActiveSessionsTable = ({
   handleRowsPerPageChange,
 }: any) => {
   const TC = useDashboardContext();
+  const markSessionComplete = async (
+      updatedSession: Session,
+      notes: string,
+      isQuestionOrConcern: boolean,
+      isFirstSession: boolean
+  ) => {
+    await handleSessionComplete(
+        updatedSession,
+        notes,
+        isQuestionOrConcern,
+        isFirstSession
+    );
+    try {
+      await fetch("/api/send-feedback-email", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          studentEmail: updatedSession.student?.email,
+          studentName: updatedSession.student?.firstName,
+        }),
+      });
+    } catch (emailError) {
+      console.error("Failed to send feedback email:", emailError);
+    }
+  }
   return (
     <>
       <Table>
@@ -184,7 +209,14 @@ const ActiveSessionsTable = ({
                 <SessionExitForm
                   currSession={session}
                   setNextClassConfirmed={setNextClassConfirmed}
-                  handleSessionComplete={handleSessionComplete}
+                  handleSessionComplete={
+                markSessionComplete(
+                    updatedSession,
+                    notes,
+                    isQuestionOrConcern,
+                    isFirstSession,
+                    )
+                }
                   handleStatusChange={handleStatusChange}
                 />
               </TableCell>
