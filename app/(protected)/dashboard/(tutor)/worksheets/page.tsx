@@ -5,10 +5,20 @@ import type { FileObject } from "@supabase/storage-js";
 export type WorksheetResource = {
   name: string;
   path: string;
+  category: string;
   collection: string;
   updatedAt: string | null;
   size: number | null;
 };
+
+const gradeFolders = new Set([
+  "4th Grade",
+  "5th Grade",
+  "6th Grade",
+  "7th Grade",
+  "8th Grade",
+  "Algebra 1",
+]);
 
 const isWorksheetFile = (file: FileObject) =>
   file.name.toLowerCase().endsWith(".pdf");
@@ -30,24 +40,32 @@ const Worksheets = async () => {
         sortBy: { column: "name", order: "asc" },
       });
 
-      if (error) {
-        console.error("Failed to load worksheets:", error);
-        return [];
-      }
+    if (error) {
+      console.error("Failed to load worksheets:", error);
+      return [];
+    }
 
     const resources = await Promise.all(
       (data ?? []).filter((file) => !isHiddenStorageItem(file)).map((file) => {
         const path = prefix ? `${prefix}/${file.name}` : file.name;
 
         if (isWorksheetFile(file)) {
-          const [collection = ""] = path.split("/");
+          const [firstFolder = "", secondFolder = ""] = path.split("/");
 
-          if (collection === file.name) return Promise.resolve([]);
+          if (firstFolder === file.name) return Promise.resolve([]);
+
+          const isGradeFirst = gradeFolders.has(firstFolder);
+          const category = isGradeFirst ? "Math" : firstFolder;
+          const collection =
+            !isGradeFirst && gradeFolders.has(secondFolder)
+              ? secondFolder
+              : firstFolder;
 
           return Promise.resolve([
             {
               name: file.name,
               path,
+              category,
               collection,
               updatedAt: file.updated_at ?? file.created_at ?? null,
               size:
@@ -69,7 +87,7 @@ const Worksheets = async () => {
   const worksheets = await listWorksheets();
 
   return (
-    <main className="min-h-screen bg-gray-50 p-4 text-gray-900 md:p-8">
+    <main className="min-h-screen bg-gray-50 p-5 text-gray-900 md:p-8">
       <WorksheetsList worksheets={worksheets} />
     </main>
   );

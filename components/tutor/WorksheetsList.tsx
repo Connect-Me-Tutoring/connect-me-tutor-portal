@@ -7,6 +7,9 @@ import { Input } from "@/components/ui/input";
 import { supabase } from "@/lib/supabase/client";
 import { Download, FileText, FolderOpen, Search } from "lucide-react";
 
+const allCategories = "All categories";
+const allCollections = "All grades";
+
 const gradeOrder = [
   "4th Grade",
   "5th Grade",
@@ -45,12 +48,35 @@ const getCollectionSortIndex = (collection: string) => {
 
 const WorksheetsList = ({ worksheets }: { worksheets: WorksheetResource[] }) => {
   const [searchQuery, setSearchQuery] = useState("");
-  const [activeCollection, setActiveCollection] = useState("All");
+  const [activeCategory, setActiveCategory] = useState(allCategories);
+  const [activeCollection, setActiveCollection] = useState(allCollections);
+
+  const categories = useMemo(() => {
+    const counts = new Map<string, number>();
+
+    worksheets.forEach((worksheet) => {
+      counts.set(worksheet.category, (counts.get(worksheet.category) ?? 0) + 1);
+    });
+
+    return Array.from(counts.entries())
+      .map(([name, count]) => ({ name, count }))
+      .sort((a, b) => a.name.localeCompare(b.name));
+  }, [worksheets]);
+
+  const categoryWorksheets = useMemo(
+    () =>
+      worksheets.filter(
+        (worksheet) =>
+          activeCategory === allCategories ||
+          worksheet.category === activeCategory,
+      ),
+    [activeCategory, worksheets],
+  );
 
   const collections = useMemo(() => {
     const counts = new Map<string, number>();
 
-    worksheets.forEach((worksheet) => {
+    categoryWorksheets.forEach((worksheet) => {
       counts.set(
         worksheet.collection,
         (counts.get(worksheet.collection) ?? 0) + 1,
@@ -64,22 +90,26 @@ const WorksheetsList = ({ worksheets }: { worksheets: WorksheetResource[] }) => 
           getCollectionSortIndex(a.name) - getCollectionSortIndex(b.name);
         return gradeSort || a.name.localeCompare(b.name);
       });
-  }, [worksheets]);
+  }, [categoryWorksheets]);
 
   const filteredWorksheets = useMemo(() => {
     const query = searchQuery.trim().toLowerCase();
 
     return worksheets
       .filter((worksheet) => {
+        const matchesCategory =
+          activeCategory === allCategories ||
+          worksheet.category === activeCategory;
         const matchesCollection =
-          activeCollection === "All" ||
+          activeCollection === allCollections ||
           worksheet.collection === activeCollection;
         const matchesSearch =
           !query ||
           worksheet.name.toLowerCase().includes(query) ||
+          worksheet.category.toLowerCase().includes(query) ||
           worksheet.collection.toLowerCase().includes(query);
 
-        return matchesCollection && matchesSearch;
+        return matchesCategory && matchesCollection && matchesSearch;
       })
       .sort((a, b) => {
         const collectionSort =
@@ -89,7 +119,7 @@ const WorksheetsList = ({ worksheets }: { worksheets: WorksheetResource[] }) => 
           collectionSort || cleanTitle(a.name).localeCompare(cleanTitle(b.name))
         );
       });
-  }, [activeCollection, searchQuery, worksheets]);
+  }, [activeCategory, activeCollection, searchQuery, worksheets]);
 
   const openWorksheet = (path: string) => {
     const { data } = supabase.storage.from("worksheets").getPublicUrl(path);
@@ -115,51 +145,87 @@ const WorksheetsList = ({ worksheets }: { worksheets: WorksheetResource[] }) => 
   };
 
   return (
-    <section className="mx-auto flex w-full max-w-7xl flex-col gap-5">
-      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-        <h1 className="text-3xl font-semibold tracking-tight text-gray-900">
+    <section className="mx-auto flex w-full max-w-6xl flex-col gap-6">
+      <div className="flex flex-col gap-5 md:flex-row md:items-start md:justify-between">
+        <h1 className="text-4xl font-semibold tracking-tight text-gray-900">
           Worksheets
         </h1>
-        <div className="relative w-full md:max-w-sm">
-          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+        <div className="relative w-full md:max-w-md">
+          <Search className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400" />
           <Input
             value={searchQuery}
             onChange={(event) => setSearchQuery(event.target.value)}
             placeholder="Search worksheets"
-            className="h-10 bg-white pl-9"
+            className="h-12 bg-white pl-12 text-base"
           />
         </div>
       </div>
 
-      <div className="grid gap-5 lg:grid-cols-[240px_minmax(0,1fr)]">
-        <aside className="rounded-lg border bg-white p-2 lg:sticky lg:top-6 lg:self-start">
+      <div className="flex flex-wrap gap-2">
+        <button
+          type="button"
+          onClick={() => {
+            setActiveCategory(allCategories);
+            setActiveCollection(allCollections);
+          }}
+          className={`rounded-md border px-4 py-2 text-base transition-colors ${
+            activeCategory === allCategories
+              ? "border-gray-900 bg-gray-900 text-white"
+              : "border-gray-200 bg-white text-gray-700 hover:bg-gray-100"
+          }`}
+        >
+          All
+        </button>
+        {categories.map((category) => (
+          <button
+            key={category.name}
+            type="button"
+            onClick={() => {
+              setActiveCategory(category.name);
+              setActiveCollection(allCollections);
+            }}
+            className={`rounded-md border px-4 py-2 text-base transition-colors ${
+              activeCategory === category.name
+                ? "border-gray-900 bg-gray-900 text-white"
+                : "border-gray-200 bg-white text-gray-700 hover:bg-gray-100"
+            }`}
+          >
+            {category.name}
+          </button>
+        ))}
+      </div>
+
+      <div className="grid gap-6 lg:grid-cols-[280px_minmax(0,1fr)]">
+        <aside className="rounded-lg border bg-white p-3 lg:sticky lg:top-6 lg:self-start">
           <button
             type="button"
-            onClick={() => setActiveCollection("All")}
-            className={`flex w-full items-center justify-between rounded-md px-3 py-2.5 text-left text-sm transition-colors ${
-              activeCollection === "All"
+            onClick={() => setActiveCollection(allCollections)}
+            className={`flex w-full items-center justify-between rounded-md px-4 py-3 text-left text-base transition-colors ${
+              activeCollection === allCollections
                 ? "bg-gray-900 text-white"
                 : "text-gray-700 hover:bg-gray-100"
             }`}
           >
-            <span>All folders</span>
-            <span className="text-xs opacity-75">{worksheets.length}</span>
+            <span>{allCollections}</span>
+            <span className="text-xs opacity-75">
+              {categoryWorksheets.length}
+            </span>
           </button>
 
-          <div className="mt-1 space-y-1">
+          <div className="mt-2 space-y-1">
             {collections.map((collection) => (
               <button
                 key={collection.name}
                 type="button"
                 onClick={() => setActiveCollection(collection.name)}
-                className={`flex w-full items-center justify-between rounded-md px-3 py-2.5 text-left text-sm transition-colors ${
+                className={`flex w-full items-center justify-between rounded-md px-4 py-3 text-left text-base transition-colors ${
                   activeCollection === collection.name
                     ? "bg-gray-900 text-white"
                     : "text-gray-700 hover:bg-gray-100"
                 }`}
               >
                 <span className="flex min-w-0 items-center gap-2">
-                  <FolderOpen className="h-4 w-4 shrink-0" />
+                  <FolderOpen className="h-5 w-5 shrink-0" />
                   <span className="truncate">{collection.name}</span>
                 </span>
                 <span className="text-xs opacity-75">{collection.count}</span>
@@ -169,22 +235,24 @@ const WorksheetsList = ({ worksheets }: { worksheets: WorksheetResource[] }) => 
         </aside>
 
         <div className="min-w-0 rounded-lg border bg-white">
-          <div className="flex items-center justify-between border-b px-4 py-3">
-            <div className="text-sm font-medium text-gray-900">
-              {activeCollection === "All" ? "All worksheets" : activeCollection}
+          <div className="flex items-center justify-between border-b px-5 py-4">
+            <div className="text-base font-medium text-gray-900">
+              {activeCollection === allCollections
+                ? "All worksheets"
+                : activeCollection}
             </div>
-            <div className="text-sm text-gray-500">
+            <div className="text-base text-gray-500">
               {filteredWorksheets.length} shown
             </div>
           </div>
 
           {filteredWorksheets.length === 0 ? (
             <div className="px-4 py-14 text-center">
-              <FileText className="mx-auto mb-3 h-8 w-8 text-gray-400" />
-              <h2 className="text-base font-medium text-gray-900">
+              <FileText className="mx-auto mb-3 h-9 w-9 text-gray-400" />
+              <h2 className="text-lg font-medium text-gray-900">
                 No worksheets found
               </h2>
-              <p className="mt-1 text-sm text-gray-500">
+              <p className="mt-1 text-base text-gray-500">
                 Try another folder or search term.
               </p>
             </div>
@@ -193,22 +261,23 @@ const WorksheetsList = ({ worksheets }: { worksheets: WorksheetResource[] }) => 
               {filteredWorksheets.map((worksheet) => (
                 <article
                   key={worksheet.path}
-                  className="grid gap-3 p-3 transition-colors hover:bg-gray-50 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center"
+                  className="grid gap-4 p-4 transition-colors hover:bg-gray-50 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center"
                 >
                   <button
                     type="button"
                     onClick={() => openWorksheet(worksheet.path)}
-                    className="min-w-0 rounded-md px-3 py-2 text-left transition-colors hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-900"
+                    className="min-w-0 rounded-md px-3 py-3 text-left transition-colors hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-900"
                   >
                     <div className="flex min-w-0 items-start gap-3">
-                      <div className="mt-0.5 rounded-md border bg-gray-50 p-2 text-gray-500">
-                        <FileText className="h-4 w-4" />
+                      <div className="mt-0.5 rounded-md border bg-gray-50 p-2.5 text-gray-500">
+                        <FileText className="h-5 w-5" />
                       </div>
                       <div className="min-w-0">
-                        <h2 className="truncate text-base font-medium text-gray-900">
+                        <h2 className="truncate text-lg font-medium text-gray-900">
                           {cleanTitle(worksheet.name)}
                         </h2>
-                        <div className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-sm text-gray-500">
+                        <div className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-base text-gray-500">
+                          <span>{worksheet.category}</span>
                           <span>{worksheet.collection}</span>
                           <span>{formatSize(worksheet.size)}</span>
                           <span>{formatDate(worksheet.updatedAt)}</span>
@@ -221,9 +290,9 @@ const WorksheetsList = ({ worksheets }: { worksheets: WorksheetResource[] }) => 
                     type="button"
                     variant="outline"
                     onClick={() => downloadWorksheet(worksheet)}
-                    className="h-10 justify-center gap-2 sm:w-32"
+                    className="h-11 justify-center gap-2 text-base sm:w-36"
                   >
-                    <Download className="h-4 w-4" />
+                    <Download className="h-5 w-5" />
                     Download
                   </Button>
                 </article>
