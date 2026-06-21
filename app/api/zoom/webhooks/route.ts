@@ -139,7 +139,6 @@ export async function POST(req: NextRequest) {
     account_id: accountId,
     account_email: accountEmail,
     meeting_number: meetingNumber,
-    meeting_number_spaced: meetingNumberSpaced,
     meeting_number_raw: meetingNumberRaw,
     host_id: hostId,
     host_email: hostEmail,
