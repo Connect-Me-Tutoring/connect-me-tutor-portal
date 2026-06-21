@@ -54,10 +54,12 @@ import {
   ChevronsRight,
   ChevronLeft,
   ChevronRight,
-  Trash,
   CalendarDays,
   UserRoundPlus,
   CircleCheck,
+  MessageSquare,
+  CalendarX,
+  Video,
 } from "lucide-react";
 import { format, parseISO, isAfter } from "date-fns";
 import { AlertDialogTrigger } from "@radix-ui/react-alert-dialog";
@@ -161,32 +163,38 @@ const CurrentSessionsTable = ({
                     onClick={() =>
                       (window.location.href = `/meeting/${session?.meeting?.id}`)
                     }
-                    className="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600"
+                    className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-connect-me-blue-2 transition-colors"
                   >
-                    View
+                    <Video className="h-4 w-4" />
+                    Meeting
                   </button>
                 ) : (
-                  <button className="text-black px-3 py-1 border border-gray-200 rounded">
-                    N/A
-                  </button>
+                  <span className="text-sm text-muted-foreground/50">N/A</span>
                 )}
               </TableCell>
-          <TableCell>
-            <a 
-              href="https://docs.google.com/forms/d/1YPS8angPHS1HEyDn6ub2d5iEsfjuvi0N_Yr7YevaSIc/viewform?edit_requested=true#responses" 
-              target="_blank" 
-              rel="noopener noreferrer"
-              className="inline-flex items-center justify-center px-4 py-2 bg-orange-500 text-white rounded-md hover:bg-orange-600 transition-colors text-sm font-medium"
-            >
-              Provide Feedback
-            </a>
-          </TableCell>
+              <TableCell>
+                <a
+                  href="https://docs.google.com/forms/d/1YPS8angPHS1HEyDn6ub2d5iEsfjuvi0N_Yr7YevaSIc/viewform?edit_requested=true#responses"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-connect-me-blue-2 transition-colors"
+                >
+                  <MessageSquare className="h-4 w-4" />
+                  Feedback
+                </a>
+              </TableCell>
               <TableCell>
                 {session.status === "Active" ? (
                   <AlertDialog>
                     <AlertDialogTrigger asChild>
-                      <Button variant="ghost" size="icon">
-                        <Trash className="h-4 w-4" color="#ef4444" />
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="text-red-500 hover:text-red-600 hover:bg-red-50"
+                        title="Cancel session"
+                      >
+                        <CalendarX className="h-4 w-4 mr-1.5" />
+                        Cancel
                       </Button>
                     </AlertDialogTrigger>
                     <CancellationForm
