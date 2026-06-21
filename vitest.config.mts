@@ -7,7 +7,7 @@ export default defineConfig({
     tsconfigPaths: true,
   },
   test: {
-    environment: 'jsdom',
+    environment: 'node',
     globals: true,
     env: {
       NEXT_PUBLIC_SUPABASE_URL: 'http://127.0.0.1:54321',
