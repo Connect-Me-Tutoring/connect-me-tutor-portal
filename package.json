@@ -12,7 +12,9 @@
     "test:watch": "vitest --watch"
   },
   "dependencies": {
+    "@ai-sdk/google": "^3.0.83",
     "@hookform/resolvers": "^3.9.0",
+    "@mastra/core": "^1.42.0",
     "@next-auth/supabase-adapter": "^0.2.1",
     "@radix-ui/react-alert-dialog": "^1.1.6",
     "@radix-ui/react-avatar": "^1.1.10",
@@ -69,7 +71,9 @@
     "react-dom": "^18",
     "react-hook-form": "^7.53.0",
     "react-hot-toast": "^2.4.1",
+    "react-markdown": "^10.1.0",
     "recharts": "^2.15.1",
+    "remark-gfm": "^4.0.1",
     "resend": "^4.5.1",
     "ssr": "^6.2.78",
     "tailwind-merge": "^2.5.2",
