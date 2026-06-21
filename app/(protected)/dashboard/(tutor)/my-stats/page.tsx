@@ -12,14 +12,16 @@ async function MyStatsData() {
   if (!user) redirect("/");
   const profile = await cachedGetProfile(user.id);
   if (!profile) throw new Error("Unable to find profile");
-  const enrollmentDetails = getSessionHoursByStudent(profile.id);
-  const eventDetails = getAllEventDetailsForTutor(profile.id);
+  const [enrollmentDetails, eventDetails] = await Promise.all([
+    getSessionHoursByStudent(profile.id),
+    getAllEventDetailsForTutor(profile.id),
+  ]);
 
   return (
     <Stats
       key={profile.id}
-      enrollmentDetailsPromise={enrollmentDetails}
-      eventDetailsPromise={eventDetails}
+      enrollmentDetails={enrollmentDetails}
+      eventDetails={eventDetails}
     />
   );
 }

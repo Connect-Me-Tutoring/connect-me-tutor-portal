@@ -21,6 +21,12 @@ import {
   getEnrollmentSchedule,
   getEnrollmentScheduleForSave,
 } from "../enrollment-schedule";
+import {
+  requireAdmin,
+  requireAuthenticatedProfile,
+  requireEnrollmentAccess,
+  requireTutorProfileAccess,
+} from "./authz.server";
 
 type EnrollmentTableRow = {
   availability?: Availability[] | null;
@@ -82,6 +88,7 @@ export async function getAllActiveEnrollmentsServer(
   endOfWeek: string,
 ): Promise<Enrollment[]> {
   try {
+    await requireAdmin();
     const supabase = await createClient();
     // Fetch meeting details from Supabase
     const { data, error } = await supabase
@@ -134,6 +141,7 @@ export async function getAllActiveEnrollmentsServer(
 }
 
 export async function getAllEnrollments(): Promise<Enrollment[] | null> {
+  await requireAdmin();
   const supabase = await createClient();
   try {
     // Fetch meeting details from Supabase
@@ -186,6 +194,7 @@ export async function getAllActiveEnrollments(
   endOfWeek?: string,
 ): Promise<Enrollment[]> {
   try {
+    await requireAdmin();
     const supabase = await createClient();
     // Fetch meeting details from Supabase
     let query = supabase
@@ -290,6 +299,7 @@ export async function getEnrollments(
   tutorId: string,
 ): Promise<Enrollment[] | null> {
   try {
+    await requireTutorProfileAccess(tutorId);
     const supabase = await createClient();
     // Fetch meeting details from Supabase
     const { data, error } = await supabase
@@ -360,9 +370,11 @@ export const removeFutureSessions = async (
 // before, it used createClient() which respects Supabase RLS
 // now tho it uses createAdminCLient() to bypass RLS and guarentee deletion succeeds
 export const removeEnrollment = async (enrollmentId: string) => {
-  const supabase = await createClient();
-  await removeFutureSessions(enrollmentId, supabase);
+  await requireEnrollmentAccess(enrollmentId);
+  const adminSupabase = await createAdminClient();
+  await removeFutureSessions(enrollmentId, adminSupabase);
 
+  const supabase = await createClient();
 
   const { data: deleteEnrollmentData, error: deleteEnrollmentError } =
     await supabase.from("Enrollments").delete().eq("id", enrollmentId);
@@ -374,6 +386,7 @@ export const removeEnrollment = async (enrollmentId: string) => {
 };
 
 export const updateEnrollment = async (enrollment: Enrollment) => {
+  await requireEnrollmentAccess(enrollment.id);
   const supabase = await createClient();
   try {
     const { availability, schedule } = getEnrollmentScheduleForSave(enrollment);
@@ -476,6 +489,15 @@ export const addEnrollment = async (
   enrollment: Omit<Enrollment, "id" | "createdAt">,
   sendEmail?: boolean,
 ) => {
+  const tutorId = enrollment.tutor?.id;
+  const auth = tutorId
+    ? await requireTutorProfileAccess(tutorId)
+    : await requireAuthenticatedProfile();
+  const enrollmentTutorId =
+    tutorId || (auth.profile.role === "Tutor" ? auth.profile.id : "");
+
+  if (!enrollmentTutorId) throw new Error("Please select a Tutor");
+
   const supabase = await createClient();
   try {
     const { availability, schedule } = getEnrollmentScheduleForSave(enrollment);
@@ -502,7 +524,7 @@ export const addEnrollment = async (
       .from(Table.Enrollments)
       .insert({
         student_id: enrollment.student?.id,
-        tutor_id: enrollment.tutor?.id,
+        tutor_id: enrollmentTutorId,
         summary: enrollment.summary,
         start_date: enrollment.startDate,
         end_date: enrollment.endDate,
@@ -579,13 +601,10 @@ export const addEnrollment = async (
   }
 };
 
-export const sessionTimeFromEnrollment = (
+export const sessionTimeFromEnrollment = async (
   availability: Availability,
   start: string,
-): string => {
-  console.log(availability);
-  console.log(start);
-
+): Promise<string> => {
   const dayMap: Record<string, number> = {
     sunday: 0,
     monday: 1,
@@ -598,12 +617,9 @@ export const sessionTimeFromEnrollment = (
 
   try {
     const startDate: Date = new Date(start);
-    console.log("Start Date", startDate);
     const startDateWeekDay: number = startDate.getDay();
     const firstSessionWeekDay: number = dayMap[availability.day.toLowerCase()];
 
-    console.log("Start Date Week Day", startDate.getUTCDay());
-    console.log("First session week day", firstSessionWeekDay);
     const additionalDays = firstSessionWeekDay >= startDateWeekDay ? 0 : 7;
     const currentDate: Date = addDays(
       startDate,

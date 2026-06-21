@@ -7,7 +7,6 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import toast, { Toaster, ValueFunction } from "react-hot-toast";
 import { useState } from "react";
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import { X, ExternalLink } from "lucide-react";
 
 import { Button } from "@/components/ui/button";

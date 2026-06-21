@@ -1,0 +1,66 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://connect-me-tutor.local/schemas/lookup-static-input.schema.json",
+  "title": "lookup_proposed_matches_static input",
+  "description": "Static test input for public.lookup_proposed_matches_static — no database tables required. requestor_role mirrors lookup_proposed_matches(request_type): student → tutor candidates, tutor → student candidates when candidate.role is set.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["requestor_subjects", "candidates", "requestor_role"],
+  "properties": {
+    "requestor_role": {
+      "type": "string",
+      "enum": ["student", "tutor"],
+      "description": "Who is requesting a match. When set, candidates with explicit role must be the opposite type (student requestor keeps only role=tutor candidates; tutor requestor keeps role=student). Candidates without role are still included."
+    },
+    "requestor_subjects": {
+      "type": "array",
+      "description": "Subject tags in priority order: index 0 is most important. Matching uses public.pairing_subject_priority_alignment (weighted by positions in both lists), not unordered set overlap.",
+      "items": { "type": "string", "minLength": 1 }
+    },
+    "candidates": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "subjects"],
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Stable key for this candidate; used by exclude_ids and returned as candidate_id."
+          },
+          "role": {
+            "type": "string",
+            "enum": ["student", "tutor"],
+            "description": "Optional. When requestor_role is set, only the opposite role is scored; omit role to always include the candidate."
+          },
+          "priority": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Queue priority (lower is better). Omitted or invalid → treated as 2."
+          },
+          "subjects": {
+            "type": "array",
+            "description": "Candidate subject tags in priority order (first = strongest). Same pairing_subject_priority_alignment scoring as requestor_subjects.",
+            "items": { "type": "string", "minLength": 1 }
+          },
+          "first_name": { "type": "string" },
+          "last_name": { "type": "string" },
+          "email": { "type": "string", "format": "email" }
+        }
+      }
+    },
+    "exclude_ids": {
+      "type": "array",
+      "description": "Candidate id values to skip (e.g. already paired). Omit or use [] for none.",
+      "items": { "type": "string" }
+    },
+    "limit": {
+      "type": "integer",
+      "minimum": 1,
+      "default": 5,
+      "description": "Max rows returned (same as p_limit on the SQL function)."
+    }
+  }
+}

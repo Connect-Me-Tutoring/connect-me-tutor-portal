@@ -32,8 +32,10 @@ import EarlySessionCheckInEmail from "@/components/emails/early-session-check-in
 import { getAllActiveEnrollmentsForCron } from "./enrollment.server.actions";
 import { Table } from "../supabase/tables";
 import { formatInTimeZone } from "date-fns-tz";
+import { requireAdmin } from "./authz.server";
 
 export const fetchScheduledMessages = async () => {
+  await requireAdmin();
   const qstash = new Client({ token: process.env.EU_CENTRAL_1_QSTASH_TOKEN });
 
   const messages = await withRetry(() => qstash.schedules.list(), {

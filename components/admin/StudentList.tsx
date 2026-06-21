@@ -54,7 +54,7 @@ import {
 import { editProfile } from "@/lib/actions/profile.server.actions"
 import { deleteUser } from "@/lib/actions/auth.server.actions";
 import { addUser } from "@/lib/actions/auth.actions";
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
+import { createClient } from "@/lib/supabase/client";
 import { Profile } from "@/types";
 import {
   Dialog,
@@ -97,7 +97,7 @@ const StudentList = ({ initialStudents }: any) =>
   //   onDeactivate: (studentId: string) => void;
   // }
   {
-    const supabase = createClientComponentClient();
+    const supabase = createClient();
     const [students, setStudents] = useState<Profile[]>(initialStudents);
     const [filteredStudents, setFilteredStudents] = useState<Profile[]>(initialStudents);
     const [profile, setProfile] = useState<Profile | null>(null);

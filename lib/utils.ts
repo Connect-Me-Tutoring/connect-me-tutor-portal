@@ -285,12 +285,13 @@ export function addOneHourToMilitaryTime(time: string) {
 }
 
 export function formatMilitaryToStandardTime(militaryTime: string) {
-  // Check if the input is in valid military time format
-  if (!/^\d{2}:\d{2}$/.test(militaryTime)) {
+  const normalized = militaryTime?.trim().slice(0, 5) ?? "";
+  if (!/^\d{1,2}:\d{2}$/.test(normalized)) {
     return "Invalid time format";
   }
 
-  let [hours, minutes] = militaryTime.split(":").map(Number);
+  let [hours, minutes] = normalized.split(":").map(Number);
+  minutes = Math.min(Math.max(minutes, 0), 59);
 
   // Adjust for times past midnight (e.g., 24:00)
   if (hours === 24) {
@@ -302,7 +303,7 @@ export function formatMilitaryToStandardTime(militaryTime: string) {
   // Convert to 12-hour format
   hours = hours % 12 || 12;
 
-  return `${hours}:${minutes.toString().padStart(2, "0")}${period}`;
+  return `${hours}:${minutes.toString().padStart(2, "0")} ${period}`;
 }
 
 export const formatSessionDuration = (duration: number) => {
@@ -315,10 +316,7 @@ export const formatSessionDuration = (duration: number) => {
 };
 
 export function to12Hour(time24: string) {
-  let [hour, minute] = time24.split(":").map(Number);
-  const ampm = hour >= 12 ? "pm" : "am";
-  hour = hour % 12 || 12; // convert 0 to 12 for 12am
-  return `${hour}${minute === 0 ? "" : `:${minute.toString().padStart(2, "0")}`}${ampm}`;
+  return formatMilitaryToStandardTime(time24);
 }
 
 export const to12HourWithMinutes = (time: string) => {
