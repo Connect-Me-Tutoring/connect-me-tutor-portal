@@ -3,6 +3,7 @@ import {
   PairingWorkflowResult,
   runPairingWorkflow,
 } from "@/lib/pairing";
+import { verifyAdmin } from "@/lib/actions/auth.server.actions";
 import { NextRequest, NextResponse } from "next/server";
 
 /** Opening this URL in a browser uses GET; the workflow only runs on POST */
@@ -32,7 +33,11 @@ export async function POST(req: NextRequest) {
       | Pick<PairingWorkflowResult, "matchesToInsert" | "logs">
       | undefined;
 
-    if (!preview || !Array.isArray(preview.matchesToInsert) || !Array.isArray(preview.logs)) {
+    if (
+      !preview ||
+      !Array.isArray(preview.matchesToInsert) ||
+      !Array.isArray(preview.logs)
+    ) {
       return NextResponse.json(
         { message: "Invalid preview payload" },
         { status: 400 },

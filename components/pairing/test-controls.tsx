@@ -176,10 +176,6 @@ export function TestingPairingControls() {
           Logs
         </Button>
 
-        {/* <Button onClick={handleResetPairings} variant="destructive" size="sm">
-          Reset all pairing matches
-        </Button> */}
-
         <AlertDialog>
           <AlertDialogTrigger asChild>
             <Button variant="destructive" size="sm">
@@ -195,7 +191,9 @@ export function TestingPairingControls() {
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
-              <AlertDialogCancel>Back</AlertDialogCancel>
+              <AlertDialogCancel asChild>
+                <Button variant="outline">Back</Button>
+              </AlertDialogCancel>
               <AlertDialogAction onClick={handleResetPairings}>
                 Reset all pairing matches
               </AlertDialogAction>

@@ -7,7 +7,8 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import toast, { Toaster, ValueFunction } from "react-hot-toast";
 import { useState, Suspense } from "react";
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
+import { createClient } from "@/lib/supabase/client";
+import { startNavigationProgress } from "@/components/ui/navigation-progress";
 import { X, ExternalLink } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -21,7 +22,6 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { setDefaultAutoSelectFamily } from "net";
 import { getProfileRole } from "@/lib/actions/user.actions";
 
 const formSchema = z.object({
@@ -36,7 +36,7 @@ const formSchema = z.object({
 export default function LoginForm() {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
-  const supabase = createClientComponentClient();
+  const supabase = createClient();
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -74,9 +74,9 @@ export default function LoginForm() {
         );
       } else if (data.user) {
         toast.success("Logged in successfully");
-        // showForms();
-        router.push("/dashboard");
-        router.refresh();
+        startNavigationProgress();
+        window.location.assign("/dashboard");
+        return;
       } else {
         toast.error("Something went wrong. Please try again.");
       }

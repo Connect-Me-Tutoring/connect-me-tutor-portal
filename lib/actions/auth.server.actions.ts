@@ -66,16 +66,18 @@ const ensurePairingQueueForNewProfile = async (
     return;
   }
 
-  const { error: insertError } = await supabase.from(Table.PairingRequests).insert([
-    {
-      user_id: profile.id,
-      type: normalizedRole,
-      status: "pending",
-      priority: 1,
-      in_queue: true,
-      notes: "Auto-enqueued on account creation",
-    },
-  ]);
+  const { error: insertError } = await supabase
+    .from(Table.PairingRequests)
+    .insert([
+      {
+        user_id: profile.id,
+        type: normalizedRole,
+        status: "pending",
+        priority: 1,
+        in_queue: true,
+        notes: "Auto-enqueued on account creation",
+      },
+    ]);
   if (insertError) throw insertError;
 };
 

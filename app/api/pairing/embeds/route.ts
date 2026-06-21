@@ -1,9 +1,11 @@
 import { createSubjectEmbeddings } from "@/lib/pairing/embeddings";
+import { verifyAdmin } from "@/lib/actions/auth.server.actions";
 import { NextRequest, NextResponse } from "next/server";
 
 //used to create subject embeddings
 export async function POST(request: NextRequest) {
   try {
+    await verifyAdmin();
     const { subjects } = await request.json();
     if (!subjects)
       return NextResponse.json(

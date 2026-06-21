@@ -13,8 +13,13 @@ import { createClient } from "../supabase/server";
 import { AdminConversation } from "@/types/chat";
 import { getProfileFromUserSettings } from "./profile.server.actions";
 import { getUserFromAction } from "./user.server.actions";
+import {
+  requireAuthenticatedUser,
+  requireSelfOrAdmin,
+} from "./authz.server";
 
 export const createAdminConversation = async (user_id: string) => {
+  await requireSelfOrAdmin(user_id);
   const supabase = await createClient();
 
   const createdConversationID = await fetchUserAdminConversation(
@@ -54,6 +59,7 @@ export async function fetchUserAdminConversation(
   userId: string,
   createIfNull: boolean = true,
 ) {
+  await requireSelfOrAdmin(userId);
   const supabase = await createClient();
   try {
     const profile = await getProfileFromUserSettings(userId);
@@ -78,6 +84,7 @@ export async function fetchUserAdminConversation(
   }
 }
 export async function fetchAdmins() {
+  await requireAuthenticatedUser();
   const supabase = await createClient();
   try {
     const { data, error } = await supabase

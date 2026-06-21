@@ -21,7 +21,7 @@ import {
   getProfile,
   getProfileWithProfileId,
 } from "@/lib/actions/user.actions";
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
+import { createClient } from "@/lib/supabase/client";
 import { Profile } from "@/types";
 import toast, { Toaster } from "react-hot-toast";
 import {
@@ -48,7 +48,7 @@ export default function SettingsPage({
 }) {
   //   const profile = use(profilePromise);
 
-  const supabase = createClientComponentClient();
+  const supabase = createClient();
   const router = useRouter();
   const searchParams = useSearchParams();
   const { profile, setProfile } = useProfile();
@@ -173,33 +173,33 @@ export default function SettingsPage({
 
   const fetchNotificationSettings = async () => {
     try {
-      if (profile) {
-        const { data, error } = await supabase
-          .from("user_notification_settings")
-          .select("*")
-          .eq("id", profile.settingsId)
-          .single();
-        if (error) throw error;
+      if (!profile?.settingsId) return;
 
-        setSessionEmailNotifications(
-          data.email_tutoring_session_notifications_enabled,
-        );
-        setSessionTextNotifications(false);
-        setWebinarEmailNotifications(data.email_webinar_notifications_enabled);
-        setWebinarTextNotifications(data.text_webinar_notifications_enabled);
+      const { data, error } = await supabase
+        .from("user_notification_settings")
+        .select("*")
+        .eq("id", profile.settingsId)
+        .maybeSingle();
+      if (error) throw error;
+      if (!data) return;
 
-        setSessionReminders(
-          data.email_tutoring_session_notifications_enabled ||
-            data.text_tutoring_session_notifications_enabled,
-        );
+      setSessionEmailNotifications(
+        data.email_tutoring_session_notifications_enabled,
+      );
+      setSessionTextNotifications(false);
+      setWebinarEmailNotifications(data.email_webinar_notifications_enabled);
+      setWebinarTextNotifications(data.text_webinar_notifications_enabled);
 
-        setWebinarReminders(false);
+      setSessionReminders(
+        data.email_tutoring_session_notifications_enabled ||
+          data.text_tutoring_session_notifications_enabled,
+      );
 
-        setSettingsId(profile.settingsId);
-      }
+      setWebinarReminders(false);
+
+      setSettingsId(profile.settingsId);
     } catch (error) {
       console.error("Unable to fetch notification settings", error);
-      throw error;
     }
   };
 

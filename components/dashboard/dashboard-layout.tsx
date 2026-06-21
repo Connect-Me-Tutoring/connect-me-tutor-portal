@@ -4,7 +4,6 @@ import React, { use, useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import { logoutUser } from "@/lib/actions/user.actions";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useProfile } from "@/lib/contexts/profileContext";

@@ -47,10 +47,10 @@ export const getAllPairingRequests = async (
   const hasRenderableProfileData = (profile: Record<string, any>) =>
     Boolean(
       profile.email ??
-        profile.firstName ??
-        profile.first_name ??
-        profile.lastName ??
-        profile.last_name,
+      profile.firstName ??
+      profile.first_name ??
+      profile.lastName ??
+      profile.last_name,
     );
 
   const rows = (data as Record<string, any>[]).map((row) => {
@@ -61,15 +61,9 @@ export const getAllPairingRequests = async (
       profile: {
         ...profile,
         firstName:
-          profile.firstName ??
-          profile.first_name ??
-          profile.firstname ??
-          "",
+          profile.firstName ?? profile.first_name ?? profile.firstname ?? "",
         lastName:
-          profile.lastName ??
-          profile.last_name ??
-          profile.lastname ??
-          "",
+          profile.lastName ?? profile.last_name ?? profile.lastname ?? "",
         availability: Array.isArray(profile.availability)
           ? profile.availability
           : [],
@@ -86,7 +80,10 @@ export const getAllPairingRequests = async (
   const missingProfileIds = Array.from(
     new Set(
       rows
-        .filter((row) => !hasRenderableProfileData(row.profile as Record<string, any>))
+        .filter(
+          (row) =>
+            !hasRenderableProfileData(row.profile as Record<string, any>),
+        )
         .map((row) => row.userId)
         .filter((id): id is string => Boolean(id)),
     ),
@@ -129,7 +126,8 @@ export const getAllPairingRequests = async (
     }
 
     for (const row of rows) {
-      if (hasRenderableProfileData(row.profile as Record<string, any>)) continue;
+      if (hasRenderableProfileData(row.profile as Record<string, any>))
+        continue;
       const fallback = fallbackByKey.get(row.userId);
       if (!fallback) continue;
       row.profile = {
@@ -232,11 +230,6 @@ export const getMyPairingRequest = async (
     throw new Error("Missing Supabase environment variables");
   }
 
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
-  );
-
   const { data, error } = await supabase
     .from(Table.PairingRequests)
     .select(
@@ -312,7 +305,10 @@ export const createPairingRequest = async (
     .limit(1)
     .maybeSingle();
 
-  const existingRow = existing as { id: string; in_queue?: boolean | null } | null;
+  const existingRow = existing as {
+    id: string;
+    in_queue?: boolean | null;
+  } | null;
 
   if (existingRow?.id) {
     if (existingRow.in_queue !== false) {
@@ -496,11 +492,6 @@ export const getPairingLogs = async (
     throw new Error("Missing Supabase environment variables");
   }
 
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
-  );
-
   const { data: logs, error } = await supabase.rpc("get_pairing_logs", {
     start_time,
     end_time,
@@ -529,10 +520,6 @@ export const getIncomingPairingMatches = async (profileId: string) => {
     throw new Error("Missing Supabase environment variables");
   }
 
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
-  );
   const { data, error } = await supabase.rpc(
     "get_pairing_matches_with_profiles",
     {
@@ -544,14 +531,12 @@ export const getIncomingPairingMatches = async (profileId: string) => {
 
   const list = data as IncomingPairingMatch[];
   return list.filter(
-    (m) =>
-      m.tutor_status !== "rejected" && m.tutor_status !== "accepted",
+    (m) => m.tutor_status !== "rejected" && m.tutor_status !== "accepted",
   );
 };
 
 export const deletePairing = async (tutorId: string, studentId: string) => {
   try {
-    
     const { data: enrollments, error: enrollmentsError } = await supabase
       .from("Enrollments")
       .select("id")
@@ -688,29 +673,33 @@ export const getAvailableMeetingLink = async (
 
     // Filter in JavaScript for arrays
     const availableMeetings =
-      allEnrollments?.filter((enrollment: { availability: { day: string; startTime: string; endTime: string }[] }) => {
-        // Check if this enrollment has any availability slots for the requested day
-        const daySlots = enrollment.availability.filter(
-          (slot: { day: string }) => slot.day === day,
-        );
+      allEnrollments?.filter(
+        (enrollment: {
+          availability: { day: string; startTime: string; endTime: string }[];
+        }) => {
+          // Check if this enrollment has any availability slots for the requested day
+          const daySlots = enrollment.availability.filter(
+            (slot: { day: string }) => slot.day === day,
+          );
 
-        if (daySlots.length === 0) {
-          // No availability for this day - consider it available
-          return true;
-        }
+          if (daySlots.length === 0) {
+            // No availability for this day - consider it available
+            return true;
+          }
 
-        // Check if ALL slots for this day have no overlap with requested time
-        const hasConflict = daySlots.some(
-          (slot: { startTime: string; endTime: string }) => {
-            // Two ranges overlap if: slot.start < end AND slot.end > start
-            const overlap = slot.startTime < end && slot.endTime > start;
-            return overlap;
-          },
-        );
+          // Check if ALL slots for this day have no overlap with requested time
+          const hasConflict = daySlots.some(
+            (slot: { startTime: string; endTime: string }) => {
+              // Two ranges overlap if: slot.start < end AND slot.end > start
+              const overlap = slot.startTime < end && slot.endTime > start;
+              return overlap;
+            },
+          );
 
-        // Return true if NO conflict (available)
-        return !hasConflict;
-      }) || [];
+          // Return true if NO conflict (available)
+          return !hasConflict;
+        },
+      ) || [];
 
     return availableMeetings.length > 0 ? availableMeetings[0] : null;
   } catch (error) {
@@ -910,8 +899,7 @@ export const updatePairingMatchStatus = async (
     ]);
 
     await sendPairingAlertToWebhook(tutorData, studentData, autoEnrollment);
-  }
-  else if (status === "rejected") {
+  } else if (status === "rejected") {
     const rejectUpdate = await supabase
       .from("pairing_matches")
       .update({

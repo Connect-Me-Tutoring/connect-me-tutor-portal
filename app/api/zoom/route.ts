@@ -8,10 +8,7 @@ import { logZoomMetadata } from "@/lib/actions/zoom.server.actions";
 // Use a single signing secret for all Zoom webhooks
 const validationSecret = config.zoom.ZOOM_WEBHOOK_SECRET;
 
-export async function POST(
-  req: NextRequest,
-  { params }: { params: { meeting: string } }
-) {
+export async function POST(req: NextRequest) {
   const body = await req.json();
 
   if (!validationSecret) {

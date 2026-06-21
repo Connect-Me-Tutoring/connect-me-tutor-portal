@@ -1,4 +1,3 @@
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import { Profile } from "@/types";
 import { Table } from "../supabase/tables";
 import { tableToInterfaceProfiles } from "../type-utils";
@@ -194,6 +193,10 @@ export async function getProfileWithProfileId(
         tutor_ids,
         timezone,
         subjects_of_interest,
+        languages_spoken,
+        age,
+        grade,
+        gender,
         status,
         student_number,
         settings_id

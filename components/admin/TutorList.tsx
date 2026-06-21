@@ -63,7 +63,7 @@ import { getEvents } from "@/lib/actions/event.server.actions";
 import { deleteUser } from "@/lib/actions/auth.server.actions";
 import { addUser } from "@/lib/actions/auth.actions";
 import { getTutorSessions } from "@/lib/actions/tutor.actions";
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
+import { createClient } from "@/lib/supabase/client";
 import { Profile, Session, Event } from "@/types";
 import {
   Dialog,
@@ -86,7 +86,7 @@ import { capitalizeFirstLetter } from "@/lib/utils";
 import { UserAvailabilities } from "../ui/UserAvailabilities";
 
 const TutorList = ({ initialTutors }: any) => {
-  const supabase = createClientComponentClient();
+  const supabase = createClient();
   const [tutors, setTutors] = useState<Profile[]>(initialTutors);
   const [filteredTutors, setFilteredTutors] =
     useState<Profile[]>(initialTutors);
