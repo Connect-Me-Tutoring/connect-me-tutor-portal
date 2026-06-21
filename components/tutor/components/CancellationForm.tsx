@@ -105,7 +105,7 @@ const CancellationForm: React.FC<CancellationFormProps> = ({
             >
               <span className="space-x-2">
                 <RadioGroupItem
-                  value="studentUnavailableWithPriorNotice"
+                  value="studentUnavailableWithPriotNotice"
                   id="studentUnavailableWithPriorNotice"
                 />
                 <Label htmlFor="studentUnavailableWithPriorNotice">

@@ -63,15 +63,13 @@ import {
   updateSession,
   getMeetings,
   getAllProfiles,
+  removeSession,
   getMeeting,
 
   // checkMeetingsAvailability,
   // isMeetingAvailable,
 } from "@/lib/actions/admin.actions";
-import {
-  addStandaloneSession,
-  removeSessionServer,
-} from "@/lib/actions/session.server.actions";
+import { addStandaloneSession } from "@/lib/actions/session.server.actions";
 import { addHours, areIntervalsOverlapping } from "date-fns";
 
 import { getAllSessions } from "@/lib/actions/session.actions";
@@ -468,7 +466,7 @@ const Schedule = () => {
     sessionsByDay.get(format(day, "yyyy-MM-dd")) || [];
 
   const removeSessionMutation = useMutation({
-    mutationFn: (sessionId: string) => removeSessionServer(sessionId),
+    mutationFn: (sessionId: string) => removeSession(sessionId),
     onMutate: async (sessionId: string) => {
       await queryClient.cancelQueries({ queryKey: ["sessions"] });
       const prevSessions = queryClient.getQueryData<Session[]>([
