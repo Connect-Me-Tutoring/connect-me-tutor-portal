@@ -1,0 +1,25 @@
+# Local Postgres for development (e.g. perf scripts, raw SQL, tools expecting DATABASE_URL).
+# Start: docker compose up -d postgres
+# Connection: postgresql://postgres:postgres@localhost:5432/connect_me
+# If port 5432 is taken (e.g. Supabase CLI), change the left side: "5433:5432"
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: connect_me
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d connect_me"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres_data:

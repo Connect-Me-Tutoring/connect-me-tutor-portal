@@ -432,13 +432,14 @@ export type ZoomSessionResolution = {
   appSessionId: string | null;
 };
 
-function zoomSessionResolutionStatus(
+export async function zoomSessionResolutionStatus(
   r: ZoomSessionResolution,
-):
+): Promise<
   | "no_meeting_number_in_payload"
   | "meeting_not_in_database"
   | "no_matching_active_session"
-  | "session_resolved" {
+  | "session_resolved"
+> {
   if (!r.zoomMeetingNumber) return "no_meeting_number_in_payload";
   if (!r.meetingsRowId) return "meeting_not_in_database";
   if (!r.appSessionId) return "no_matching_active_session";

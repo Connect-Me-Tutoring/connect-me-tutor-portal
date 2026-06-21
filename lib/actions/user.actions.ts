@@ -15,7 +15,9 @@ export const getUser = async () => {
   return user;
 };
 
-export const getProfileFromUserSettings = async (userId: string) => {
+export const getProfileFromUserSettings = async (
+  userId: string
+): Promise<Profile | null> => {
   try {
     const { data, error } = await supabase
       .from("user_settings")
@@ -47,7 +49,7 @@ export const getProfileFromUserSettings = async (userId: string) => {
       `,
       )
       .eq("user_id", userId)
-      .single();
+      .maybeSingle();
 
     if (error) {
       console.error("Error fetching profile in getProfile:", error.message);
@@ -55,8 +57,8 @@ export const getProfileFromUserSettings = async (userId: string) => {
       throw error;
     }
 
-    if (!data) {
-      throw new Error("No profile associated with user id");
+    if (!data?.profile) {
+      return null;
     }
 
     const profile = data.profile as any;
@@ -80,7 +82,7 @@ export const getProfile = async (userId: string): Promise<Profile | null> => {
     return null;
   }
   try {
-    return getProfileFromUserSettings(userId);
+    return await getProfileFromUserSettings(userId);
   } catch (error) {
     console.error("Unexpected error in getProfile:", error);
     return null;
@@ -117,8 +119,6 @@ export const getProfileRole = async (
   }
 
   try {
-    // first, check if user_settings exists for this user
-    console.log("User Id", userId);
     const { data, error } = await supabase
       .from("user_settings")
       .select(
@@ -126,7 +126,8 @@ export const getProfileRole = async (
         profile:Profiles!last_active_profile_id(role)
       `,
       )
-      .eq("user_id", userId);
+      .eq("user_id", userId)
+      .maybeSingle();
 
     if (error) {
       console.error(
@@ -136,39 +137,16 @@ export const getProfileRole = async (
       return null;
     }
 
-    // handle no user_settings record
-    if (!data || data.length === 0) {
-      console.log("Data", data);
+    const profile = data?.profile as { role: string } | null | undefined;
+    const role = profile?.role;
+    if (!role) {
       console.warn(
-        `No user_settings record found for user ${userId}. User/profile mismatch.`,
+        `No role for user ${userId} (missing user_settings, profile, or role).`,
       );
       return null;
     }
 
-    // handle multiple user_settings records (should take the first one)
-    if (data.length > 1) {
-      console.warn(
-        `Multiple user_settings records found for user ${userId}. Using first record.`,
-      );
-    }
-
-    const profileRole: { profile: { role: string } | null } = data[0] as any;
-
-    // handle missing profile
-    if (!profileRole || !profileRole.profile) {
-      console.warn(
-        `User ${userId} has user_settings but no associated profile. User/profile mismatch.`,
-      );
-      return null;
-    }
-
-    // handle missing role
-    if (!profileRole.profile.role) {
-      console.warn(`User ${userId} has profile but no role assigned.`);
-      return null;
-    }
-
-    return profileRole.profile.role;
+    return role;
   } catch (error) {
     console.error(
       `Unexpected error in getProfileRole for user ${userId}:`,

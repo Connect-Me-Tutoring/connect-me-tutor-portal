@@ -18,6 +18,7 @@ import {
   requireEnrollmentAccess,
   requireSelfOrAdmin,
 } from "./authz.server";
+import { getPairingRejectionCooldown } from "../pairing/rejection-config";
 
 export const getPairingFromEnrollmentId = async (enrollmentId: string) => {
   try {
@@ -110,6 +111,44 @@ export const deleteAllPairingRequests = async () => {
   } catch (err: any) {
     console.error(err.message);
   }
+};
+
+/**
+ * Tutors to exclude from matching: rejected this student while cooldown applies.
+ * Uses PAIRING_REJECTION_COOLDOWN_DAYS (never / -1 = always exclude; N = days since rejection).
+ */
+export const getRejectedTutorIdsForStudent = async (
+  studentProfileId: string,
+): Promise<string[]> => {
+  const supabase = await createClient();
+  const cooldown = getPairingRejectionCooldown();
+
+  const { data, error } = await supabase
+    .from("pairing_matches")
+    .select("tutor_id, rejected_at, created_at")
+    .eq("student_id", studentProfileId)
+    .eq("tutor_status", "rejected");
+
+  if (error) {
+    console.error("getRejectedTutorIdsForStudent error", error);
+    return [];
+  }
+  if (!data?.length) return [];
+
+  if (cooldown === "never") {
+    return data.map((row) => row.tutor_id as string);
+  }
+
+  const cutoffMs = Date.now() - cooldown * 24 * 60 * 60 * 1000;
+  return data
+    .filter((row) => {
+      const raw =
+        (row as { rejected_at?: string | null; created_at?: string })
+          .rejected_at ?? (row as { created_at?: string }).created_at;
+      if (!raw) return true;
+      return new Date(raw).getTime() >= cutoffMs;
+    })
+    .map((row) => row.tutor_id as string);
 };
 
 export const resetPairingQueues = async () => {

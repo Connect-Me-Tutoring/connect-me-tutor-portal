@@ -57,7 +57,8 @@ export async function POST(req: NextRequest) {
         // console.log("JOINED: ", participant);
 
         await logZoomMetadata({
-          session_id: payload?.object?.id,
+          session_id: null,
+          zoom_meeting_uuid: payload?.object?.uuid ?? null,
           participant_id: participant?.user_id || "",
           name: participant?.user_name || "Unknown",
           email: participant?.email || null,
@@ -72,7 +73,8 @@ export async function POST(req: NextRequest) {
         const participant = payload?.object?.participant;
 
         await logZoomMetadata({
-          session_id: payload?.object?.id,
+          session_id: null,
+          zoom_meeting_uuid: payload?.object?.uuid ?? null,
           participant_id: participant?.user_id || "",
           name: participant?.user_name || "Unknown",
           email: participant?.email || null,

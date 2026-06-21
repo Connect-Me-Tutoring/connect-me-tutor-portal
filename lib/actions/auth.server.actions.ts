@@ -9,7 +9,7 @@ import { admin } from "googleapis/build/src/apis/admin";
 import { profile } from "console";
 import { tableToInterfaceProfiles } from "../type-utils";
 import { createPassword } from "../utils";
-import { requireAdmin } from "./authz.server";
+import { cachedGetUser, getProfileRole } from "./user.server.actions";
 
 interface UserMetadata {
   email: string;
@@ -33,13 +33,64 @@ interface UserMetadata {
   languages_spoken: string[];
 }
 
+const ensurePairingQueueForNewProfile = async (
+  supabase: Awaited<ReturnType<typeof createAdminClient>>,
+  profile: { id: string; role: string | null },
+) => {
+  const normalizedRole = profile.role?.toLowerCase();
+  if (normalizedRole !== "student" && normalizedRole !== "tutor") return;
+
+  const { data: existing, error: existingError } = await supabase
+    .from(Table.PairingRequests)
+    .select("id, in_queue, priority")
+    .eq("user_id", profile.id)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (existingError) throw existingError;
+
+  if (existing?.id) {
+    if (existing.in_queue === false) {
+      const { error: updateError } = await supabase
+        .from(Table.PairingRequests)
+        .update({
+          in_queue: true,
+          status: "pending",
+          type: normalizedRole,
+          priority: existing.priority ?? 1,
+        })
+        .eq("id", existing.id);
+      if (updateError) throw updateError;
+    }
+    return;
+  }
+
+  const { error: insertError } = await supabase
+    .from(Table.PairingRequests)
+    .insert([
+      {
+        user_id: profile.id,
+        type: normalizedRole,
+        status: "pending",
+        priority: 1,
+        in_queue: true,
+        notes: "Auto-enqueued on account creation",
+      },
+    ]);
+  if (insertError) throw insertError;
+};
+
 export const isAuthorized = async (request: NextRequest) => {
   const authHeader = request.headers.get("authorization");
   return authHeader === `Bearer ${process.env.BEARER_TOKEN}`;
 };
 
 export const verifyAdmin = async () => {
-  await requireAdmin();
+  const user = await cachedGetUser();
+  if (!user) throw new Error("Unauthenticated access");
+  const role = await getProfileRole(user.id);
+  if (role !== "Admin") throw new Error("Unauthorized Access");
 };
 
 /**
@@ -161,6 +212,13 @@ export const createUser = async (newProfileData: CreatedProfileData) => {
 
     const createdProfileData: Profile =
       tableToInterfaceProfiles(createdProfile);
+
+    if (createdProfile?.id) {
+      await ensurePairingQueueForNewProfile(supabase, {
+        id: createdProfile.id,
+        role: createdProfile.role ?? null,
+      });
+    }
 
     return createdProfileData;
   } catch (error) {
