@@ -1,5 +1,4 @@
 "use server";
-import { pipeline } from "@xenova/transformers";
 
 /**
  * Create Subject Embeddings
@@ -9,15 +8,22 @@ import { pipeline } from "@xenova/transformers";
 export const createSubjectEmbeddings = async (
   subjects: string[]
 ): Promise<number[]> => {
-  const embedder = await pipeline(
-    "feature-extraction",
-    "Xenova/all-MiniLM-L6-v2"
-  );
+  const vector = new Array(384).fill(0);
+  const tokens = subjects
+    .join(" ")
+    .toLowerCase()
+    .match(/[a-z0-9]+/g) ?? [];
 
-  const sentence = subjects.join(" ");
-  const result = await embedder(sentence, {
-    pooling: "mean",
-    normalize: true,
-  });
-  return Array.from(result.data);
+  for (const token of tokens) {
+    let hash = 2166136261;
+    for (let i = 0; i < token.length; i++) {
+      hash ^= token.charCodeAt(i);
+      hash = Math.imul(hash, 16777619);
+    }
+    const index = Math.abs(hash) % vector.length;
+    vector[index] += hash % 2 === 0 ? 1 : -1;
+  }
+
+  const length = Math.hypot(...vector) || 1;
+  return vector.map((value) => value / length);
 };

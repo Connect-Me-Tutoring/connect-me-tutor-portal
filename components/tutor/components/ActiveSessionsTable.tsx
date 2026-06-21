@@ -209,14 +209,7 @@ const ActiveSessionsTable = ({
                 <SessionExitForm
                   currSession={session}
                   setNextClassConfirmed={setNextClassConfirmed}
-                  handleSessionComplete={
-                markSessionComplete(
-                    updatedSession,
-                    notes,
-                    isQuestionOrConcern,
-                    isFirstSession,
-                    )
-                }
+                  handleSessionComplete={markSessionComplete}
                   handleStatusChange={handleStatusChange}
                 />
               </TableCell>

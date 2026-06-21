@@ -102,6 +102,7 @@ const SessionExitForm = ({
   // setNextClassConfirmed,
   handleSessionComplete,
   handleStatusChange,
+  actor = "tutor",
 }: any) => {
   const TC = useDashboardContext();
 
@@ -115,7 +116,7 @@ const SessionExitForm = ({
     >
       <DialogTrigger asChild>
         <HoverCard>
-          <HoverCardTrigger>
+          <HoverCardTrigger asChild>
             <Button
               variant="outline"
               disabled={
@@ -154,6 +155,7 @@ const SessionExitForm = ({
                   session={TC.selectedSession}
                   handleStatusChange={handleStatusChange}
                   onClose={() => TC.setIsSessionExitFormOpen(false)}
+                  actor={actor}
                 />
               ) : (
                 ""

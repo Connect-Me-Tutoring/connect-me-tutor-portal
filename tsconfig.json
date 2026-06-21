@@ -36,7 +36,6 @@
     "lib/supabase/server.js",
     "lib/supabase/client.ts",
     "lib/supabase/middleware.js",
-    "unlighthouse.config.mjs",
     ".next/dev/types/**/*.ts"
   ],
   "exclude": [
