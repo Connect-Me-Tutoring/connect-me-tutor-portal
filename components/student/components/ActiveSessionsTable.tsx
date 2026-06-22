@@ -30,6 +30,16 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import {
+  AlertDialog,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogCancel,
+  AlertDialogAction,
+} from "@/components/ui/alert-dialog";
+import {
   HoverCard,
   HoverCardContent,
   HoverCardTrigger,
@@ -41,16 +51,19 @@ import {
   ChevronsRight,
   ChevronLeft,
   ChevronRight,
-  Trash,
   CalendarDays,
   UserRoundPlus,
   Clock,
   CircleCheckBig,
   CircleX,
   Copy,
+  MessageSquare,
+  CalendarX,
+  Video,
 } from "lucide-react";
 import { format, parseISO, isAfter } from "date-fns";
 import { AlertDialogTrigger } from "@radix-ui/react-alert-dialog";
+import CancellationForm from "../../tutor/components/CancellationForm";
 // import SessionExitForm from "./SessionExitForm";
 // import RescheduleForm from "./RescheduleDialog";
 // import CancellationForm from "./CancellationForm";
@@ -130,6 +143,8 @@ const ActiveSessionsTable = ({
             <TableHead>Title</TableHead>
             <TableHead>Tutor</TableHead>
             <TableHead>Meeting</TableHead>
+            <TableHead>Feedback</TableHead>
+            <TableHead>Actions</TableHead>
             {/* <TableHead>Reschedule</TableHead> */}
             {/* <TableHead>Request Substitute</TableHead> */}
           </TableRow>
@@ -167,21 +182,52 @@ const ActiveSessionsTable = ({
               </TableCell>
               <TableCell>
                 {session?.meeting?.meetingId ? (
-                  <span>
-                    <button
-                      onClick={() =>
-                        (window.location.href = `/meeting/${session?.meeting?.id}`)
-                      }
-                      className="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600"
-                    >
-                      View
-                    </button>
-                  </span>
-                ) : (
-                  <button className="text-black px-3 py-1 border border-gray-200 rounded">
-                    N/A
+                  <button
+                    onClick={() =>
+                      (window.location.href = `/meeting/${session?.meeting?.id}`)
+                    }
+                    className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-connect-me-blue-2 transition-colors"
+                  >
+                    <Video className="h-4 w-4" />
+                    Meeting
                   </button>
+                ) : (
+                  <span className="text-sm text-muted-foreground/50">N/A</span>
                 )}
+              </TableCell>
+              <TableCell>
+                <a
+                  href="https://docs.google.com/forms/d/1YPS8angPHS1HEyDn6ub2d5iEsfjuvi0N_Yr7YevaSIc/viewform?edit_requested=true#responses"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-connect-me-blue-2 transition-colors"
+                >
+                  <MessageSquare className="h-4 w-4" />
+                  Feedback
+                </a>
+              </TableCell>
+              <TableCell>
+                {session.status === "Active" ? (
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="text-red-500 hover:text-red-600 hover:bg-red-50"
+                        title="Cancel session"
+                      >
+                        <CalendarX className="h-4 w-4 mr-1.5" />
+                        Cancel
+                      </Button>
+                    </AlertDialogTrigger>
+                    <CancellationForm
+                      session={session}
+                      handleStatusChange={handleStatusChange}
+                      onClose={() => {}}
+                      actor="student"
+                    />
+                  </AlertDialog>
+                ) : null}
               </TableCell>
               {/* <TableCell></TableCell> */}
 

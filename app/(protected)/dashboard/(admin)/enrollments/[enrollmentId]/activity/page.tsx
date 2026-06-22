@@ -20,11 +20,10 @@ import {
 } from "@/components/ui/table";
 import { ArrowLeft, Video } from "lucide-react";
 
-export default async function EnrollmentActivityPage({
-  params,
-}: {
-  params: { enrollmentId: string };
+export default async function EnrollmentActivityPage(props: {
+  params: Promise<{ enrollmentId: string }>;
 }) {
+  const params = await props.params;
   const data = await getEnrollmentSessionsActivityData(params.enrollmentId);
   if (!data) {
     notFound();

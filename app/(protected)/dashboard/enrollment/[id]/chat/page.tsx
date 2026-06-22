@@ -5,10 +5,12 @@ import { isUuidString } from "@/lib/utils";
 import { notFound } from "next/navigation";
 
 interface Props {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }
 
-export default async function ChatRoomPage({ params }: Props) {
+export default async function ChatRoomPage(props: Props) {
+  const params = await props.params;
+
   const mockMessages: Message[] = [];
 
   const pairingId = await getPairingFromEnrollmentId(params.id);

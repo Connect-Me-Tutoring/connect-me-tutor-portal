@@ -1,0 +1,40 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://connect-me-tutor.local/schemas/lookup-static-output-envelope.schema.json",
+  "title": "lookup-static JSON runner output",
+  "description": "Wrapper emitted by run-static-from-json.mjs (JSON mode, not --table).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["requestor_role", "results"],
+  "properties": {
+    "requestor_role": {
+      "type": "string",
+      "enum": ["student", "tutor"]
+    },
+    "results": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "candidate_id",
+          "match_first_name",
+          "match_last_name",
+          "match_email",
+          "similarity",
+          "rank_score",
+          "subject_alignment"
+        ],
+        "properties": {
+          "candidate_id": { "type": "string" },
+          "match_first_name": { "type": "string" },
+          "match_last_name": { "type": "string" },
+          "match_email": { "type": "string" },
+          "similarity": { "type": "number" },
+          "rank_score": { "type": "number" },
+          "subject_alignment": { "type": "object" }
+        }
+      }
+    }
+  }
+}

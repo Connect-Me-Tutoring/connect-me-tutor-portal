@@ -81,7 +81,6 @@ import {
   removeEnrollment,
   updateEnrollment,
 } from "@/lib/actions/enrollment.server.actions";
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import { Enrollment, Profile, Event, Meeting, Availability } from "@/types";
 import toast from "react-hot-toast";
 import AvailabilityFormat from "@/components/student/AvailabilityFormat";
@@ -206,7 +205,6 @@ const EnrollmentList = ({
   const [tutors, setTutors] = useState<Profile[]>(initialTutors);
   const [meetings, setMeetings] = useState<Meeting[]>(initialMeetings);
 
-  const supabase = createClientComponentClient();
   const [open, setOpen] = React.useState(false);
   const [value, setValue] = React.useState("");
 

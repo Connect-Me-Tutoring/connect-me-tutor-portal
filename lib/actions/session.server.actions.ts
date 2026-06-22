@@ -4,6 +4,15 @@ import { Enrollment, Meeting, Session } from "@/types";
 import { toast } from "react-hot-toast";
 import { Client } from "@upstash/qstash";
 import { createAdminClient, createClient } from "@/lib/supabase/server";
+import {
+  applySessionScope,
+  requireAdmin,
+  requireAuthenticatedProfile,
+  requireEnrollmentAccess,
+  requireSessionAccess,
+  requireStudentProfileAccess,
+  requireTutorProfileAccess,
+} from "./authz.server";
 import { Profile } from "@/types";
 import { getProfileWithProfileId } from "./user.actions";
 import { getMeeting } from "./meeting.server.actions";
@@ -18,9 +27,20 @@ import {
   tableToInterfaceEnrollments,
   tableToInterfaceSessions,
 } from "../type-utils";
-import { sendScheduledEmailsBeforeSessions } from "./email.server.actions";
+import {
+  sendScheduledEmailsBeforeSessions,
+  sendStudentSessionCancellationEmail,
+  sendTutorSessionCancellationEmail,
+} from "./email.server.actions";
 
-import { startOfWeek, endOfWeek, subDays, parseISO, format, addDays } from "date-fns"; // Only use date-fns
+import {
+  startOfWeek,
+  endOfWeek,
+  subDays,
+  parseISO,
+  format,
+  addDays,
+} from "date-fns"; // Only use date-fns
 
 import * as DateFNS from "date-fns-tz";
 const { fromZonedTime } = DateFNS;
@@ -60,7 +80,7 @@ export async function addSessionsServer(
   sessions: Session[],
 ) {
   try {
-    const supabase = await createAdminClient();
+    const supabase = await createClient();
     const parsedWeekStart = parseISO(weekStartString);
     const parsedWeekEnd = parseISO(weekEndString);
 
@@ -345,6 +365,59 @@ export async function getActiveSessionFromMeetingID(meetingID: string) {
   return data || [];
 }
 
+export async function cancelSession(
+  session: Session,
+  actor: "tutor" | "student",
+) {
+  const supabase = await createServerClient();
+
+  const { error } = await supabase
+    .from(Table.Sessions)
+    .update({
+      status: "Cancelled",
+      session_exit_form: session.session_exit_form ?? null,
+    })
+    .eq("id", session.id);
+
+  if (error) {
+    console.error("Error cancelling session:", error);
+    throw error;
+  }
+
+  try {
+    const sessionDate = session.date
+      ? format(new Date(session.date), "MMMM d, yyyy")
+      : "";
+    const sessionTime = session.date
+      ? format(new Date(session.date), "h:mm a")
+      : "";
+    const studentName =
+      `${session.student?.firstName ?? ""} ${session.student?.lastName ?? ""}`.trim() ||
+      "Student";
+    const tutorName =
+      `${session.tutor?.firstName ?? ""} ${session.tutor?.lastName ?? ""}`.trim() ||
+      "Your Tutor";
+    const reason = session.session_exit_form || undefined;
+
+    if (actor === "tutor" && session.student?.email) {
+      await sendStudentSessionCancellationEmail(
+        { studentName, tutorName, sessionDate, sessionTime, reason },
+        session.student.email,
+      );
+    } else if (actor === "student" && session.tutor?.email) {
+      // Student cancelled -> notify the tutor.
+      await sendTutorSessionCancellationEmail(
+        { tutorName, studentName, sessionDate, sessionTime, reason },
+        session.tutor.email,
+      );
+    }
+  } catch (emailError) {
+    console.error("Failed to send cancellation email:", emailError);
+  }
+
+  return { ...session, status: "Cancelled" as const };
+}
+
 /** Zoom webhook: payload.object → Zoom meeting number → `Meetings` row → `Sessions` row */
 export type ZoomSessionResolution = {
   /** Zoom `object.id` / `meeting_number` (numeric string) */
@@ -359,13 +432,14 @@ export type ZoomSessionResolution = {
   appSessionId: string | null;
 };
 
-function zoomSessionResolutionStatus(
+export async function zoomSessionResolutionStatus(
   r: ZoomSessionResolution,
-):
+): Promise<
   | "no_meeting_number_in_payload"
   | "meeting_not_in_database"
   | "no_matching_active_session"
-  | "session_resolved" {
+  | "session_resolved"
+> {
   if (!r.zoomMeetingNumber) return "no_meeting_number_in_payload";
   if (!r.meetingsRowId) return "meeting_not_in_database";
   if (!r.appSessionId) return "no_matching_active_session";
@@ -396,9 +470,8 @@ export async function resolveAppSessionFromZoomWebhookObject(
     };
   }
 
-  const resolved = await resolvePortalSessionForZoomMeetingNumber(
-    meetingNumber,
-  );
+  const resolved =
+    await resolvePortalSessionForZoomMeetingNumber(meetingNumber);
   if (!resolved) {
     return {
       zoomMeetingNumber: meetingNumber,
@@ -504,6 +577,7 @@ export async function getSessions(
   end: string,
 ): Promise<Session[]> {
   try {
+    await requireAdmin();
     const supabase = await createAdminClient();
 
     const { data: sessionData, error: sessionError } = await supabase
@@ -537,6 +611,7 @@ export async function getAllSessionsServer(
   orderBy?: string,
   ascending?: boolean,
 ) {
+  await requireAdmin();
   const supabase = await createClient();
   try {
     let query = supabase.from(Table.Sessions).select(`
@@ -558,8 +633,6 @@ export async function getAllSessionsServer(
     }
 
     const { data, error } = await query;
-
-    // console.log(data);
 
     if (error) {
       console.error("Error fetching student sessions:", error.message);
@@ -590,6 +663,7 @@ export async function getAllSessions(
   },
 ): Promise<Session[]> {
   try {
+    const { profile } = await requireAuthenticatedProfile();
     const supabase = await createClient();
 
     let query = supabase.from(Table.Sessions).select(`
@@ -598,6 +672,8 @@ export async function getAllSessions(
       student:Profiles!student_id(*),
       tutor:Profiles!tutor_id(*)
     `);
+
+    query = applySessionScope(query, profile);
 
     if (startDate) {
       query = query.gte("date", startDate);
@@ -669,6 +745,7 @@ export async function getEnrollmentSessionsActivityData(
 ): Promise<EnrollmentSessionsActivityData | null> {
   try {
     if (!enrollmentId) return null;
+    await requireEnrollmentAccess(enrollmentId);
     const supabase = await createClient();
 
     const { data: enRow, error: enErr } = await supabase
@@ -817,11 +894,13 @@ export async function getParticipationData(
     }
 
     // Get session details to calculate meeting end time
-    const session = await getSessionById(sessionId);
+    const session = await getSessionById(sessionId, { skipAccessCheck: true });
 
     if (!session) {
       return null;
     }
+
+    await requireSessionAccess(session);
 
     const participationRecords = await getParticipationBySessionId(sessionId);
 
@@ -858,7 +937,9 @@ export async function getParticipationData(
       return { ...base, enrollmentQueryMismatch: true };
     }
 
-    const activity = await getEnrollmentSessionsActivityData(session.enrollmentId);
+    const activity = await getEnrollmentSessionsActivityData(
+      session.enrollmentId,
+    );
     if (!activity) {
       return { ...base, enrollmentQueryMismatch: true };
     }
@@ -884,6 +965,7 @@ export async function getParticipationData(
 
 export async function getSessionById(
   sessionId: string,
+  options?: { skipAccessCheck?: boolean },
 ): Promise<Session | null> {
   try {
     const supabase = await createClient();
@@ -913,6 +995,10 @@ export async function getSessionById(
 
     const session: Session = tableToInterfaceSessions(sessionData);
 
+    if (!options?.skipAccessCheck) {
+      await requireSessionAccess(session);
+    }
+
     return session;
   } catch (error) {
     console.error("Error fetching session by ID:", error);
@@ -930,6 +1016,7 @@ export async function getTutorSessions(
     ascending?: boolean;
   },
 ): Promise<Session[]> {
+  await requireTutorProfileAccess(profileId);
   const supabase = await createClient();
   const { startDate, endDate, status, orderBy, ascending } = params
     ? params
@@ -973,7 +1060,6 @@ export async function getTutorSessions(
     throw error;
   }
 
-  // Map the result to the Session interface
   const sessions: Session[] = data
     .filter((data) => data.meeting && data.student && data.tutor)
     .map((session: any) => tableToInterfaceSessions(session));
@@ -991,6 +1077,7 @@ export async function getStudentSessions(
     ascending?: boolean;
   },
 ): Promise<Session[]> {
+  await requireStudentProfileAccess(profileId);
   const supabase = await createClient();
   const { startDate, endDate, status, orderBy, ascending } = params
     ? params
@@ -1034,7 +1121,6 @@ export async function getStudentSessions(
     throw error;
   }
 
-  // Map the result to the Session interface
   const sessions: Session[] = data
     .filter(
       (session) => session.meeting && session.tutor_id && session.student_id,
@@ -1050,6 +1136,10 @@ export async function rescheduleSession(
   meetingId: string,
   tutorid?: string,
 ) {
+  const existing = await getSessionById(sessionId);
+  if (!existing) {
+    throw new Error("Session not found");
+  }
   const supabase = await createClient();
   try {
     const { data: sessionData, error } = await supabase
@@ -1094,6 +1184,13 @@ export async function addStandaloneSession(
     meeting?: Meeting;
   },
 ): Promise<void> {
+  const { profile } = await requireAuthenticatedProfile();
+  if (profile.role !== "Admin") {
+    const tutorId = session.tutor?.id;
+    if (!tutorId || profile.id !== tutorId) {
+      throw new Error("Unauthorized");
+    }
+  }
   const supabase = await createClient();
 
   try {
@@ -1187,4 +1284,22 @@ export async function cancelUnsubmittedSEFCron() {
   }
 
   return { success: true, error: undefined, cancelled: sessions.length };
+}
+
+export async function updateSessionsStatus(
+  sessionIds: string[],
+  status: string,
+) {
+  try {
+    const supabase = await createClient();
+    const { error } = await supabase
+      .from(Table.Sessions)
+      .update({ status })
+      .in("id", sessionIds);
+
+    if (error) throw error;
+  } catch (error) {
+    console.error("Error updating sessions status:", error);
+    throw error;
+  }
 }
