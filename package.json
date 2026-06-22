@@ -134,11 +134,19 @@
     "uuid": "^11.1.1",
     "unhead": "^2.1.13",
     "markdown-it": "^14.2.0",
+    "js-yaml": "4.2.0",
     "piscina": "^4.9.3",
     "qs": "6.15.2",
     "tmp": "0.2.7",
     "ws": "8.21.0",
     "@types/react": "19.2.15",
-    "@types/react-dom": "19.2.3"
+    "@types/react-dom": "19.2.3",
+    "gray-matter": {
+      "js-yaml": "4.2.0"
+    },
+    "@mastra/core": {
+      "@ai-sdk/provider-utils-v5": "npm:@ai-sdk/provider-utils@4.0.30",
+      "@ai-sdk/provider-utils-v6": "npm:@ai-sdk/provider-utils@4.0.30"
+    }
   }
 }
