@@ -82,10 +82,11 @@ export function PairingRunLogsPage() {
     }
   }, [runId]);
 
+  const runCreatedAt = run?.createdAt;
   const createdAtText = useMemo(() => {
-    if (!run?.createdAt) return "";
-    return new Date(run.createdAt).toLocaleString();
-  }, [run?.createdAt]);
+    if (!runCreatedAt) return "";
+    return new Date(runCreatedAt).toLocaleString();
+  }, [runCreatedAt]);
 
   const isLegacyPreview = !run?.preview.matchPreviews?.length;
   const hasOverlapData = Boolean(run?.preview.matchPreviews?.length);

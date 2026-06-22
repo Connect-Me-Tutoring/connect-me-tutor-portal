@@ -4,8 +4,6 @@ import { createClient } from "@supabase/supabase-js";
 import { supabase } from "../supabase/client";
 import { Table } from "../supabase/tables";
 
-import axios from "axios";
-
 // export async function getProfileWithProfileId(
 //   profileId: string
 // ): Promise<Profile | null> {
@@ -108,15 +106,6 @@ export async function updateProfileDetails({
     updates.subjects_of_interest = subjectsOfInterest;
   if (languagesSpoken !== undefined) updates.languages_spoken = languagesSpoken;
 
-  const updatedSubjects = updates["subjects_of_interest"] as string[];
-  if (updatedSubjects) {
-    const { data } = await axios.post("/api/pairing/embeds", {
-      subjects: updatedSubjects,
-    });
-    if (data.embed) updates["subject_embed"] = data.embed;
-  }
-
-
   const { error } = await supabase
     .from(Table.Profiles)
     .update(updates)
@@ -133,4 +122,3 @@ export async function updateProfileDetails({
 export const switchAndGetProfileInfo = async () => {
 
 }
-
