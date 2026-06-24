@@ -269,22 +269,6 @@ export default function DashboardLayout({
     // },
   ];
 
-  // useEffect(() => {
-  //   const getUserProfileRole = async () => {
-  //     try {
-  //       if (profile) {
-  //         const userProfiles = await getUserProfiles(profile.userId)
-  //         if (userProfiles) setUserProfiles(userProfiles);
-  //       }
-  //     } catch (error) {
-  //       console.error("Error fetching user role:", error);
-  //     } finally {
-  //       setLoading(false);
-  //     }
-  //   };
-  //   getUserProfileRole();
-  // }, [profile]);
-
   const [isOpen, setIsOpen] = useState(true);
   const toggleSidebar = () => setIsOpen(!isOpen);
 

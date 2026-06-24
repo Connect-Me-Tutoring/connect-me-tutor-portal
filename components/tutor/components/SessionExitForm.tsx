@@ -176,6 +176,11 @@ const SessionExitForm = ({
             I have a question or a concern
           </label>
         </div>
+
+        {/* 
+          TODO: ADD CHECK BOXES HERE
+          */}
+
         <Textarea
           value={TC.notes}
           onChange={(e) => TC.setNotes(e.target.value)}
