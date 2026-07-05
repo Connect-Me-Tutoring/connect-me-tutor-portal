@@ -1,6 +1,6 @@
 // lib/tutors.actions.ts
 
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
+import { supabase } from "@/lib/supabase/client";
 import { Profile, Session } from "@/types";
 import { getProfileWithProfileId } from "./user.actions";
 import { getMeeting } from "./admin.actions";
@@ -10,11 +10,6 @@ import {
   tableToInterfaceMeetings,
   tableToInterfaceProfiles,
 } from "../type-utils";
-
-const supabase = createClientComponentClient({
-  supabaseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL,
-  supabaseKey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
-});
 
 /** 
 @params 
@@ -78,9 +73,9 @@ export async function getTutorSessions(
       createdAt: session.created_at,
       date: session.date,
       summary: session.summary,
-      meeting: tableToInterfaceMeetings(session.meeting),
-      student: tableToInterfaceProfiles(session.student),
-      tutor: tableToInterfaceProfiles(session.tutor),
+      meeting: session.meeting ? tableToInterfaceMeetings(session.meeting) : null,
+      student: session.student ? tableToInterfaceProfiles(session.student) : null,
+      tutor: session.tutor ? tableToInterfaceProfiles(session.tutor) : null,
       status: session.status,
       session_exit_form: session.session_exit_form,
       isQuestionOrConcern: Boolean(session.isQuestionOrConcernO),
@@ -146,19 +141,6 @@ export async function getTutorStudents(tutorId: string) {
     console.error("Unexpected error in getProfile:", error);
     return null;
   }
-}
-
-export async function cancelSession(sessionId: string) {
-  const { data, error } = await supabase
-    .from(Table.Sessions)
-    .update({
-      status: "CANCELLED",
-    })
-    .eq("id", sessionId)
-    .single();
-
-  if (error) throw error;
-  return data;
 }
 
 // changed to allow tutors to restore cancelled sessions back to their original status

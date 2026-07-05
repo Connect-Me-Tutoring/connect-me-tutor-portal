@@ -178,7 +178,7 @@ const EnrollmentList = ({
 
   const [openStudentOptions, setOpenStudentOptions] = React.useState(false);
   const [openTutorOptions, setOpentTutorOptions] = React.useState(false);
-  const [selectedTutorId, setSelectedTutorId] = useState("");
+  const [selectedTutorId, setSelectedTutorId] = useState(profile.id);
   const [selectedStudentId, setSelectedStudentId] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -201,7 +201,7 @@ const EnrollmentList = ({
     Omit<Enrollment, "id" | "createdAt">
   >({
     student: {} as Profile, // Initialize as an empty Profile
-    tutor: {} as Profile, // Initialize as an empty Profile
+    tutor: profile,
     summary: "",
     startDate: "",
     endDate: null,
@@ -531,7 +531,7 @@ const EnrollmentList = ({
         ]);
         setIsAddModalOpen(false);
         resetNewEnrollment();
-        setSelectedTutorId("");
+        setSelectedTutorId(profile.id);
         setSelectedStudentId("");
         setAvailabilityList([]);
         toast.success("Enrollment added successfully");
@@ -584,7 +584,7 @@ const EnrollmentList = ({
   const resetNewEnrollment = () => {
     setNewEnrollment({
       student: {} as Profile,
-      tutor: {} as Profile,
+      tutor: profile,
       summary: "",
       startDate: "",
       endDate: null,

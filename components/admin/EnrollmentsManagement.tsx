@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useEffect, useMemo } from "react";
+import React, { use, useState, useEffect, useMemo } from "react";
 import {
   AlarmClockMinus,
   MessageCircleIcon,
@@ -81,18 +81,15 @@ import {
   removeEnrollment,
   updateEnrollment,
 } from "@/lib/actions/enrollment.server.actions";
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import { Enrollment, Profile, Event, Meeting, Availability } from "@/types";
 import toast from "react-hot-toast";
 import AvailabilityFormat from "@/components/student/AvailabilityFormat";
 import AvailabilityForm from "@/components/ui/availability-form";
-import { formatDate } from "@/lib/utils";
-import { normalize } from "path";
-import { areIntervalsOverlapping, previousDay, set } from "date-fns";
 import { z } from "zod";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { checkAvailableMeetingForEnrollments } from "@/lib/actions/meeting.actions";
+import { WeeklyMeetingSchedule } from "@/types/meeting";
 import { formatDateServer } from "@/lib/actions/utils.server.actions";
 import { QueryClient } from "@tanstack/react-query";
 import {
@@ -168,12 +165,38 @@ const enrollmentMatchesTimeFilter = (
 };
 
 const EnrollmentList = ({
-  initialEnrollments,
-  initialMeetings,
-  initialStudents,
-  initialTutors,
+  enrollmentsPromise,
+  meetingsPromise,
+  studentsPromise,
+  tutorsPromise,
+  weeklySchedulesPromise,
 }: any) => {
-  // data is awaited in server component now, no use() needed
+  const combinedPromise = useMemo(
+    () =>
+      Promise.all([
+        enrollmentsPromise,
+        meetingsPromise,
+        studentsPromise,
+        tutorsPromise,
+        weeklySchedulesPromise,
+      ]),
+    [
+      enrollmentsPromise,
+      meetingsPromise,
+      studentsPromise,
+      tutorsPromise,
+      weeklySchedulesPromise,
+    ],
+  );
+
+  const [
+    initialEnrollments,
+    initialMeetings,
+    initialStudents,
+    initialTutors,
+    initialWeeklySchedules,
+  ] = use(combinedPromise);
+
   const [enrollments, setEnrollments] =
     useState<Enrollment[]>(initialEnrollments);
   const [filteredEnrollments, setFilteredEnrollments] =
@@ -182,7 +205,6 @@ const EnrollmentList = ({
   const [tutors, setTutors] = useState<Profile[]>(initialTutors);
   const [meetings, setMeetings] = useState<Meeting[]>(initialMeetings);
 
-  const supabase = createClientComponentClient();
   const [open, setOpen] = React.useState(false);
   const [value, setValue] = React.useState("");
 
@@ -229,6 +251,7 @@ const EnrollmentList = ({
   const [meetingAvailability, setMeetingAvailability] = useState<{
     [key: string]: boolean;
   }>({});
+  const weeklySchedules: WeeklyMeetingSchedule[] = initialWeeklySchedules ?? [];
 
   const [hoursError, setHoursError] = useState<string | null>(null);
   const [editHoursError, setEditHoursError] = useState<string | null>(null);
@@ -344,7 +367,12 @@ const EnrollmentList = ({
     setIsCheckingMeetingAvailability(true);
 
     const updatedMeetingAvailability =
-      await checkAvailableMeetingForEnrollments(enroll, enrollments, meetings);
+      await checkAvailableMeetingForEnrollments(
+        enroll,
+        enrollments,
+        meetings,
+        weeklySchedules,
+      );
     setIsCheckingMeetingAvailability(false);
     setMeetingAvailability(updatedMeetingAvailability);
   };
@@ -1234,8 +1262,15 @@ const EnrollmentList = ({
                     </Button>
                   </TableCell>
                   <TableCell>
-                    <Button variant="outline" size="sm" className="gap-2" asChild>
-                      <Link href={`/dashboard/enrollments/${enrollment.id}/activity`}>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="gap-2"
+                      asChild
+                    >
+                      <Link
+                        href={`/dashboard/enrollments/${enrollment.id}/activity`}
+                      >
                         <Activity className="h-4 w-4" />
                         Activity
                       </Link>

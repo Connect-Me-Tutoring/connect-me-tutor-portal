@@ -53,3 +53,5 @@
 //     return NextResponse.json({ error: err.message }, { status: 500 });
 //   }
 // }
+
+export {};

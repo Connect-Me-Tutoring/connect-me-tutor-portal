@@ -10,20 +10,29 @@ import {
 } from "@/components/ui/card";
 import { MessageSquare, Shield, Users } from "lucide-react";
 import { getAccountPairings } from "@/lib/actions/pairing.server.actions";
+import { cachedGetProfile } from "@/lib/actions/cache";
 import { redirect } from "next/navigation";
 import { fetchUserAdminConversation } from "@/lib/actions/chat.server.actions";
 import Link from "next/link";
 import { cachedGetUser } from "@/lib/actions/user.server.actions";
-import { cachedGetProfile } from "@/lib/actions/cache";
 
 export default async function ChatPage() {
   const user = await cachedGetUser();
   const userId = user?.id;
   if (!userId) redirect("/");
-  const adminConversationID = await fetchUserAdminConversation(userId);
 
-  const profile = cachedGetProfile(userId);
+  const profile = await cachedGetProfile(userId);
+  if (!profile) {
+    redirect("/dashboard/settings?completeProfile=1");
+  }
+
+  const adminConversationID = await fetchUserAdminConversation(userId);
+  if (!adminConversationID) {
+    redirect("/dashboard");
+  }
+
   const pairings = getAccountPairings(userId);
+  const profilePromise = cachedGetProfile(userId);
 
   return (
     <div className="flex flex-col h-screen">
@@ -71,7 +80,7 @@ export default async function ChatPage() {
           </Card>
         </div>
       </div>
-      <ChatList pairingsPromise={pairings} profilePromise={profile} />
+      <ChatList pairingsPromise={pairings} profilePromise={profilePromise} />
     </div>
   );
 }

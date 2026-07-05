@@ -8,9 +8,18 @@ import axios from "axios";
 import { getSupabase } from "../supabase-server/serverClient";
 import { revalidatePath } from "next/cache";
 import { tableToInterfaceProfiles } from "../type-utils";
+import {
+  assertProfileBelongsToUser,
+  requireAdmin,
+  requireAuthenticatedProfile,
+  requireSelfOrAdmin,
+  requireTutorProfileAccess,
+} from "./authz.server";
 
 export const switchProfile = async (userId: string, profileId: string) => {
   try {
+    await requireSelfOrAdmin(userId);
+    await assertProfileBelongsToUser(userId, profileId);
     const supabase = await createClient();
     await supabase
       .from("user_settings")
@@ -30,6 +39,7 @@ export const switchProfile = async (userId: string, profileId: string) => {
 
 export const getUserProfiles = async (userId: string) => {
   try {
+    await requireSelfOrAdmin(userId);
     const supabase = await createClient();
     const { data } = await supabase
       .from("Profiles")
@@ -62,8 +72,8 @@ export async function getAllProfiles(
   ascending?: boolean | null,
   status?: string | null,
 ): Promise<Profile[] | null> {
+  await requireAdmin();
   const supabase = await createClient();
-
   try {
     const profileFields = `
       id,
@@ -155,8 +165,11 @@ export async function getAllProfiles(
   }
 }
 
-export const getProfileFromUserSettings = async (userId: string) => {
+export const getProfileFromUserSettings = async (
+  userId: string,
+): Promise<Profile | null> => {
   try {
+    await requireSelfOrAdmin(userId);
     const supabase = await createClient();
     const { data, error } = await supabase
       .from("user_settings")
@@ -188,13 +201,18 @@ export const getProfileFromUserSettings = async (userId: string) => {
       `,
       )
       .eq("user_id", userId)
-      .single();
+      .maybeSingle();
 
     if (error) {
       console.error("Error fetching profile in getProfile:", error.message);
       console.error("Error details:", error);
       throw error;
     }
+
+    if (!data?.profile) {
+      return null;
+    }
+
     return tableToInterfaceProfiles(data.profile as any);
   } catch (error) {
     throw error;
@@ -207,7 +225,7 @@ export async function getProfile(userId: string) {
     return null;
   }
   try {
-    return getProfileFromUserSettings(userId);
+    return await getProfileFromUserSettings(userId);
   } catch (error) {
     console.error("Unexpected error in getProfile:", error);
     return null;
@@ -220,6 +238,7 @@ export const getProfileUncached = async (userId: string) => {
 
 export const getTutorStudents = async (tutorId: string) => {
   try {
+    await requireTutorProfileAccess(tutorId);
     const supabase = await createClient();
     const { data: pairings, error: pairingsError } = await supabase
       .from(Table.Pairings)
@@ -296,6 +315,10 @@ export const getTutorStudents = async (tutorId: string) => {
 };
 
 export async function editProfile(profile: Profile) {
+  const { profile: actor } = await requireAuthenticatedProfile();
+  if (actor.role !== "Admin" && actor.id !== profile.id) {
+    throw new Error("Unauthorized");
+  }
   const supabase = await createClient();
   const {
     id,

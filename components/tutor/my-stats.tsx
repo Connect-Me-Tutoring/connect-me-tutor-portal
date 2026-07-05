@@ -1,8 +1,7 @@
 "use client";
-import { use, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { getTutorSessions } from "@/lib/actions/tutor.actions";
 import { getEvents } from "@/lib/actions/event.server.actions";
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import { getProfile } from "@/lib/actions/user.actions";
 import {
   Table,
@@ -39,18 +38,12 @@ interface EventDetails {
 }
 
 const Stats = ({
-  enrollmentDetailsPromise,
-  eventDetailsPromise,
+  enrollmentDetails,
+  eventDetails,
 }: {
-  enrollmentDetailsPromise: Promise<EnrollmentDetails[]>;
-  eventDetailsPromise: Promise<{ [key: string]: EventDetails[] }>;
+  enrollmentDetails: EnrollmentDetails[];
+  eventDetails: { [key: string]: EventDetails[] };
 }) => {
-  const combinedPromise = Promise.all([
-    enrollmentDetailsPromise,
-    eventDetailsPromise,
-  ]);
-  const [enrollmentDetails, eventDetails] = use(combinedPromise);
-
   const [activeTab, setActiveTab] = useState("cards");
   const [expandedSections, setExpandedSections] = useState(
     new Set(["TUTORING"]),
@@ -215,7 +208,7 @@ const Stats = ({
                     <TableHeader>
                       <TableRow className="bg-gray-50">
                         <TableHead>Summary</TableHead>
-                        <TableHead>Hours</TableHead>` `
+                        <TableHead>Hours</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
