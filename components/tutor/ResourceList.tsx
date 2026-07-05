@@ -230,6 +230,32 @@ const ResourceList = () => {
               </Button>
             </CardFooter>
           </Card>
+          <Card className="w-[300px] aspect-square flex flex-col justify-between">
+            <CardHeader>
+              <CardTitle>Tutor FAQs</CardTitle>
+              <CardDescription>Frequently asked questions for tutors.</CardDescription>
+            </CardHeader>
+
+            <CardContent>
+              <p className="mb-4">
+                Find answers to common questions asked by tutors.
+              </p>
+            </CardContent>
+
+            <CardFooter>
+              <Button
+                className="w-full"
+                onClick={() =>
+                  window.open(
+                    "https://docs.google.com/document/d/1bCP9wAU75cHdgvlERH7m6kaomt3DkFRg1YqWvOHmHbo/edit?tab=t.0",
+                    "_blank"
+                  )
+                }
+              >
+                Open Tutor FAQs
+              </Button>
+            </CardFooter>
+          </Card>
         </div>
       </div>
     </main>
