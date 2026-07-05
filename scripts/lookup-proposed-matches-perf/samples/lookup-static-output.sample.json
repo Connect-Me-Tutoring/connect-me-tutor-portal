@@ -1,0 +1,248 @@
+{
+  "requestor_role": "student",
+  "results": [
+    {
+      "candidate_id": "t8",
+      "match_first_name": "Ivy",
+      "match_last_name": "Theta",
+      "match_email": "tutor08@example.com",
+      "similarity": 1,
+      "rank_score": 120,
+      "subject_alignment": {
+        "matched": [
+          {
+            "subject": "math",
+            "candidate_index": 1,
+            "requestor_index": 1
+          },
+          {
+            "subject": "reading",
+            "candidate_index": 2,
+            "requestor_index": 2
+          }
+        ],
+        "candidate_subjects": [
+          "math",
+          "reading"
+        ],
+        "requestor_subjects": [
+          "math",
+          "reading"
+        ]
+      }
+    },
+    {
+      "candidate_id": "t5",
+      "match_first_name": "Finn",
+      "match_last_name": "Epsilon",
+      "match_email": "tutor05@example.com",
+      "similarity": 1,
+      "rank_score": 110,
+      "subject_alignment": {
+        "matched": [
+          {
+            "subject": "math",
+            "candidate_index": 1,
+            "requestor_index": 1
+          },
+          {
+            "subject": "reading",
+            "candidate_index": 2,
+            "requestor_index": 2
+          }
+        ],
+        "candidate_subjects": [
+          "math",
+          "reading",
+          "writing",
+          "science",
+          "computer_science"
+        ],
+        "requestor_subjects": [
+          "math",
+          "reading"
+        ]
+      }
+    },
+    {
+      "candidate_id": "t1",
+      "match_first_name": "Bob",
+      "match_last_name": "Alpha",
+      "match_email": "tutor01@example.com",
+      "similarity": 0.7272727272727273,
+      "rank_score": 102.72727272727273,
+      "subject_alignment": {
+        "matched": [
+          {
+            "subject": "math",
+            "candidate_index": 1,
+            "requestor_index": 1
+          }
+        ],
+        "candidate_subjects": [
+          "math",
+          "algebra",
+          "science",
+          "physics"
+        ],
+        "requestor_subjects": [
+          "math",
+          "reading"
+        ]
+      }
+    },
+    {
+      "candidate_id": "t2",
+      "match_first_name": "Carol",
+      "match_last_name": "Beta",
+      "match_email": "tutor02@example.com",
+      "similarity": 0.375,
+      "rank_score": 57.5,
+      "subject_alignment": {
+        "matched": [
+          {
+            "subject": "reading",
+            "candidate_index": 1,
+            "requestor_index": 2
+          }
+        ],
+        "candidate_subjects": [
+          "reading",
+          "writing",
+          "social_studies"
+        ],
+        "requestor_subjects": [
+          "math",
+          "reading"
+        ]
+      }
+    },
+    {
+      "candidate_id": "t9",
+      "match_first_name": "Jules",
+      "match_last_name": "Iota",
+      "match_email": "tutor09@example.com",
+      "similarity": 0.375,
+      "rank_score": 47.5,
+      "subject_alignment": {
+        "matched": [
+          {
+            "subject": "reading",
+            "candidate_index": 1,
+            "requestor_index": 2
+          }
+        ],
+        "candidate_subjects": [
+          "reading",
+          "history",
+          "writing"
+        ],
+        "requestor_subjects": [
+          "math",
+          "reading"
+        ]
+      }
+    },
+    {
+      "candidate_id": "t6",
+      "match_first_name": "Gia",
+      "match_last_name": "Zeta",
+      "match_email": "tutor06@example.com",
+      "similarity": 0.125,
+      "rank_score": 42.5,
+      "subject_alignment": {
+        "matched": [
+          {
+            "subject": "reading",
+            "candidate_index": 3,
+            "requestor_index": 2
+          }
+        ],
+        "candidate_subjects": [
+          "biology",
+          "chemistry",
+          "reading"
+        ],
+        "requestor_subjects": [
+          "math",
+          "reading"
+        ]
+      }
+    },
+    {
+      "candidate_id": "t4",
+      "match_first_name": "Eve",
+      "match_last_name": "Delta",
+      "match_email": "tutor04@example.com",
+      "similarity": 0,
+      "rank_score": 30,
+      "subject_alignment": {
+        "matched": [],
+        "candidate_subjects": [
+          "geometry"
+        ],
+        "requestor_subjects": [
+          "math",
+          "reading"
+        ]
+      }
+    },
+    {
+      "candidate_id": "t10",
+      "match_first_name": "Kai",
+      "match_last_name": "Kappa",
+      "match_email": "tutor10@example.com",
+      "similarity": 0,
+      "rank_score": 30,
+      "subject_alignment": {
+        "matched": [],
+        "candidate_subjects": [
+          "science",
+          "earth_science"
+        ],
+        "requestor_subjects": [
+          "math",
+          "reading"
+        ]
+      }
+    },
+    {
+      "candidate_id": "t7",
+      "match_first_name": "Hal",
+      "match_last_name": "Eta",
+      "match_email": "tutor07@example.com",
+      "similarity": 0,
+      "rank_score": 20,
+      "subject_alignment": {
+        "matched": [],
+        "candidate_subjects": [
+          "spanish",
+          "music"
+        ],
+        "requestor_subjects": [
+          "math",
+          "reading"
+        ]
+      }
+    },
+    {
+      "candidate_id": "t3",
+      "match_first_name": "Dan",
+      "match_last_name": "Gamma",
+      "match_email": "tutor03@example.com",
+      "similarity": 0,
+      "rank_score": 20,
+      "subject_alignment": {
+        "matched": [],
+        "candidate_subjects": [
+          "history",
+          "art"
+        ],
+        "requestor_subjects": [
+          "math",
+          "reading"
+        ]
+      }
+    }
+  ]
+}

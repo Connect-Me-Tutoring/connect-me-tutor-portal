@@ -1,0 +1,71 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://connect-me-tutor.local/schemas/lookup-static-output.schema.json",
+  "title": "lookup_proposed_matches_static result row",
+  "description": "One row from public.lookup_proposed_matches_static. Scripts may return an array of these.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "candidate_id",
+    "match_first_name",
+    "match_last_name",
+    "match_email",
+    "similarity",
+    "rank_score",
+    "subject_alignment"
+  ],
+  "properties": {
+    "candidate_id": {
+      "type": "string",
+      "description": "Echoes the candidate id from input JSON."
+    },
+    "match_first_name": { "type": "string" },
+    "match_last_name": { "type": "string" },
+    "match_email": { "type": "string" },
+    "similarity": {
+      "type": "number",
+      "description": "public.pairing_subject_priority_alignment(requestor_subjects, candidate subjects): 0–1 from ordered lists (earlier entries weigh more). 0 when there is no usable overlap."
+    },
+    "rank_score": {
+      "type": "number",
+      "description": "(4 - LEAST(priority,3))*10 + similarity*100; higher ranks first."
+    },
+    "subject_alignment": {
+      "type": "object",
+      "description": "Compared subject context: echo of both ordered lists plus each match used in scoring (1-based indices). Omits duplicate similarity key from pairing_subject_priority_alignment_detail.",
+      "additionalProperties": false,
+      "required": ["requestor_subjects", "candidate_subjects", "matched"],
+      "properties": {
+        "requestor_subjects": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "candidate_subjects": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "matched": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["subject", "requestor_index", "candidate_index"],
+            "properties": {
+              "subject": { "type": "string" },
+              "requestor_index": {
+                "type": "integer",
+                "minimum": 1,
+                "description": "1-based position in requestor_subjects."
+              },
+              "candidate_index": {
+                "type": "integer",
+                "minimum": 1,
+                "description": "1-based position of first occurrence in candidate_subjects."
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

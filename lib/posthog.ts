@@ -78,6 +78,43 @@ export function serializeForPosthog(
 }
 
 /**
+ * PostHog properties are flat; nested objects are often truncated or dropped.
+ * Stringify objects/arrays/errors so full messages appear in the UI.
+ */
+function serializeForPostHog(value: unknown): string | number | boolean | null {
+  if (value === null) return null;
+  if (value === undefined) return null;
+  const t = typeof value;
+  if (t === "string" || t === "number" || t === "boolean") {
+    return value as string | number | boolean;
+  }
+  if (value instanceof Error) {
+    return JSON.stringify({
+      name: value.name,
+      message: value.message,
+      stack: value.stack,
+    });
+  }
+  try {
+    return JSON.stringify(value);
+  } catch {
+    return String(value);
+  }
+}
+
+export function normalizePropertiesForPostHog(
+  properties?: Record<string, unknown>
+): Record<string, string | number | boolean | null> {
+  if (!properties) return {};
+  const out: Record<string, string | number | boolean | null> = {};
+  for (const [key, value] of Object.entries(properties)) {
+    if (value === undefined) continue;
+    out[key] = serializeForPostHog(value);
+  }
+  return out;
+}
+
+/**
  * Get or create PostHog client instance
  * Uses singleton pattern to reuse connection
  */
@@ -123,12 +160,15 @@ export async function logEvent(
   };
 
   try {
+    const normalized = normalizePropertiesForPostHog({
+      ...properties,
+      timestamp: new Date().toISOString(),
+    });
     client.capture({
       distinctId: distinctId || "zoom-webhook",
       event: eventName,
       properties: {
-        ...flatProps,
-        // Single searchable blob for PostHog (nested objects are easier to inspect as text)
+        ...normalized,
         properties_json: serializeForPosthog(flatProps),
       },
     });

@@ -5,10 +5,6 @@ import { Input } from "@/components/ui/input";
 import ActiveSessionsTable from "./components/ActiveSessionsTable";
 import CurrentSessionsTable from "./components/CurrentSessionsTable";
 import CompletedSessionsTable from "./components/CompletedSessionsTable";
-import {
-  createClientComponentClient,
-  User,
-} from "@supabase/auth-helpers-nextjs";
 import { getProfile } from "@/lib/actions/user.actions";
 import { updateSession, getMeetings } from "@/lib/actions/admin.actions";
 import {
@@ -16,7 +12,10 @@ import {
   recordSessionExitForm,
 } from "@/lib/actions/tutor.actions";
 import { getAllSessions } from "@/lib/actions/session.actions";
-import { rescheduleSession } from "@/lib/actions/session.server.actions";
+import {
+  rescheduleSession,
+  cancelSession,
+} from "@/lib/actions/session.server.actions";
 import { Session, Profile, Meeting } from "@/types";
 import toast from "react-hot-toast";
 import {
@@ -171,7 +170,13 @@ const StudentDashboard = () => {
 
   const handleStatusChange = async (updatedSession: Session) => {
     try {
-      await updateSession(updatedSession);
+      // Cancellations go through the consolidated server action, which updates
+      // the session and notifies the tutor in one round trip.
+      if (updatedSession.status === "Cancelled") {
+        await cancelSession(updatedSession, "student");
+      } else {
+        await updateSession(updatedSession);
+      }
       SC.setCurrentSessions(
         SC.currentSessions.map((e: Session) =>
           e.id === updatedSession.id ? updatedSession : e,
@@ -182,6 +187,7 @@ const StudentDashboard = () => {
           e.id === updatedSession.id ? updatedSession : e,
         ),
       );
+
       toast.success("Session updated successfully");
     } catch (error) {
       console.error("Failed to update session:", error);
@@ -296,7 +302,7 @@ const StudentDashboard = () => {
         <div className="flex space-x-6">
           <div className="flex-grow bg-white rounded-lg shadow p-6">
             <Suspense fallback={<SkeletonTable />}>
-              <CurrentSessionsTable />
+              <CurrentSessionsTable handleStatusChange={handleStatusChange} />
             </Suspense>
           </div>
         </div>
@@ -358,21 +364,12 @@ const StudentDashboard = () => {
               {" "}
               <CompletedSessionsTable
                 paginatedSessions={paginatedPastSessions}
-                // filteredSessions={SC.filteredPastSessions}
-                // currentPage={currentPage}
                 totalPages={totalPages}
-                // rowsPerPage={rowsPerPage.toString()}
-                // selectedSession={selectedSession}
-                // setSelectedSession={setSelectedSession}
                 handlePageChange={handlePageChange}
                 handleRowsPerPageChange={handleRowsPerPageChange}
               />
             </Suspense>
           </div>
-
-          {/* <div className="w-80">
-            {/* <TutorCalendar sessions={sessions} /> */}
-          {/* </div>  */}
         </div>
       </div>
     </>

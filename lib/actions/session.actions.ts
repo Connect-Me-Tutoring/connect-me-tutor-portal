@@ -1,4 +1,3 @@
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import {
   Profile,
   Session,
@@ -28,10 +27,8 @@ import {
 } from "date-fns"; // Only use date-fns
 import ResetPassword from "@/app/(auth)/set-password/page";
 import { date } from "zod";
-import { withCoalescedInvoke } from "next/dist/lib/coalesced-function";
 import toast from "react-hot-toast";
 import { DatabaseIcon } from "lucide-react";
-import { SYSTEM_ENTRYPOINTS } from "next/dist/shared/lib/constants";
 import { getMeeting } from "./admin.actions";
 import { fromZonedTime } from "date-fns-tz";
 import { Table } from "../supabase/tables";
@@ -191,12 +188,12 @@ export async function addSessions(
         }
 
         //Add Seven Days if CurrentDate is last week (Acts as a Modulus to ensure updating current week only)
-        if (currentDate < parseISO(weekStartString)) {
+        if (currentDate < weekStart) {
           currentDate = addDays(currentDate, 7);
         }
 
         //Remove Seven Days if CurrentDate is next week (Acts as a Modulus to ensure updating current week only)
-        if (currentDate > parseISO(weekEndString)) {
+        if (currentDate > weekEnd) {
           currentDate = addDays(currentDate, -7);
         }
 
@@ -468,5 +465,44 @@ export async function getAllSessions(
   } catch (error) {
     console.error("Error fetching sessions", error);
     return [];
+  }
+}
+
+export async function addOneSession(session: Session): Promise<Session | null> {
+  try {
+    const newSession = {
+      date: session.date,
+      enrollment_id: session.enrollmentId || null,
+      student_id: session.student?.id,
+      tutor_id: session.tutor?.id,
+      status: session.status || "Active",
+      summary: session.summary,
+      meeting_id: session.meeting?.id,
+      duration: session.duration || 1,
+      is_standalone: true,
+    };
+
+    const { data, error } = await supabase
+      .from(Table.Sessions)
+      .insert(newSession)
+      .select(
+        `
+        *,
+        tutor:Profiles!tutor_id(*),
+        student:Profiles!student_id(*),
+        meeting:Meetings!meeting_id(*)
+      `,
+      )
+      .single();
+
+    if (error) throw error;
+
+    if (data) {
+      return tableToInterfaceSessions(data);
+    }
+    return null;
+  } catch (error) {
+    console.error("Unable to add one session", error);
+    throw error;
   }
 }

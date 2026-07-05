@@ -1,12 +1,12 @@
+"use client";
+
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { Profile } from "@/types";
-
 import { SharedPairing } from "@/types/pairing";
-import { profile } from "console";
+import { isUuidString } from "@/lib/utils";
 import Link from "next/link";
-import { redirect, useRouter } from "next/navigation";
+import { redirect } from "next/navigation";
 import { use, useMemo } from "react";
 
 interface ChatListProps {
@@ -57,7 +57,6 @@ const getLastMessage = (
   );
 };
 
-// Generate avatar URL based on name
 const getAvatarUrl = (name: string): string => {
   return `/placeholder.svg?height=48&width=48&text=${encodeURIComponent(name.charAt(0))}`;
 };
@@ -87,24 +86,23 @@ export function ChatList({ pairingsPromise, profilePromise }: ChatListProps) {
 
   const clientConversations = useMemo(
     () =>
-      pairings.map((pairing) => {
-        const profile =
-          role === "Student" ? pairing["tutor"] : pairing["student"];
-        return {
-          id: profile.id,
-          name: `${profile.first_name}  ${profile.last_name}`,
-          email: profile.email,
-          //   startDate: pairing.start_date,
-          //   endDate: pairing.end_date,
-          pairingId: pairing.id,
-        };
-      }),
-    // const d
+      pairings
+        .filter((pairing) => isUuidString(pairing.id))
+        .map((pairing) => {
+          const counterparty =
+            role === "Student" ? pairing["tutor"] : pairing["student"];
+          return {
+            counterpartyId: counterparty.id,
+            name: `${counterparty.first_name}  ${counterparty.last_name}`,
+            email: counterparty.email,
+            pairingId: pairing.id,
+          };
+        }),
     [pairings, role],
   );
+
   return (
     <div className="flex flex-col h-screen">
-      {/* Header */}
       <div className="p-4 border-b border-gray-100">
         <h1 className="text-xl font-semibold text-gray-900">Messages</h1>
         <p className="text-sm text-gray-500 mt-1">
@@ -113,7 +111,6 @@ export function ChatList({ pairingsPromise, profilePromise }: ChatListProps) {
         </p>
       </div>
 
-      {/* Chat List */}
       <div className="flex-1 overflow-y-auto">
         {pairings.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full p-8 text-center">
@@ -141,14 +138,14 @@ export function ChatList({ pairingsPromise, profilePromise }: ChatListProps) {
           </div>
         ) : (
           clientConversations.map((conversation) => {
-            const lastMessage = getLastMessage(conversation.id);
-            const unreadCount = getUnreadCount(conversation.id);
-            const isActive = new Date() > new Date();
+            const lastMessage = getLastMessage(conversation.pairingId);
+            const unreadCount = getUnreadCount(conversation.pairingId);
+            const isActive = true;
 
             return (
               <Link
                 href={`/dashboard/pairings/${conversation.pairingId}/chat`}
-                key={conversation.name}
+                key={conversation.pairingId}
                 className="flex items-center p-4 hover:bg-gray-50 cursor-pointer border-b border-gray-50 transition-colors"
               >
                 {/* Tutor Avatar */}

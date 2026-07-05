@@ -4,7 +4,6 @@ import React, { use, useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import { logoutUser } from "@/lib/actions/user.actions";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useProfile } from "@/lib/contexts/profileContext";
@@ -13,6 +12,7 @@ import {
   Link as LinkIcon,
   LogOut,
   Calendar,
+  CalendarRange,
   Bell,
   Home,
   CirclePlus,
@@ -77,7 +77,7 @@ export default function DashboardLayout({
   userProfilesPromise,
 }: {
   children: React.ReactNode;
-  profile: Profile;
+  profile: Profile | null;
   userProfilesPromise: Promise<Partial<Profile>[]>;
 }) {
   // const [role, setRole] = useState<string | null>(null);
@@ -94,6 +94,12 @@ export default function DashboardLayout({
   const router = useRouter();
   const pathname = usePathname();
   const isSettingsPage = pathname === "/dashboard/settings";
+
+  useEffect(() => {
+    if (!profile && !isSettingsPage) {
+      router.replace("/dashboard/settings?completeProfile=1");
+    }
+  }, [isSettingsPage, profile, router]);
 
   const settingsSidebarItems = [
     {
@@ -212,6 +218,11 @@ export default function DashboardLayout({
       icon: <BookOpenText className="h-5 w-5" />,
     },
     {
+      title: "Meeting Schedule",
+      href: "/dashboard/hq-schedule",
+      icon: <CalendarRange className="h-5 w-5" />,
+    },
+    {
       title: "Hours Manager",
       href: "/dashboard/hours-manager",
       icon: <Clock className="h-5 w-5" />,
@@ -258,22 +269,6 @@ export default function DashboardLayout({
     // },
   ];
 
-  // useEffect(() => {
-  //   const getUserProfileRole = async () => {
-  //     try {
-  //       if (profile) {
-  //         const userProfiles = await getUserProfiles(profile.userId)
-  //         if (userProfiles) setUserProfiles(userProfiles);
-  //       }
-  //     } catch (error) {
-  //       console.error("Error fetching user role:", error);
-  //     } finally {
-  //       setLoading(false);
-  //     }
-  //   };
-  //   getUserProfileRole();
-  // }, [profile]);
-
   const [isOpen, setIsOpen] = useState(true);
   const toggleSidebar = () => setIsOpen(!isOpen);
 
@@ -305,8 +300,7 @@ export default function DashboardLayout({
     );
   }
 
-  if (!profile) {
-    router.push("/");
+  if (!profile && !isSettingsPage) {
     return null;
   }
 
@@ -442,7 +436,7 @@ export default function DashboardLayout({
             )}
 
             {/* Navigation */}
-            {!isSettingsPage && (
+            {!isSettingsPage && profile && (
               <nav className="flex-grow space-y-1 px-3">
                 {profile.role === "Student" && (
                   <>
@@ -645,22 +639,23 @@ export default function DashboardLayout({
               </Button>
 
               <nav className="space-y-2">
-                {(profile.role === "Student"
-                  ? studentSidebarItems
-                  : profile.role === "Tutor"
-                    ? tutorSidebarItems
-                    : adminSidebarItems
-                ).map((item) => (
-                  <Link
-                    key={item.href}
-                    href={item.href}
-                    onClick={() => setMobileOpen(false)}
-                    className="flex items-center gap-3 p-2 rounded:bg-muted"
-                  >
-                    {item.icon}
-                    <span>{item.title}</span>
-                  </Link>
-                ))}
+                {profile &&
+                  (profile.role === "Student"
+                    ? studentSidebarItems
+                    : profile.role === "Tutor"
+                      ? tutorSidebarItems
+                      : adminSidebarItems
+                  ).map((item) => (
+                    <Link
+                      key={item.href}
+                      href={item.href}
+                      onClick={() => setMobileOpen(false)}
+                      className="flex items-center gap-3 p-2 rounded:bg-muted"
+                    >
+                      {item.icon}
+                      <span>{item.title}</span>
+                    </Link>
+                  ))}
               </nav>
             </div>
           </div>
@@ -686,23 +681,28 @@ export default function DashboardLayout({
                 </Button>
               )}
               <div className="flex items-center space-x-2 absolute tpo-4 right-8">
-                <Select onValueChange={handleSwitchProfile}>
-                  <SelectTrigger className="space-x-2 z-50">
-                    {/* <span className=""> */}
-                    <User className="w-4 h-4" />
-                    <span className="font-semibold">
-                      {profile?.firstName} {profile?.lastName}
-                    </span>
-                    {/* </span> */}
-                  </SelectTrigger>
-                  <SelectContent>
-                    {userProfiles.map((profile) => (
-                      <SelectItem key={profile.id} value={profile.id || ""}>
+                {profile ? (
+                  <Select onValueChange={handleSwitchProfile}>
+                    <SelectTrigger className="space-x-2 z-50">
+                      <User className="w-4 h-4" />
+                      <span className="font-semibold">
                         {profile.firstName} {profile.lastName}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                      </span>
+                    </SelectTrigger>
+                    <SelectContent>
+                      {userProfiles.map((p) => (
+                        <SelectItem key={p.id} value={p.id || ""}>
+                          {p.firstName} {p.lastName}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                ) : (
+                  <div className="flex items-center gap-2 rounded-md border px-3 py-2 text-sm font-medium">
+                    <User className="w-4 h-4" />
+                    <span>Complete your account</span>
+                  </div>
+                )}
               </div>
             </div>
           </div>

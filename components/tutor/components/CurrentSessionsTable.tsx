@@ -27,13 +27,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import {
   HoverCard,
   HoverCardContent,
   HoverCardTrigger,
@@ -58,42 +51,28 @@ import {
   ChevronsRight,
   ChevronLeft,
   ChevronRight,
-  Trash,
-  CalendarDays,
+  CalendarX,
   UserRoundPlus,
   CircleCheck,
   X,
+  Video,
 } from "lucide-react";
 import { format, parseISO, isAfter, addDays } from "date-fns";
 import { AlertDialogTrigger } from "@radix-ui/react-alert-dialog";
 import SessionExitForm from "./SessionExitForm";
-import RescheduleForm from "./RescheduleDialog";
 import CancellationForm from "./CancellationForm";
-import { useRouter } from "next/navigation";
+import EditSessionForm from "./EditSessionForm";
 import { useDashboardContext } from "@/lib/contexts/dashboardContext";
 
 const CurrentSessionsTable = ({
   meetings,
   totalPages,
   handleStatusChange,
-  handleReschedule,
   handleSessionComplete,
   handlePageChange,
   handleRowsPerPageChange,
-  handleInputChange,
   handleUndoCancel,
 }: any) => {
-  const router = useRouter();
-
-  const handleRescheduleWithRefresh = async (
-    sessionId: string,
-    newDate: string,
-    meetingId: string,
-  ) => {
-    await handleReschedule(sessionId, newDate, meetingId);
-    router.refresh();
-  };
-
   const calculateDeadline = (sessionDate: Date) => {
     const deadlineDate = addDays(sessionDate, 2);
     const month: string = String(deadlineDate.getMonth() + 1).padStart(2, "0");
@@ -113,6 +92,32 @@ const CurrentSessionsTable = ({
           : `SEF Due ${deadlineDay} 11:59 pm EST`}
       </>
     );
+  };
+
+  const markSessionComplete = async (
+    updatedSession: Session,
+    notes: string,
+    isQuestionOrConcern: boolean,
+    isFirstSession: boolean,
+  ) => {
+    await handleSessionComplete(
+      updatedSession,
+      notes,
+      isQuestionOrConcern,
+      isFirstSession,
+    );
+    try {
+      await fetch("/api/send-feedback-email", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          studentEmail: updatedSession.student?.email,
+          studentName: updatedSession.student?.firstName,
+        }),
+      });
+    } catch (emailError) {
+      console.error("Failed to send feedback email:", emailError);
+    }
   };
 
   const TC = useDashboardContext();
@@ -169,14 +174,13 @@ const CurrentSessionsTable = ({
                     onClick={() =>
                       (window.location.href = `/meeting/${session?.meeting?.id}`)
                     }
-                    className="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600"
+                    className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-connect-me-blue-2 transition-colors"
                   >
-                    View
+                    <Video className="h-4 w-4" />
+                    Meeting
                   </button>
                 ) : (
-                  <button className="text-black px-3 py-1 border border-gray-200 rounded">
-                    N/A
-                  </button>
+                  <span className="text-sm text-muted-foreground/50">N/A</span>
                 )}
               </TableCell>
               <TableCell>
@@ -190,44 +194,17 @@ const CurrentSessionsTable = ({
                   // setNotes={setNotes}
                   // nextClassConfirmed={nextClassConfirmed}
                   // setNextClassConfirmed={setNextClassConfirmed}
-                  handleSessionComplete={handleSessionComplete}
+                  handleSessionComplete={markSessionComplete}
                   handleStatusChange={handleStatusChange}
                 />
               </TableCell>
               <TableCell className="flex content-center">
-                <Dialog
-                  open={TC.isDialogOpen}
-                  onOpenChange={TC.setIsDialogOpen}
-                >
-                  <DialogTrigger asChild>
-                    <HoverCard>
-                      <HoverCardTrigger>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => {
-                            TC.setSelectedSession(session);
-                            TC.setIsDialogOpen(true);
-                            TC.setSelectedSessionDate(session.date);
-                          }}
-                        >
-                          <CalendarDays color="#3b82f6" className="h-4 w-4" />
-                        </Button>
-                      </HoverCardTrigger>
-                      <HoverCardContent>
-                        <center>Reschedule Session</center>
-                      </HoverCardContent>
-                    </HoverCard>
-                  </DialogTrigger>
-                  <RescheduleForm
-                    selectedSession={TC.selectedSession}
-                    selectedSessionDate={TC.selectedSessionDate}
-                    meetings={meetings}
-                    setSelectedSessionDate={TC.setSelectedSessionDate}
-                    handleInputChange={handleInputChange}
-                    handleReschedule={handleRescheduleWithRefresh}
-                  />
-                </Dialog>
+                <EditSessionForm
+                  session={session}
+                  meetings={meetings}
+                  handleStatusChange={handleStatusChange}
+                  isDropdownItem={false}
+                />
 
                 <HoverCard>
                   <HoverCardTrigger>
@@ -266,7 +243,7 @@ const CurrentSessionsTable = ({
                   <AlertDialog>
                     <AlertDialogTrigger asChild>
                       <Button variant="ghost" size="icon">
-                        <Trash className="h-4 w-4" color="#ef4444" />
+                        <CalendarX className="h-4 w-4" color="#ef4444" />
                       </Button>
                     </AlertDialogTrigger>
                     <CancellationForm

@@ -102,6 +102,7 @@ const SessionExitForm = ({
   // setNextClassConfirmed,
   handleSessionComplete,
   handleStatusChange,
+  actor = "tutor",
 }: any) => {
   const TC = useDashboardContext();
 
@@ -115,7 +116,7 @@ const SessionExitForm = ({
     >
       <DialogTrigger asChild>
         <HoverCard>
-          <HoverCardTrigger>
+          <HoverCardTrigger asChild>
             <Button
               variant="outline"
               disabled={
@@ -146,7 +147,7 @@ const SessionExitForm = ({
           <DialogTitle className="flex items-center justify-between">
             Session Exit Form
             <AlertDialog>
-              <AlertDialogTrigger>
+              <AlertDialogTrigger asChild>
                 <Button variant="outline">The session did not happen</Button>
               </AlertDialogTrigger>
               {TC.selectedSession ? (
@@ -154,6 +155,7 @@ const SessionExitForm = ({
                   session={TC.selectedSession}
                   handleStatusChange={handleStatusChange}
                   onClose={() => TC.setIsSessionExitFormOpen(false)}
+                  actor={actor}
                 />
               ) : (
                 ""
@@ -174,6 +176,11 @@ const SessionExitForm = ({
             I have a question or a concern
           </label>
         </div>
+
+        {/* 
+          TODO: ADD CHECK BOXES HERE
+          */}
+
         <Textarea
           value={TC.notes}
           onChange={(e) => TC.setNotes(e.target.value)}

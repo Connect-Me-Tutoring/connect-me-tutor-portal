@@ -4,18 +4,44 @@ import { Enrollment, Meeting, Session } from "@/types";
 import { toast } from "react-hot-toast";
 import { Client } from "@upstash/qstash";
 import { createAdminClient, createClient } from "@/lib/supabase/server";
+import {
+  applySessionScope,
+  requireAdmin,
+  requireAuthenticatedProfile,
+  requireEnrollmentAccess,
+  requireSessionAccess,
+  requireStudentProfileAccess,
+  requireTutorProfileAccess,
+} from "./authz.server";
 import { Profile } from "@/types";
 import { getProfileWithProfileId } from "./user.actions";
 import { getMeeting } from "./meeting.server.actions";
 import { createServerClient } from "../supabase/server";
 import { Table } from "../supabase/tables";
-import { getParticipationBySessionId } from "./zoom.server.actions";
 import {
+  getParticipationBySessionId,
+  getParticipantEventCountsBySessionIds,
+} from "./zoom.server.actions";
+import { normalizeZoomParticipationEvents } from "@/lib/zoom/participation-normalize";
+import {
+  tableToInterfaceEnrollments,
   tableToInterfaceSessions,
 } from "../type-utils";
-import { sendScheduledEmailsBeforeSessions } from "./email.server.actions";
+import {
+  deleteScheduledEmailBeforeSessions,
+  sendScheduledEmailsBeforeSessions,
+  sendStudentSessionCancellationEmail,
+  sendTutorSessionCancellationEmail,
+} from "./email.server.actions";
 
-import { startOfWeek, endOfWeek, subDays } from "date-fns"; // Only use date-fns
+import {
+  startOfWeek,
+  endOfWeek,
+  subDays,
+  parseISO,
+  format,
+  addDays,
+} from "date-fns"; // Only use date-fns
 
 import * as DateFNS from "date-fns-tz";
 const { fromZonedTime } = DateFNS;
@@ -48,48 +74,230 @@ async function isSessioninPastWeek(enrollmentId: string, midWeek: Date) {
  * @param sessions - Existing sessions to avoid duplicates
  * @returns Newly created sessions
  */
+export async function addSessionsServer(
+  weekStartString: string,
+  weekEndString: string,
+  enrollments: Enrollment[],
+  sessions: Session[],
+) {
+  try {
+    const supabase = await createClient();
+    const parsedWeekStart = parseISO(weekStartString);
+    const parsedWeekEnd = parseISO(weekEndString);
+
+    if (
+      Number.isNaN(parsedWeekStart.getTime()) ||
+      Number.isNaN(parsedWeekEnd.getTime())
+    ) {
+      throw new Error(
+        `Invalid week range: weekStartString=${weekStartString}, weekEndString=${weekEndString}`,
+      );
+    }
+
+    const weekStart: Date = fromZonedTime(parsedWeekStart, "America/New_York");
+    const weekEnd: Date = fromZonedTime(parsedWeekEnd, "America/New_York");
+
+    const scheduledSessions: Set<string> = new Set();
+    sessions.forEach((session) => {
+      if (session.date) {
+        const sessionDate = new Date(session.date);
+        const key = `${session.student?.id}-${session.tutor?.id}-${format(
+          sessionDate,
+          "yyyy-MM-dd-HH:mm",
+        )}`;
+        scheduledSessions.add(key);
+      }
+    });
+
+    const enrollmentsWithSessions: Set<string> = new Set(
+      sessions
+        .filter((s) => s.enrollmentId)
+        .map((s) => s.enrollmentId as string),
+    );
+
+    const sessionsToCreate: any[] = [];
+
+    for (const enrollment of enrollments) {
+      const {
+        id,
+        student,
+        tutor,
+        availability,
+        meetingId,
+        summary,
+        startDate,
+        duration,
+      } = enrollment;
+
+      if (enrollment.paused) {
+        continue;
+      }
+
+      if (enrollmentsWithSessions.has(id)) {
+        continue;
+      }
+
+      if (!student?.id || !tutor?.id || !availability?.length) {
+        continue;
+      }
+
+      let { day, startTime, endTime } = availability[0];
+
+      if (!startTime || !endTime) {
+        console.error(`Invalid time format in availability:`, availability[0]);
+        continue;
+      }
+
+      const startDate_asDate = new Date(startDate);
+      let currentDate = new Date(weekStart);
+      const dayLower = day.toLowerCase();
+
+      while (currentDate <= weekEnd) {
+        const currentDay = format(currentDate, "EEEE").toLowerCase();
+
+        if (currentDay !== dayLower) {
+          currentDate = addDays(currentDate, 1);
+          continue;
+        }
+
+        if (currentDate < weekStart) {
+          currentDate = addDays(currentDate, 7);
+        }
+
+        if (currentDate > weekEnd) {
+          currentDate = addDays(currentDate, -7);
+        }
+
+        try {
+          const [startHour, startMinute] = startTime.split(":").map(Number);
+          const [endHour, endMinute] = endTime.split(":").map(Number);
+
+          if (
+            isNaN(startHour) ||
+            isNaN(startMinute) ||
+            isNaN(endHour) ||
+            isNaN(endMinute)
+          ) {
+            throw new Error(
+              `Invalid time format: start=${startTime}, end=${endTime}`,
+            );
+          }
+
+          const dateString = `${format(currentDate, "yyyy-MM-dd")}T${startTime}:00`;
+          const sessionStartTime = fromZonedTime(
+            dateString,
+            "America/New_York",
+          );
+
+          if (sessionStartTime < startDate_asDate) {
+            throw new Error("Session occurs before start date");
+          }
+
+          const sessionKey = `${student.id}-${tutor.id}-${format(
+            sessionStartTime,
+            "yyyy-MM-dd-HH:mm",
+          )}`;
+
+          if (!scheduledSessions.has(sessionKey)) {
+            sessionsToCreate.push({
+              enrollment_id: id,
+              date: sessionStartTime.toISOString(),
+              student_id: student.id,
+              tutor_id: tutor.id,
+              status: "Active",
+              summary: summary || "",
+              meeting_id: meetingId || null,
+              duration: duration,
+            });
+
+            scheduledSessions.add(sessionKey);
+          }
+        } catch (err) {
+          console.error(
+            "Error processing time for %s %s-%s:",
+            day,
+            startTime,
+            endTime,
+            err,
+          );
+        }
+
+        currentDate = addDays(currentDate, 1);
+      }
+    }
+
+    if (sessionsToCreate.length > 0) {
+      const { data, error } = await supabase
+        .from(Table.Sessions)
+        .insert(sessionsToCreate).select(`
+          *,
+          student:Profiles!student_id(*),
+          tutor:Profiles!tutor_id(*),
+          meeting:Meetings!meeting_id(*)
+          `);
+
+      if (error) throw error;
+
+      if (data) {
+        const createdSessions: Session[] = data.map((session: any) =>
+          tableToInterfaceSessions(session),
+        );
+        return createdSessions;
+      }
+    }
+
+    return [];
+  } catch (error) {
+    console.error("Error creating sessions:", error);
+    throw error;
+  }
+}
 
 /**
- * Normalize meeting ID by removing spaces for comparison
- * @param meetingId - Meeting ID with or without spaces (e.g., "96691315547" or "966 913 15547")
- * @returns Normalized meeting ID without spaces
+ * Normalize meeting ID by keeping only digits for comparison.
+ * Handles stored or incoming formats with spaces, dashes, etc.
+ * @param meetingId - Meeting ID in any human-formatted style
+ * @returns Digits-only meeting ID
  */
 function normalizeMeetingId(meetingId: string): string {
-  return meetingId.replace(/\s+/g, "");
+  return meetingId.replace(/\D+/g, "");
+}
+
+/**
+ * Format a normalized Zoom meeting number into spaced storage format.
+ * Example: "93034287023" -> "930 3428 7023"
+ */
+function formatMeetingIdForStorage(normalizedMeetingId: string): string {
+  if (!normalizedMeetingId) return "";
+  if (normalizedMeetingId.length <= 3) return normalizedMeetingId;
+  if (normalizedMeetingId.length <= 7) {
+    return `${normalizedMeetingId.slice(0, 3)} ${normalizedMeetingId.slice(3)}`;
+  }
+
+  return `${normalizedMeetingId.slice(0, 3)} ${normalizedMeetingId.slice(3, 7)} ${normalizedMeetingId.slice(7)}`;
 }
 
 /**
  * Resolve `Meetings` row where the stored Zoom numeric id matches `normalizedSearch`
- * after whitespace normalization (fast path: DB value equals normalized string).
+ * after applying the spaced storage format used in the Meetings table.
  */
 async function findMeetingRecordByNormalizedZoomNumber(
   supabase: SupabaseClient,
   normalizedSearch: string,
 ): Promise<{ id: string; meeting_id: string } | null> {
-  const { data: exactMatch, error: exactErr } = await supabase
+  const formattedSearch = formatMeetingIdForStorage(normalizedSearch);
+  const { data: meetingRecord, error } = await supabase
     .from(Table.Meetings)
     .select("id, meeting_id")
-    .eq("meeting_id", normalizedSearch)
+    .eq("meeting_id", formattedSearch)
     .maybeSingle();
 
-  if (!exactErr && exactMatch?.id) {
-    return exactMatch;
-  }
-
-  const { data: meetings, error } = await supabase
-    .from(Table.Meetings)
-    .select("id, meeting_id");
-
   if (error) {
-    console.error("Error fetching meetings for Zoom webhook:", error);
+    console.error("Error fetching meeting for Zoom webhook:", error);
     return null;
   }
 
-  return (
-    meetings?.find(
-      (m) => normalizeMeetingId(m.meeting_id || "") === normalizedSearch,
-    ) ?? null
-  );
+  return meetingRecord ?? null;
 }
 
 /**
@@ -156,6 +364,180 @@ export async function getActiveSessionFromMeetingID(meetingID: string) {
   }
 
   return data || [];
+}
+
+export async function cancelSession(
+  session: Session,
+  actor: "tutor" | "student",
+) {
+  const authSupabase = await createClient();
+  const adminSupabase = await createAdminClient();
+
+  const { data: existingSession, error: existingSessionError } =
+    await authSupabase
+      .from(Table.Sessions)
+      .select("id, tutor_id, student_id")
+      .eq("id", session.id)
+      .single();
+
+  if (existingSessionError || !existingSession) {
+    console.error("Error loading session before cancellation:", existingSessionError);
+    throw existingSessionError ?? new Error("Session not found");
+  }
+
+  await requireSessionAccess(existingSession);
+
+  const { error } = await adminSupabase
+    .from(Table.Sessions)
+    .update({
+      status: "Cancelled",
+      session_exit_form: session.session_exit_form ?? null,
+    })
+    .eq("id", session.id);
+
+  if (error) {
+    console.error("Error cancelling session:", error);
+    throw error;
+  }
+
+  try {
+    const sessionDate = session.date
+      ? format(new Date(session.date), "MMMM d, yyyy")
+      : "";
+    const sessionTime = session.date
+      ? format(new Date(session.date), "h:mm a")
+      : "";
+    const studentName =
+      `${session.student?.firstName ?? ""} ${session.student?.lastName ?? ""}`.trim() ||
+      "Student";
+    const tutorName =
+      `${session.tutor?.firstName ?? ""} ${session.tutor?.lastName ?? ""}`.trim() ||
+      "Your Tutor";
+    const reason = session.session_exit_form || undefined;
+
+    if (actor === "tutor" && session.student?.email) {
+      await sendStudentSessionCancellationEmail(
+        { studentName, tutorName, sessionDate, sessionTime, reason },
+        session.student.email,
+      );
+    } else if (actor === "student" && session.tutor?.email) {
+      // Student cancelled -> notify the tutor.
+      await sendTutorSessionCancellationEmail(
+        { tutorName, studentName, sessionDate, sessionTime, reason },
+        session.tutor.email,
+      );
+    }
+  } catch (emailError) {
+    console.error("Failed to send cancellation email:", emailError);
+  }
+
+  return { ...session, status: "Cancelled" as const };
+}
+
+export async function removeSessionServer(
+  sessionId: string,
+  updateEmail: boolean = true,
+) {
+  await requireAdmin();
+  const supabase = await createAdminClient();
+
+  const { error: notificationError } = await supabase
+    .from(Table.Notifications)
+    .delete()
+    .eq("session_id", sessionId);
+
+  if (notificationError) throw notificationError;
+
+  const { error: participantEventError } = await supabase
+    .from("zoom_participant_events")
+    .update({ session_id: null })
+    .eq("session_id", sessionId);
+
+  if (participantEventError) throw participantEventError;
+
+  const { error: sessionError } = await supabase
+    .from(Table.Sessions)
+    .delete()
+    .eq("id", sessionId);
+
+  if (sessionError) throw sessionError;
+
+  if (updateEmail) {
+    await deleteScheduledEmailBeforeSessions(sessionId);
+  }
+}
+
+/** Zoom webhook: payload.object → Zoom meeting number → `Meetings` row → `Sessions` row */
+export type ZoomSessionResolution = {
+  /** Zoom `object.id` / `meeting_number` (numeric string) */
+  zoomMeetingNumber: string | undefined;
+  /** Zoom `object.uuid` (often base64) */
+  zoomMeetingUuid: string | undefined;
+  /** `Meetings.id` */
+  meetingsRowId: string | null;
+  /** `Meetings.meeting_id` as stored */
+  storedMeetingId: string | null;
+  /** `Sessions.id` when an active past session matches */
+  appSessionId: string | null;
+};
+
+export async function zoomSessionResolutionStatus(
+  r: ZoomSessionResolution,
+): Promise<
+  | "no_meeting_number_in_payload"
+  | "meeting_not_in_database"
+  | "no_matching_active_session"
+  | "session_resolved"
+> {
+  if (!r.zoomMeetingNumber) return "no_meeting_number_in_payload";
+  if (!r.meetingsRowId) return "meeting_not_in_database";
+  if (!r.appSessionId) return "no_matching_active_session";
+  return "session_resolved";
+}
+
+/**
+ * Map Zoom webhook `payload.object` to app session: meeting number → normalized match on
+ * `Meetings.meeting_id` → `Sessions.meeting_id` = `Meetings.id`.
+ */
+export async function resolveAppSessionFromZoomWebhookObject(
+  payloadObject: Record<string, unknown> | null | undefined,
+): Promise<ZoomSessionResolution> {
+  const raw = payloadObject?.id ?? payloadObject?.meeting_number;
+  const meetingNumber =
+    raw !== undefined && raw !== null ? String(raw) : undefined;
+  const uuidRaw = payloadObject?.uuid;
+  const zoomMeetingUuid =
+    uuidRaw !== undefined && uuidRaw !== null ? String(uuidRaw) : undefined;
+
+  if (!meetingNumber) {
+    return {
+      zoomMeetingNumber: undefined,
+      zoomMeetingUuid,
+      meetingsRowId: null,
+      storedMeetingId: null,
+      appSessionId: null,
+    };
+  }
+
+  const resolved =
+    await resolvePortalSessionForZoomMeetingNumber(meetingNumber);
+  if (!resolved) {
+    return {
+      zoomMeetingNumber: meetingNumber,
+      zoomMeetingUuid,
+      meetingsRowId: null,
+      storedMeetingId: null,
+      appSessionId: null,
+    };
+  }
+
+  return {
+    zoomMeetingNumber: meetingNumber,
+    zoomMeetingUuid,
+    meetingsRowId: resolved.meetingRecord.id,
+    storedMeetingId: resolved.meetingRecord.meeting_id,
+    appSessionId: resolved.sessionId,
+  };
 }
 
 /** Zoom sends join/leave before the scheduled start; allow attribution slightly early */
@@ -229,10 +611,10 @@ export async function resolvePortalSessionForZoomMeetingNumber(
 
   for (const s of sessions) {
     const startMs = new Date(s.date as string).getTime();
-    const endMs = startMs + durationMs(s.duration);
+    const endMs = startMs + durationMs(s.duration as number);
     const effectiveStart = startMs - ZOOM_WEBHOOK_EARLY_JOIN_MS;
     if (nowMs >= effectiveStart && nowMs <= endMs) {
-      return { meetingRecord, sessionId: s.id };
+      return { meetingRecord, sessionId: s.id as string };
     }
   }
 
@@ -244,6 +626,7 @@ export async function getSessions(
   end: string,
 ): Promise<Session[]> {
   try {
+    await requireAdmin();
     const supabase = await createAdminClient();
 
     const { data: sessionData, error: sessionError } = await supabase
@@ -277,6 +660,7 @@ export async function getAllSessionsServer(
   orderBy?: string,
   ascending?: boolean,
 ) {
+  await requireAdmin();
   const supabase = await createClient();
   try {
     let query = supabase.from(Table.Sessions).select(`
@@ -298,8 +682,6 @@ export async function getAllSessionsServer(
     }
 
     const { data, error } = await query;
-
-    // console.log(data);
 
     if (error) {
       console.error("Error fetching student sessions:", error.message);
@@ -330,6 +712,7 @@ export async function getAllSessions(
   },
 ): Promise<Session[]> {
   try {
+    const { profile } = await requireAuthenticatedProfile();
     const supabase = await createClient();
 
     let query = supabase.from(Table.Sessions).select(`
@@ -338,6 +721,8 @@ export async function getAllSessions(
       student:Profiles!student_id(*),
       tutor:Profiles!tutor_id(*)
     `);
+
+    query = applySessionScope(query, profile);
 
     if (startDate) {
       query = query.gte("date", startDate);
@@ -372,6 +757,128 @@ export async function getAllSessions(
 
 export async function updateSessionParticipantion(meetingID: string) {}
 
+function profileLabelForActivity(p: Profile | null): string {
+  if (!p) return "Unknown";
+  const name = `${p.firstName ?? ""} ${p.lastName ?? ""}`.trim();
+  if (name) return name;
+  if (p.email) return p.email;
+  return "Unknown";
+}
+
+export type EnrollmentActivitySessionRow = {
+  id: string;
+  date: string;
+  status: string | null;
+  meetingTitle: string;
+  meetingId: string;
+  zoomEventCount: number;
+};
+
+export type EnrollmentSessionsActivityData = {
+  enrollment: {
+    id: string;
+    summary: string;
+    frequency: string;
+    paused: boolean;
+    studentName: string;
+    tutorName: string;
+  };
+  sessions: EnrollmentActivitySessionRow[];
+};
+
+/**
+ * Enrollment header plus all portal sessions for that enrollment, with Zoom log counts.
+ */
+export async function getEnrollmentSessionsActivityData(
+  enrollmentId: string,
+): Promise<EnrollmentSessionsActivityData | null> {
+  try {
+    if (!enrollmentId) return null;
+    await requireEnrollmentAccess(enrollmentId);
+    const supabase = await createClient();
+
+    const { data: enRow, error: enErr } = await supabase
+      .from(Table.Enrollments)
+      .select(
+        `
+        id,
+        summary,
+        frequency,
+        paused,
+        student:Profiles!student_id(*),
+        tutor:Profiles!tutor_id(*)
+      `,
+      )
+      .eq("id", enrollmentId)
+      .single();
+
+    if (enErr || !enRow) {
+      console.error("getEnrollmentSessionsActivityData enrollment:", enErr);
+      return null;
+    }
+
+    if (!enRow.student || !enRow.tutor) {
+      console.error(
+        "getEnrollmentSessionsActivityData: enrollment missing student or tutor",
+      );
+      return null;
+    }
+
+    const en = tableToInterfaceEnrollments(enRow);
+
+    const { data: sessRows, error: sErr } = await supabase
+      .from(Table.Sessions)
+      .select(
+        `
+        id,
+        date,
+        status,
+        meeting:Meetings!meeting_id(name, meeting_id)
+      `,
+      )
+      .eq("enrollment_id", enrollmentId)
+      .order("date", { ascending: false })
+      .limit(150);
+
+    if (sErr) {
+      console.error("getEnrollmentSessionsActivityData sessions:", sErr);
+      throw sErr;
+    }
+
+    const sessionIds = (sessRows || []).map((r: { id: string }) => r.id);
+    const counts = await getParticipantEventCountsBySessionIds(sessionIds);
+
+    const sessions: EnrollmentActivitySessionRow[] = (sessRows || []).map(
+      (r: any) => {
+        const m = Array.isArray(r.meeting) ? r.meeting[0] : r.meeting;
+        return {
+          id: r.id,
+          date: r.date ?? "",
+          status: r.status,
+          meetingTitle: m?.name || "Meeting",
+          meetingId: m?.meeting_id || "",
+          zoomEventCount: counts[r.id] ?? 0,
+        };
+      },
+    );
+
+    return {
+      enrollment: {
+        id: en.id,
+        summary: en.summary,
+        frequency: en.frequency,
+        paused: en.paused,
+        studentName: profileLabelForActivity(en.student),
+        tutorName: profileLabelForActivity(en.tutor),
+      },
+      sessions,
+    };
+  } catch (error) {
+    console.error("getEnrollmentSessionsActivityData:", error);
+    return null;
+  }
+}
+
 export interface ParticipationEvent {
   id: string;
   participantId: string;
@@ -379,6 +886,10 @@ export interface ParticipationEvent {
   email: string;
   action: "joined" | "left";
   timestamp: string;
+  /** Present when join was inferred (e.g. first webhook was a leave). */
+  inferred?: boolean;
+  /** Join timestamp was before the scheduled session start. */
+  joinedBeforeScheduledStart?: boolean;
 }
 
 export interface ParticipationSummary {
@@ -390,11 +901,15 @@ export interface ParticipationSummary {
   currentlyInMeeting: boolean;
   firstJoined: string;
   lastActivity: string;
+  hadInferredJoin?: boolean;
+  joinedBeforeScheduledStart?: boolean;
 }
 
 export interface ParticipationData {
   session: {
     id: string;
+    /** Portal enrollment this session belongs to, if any. */
+    enrollmentId: string | null;
     meetingTitle: string;
     meetingId: string;
     startTime: string;
@@ -403,10 +918,24 @@ export interface ParticipationData {
   };
   events: ParticipationEvent[];
   participantSummaries: ParticipationSummary[];
+  /** Present when `?enrollmentId=` matches this session's enrollment. */
+  enrollmentBreakdown?: {
+    enrollment: {
+      id: string;
+      summary: string;
+      frequency: string;
+      studentName: string;
+      tutorName: string;
+    };
+    sessions: EnrollmentActivitySessionRow[];
+  };
+  /** `?enrollmentId=` was sent but does not match this session (or enrollment missing). */
+  enrollmentQueryMismatch?: boolean;
 }
 
 export async function getParticipationData(
   sessionId: string,
+  enrollmentIdFromSearch?: string | null,
 ): Promise<ParticipationData | null> {
   try {
     if (!sessionId) {
@@ -414,132 +943,30 @@ export async function getParticipationData(
     }
 
     // Get session details to calculate meeting end time
-    const session = await getSessionById(sessionId);
+    const session = await getSessionById(sessionId, { skipAccessCheck: true });
 
     if (!session) {
       return null;
     }
 
-    // Get participation records
+    await requireSessionAccess(session);
+
     const participationRecords = await getParticipationBySessionId(sessionId);
-
-    // Transform participation records into events format
-    // Each record in zoom_participant_events already represents a single action (joined or left)
-    const events: ParticipationEvent[] = participationRecords.map((record) => ({
-      id: record.id,
-      participantId: record.participant_id,
-      name: record.name,
-      email: record.email || "",
-      action: record.action as "joined" | "left",
-      timestamp: record.timestamp,
-    }));
-
-    // Sort events by timestamp
-    events.sort(
-      (a, b) =>
-        new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime(),
-    );
-
-    // Calculate participant summaries
-    const participantMap = new Map<
-      string,
-      {
-        id: string;
-        name: string;
-        email: string;
-        totalDuration: number;
-        joinCount: number;
-        currentlyInMeeting: boolean;
-        firstJoined: string;
-        lastActivity: string;
-      }
-    >();
 
     const sessionStartTime = session.date ? new Date(session.date) : new Date();
     const sessionEndTime = session.duration
       ? new Date(sessionStartTime.getTime() + session.duration * 60 * 60 * 1000)
       : null;
 
-    events.forEach((event) => {
-      if (!participantMap.has(event.participantId)) {
-        participantMap.set(event.participantId, {
-          id: event.participantId,
-          name: event.name,
-          email: event.email,
-          totalDuration: 0,
-          joinCount: 0,
-          currentlyInMeeting: false,
-          firstJoined: event.timestamp,
-          lastActivity: event.timestamp,
-        });
-      }
-
-      const summary = participantMap.get(event.participantId)!;
-      summary.lastActivity = event.timestamp;
-
-      if (event.action === "joined") {
-        summary.joinCount++;
-        summary.currentlyInMeeting = true;
-      } else {
-        summary.currentlyInMeeting = false;
-      }
-    });
-
-    // Calculate durations for each participant
-    participantMap.forEach((summary) => {
-      const userEvents = events.filter((e) => e.participantId === summary.id);
-      let totalDuration = 0;
-      let joinTime: Date | null = null;
-
-      userEvents.forEach((event) => {
-        if (event.action === "joined") {
-          joinTime = new Date(event.timestamp);
-        } else if (event.action === "left" && joinTime) {
-          const leaveTime = new Date(event.timestamp);
-          totalDuration +=
-            (leaveTime.getTime() - joinTime.getTime()) / (1000 * 60);
-          joinTime = null;
-        }
-      });
-
-      // If still in meeting, calculate duration until session end or now
-      if (joinTime !== null && summary.currentlyInMeeting) {
-        const now = new Date();
-        const joinTimeDate = joinTime as Date;
-
-        // Determine the end time: use session end if it exists and is in the past,
-        // otherwise use current time, but never use a time before the join time
-        let endTime: Date;
-        if (sessionEndTime && sessionEndTime >= joinTimeDate) {
-          // Session has ended, use session end time (but not if it's in the future)
-          endTime = sessionEndTime < now ? sessionEndTime : now;
-        } else {
-          // No session end time or it's before join time, use current time
-          endTime = now;
-        }
-
-        // Only calculate if join time is before or equal to end time
-        if (joinTimeDate <= endTime) {
-          const duration =
-            (endTime.getTime() - joinTimeDate.getTime()) / (1000 * 60);
-          // Only add positive durations
-          if (duration > 0) {
-            totalDuration += duration;
-          }
-        }
-      }
-
-      // Ensure totalDuration is never negative
-      summary.totalDuration = Math.max(0, Math.round(totalDuration));
-    });
-
-    const participantSummaries = Array.from(participantMap.values()).sort(
-      (a, b) => b.totalDuration - a.totalDuration,
+    const { events, participantSummaries } = normalizeZoomParticipationEvents(
+      participationRecords,
+      { sessionStart: sessionStartTime, sessionEnd: sessionEndTime },
     );
 
-    return {
+    const base: ParticipationData = {
       session: {
         id: session.id,
+        enrollmentId: session.enrollmentId,
         meetingTitle: session.meeting?.name || "Tutoring Session",
         meetingId: session.meeting?.meetingId || "",
         startTime: session.date,
@@ -549,6 +976,36 @@ export async function getParticipationData(
       events,
       participantSummaries,
     };
+
+    const q = enrollmentIdFromSearch?.trim();
+    if (!q) {
+      return base;
+    }
+
+    if (!session.enrollmentId || q !== session.enrollmentId) {
+      return { ...base, enrollmentQueryMismatch: true };
+    }
+
+    const activity = await getEnrollmentSessionsActivityData(
+      session.enrollmentId,
+    );
+    if (!activity) {
+      return { ...base, enrollmentQueryMismatch: true };
+    }
+
+    return {
+      ...base,
+      enrollmentBreakdown: {
+        enrollment: {
+          id: activity.enrollment.id,
+          summary: activity.enrollment.summary,
+          frequency: activity.enrollment.frequency,
+          studentName: activity.enrollment.studentName,
+          tutorName: activity.enrollment.tutorName,
+        },
+        sessions: activity.sessions,
+      },
+    };
   } catch (error) {
     console.error("Error fetching participation data:", error);
     return null;
@@ -557,6 +1014,7 @@ export async function getParticipationData(
 
 export async function getSessionById(
   sessionId: string,
+  options?: { skipAccessCheck?: boolean },
 ): Promise<Session | null> {
   try {
     const supabase = await createClient();
@@ -586,6 +1044,10 @@ export async function getSessionById(
 
     const session: Session = tableToInterfaceSessions(sessionData);
 
+    if (!options?.skipAccessCheck) {
+      await requireSessionAccess(session);
+    }
+
     return session;
   } catch (error) {
     console.error("Error fetching session by ID:", error);
@@ -603,6 +1065,7 @@ export async function getTutorSessions(
     ascending?: boolean;
   },
 ): Promise<Session[]> {
+  await requireTutorProfileAccess(profileId);
   const supabase = await createClient();
   const { startDate, endDate, status, orderBy, ascending } = params
     ? params
@@ -646,7 +1109,6 @@ export async function getTutorSessions(
     throw error;
   }
 
-  // Map the result to the Session interface
   const sessions: Session[] = data
     .filter((data) => data.meeting && data.student && data.tutor)
     .map((session: any) => tableToInterfaceSessions(session));
@@ -664,6 +1126,7 @@ export async function getStudentSessions(
     ascending?: boolean;
   },
 ): Promise<Session[]> {
+  await requireStudentProfileAccess(profileId);
   const supabase = await createClient();
   const { startDate, endDate, status, orderBy, ascending } = params
     ? params
@@ -707,7 +1170,6 @@ export async function getStudentSessions(
     throw error;
   }
 
-  // Map the result to the Session interface
   const sessions: Session[] = data
     .filter(
       (session) => session.meeting && session.tutor_id && session.student_id,
@@ -723,6 +1185,10 @@ export async function rescheduleSession(
   meetingId: string,
   tutorid?: string,
 ) {
+  const existing = await getSessionById(sessionId);
+  if (!existing) {
+    throw new Error("Session not found");
+  }
   const supabase = await createClient();
   try {
     const { data: sessionData, error } = await supabase
@@ -767,6 +1233,13 @@ export async function addStandaloneSession(
     meeting?: Meeting;
   },
 ): Promise<void> {
+  const { profile } = await requireAuthenticatedProfile();
+  if (profile.role !== "Admin") {
+    const tutorId = session.tutor?.id;
+    if (!tutorId || profile.id !== tutorId) {
+      throw new Error("Unauthorized");
+    }
+  }
   const supabase = await createClient();
 
   try {
@@ -860,4 +1333,22 @@ export async function cancelUnsubmittedSEFCron() {
   }
 
   return { success: true, error: undefined, cancelled: sessions.length };
+}
+
+export async function updateSessionsStatus(
+  sessionIds: string[],
+  status: string,
+) {
+  try {
+    const supabase = await createClient();
+    const { error } = await supabase
+      .from(Table.Sessions)
+      .update({ status })
+      .in("id", sessionIds);
+
+    if (error) throw error;
+  } catch (error) {
+    console.error("Error updating sessions status:", error);
+    throw error;
+  }
 }

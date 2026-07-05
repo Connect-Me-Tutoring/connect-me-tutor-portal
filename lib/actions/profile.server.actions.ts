@@ -8,9 +8,18 @@ import axios from "axios";
 import { getSupabase } from "../supabase-server/serverClient";
 import { revalidatePath } from "next/cache";
 import { tableToInterfaceProfiles } from "../type-utils";
+import {
+  assertProfileBelongsToUser,
+  requireAdmin,
+  requireAuthenticatedProfile,
+  requireSelfOrAdmin,
+  requireTutorProfileAccess,
+} from "./authz.server";
 
 export const switchProfile = async (userId: string, profileId: string) => {
   try {
+    await requireSelfOrAdmin(userId);
+    await assertProfileBelongsToUser(userId, profileId);
     const supabase = await createClient();
     await supabase
       .from("user_settings")
@@ -30,6 +39,7 @@ export const switchProfile = async (userId: string, profileId: string) => {
 
 export const getUserProfiles = async (userId: string) => {
   try {
+    await requireSelfOrAdmin(userId);
     const supabase = await createClient();
     const { data } = await supabase
       .from("Profiles")
@@ -62,8 +72,8 @@ export async function getAllProfiles(
   ascending?: boolean | null,
   status?: string | null,
 ): Promise<Profile[] | null> {
+  await requireAdmin();
   const supabase = await createClient();
-
   try {
     const profileFields = `
       id,
@@ -155,8 +165,11 @@ export async function getAllProfiles(
   }
 }
 
-export const getProfileFromUserSettings = async (userId: string) => {
+export const getProfileFromUserSettings = async (
+  userId: string,
+): Promise<Profile | null> => {
   try {
+    await requireSelfOrAdmin(userId);
     const supabase = await createClient();
     const { data, error } = await supabase
       .from("user_settings")
@@ -188,7 +201,7 @@ export const getProfileFromUserSettings = async (userId: string) => {
       `,
       )
       .eq("user_id", userId)
-      .single();
+      .maybeSingle();
 
     if (error) {
       console.error("Error fetching profile in getProfile:", error.message);
@@ -196,14 +209,9 @@ export const getProfileFromUserSettings = async (userId: string) => {
       throw error;
     }
 
-    const profile = data as any;
-    // if (profile.user_id !== userId) {
-    //   throw new Error(
-    //     `User_settings for user ${userId} points to profile owned by ${profile?.user_id}. Refusing to return profile.`,
-    //   );
-    // }
-
-    console.log("Getting Profile FROM USER SETTINGS");
+    if (!data?.profile) {
+      return null;
+    }
 
     return tableToInterfaceProfiles(data.profile as any);
   } catch (error) {
@@ -217,7 +225,7 @@ export async function getProfile(userId: string) {
     return null;
   }
   try {
-    return getProfileFromUserSettings(userId);
+    return await getProfileFromUserSettings(userId);
   } catch (error) {
     console.error("Unexpected error in getProfile:", error);
     return null;
@@ -230,6 +238,7 @@ export const getProfileUncached = async (userId: string) => {
 
 export const getTutorStudents = async (tutorId: string) => {
   try {
+    await requireTutorProfileAccess(tutorId);
     const supabase = await createClient();
     const { data: pairings, error: pairingsError } = await supabase
       .from(Table.Pairings)
@@ -243,15 +252,28 @@ export const getTutorStudents = async (tutorId: string) => {
 
     const studentIds = pairings.map((pairing) => pairing.student_id);
 
-    const { data: studentProfiles, error: profileError } = await supabase
-      .from(Table.Profiles)
-      .select("*")
-      .in("id", studentIds);
+    // parallel fetch - saves a round trip
+    const [
+      { data: studentProfiles, error: profileError },
+      { data: enrollments },
+    ] = await Promise.all([
+      supabase.from(Table.Profiles).select("*").in("id", studentIds),
+      supabase
+        .from(Table.Enrollments)
+        .select("student_id")
+        .eq("tutor_id", tutorId)
+        .eq("paused", false), // only active enrollments matter for sorting
+    ]);
 
     if (profileError) {
       console.error("Error fetching student profile", profileError);
       return null;
     }
+
+    // set of student ids w/ an active enrollment - used to sort below
+    const enrolledIds = new Set(
+      (enrollments ?? []).map((e: any) => e.student_id),
+    );
 
     // Mapping the fetched data to the Profile object
     const userProfiles: Profile[] = studentProfiles.map((profile: any) => ({
@@ -278,6 +300,13 @@ export const getTutorStudents = async (tutorId: string) => {
       languages_spoken: profile.languages_spoken || [],
     }));
 
+    // enrolled students first, rest after
+    userProfiles.sort((a, b) => {
+      const aEnrolled = enrolledIds.has(a.id) ? 0 : 1;
+      const bEnrolled = enrolledIds.has(b.id) ? 0 : 1;
+      return aEnrolled - bEnrolled;
+    });
+
     return userProfiles;
   } catch (error) {
     console.error("Unexpected error in getProfile:", error);
@@ -286,6 +315,10 @@ export const getTutorStudents = async (tutorId: string) => {
 };
 
 export async function editProfile(profile: Profile) {
+  const { profile: actor } = await requireAuthenticatedProfile();
+  if (actor.role !== "Admin" && actor.id !== profile.id) {
+    throw new Error("Unauthorized");
+  }
   const supabase = await createClient();
   const {
     id,
