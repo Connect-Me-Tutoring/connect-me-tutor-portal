@@ -471,7 +471,7 @@ export const getEnrollmentsWithMissingSEF = async (
         )
         `,
       )
-      .eq("sessions.status", "Complete")
+      .eq("sessions.status", "Unsubmitted")
       .throwOnError();
 
     const enrollmentsWithConsecutiveMissingSEF = enrollments.filter(
@@ -486,7 +486,7 @@ export const getEnrollmentsWithMissingSEF = async (
         let consecutiveMissing = 0;
 
         for (let i = sorted.length - 1; i >= 0; i--) {
-          if (sorted[i].session_exit_form === null) {
+          if (sorted[i].session_exit_form === Unsubmitted) {
             consecutiveMissing++;
           } else {
             // streak breaks bcz of filled SEF, don't need to go further back in search

@@ -1323,7 +1323,7 @@ export async function cancelUnsubmittedSEFCron() {
   // Then update them
   const { error: updateError } = await supabase
     .from("Sessions")
-    .update({ status: "Cancelled" })
+    .update({ status: "Unsubmitted" })
     .eq("status", "Active")
     .eq("is_standalone", false)
     .lt("date", fortyEightHoursAgo);
