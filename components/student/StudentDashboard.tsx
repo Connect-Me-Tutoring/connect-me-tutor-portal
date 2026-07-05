@@ -101,7 +101,7 @@ const StudentDashboard = () => {
           .includes(SC.filterValueActiveSessions.toLowerCase()),
     );
     SC.setFilteredSessions(filtered);
-    SC.setCurrentPage(1);
+    SC.setCurrentPageActiveSessions(1);
   }, [SC.filterValueActiveSessions, SC.sessions]);
 
   useEffect(() => {
@@ -115,18 +115,32 @@ const StudentDashboard = () => {
           .includes(SC.filterValuePastSessions.toLowerCase()),
     );
     SC.setFilteredPastSessions(filtered);
-    SC.setCurrentPage(1);
+    SC.setCurrentPagePastSessions(1);
   }, [SC.filterValuePastSessions, SC.sessions]);
 
-  const totalPages = Math.ceil(SC.filteredSessions.length / SC.rowsPerPage);
+  const totalActiveSessionsPages = Math.ceil(
+    SC.filteredSessions.length / SC.rowsPerPageActiveSessions,
+  );
+  const totalPastSessionsPages = Math.ceil(
+    SC.filteredPastSessions.length / SC.rowsPerPagePastSessions,
+  );
 
-  const handlePageChange = (newPage: number) => {
-    SC.setCurrentPage(newPage);
+  const handleActiveSessionsPageChange = (newPage: number) => {
+    SC.setCurrentPageActiveSessions(newPage);
   };
 
-  const handleRowsPerPageChange = (value: string) => {
-    SC.setRowsPerPage(parseInt(value));
-    SC.setCurrentPage(1);
+  const handleActiveSessionsRowsPerPageChange = (value: string) => {
+    SC.setRowsPerPageActiveSessions(parseInt(value));
+    SC.setCurrentPageActiveSessions(1);
+  };
+
+  const handlePastSessionsPageChange = (newPage: number) => {
+    SC.setCurrentPagePastSessions(newPage);
+  };
+
+  const handlePastSessionsRowsPerPageChange = (value: string) => {
+    SC.setRowsPerPagePastSessions(parseInt(value));
+    SC.setCurrentPagePastSessions(1);
   };
 
   const handleReschedule = async (
@@ -257,13 +271,13 @@ const StudentDashboard = () => {
   };
 
   const paginatedSessions = SC.filteredSessions.slice(
-    (SC.currentPage - 1) * SC.rowsPerPage,
-    SC.currentPage * SC.rowsPerPage,
+    (SC.currentPageActiveSessions - 1) * SC.rowsPerPageActiveSessions,
+    SC.currentPageActiveSessions * SC.rowsPerPageActiveSessions,
   );
 
   const paginatedPastSessions = SC.filteredPastSessions.slice(
-    (SC.currentPage - 1) * SC.rowsPerPage,
-    SC.currentPage * SC.rowsPerPage,
+    (SC.currentPagePastSessions - 1) * SC.rowsPerPagePastSessions,
+    SC.currentPagePastSessions * SC.rowsPerPagePastSessions,
   );
 
   const handleInputChange = (e: {
@@ -329,12 +343,12 @@ const StudentDashboard = () => {
               <ActiveSessionsTable
                 paginatedSessions={paginatedSessions}
                 filteredSessions={SC.filteredSessions}
-                totalPages={totalPages}
+                totalPages={totalActiveSessionsPages}
                 handleStatusChange={handleStatusChange}
                 handleReschedule={handleReschedule}
                 handleSessionComplete={handleSessionComplete}
-                handlePageChange={handlePageChange}
-                handleRowsPerPageChange={handleRowsPerPageChange}
+                handlePageChange={handleActiveSessionsPageChange}
+                handleRowsPerPageChange={handleActiveSessionsRowsPerPageChange}
                 handleInputChange={handleInputChange}
               />
             </Suspense>
@@ -364,9 +378,9 @@ const StudentDashboard = () => {
               {" "}
               <CompletedSessionsTable
                 paginatedSessions={paginatedPastSessions}
-                totalPages={totalPages}
-                handlePageChange={handlePageChange}
-                handleRowsPerPageChange={handleRowsPerPageChange}
+                totalPages={totalPastSessionsPages}
+                handlePageChange={handlePastSessionsPageChange}
+                handleRowsPerPageChange={handlePastSessionsRowsPerPageChange}
               />
             </Suspense>
           </div>
