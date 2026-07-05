@@ -282,11 +282,11 @@ const ActiveSessionsTable = ({
         <div className="flex items-center space-x-2">
           <span>Rows per page</span>
           <Select
-            value={TC.rowsPerPage.toString()}
+            value={TC.rowsPerPageActiveSessions.toString()}
             onValueChange={handleRowsPerPageChange}
           >
             <SelectTrigger className="w-[70px]">
-              <SelectValue placeholder={TC.rowsPerPage.toString()} />
+              <SelectValue placeholder={TC.rowsPerPageActiveSessions.toString()} />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="5">5</SelectItem>
@@ -295,30 +295,30 @@ const ActiveSessionsTable = ({
             </SelectContent>
           </Select>
           <span>
-            Page {TC.currentPage} of {totalPages}
+            Page {TC.currentPageActiveSessions} of {totalPages}
           </span>
           <div className="flex space-x-1">
             <Button
               variant="ghost"
               size="icon"
               onClick={() => handlePageChange(1)}
-              disabled={TC.currentPage === 1}
+              disabled={TC.currentPageActiveSessions === 1}
             >
               <ChevronsLeft className="h-4 w-4" />
             </Button>
             <Button
               variant="ghost"
               size="icon"
-              onClick={() => handlePageChange(TC.currentPage - 1)}
-              disabled={TC.currentPage === 1}
+              onClick={() => handlePageChange(TC.currentPageActiveSessions - 1)}
+              disabled={TC.currentPageActiveSessions === 1}
             >
               <ChevronLeft className="h-4 w-4" />
             </Button>
             <Button
               variant="ghost"
               size="icon"
-              onClick={() => handlePageChange(TC.currentPage + 1)}
-              disabled={TC.currentPage === totalPages}
+              onClick={() => handlePageChange(TC.currentPageActiveSessions + 1)}
+              disabled={TC.currentPageActiveSessions === totalPages}
             >
               <ChevronRight className="h-4 w-4" />
             </Button>
@@ -326,7 +326,7 @@ const ActiveSessionsTable = ({
               variant="ghost"
               size="icon"
               onClick={() => handlePageChange(totalPages)}
-              disabled={TC.currentPage === totalPages}
+              disabled={TC.currentPageActiveSessions === totalPages}
             >
               <ChevronsRight className="h-4 w-4" />
             </Button>

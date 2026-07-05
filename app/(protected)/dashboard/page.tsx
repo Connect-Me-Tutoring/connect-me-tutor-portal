@@ -32,7 +32,12 @@ async function TutorDashboardPage({
   );
 
   const pastTutorSessions = sessions.then((sessions) =>
-    sessions.filter((session) => session.status == "Complete" || "Cancelled"),
+    sessions
+      .filter(
+        (session) =>
+          session.status == "Complete" || session.status == "Cancelled",
+      )
+      .toReversed(),
   );
 
   const currentTutorSessions = sessions.then((sessions) => {
@@ -90,7 +95,12 @@ async function StudentDashboardPage({
   );
 
   const pastStudentSessions = sessions.then((sessions) =>
-    sessions.filter((session) => session.status == "Complete" || "Cancelled"),
+    sessions
+      .filter(
+        (session) =>
+          session.status == "Complete" || session.status == "Cancelled",
+      )
+      .toReversed(),
   );
 
   return (
