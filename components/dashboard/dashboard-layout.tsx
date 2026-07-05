@@ -701,7 +701,7 @@ export default function DashboardLayout({
                     </Link>
                   ))}
                 <a
-                  href="https://docs.google.com/forms/d/e/1FAIpQLSdWtwkfILDsd6o6skBhUoeEa0SprHxk4-B1ZjRpa3zPPiwTzw/viewform?usp=sharing&ouid=117851034685411009866"
+                  href="https://docs.google.com/forms/d/e/1FAIpQLSdWtwkfILDsd6o6skBhUoeEa0SprHxk4-B1ZjRpa3zPPiwTzw/viewform?usp=sharing"
                   target="_blank"
                   rel="noopener noreferrer"
                   onClick={() => setMobileOpen(false)}
