@@ -42,6 +42,7 @@ import {
   FileSpreadsheet,
   FileText,
   Sparkles,
+  Flag,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -546,6 +547,33 @@ export default function DashboardLayout({
 
             {/* Settings and Logout */}
             <div className="px-3 space-y-2 mb-2">
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    asChild
+                    variant="ghost"
+                    className={cn(
+                      "w-full justify-start",
+                      !isOpen && "justify-center px-2",
+                    )}
+                  >
+                    <a
+                      href="https://docs.google.com/forms/d/e/1FAIpQLSdWtwkfILDsd6o6skBhUoeEa0SprHxk4-B1ZjRpa3zPPiwTzw/viewform?usp=sharing"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      <Flag className="h-5 w-5" />
+                      {isOpen && <span className="ml-3">Report an Issue</span>}
+                    </a>
+                  </Button>
+                </TooltipTrigger>
+                {!isOpen && (
+                  <TooltipContent side="right">
+                    <p>Report an Issue</p>
+                  </TooltipContent>
+                )}
+              </Tooltip>
+
               {!isSettingsPage && (
                 <Tooltip>
                   <TooltipTrigger asChild>
@@ -656,6 +684,27 @@ export default function DashboardLayout({
                       <span>{item.title}</span>
                     </Link>
                   ))}
+                <a
+                  href="https://docs.google.com/forms/d/e/1FAIpQLSdWtwkfILDsd6o6skBhUoeEa0SprHxk4-B1ZjRpa3zPPiwTzw/viewform?usp=sharing"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={() => setMobileOpen(false)}
+                  className="flex items-center gap-3 p-2 rounded-md hover:bg-muted text-primary-dark"
+                >
+                  <Flag className="h-5 w-5" />
+                  <span>Report an Issue</span>
+                </a>
+                <Link
+                  href="/dashboard/settings"
+                  onClick={() => setMobileOpen(false)}
+                  className={cn(
+                    "flex items-center gap-3 p-2 rounded-md hover:bg-muted text-primary-dark",
+                    pathname === "/dashboard/settings" && "bg-blue-400/10 text-blue-500",
+                  )}
+                >
+                  <Settings className="h-5 w-5" />
+                  <span>Settings</span>
+                </Link>
               </nav>
             </div>
           </div>
