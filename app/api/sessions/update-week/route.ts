@@ -18,6 +18,10 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ newSessions: newSessions }, { status: 200 });
   } catch (error) {
     const err = error as Error;
+    if (err.message === "Unauthorized cron access") {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     return NextResponse.json(
       { error: `Update Week error ${err.message}` },
       { status: 500 },
