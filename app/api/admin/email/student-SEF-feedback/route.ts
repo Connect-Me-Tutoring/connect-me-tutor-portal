@@ -1,11 +1,21 @@
 import { NextResponse } from "next/server";
 import { Resend } from "resend";
 import FeedbackEmail from "@/components/emails/student-feedback-email";
+import { verifyAdmin } from "@/lib/actions/auth.server.actions";
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+let resend: Resend | null = null;
+
+function getResend() {
+  if (!resend) {
+    resend = new Resend(process.env.RESEND_API_KEY);
+  }
+  return resend;
+}
 
 export async function POST(request: Request) {
   try {
+    await verifyAdmin();
+
     const { studentEmail, studentName } = await request.json();
 
     if (!studentEmail) {
@@ -15,7 +25,7 @@ export async function POST(request: Request) {
       );
     }
 
-    await resend.emails.send({
+    await getResend().emails.send({
       from:
         process.env.NEXT_PUBLIC_ADMIN_EMAILS?.split(",")[1]?.trim() ||
         "Connect Me Tutoring <noreply@connectmego.org>",
