@@ -1,9 +1,9 @@
 import { google } from "googleapis";
-import { json } from "stream/consumers";
+import { sanitizeForSheetCell } from "@/lib/security/spreadsheet";
 
 async function authenticate() {
   const credentials = JSON.parse(
-    process.env.GOOGLE_APPLICATION_CREDENTIALS || "{}"
+    process.env.GOOGLE_APPLICATION_CREDENTIALS || "{}",
   );
 
   const auth = new google.auth.GoogleAuth({
@@ -46,6 +46,11 @@ interface FormData {
   tutorEmail?: string;
   studentEmail?: string;
 }
+
+function joinName(firstName?: string, lastName?: string): string {
+  return [firstName, lastName].filter(Boolean).join(" ");
+}
+
 export async function getSheetSize(sheetName: string = "Questions & Concerns") {
   const authClient = (await authenticate()) as any;
   const sheets = google.sheets({ version: "v4", auth: authClient });
@@ -87,11 +92,15 @@ export async function writeSpreadSheet(formData: FormData) {
 
   const values = [
     [
-      formData.tutorFirstName + " " + formData.tutorLastName,
-      formData.studentFirstName + " " + formData.studentLastName,
-      formData.tutorEmail,
-      formData.studentEmail,
-      formData.formContent,
+      sanitizeForSheetCell(
+        joinName(formData.tutorFirstName, formData.tutorLastName),
+      ),
+      sanitizeForSheetCell(
+        joinName(formData.studentFirstName, formData.studentLastName),
+      ),
+      sanitizeForSheetCell(formData.tutorEmail),
+      sanitizeForSheetCell(formData.studentEmail),
+      sanitizeForSheetCell(formData.formContent),
     ],
   ];
 
@@ -130,9 +139,9 @@ async function sendDiscordNotification(rowIdx: number, formData: FormData) {
           studentLastName: formData.studentLastName || "",
           questionOrConcern: formData.formContent || "",
         }),
-      }
+      },
     )
-      .then((res) => res.text())
+      .then((res) => res.text());
   } catch (error) {
     throw error;
   }
