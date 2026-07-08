@@ -4,12 +4,12 @@ import {
   deleteInactiveEnrollments,
   warnInactiveEnrollments,
 } from "@/lib/actions/enrollment.server.actions";
+import { isCronRequestAuthorized } from "@/lib/security/cron";
 
 export const dynamic = "force-dynamic";
 
 export async function GET(req: NextRequest) {
-  const authHeader = req.headers.get("authorization");
-  if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+  if (!isCronRequestAuthorized(req)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   const results = {
