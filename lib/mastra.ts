@@ -1,3 +1,4 @@
+/*
 import { Mastra } from "@mastra/core";
 import { Agent } from "@mastra/core/agent";
 import { google } from "@ai-sdk/google";
@@ -34,3 +35,5 @@ export const mastra = new Mastra({
 });
 
 export default mastra;
+*/
+export const mastra = null;
