@@ -45,13 +45,14 @@ interface FormData {
   formContent: string;
   tutorEmail?: string;
   studentEmail?: string;
+  category?: string;
 }
 export async function getSheetSize(sheetName: string = "Questions & Concerns") {
   const authClient = (await authenticate()) as any;
   const sheets = google.sheets({ version: "v4", auth: authClient });
 
   const spreadsheetId = process.env.SHEET_ID;
-  const range = `${sheetName}!B:F`; // no cell range, just the sheet name
+  const range = `${sheetName}!B:G`; // no cell range, just the sheet name
 
   try {
     const response = await sheets.spreadsheets.values.get({
@@ -82,7 +83,7 @@ export async function writeSpreadSheet(formData: FormData) {
   const currRowSize = (await getSheetSize()).numRows;
   const nextRowIdx = currRowSize + 1;
 
-  const range = `Questions & Concerns!B${nextRowIdx}:F${nextRowIdx}`;
+  const range = `Questions & Concerns!B${nextRowIdx}:G${nextRowIdx}`;
   const valueInputOption = "USER_ENTERED";
 
   const values = [
@@ -92,6 +93,7 @@ export async function writeSpreadSheet(formData: FormData) {
       formData.tutorEmail,
       formData.studentEmail,
       formData.formContent,
+      formData.category || "General",
     ],
   ];
 

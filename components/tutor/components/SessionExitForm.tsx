@@ -49,6 +49,7 @@ interface SessionExitFormProps {
     notes: string,
     isQuestionOrConcern: boolean,
     isFirstSession: boolean,
+    category?: string,
   ) => void;
   handleStatusChange: (session: Session) => void;
 }
@@ -108,10 +109,18 @@ const SessionExitForm = ({
   const [isCancellation, setisCancellation] = useState(false);
   const [isFirstSession, setIsFirstSession] = useState(false);
   const [isQuestionOrConcern, setIsQuestionOrConcern] = useState(false);
+  const [category, setCategory] = useState("");
   return (
     <Dialog
       open={TC.isSessionExitFormOpen}
-      onOpenChange={TC.setIsSessionExitFormOpen}
+      
+      onOpenChange={(open) =>{
+        TC.setIsSessionExitFormOpen(open);
+        if(!open){
+          setIsQuestionOrConcern(false);
+          setCategory("");
+        }
+      }}
     >
       <DialogTrigger asChild>
         <HoverCard>
@@ -166,14 +175,42 @@ const SessionExitForm = ({
           <Checkbox
             id="question-or-concern"
             checked={isQuestionOrConcern}
-            onCheckedChange={(checked) =>
-              setIsQuestionOrConcern(checked === true)
-            }
+          
+            onCheckedChange={(checked) => {
+              const isChecked = checked === true;
+              setIsQuestionOrConcern(isChecked);
+              if (!isChecked) setCategory("");
+
+            }}
           />
           <label htmlFor="next-class" className="text-sm font-medium">
             I have a question or a concern
           </label>
         </div>
+        {isQuestionOrConcern && (
+          <div className="flex flex-col space-y-1.5">
+            <label htmlFor="category" className="text-sm font-medium">
+              Issue Category <span className="text-red-500">*</span>
+            </label>
+            <select
+              id="category"
+              value={category}
+              onChange={(e) => setCategory(e.target.value)}
+              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                <option value="" disabled>Select a category...</option>
+                <option value="attendance">Attendance & Engagement</option>
+                <option value="technical">Technical and Portal Issues</option>
+                <option value="behavior">Student Behavior and Support</option>
+                <option value="urgent">Urgent Escalation</option>
+
+              </select>
+          </div>
+
+
+        )}
+
+
         <Textarea
           value={TC.notes}
           onChange={(e) => TC.setNotes(e.target.value)}
@@ -207,11 +244,14 @@ const SessionExitForm = ({
                 TC.notes,
                 isQuestionOrConcern,
                 isFirstSession,
+                category,
               );
             }
           }}
           disabled={
-            !TC.notes || (!TC.nextClassConfirmed && !isQuestionOrConcern)
+            !TC.notes ||
+            (!TC.nextClassConfirmed && !isQuestionOrConcern) ||
+            (isQuestionOrConcern && !category)
           }
         >
           Submit

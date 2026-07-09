@@ -11,6 +11,7 @@ interface FormData {
   formContent: string;
   tutorEmail?: string;
   studentEmail?: string;
+  category?: string;
 }
 
 interface ResponseData {
@@ -31,8 +32,20 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest, response: NextResponse) {
   try {
     const formData = await request.json();
+const categoryMapping:Record<string, string>={
+    attendance: "Attendance & Engagement",
+    technical: "Technical and Portal Issues",
+    behavior: "Student Behavior and Support",
+    urgent: "Urgent Escalation",
+  };
 
-    const data = await writeSpreadSheet(formData);
+  if(formData.category){
+    formData.category = categoryMapping[formData.category] || "General";
+  }
+
+  const data = await writeSpreadSheet(formData);
+
+    
 
     return NextResponse.json({ success: true }, { status: 200 });
   } catch (error) {

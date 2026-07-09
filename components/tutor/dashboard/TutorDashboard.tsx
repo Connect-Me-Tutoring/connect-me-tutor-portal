@@ -141,6 +141,7 @@ const TutorDashboard = () => {
     notes: string,
     isQuestionOrConcern: boolean,
     isFirstSession: boolean,
+    category?: string,
   ) => {
     try {
       const updatedSession = session;
@@ -182,6 +183,7 @@ const TutorDashboard = () => {
               formContent: notes,
               tutorEmail: session.tutor?.email,
               studentEmail: session.student?.email,
+              category: category || "General",
             }),
           },
         );
