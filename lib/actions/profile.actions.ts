@@ -1,5 +1,5 @@
 "use client";
-import { Profile } from "@/types";
+import { Profile, Session } from "@/types";
 import { createClient } from "@supabase/supabase-js";
 import { supabase } from "../supabase/client";
 import { Table } from "../supabase/tables";
@@ -119,6 +119,20 @@ export async function updateProfileDetails({
   return { success: true };
 }
 
-export const switchAndGetProfileInfo = async () => {
+export const switchAndGetProfileInfo = async () => {};
 
+export function getStudentFromSession(session: Session): {
+  studentName: string;
+  studentEmail: string;
+} {
+  const student = session.student;
+
+  if (!student) {
+    throw new Error("Session has no student assigned");
+  }
+
+  return {
+    studentName: `${student.firstName} ${student.lastName}`.trim(),
+    studentEmail: student.email,
+  };
 }

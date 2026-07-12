@@ -12,6 +12,7 @@ import {
   updateScheduledEmailBeforeSessions,
 } from "./email.server.actions";
 import { getProfileWithProfileId, getProfileByEmail } from "./user.actions";
+import { getStudentFromSession } from "./profile.actions";
 import {
   addDays,
   format,
@@ -503,6 +504,37 @@ export async function addOneSession(session: Session): Promise<Session | null> {
     return null;
   } catch (error) {
     console.error("Unable to add one session", error);
+    throw error;
+  }
+}
+
+export async function sendStudentSEFFeedbackEmail(
+  session: Session,
+): Promise<void> {
+  try {
+    const { studentName, studentEmail } = getStudentFromSession(session);
+    const response = await fetch("/api/admin/email/student-SEF-feedback", {
+      method: "POST",
+      body: JSON.stringify({ studentName, studentEmail }),
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+
+    if (!response.ok) {
+      const errorData = await response
+        .json()
+        .catch(() => ({ message: "Unknown error" }));
+      throw new Error(
+        errorData.message ||
+          `HTTP ${response.status}: Unable to send student SEF feedback email`,
+      );
+    }
+
+    toast.success("Feedback email sent to student");
+  } catch (error) {
+    console.error("Unable to send student SEF feedback email", error);
+    toast.error("Failed to send feedback email to student");
     throw error;
   }
 }

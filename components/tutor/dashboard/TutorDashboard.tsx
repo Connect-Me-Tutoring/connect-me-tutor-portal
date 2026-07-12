@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input";
 import ActiveSessionsTable from "../components/ActiveSessionsTable";
 import CurrentSessionsTable from "../components/CurrentSessionsTable";
 import CompletedSessionsTable from "../components/CompletedSessionsTable";
-import { updateSession } from "@/lib/actions/admin.actions";
+import { updateSession } from "@/lib/actions/session.server.actions";
 import { undoCancelSession } from "@/lib/actions/tutor.actions";
 import {
   rescheduleSession,
@@ -14,7 +14,10 @@ import { Session, Profile, Meeting } from "@/types";
 import toast from "react-hot-toast";
 import { useDashboardContext } from "@/lib/contexts/dashboardContext";
 import { undoSessionExitForm } from "@/lib/actions/tutor.actions";
-import { getSessionTimePassed } from "@/lib/actions/session.actions";
+import {
+  getSessionTimePassed,
+  sendStudentSEFFeedbackEmail,
+} from "@/lib/actions/session.actions";
 import {
   sendSessionRescheduleEmail,
   updateScheduledEmailBeforeSessions,
@@ -170,6 +173,7 @@ const TutorDashboard = () => {
       updatedSession.status = "Complete";
       updatedSession.isQuestionOrConcern = isQuestionOrConcern;
       updatedSession.isFirstSession = isFirstSession;
+      await sendStudentSEFFeedbackEmail(session);
       await updateSession(updatedSession);
       TC.setCurrentSessions(
         TC.currentSessions.map((e: Session) =>
