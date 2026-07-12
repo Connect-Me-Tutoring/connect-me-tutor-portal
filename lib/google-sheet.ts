@@ -1,5 +1,9 @@
 import { google } from "googleapis";
 import { json } from "stream/consumers";
+import { SessionExitFormPayload } from "@/types/sessionExitForm";
+
+// Columns: tutorName, studentName, tutorEmail, studentEmail, formContent, category
+const SHEET_RANGE_COLUMNS = "B:G";
 
 async function authenticate() {
   const credentials = JSON.parse(
@@ -37,22 +41,12 @@ export async function readSpreadsheet() {
   }
 }
 
-interface FormData {
-  tutorFirstName?: string;
-  tutorLastName?: string;
-  studentFirstName?: string;
-  studentLastName?: string;
-  formContent: string;
-  tutorEmail?: string;
-  studentEmail?: string;
-  category?: string;
-}
 export async function getSheetSize(sheetName: string = "Questions & Concerns") {
   const authClient = (await authenticate()) as any;
   const sheets = google.sheets({ version: "v4", auth: authClient });
 
   const spreadsheetId = process.env.SHEET_ID;
-  const range = `${sheetName}!B:G`; // no cell range, just the sheet name
+  const range = `${sheetName}!${SHEET_RANGE_COLUMNS}`; // no cell range, just the sheet name
 
   try {
     const response = await sheets.spreadsheets.values.get({
@@ -72,7 +66,7 @@ export async function getSheetSize(sheetName: string = "Questions & Concerns") {
   }
 }
 
-export async function writeSpreadSheet(formData: FormData) {
+export async function writeSpreadSheet(formData: SessionExitFormPayload) {
   const authClient = (await authenticate()) as any;
   const sheets = google.sheets({
     version: "v4",
@@ -83,7 +77,8 @@ export async function writeSpreadSheet(formData: FormData) {
   const currRowSize = (await getSheetSize()).numRows;
   const nextRowIdx = currRowSize + 1;
 
-  const range = `Questions & Concerns!B${nextRowIdx}:G${nextRowIdx}`;
+  const [startCol, endCol] = SHEET_RANGE_COLUMNS.split(":");
+  const range = `Questions & Concerns!${startCol}${nextRowIdx}:${endCol}${nextRowIdx}`;
   const valueInputOption = "USER_ENTERED";
 
   const values = [
@@ -93,7 +88,7 @@ export async function writeSpreadSheet(formData: FormData) {
       formData.tutorEmail,
       formData.studentEmail,
       formData.formContent,
-      formData.category || "General",
+      formData.category,
     ],
   ];
 
@@ -114,7 +109,10 @@ export async function writeSpreadSheet(formData: FormData) {
   }
 }
 
-async function sendDiscordNotification(rowIdx: number, formData: FormData) {
+async function sendDiscordNotification(
+  rowIdx: number,
+  formData: SessionExitFormPayload,
+) {
   try {
     await fetch(
       "https://script.google.com/macros/s/AKfycbz642YwN0t9gUAKycvrKq5WEJueL_PfDQwug7LK36EYsF6gf9ZVpbBkCc1p88Nf83qD/exec",
@@ -131,6 +129,7 @@ async function sendDiscordNotification(rowIdx: number, formData: FormData) {
           studentFirstName: formData.studentFirstName || "",
           studentLastName: formData.studentLastName || "",
           questionOrConcern: formData.formContent || "",
+          category: formData.category,
         }),
       }
     )

@@ -31,8 +31,16 @@ import {
 } from "date-fns";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import CancellationForm from "./CancellationForm";
 import { useDashboardContext } from "@/lib/contexts/dashboardContext";
+import { CATEGORY_LABELS } from "@/constants/sessionExitForm";
 
 interface SessionExitFormProps {
   currSession: Session;
@@ -50,7 +58,7 @@ interface SessionExitFormProps {
     isQuestionOrConcern: boolean,
     isFirstSession: boolean,
     category?: string,
-  ) => void;
+  ) => Promise<void>;
   handleStatusChange: (session: Session) => void;
 }
 
@@ -111,14 +119,20 @@ const SessionExitForm = ({
   const [isFirstSession, setIsFirstSession] = useState(false);
   const [isQuestionOrConcern, setIsQuestionOrConcern] = useState(false);
   const [category, setCategory] = useState("");
+
+  const resetLocalFormState = () => {
+    setIsQuestionOrConcern(false);
+    setCategory("");
+    setIsFirstSession(false);
+  };
+
   return (
     <Dialog
       open={TC.isSessionExitFormOpen}
       onOpenChange={(open) => {
         TC.setIsSessionExitFormOpen(open);
         if (!open) {
-          setIsQuestionOrConcern(false);
-          setCategory("");
+          resetLocalFormState();
         }
       }}
     >
@@ -162,7 +176,10 @@ const SessionExitForm = ({
                 <CancellationForm
                   session={TC.selectedSession}
                   handleStatusChange={handleStatusChange}
-                  onClose={() => TC.setIsSessionExitFormOpen(false)}
+                  onClose={() => {
+                    TC.setIsSessionExitFormOpen(false);
+                    resetLocalFormState();
+                  }}
                   actor={actor}
                 />
               ) : (
@@ -191,20 +208,18 @@ const SessionExitForm = ({
             <label htmlFor="category" className="text-sm font-medium">
               Issue Category <span className="text-red-500">*</span>
             </label>
-            <select
-              id="category"
-              value={category}
-              onChange={(e) => setCategory(e.target.value)}
-              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              <option value="" disabled>
-                Select a category...
-              </option>
-              <option value="attendance">Attendance & Engagement</option>
-              <option value="technical">Technical and Portal Issues</option>
-              <option value="behavior">Student Behavior and Support</option>
-              <option value="urgent">Urgent Escalation</option>
-            </select>
+            <Select value={category} onValueChange={setCategory}>
+              <SelectTrigger id="category">
+                <SelectValue placeholder="Select a category..." />
+              </SelectTrigger>
+              <SelectContent>
+                {Object.entries(CATEGORY_LABELS).map(([value, label]) => (
+                  <SelectItem key={value} value={value}>
+                    {label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
         )}
 
@@ -234,15 +249,16 @@ const SessionExitForm = ({
           </div>
         </div>
         <Button
-          onClick={() => {
+          onClick={async () => {
             if (TC.selectedSession) {
-              handleSessionComplete(
+              await handleSessionComplete(
                 TC.selectedSession,
                 TC.notes,
                 isQuestionOrConcern,
                 isFirstSession,
                 category,
               );
+              resetLocalFormState();
             }
           }}
           disabled={
