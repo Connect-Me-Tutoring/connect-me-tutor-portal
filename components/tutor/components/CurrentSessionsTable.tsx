@@ -99,12 +99,14 @@ const CurrentSessionsTable = ({
     notes: string,
     isQuestionOrConcern: boolean,
     isFirstSession: boolean,
+    category?: string,
   ) => {
     await handleSessionComplete(
       updatedSession,
       notes,
       isQuestionOrConcern,
       isFirstSession,
+      category,
     );
     try {
       await fetch("/api/send-feedback-email", {
