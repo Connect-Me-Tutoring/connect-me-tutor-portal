@@ -8,7 +8,7 @@ import { Resend } from "resend";
 import { ideahub } from "googleapis/build/src/apis/ideahub";
 import { getSupabase } from "@/lib/supabase-server/serverClient";
 import { Table } from "@/lib/supabase/tables";
-import { isAuthorized, verifyAdmin } from "@/lib/actions/auth.server.actions";
+import { isAuthorized } from "@/lib/actions/auth.server.actions";
 import { z } from "zod";
 
 export const dynamic = "force-dynamic";
@@ -24,7 +24,9 @@ const emailSchema = z.object({
 
 export async function POST(request: NextRequest) {
   try {
-    if (!isAuthorized(request)) return;
+    if (!(await isAuthorized(request))) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
 
     const supabase = await createClient();
 

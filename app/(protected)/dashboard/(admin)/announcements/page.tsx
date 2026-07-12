@@ -10,7 +10,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { config } from "@/config";
 import {
   StudentAnnouncementsRoomId,
   TutorAnnouncementRoomId,
@@ -67,11 +66,9 @@ export default function AnnouncementsPage() {
 
       <div className="h-full pb-5 ">
         <ChatRoom
-          announcements={true}
-          roomName={`${currentRoom === "tutors" ? "Tutor" : "Student"} Announcements`}
+          type="announcements"
+          roomName={`${currentRoom === "tutors" ? "Tutor" : currentRoom === "students" ? "Student" : "Announcements"}`}
           roomId={roomID}
-          // supabaseUrl={supabaseConfig.url}
-          // supabaseKey={supabaseConfig.key}
         />
       </div>
     </main>

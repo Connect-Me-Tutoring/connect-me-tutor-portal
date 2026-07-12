@@ -8,10 +8,7 @@ import { logZoomMetadata } from "@/lib/actions/zoom.server.actions";
 // Use a single signing secret for all Zoom webhooks
 const validationSecret = config.zoom.ZOOM_WEBHOOK_SECRET;
 
-export async function POST(
-  req: NextRequest,
-  { params }: { params: { meeting: string } }
-) {
+export async function POST(req: NextRequest) {
   const body = await req.json();
 
   if (!validationSecret) {
@@ -60,7 +57,8 @@ export async function POST(
         // console.log("JOINED: ", participant);
 
         await logZoomMetadata({
-          session_id: payload?.object?.id,
+          session_id: null,
+          zoom_meeting_uuid: payload?.object?.uuid ?? null,
           participant_id: participant?.user_id || "",
           name: participant?.user_name || "Unknown",
           email: participant?.email || null,
@@ -75,7 +73,8 @@ export async function POST(
         const participant = payload?.object?.participant;
 
         await logZoomMetadata({
-          session_id: payload?.object?.id,
+          session_id: null,
+          zoom_meeting_uuid: payload?.object?.uuid ?? null,
           participant_id: participant?.user_id || "",
           name: participant?.user_name || "Unknown",
           email: participant?.email || null,

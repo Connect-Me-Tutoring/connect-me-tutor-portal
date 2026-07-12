@@ -29,7 +29,7 @@ export async function GET(request: NextRequest) {
   }
 }
 
-export async function POST(request: NextRequest, response: NextResponse) {
+export async function POST(request: NextRequest) {
   try {
     const formData = await request.json();
 const categoryMapping:Record<string, string>={

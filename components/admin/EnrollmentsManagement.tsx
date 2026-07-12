@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useEffect, useMemo } from "react";
+import React, { use, useState, useEffect, useMemo } from "react";
 import {
   AlarmClockMinus,
   MessageCircleIcon,
@@ -28,6 +28,7 @@ import {
   Circle,
   Loader2,
   Copy,
+  Activity,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -80,20 +81,22 @@ import {
   removeEnrollment,
   updateEnrollment,
 } from "@/lib/actions/enrollment.server.actions";
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import { Enrollment, Profile, Event, Meeting, Availability } from "@/types";
 import toast from "react-hot-toast";
 import AvailabilityFormat from "@/components/student/AvailabilityFormat";
 import AvailabilityForm from "@/components/ui/availability-form";
-import { formatDate } from "@/lib/utils";
-import { normalize } from "path";
-import { areIntervalsOverlapping, previousDay, set } from "date-fns";
 import { z } from "zod";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { checkAvailableMeetingForEnrollments } from "@/lib/actions/meeting.actions";
+import { WeeklyMeetingSchedule } from "@/types/meeting";
 import { formatDateServer } from "@/lib/actions/utils.server.actions";
 import { QueryClient } from "@tanstack/react-query";
+import {
+  getEnrollmentAvailability,
+  getEnrollmentSchedule,
+  getEnrollmentScheduleFields,
+} from "@/lib/enrollment-schedule";
 // import Availability from "@/components/student/AvailabilityFormat";
 
 const durationSchema = z.object({
@@ -104,13 +107,96 @@ const durationSchema = z.object({
     .min(0, "Duration must be at least 0"),
 });
 
+const DAYS_OF_WEEK = [
+  "Monday",
+  "Tuesday",
+  "Wednesday",
+  "Thursday",
+  "Friday",
+  "Saturday",
+  "Sunday",
+];
+
+const timeToMinutes = (time?: string | null) => {
+  if (!time) return null;
+
+  const match = /^(\d{1,2}):(\d{2})$/.exec(time);
+  if (!match) return null;
+
+  const hours = Number(match[1]);
+  const minutes = Number(match[2]);
+
+  if (hours < 0 || hours > 23 || minutes < 0 || minutes > 59) {
+    return null;
+  }
+
+  return hours * 60 + minutes;
+};
+
+const enrollmentMatchesTimeFilter = (
+  enrollment: Enrollment,
+  dayFilter: string,
+  startFilter: string,
+  endFilter: string,
+) => {
+  const hasDayFilter = dayFilter !== "all";
+  const filterStart = timeToMinutes(startFilter);
+  const filterEnd = timeToMinutes(endFilter);
+  const hasTimeFilter = filterStart !== null || filterEnd !== null;
+
+  if (!hasDayFilter && !hasTimeFilter) return true;
+
+  const availability = enrollment.availability || [];
+
+  return availability.some((slot) => {
+    if (hasDayFilter && slot.day !== dayFilter) return false;
+    if (!hasTimeFilter) return true;
+
+    const enrollmentStart = timeToMinutes(slot.startTime);
+    const enrollmentEnd = timeToMinutes(slot.endTime);
+    if (enrollmentStart === null || enrollmentEnd === null) return false;
+
+    const rangeStart = filterStart ?? 0;
+    const rangeEnd = filterEnd ?? 24 * 60;
+    if (rangeStart >= rangeEnd) return false;
+
+    return enrollmentStart < rangeEnd && enrollmentEnd > rangeStart;
+  });
+};
+
 const EnrollmentList = ({
-  initialEnrollments,
-  initialMeetings,
-  initialStudents,
-  initialTutors,
+  enrollmentsPromise,
+  meetingsPromise,
+  studentsPromise,
+  tutorsPromise,
+  weeklySchedulesPromise,
 }: any) => {
-  // data is awaited in server component now, no use() needed
+  const combinedPromise = useMemo(
+    () =>
+      Promise.all([
+        enrollmentsPromise,
+        meetingsPromise,
+        studentsPromise,
+        tutorsPromise,
+        weeklySchedulesPromise,
+      ]),
+    [
+      enrollmentsPromise,
+      meetingsPromise,
+      studentsPromise,
+      tutorsPromise,
+      weeklySchedulesPromise,
+    ],
+  );
+
+  const [
+    initialEnrollments,
+    initialMeetings,
+    initialStudents,
+    initialTutors,
+    initialWeeklySchedules,
+  ] = use(combinedPromise);
+
   const [enrollments, setEnrollments] =
     useState<Enrollment[]>(initialEnrollments);
   const [filteredEnrollments, setFilteredEnrollments] =
@@ -119,7 +205,6 @@ const EnrollmentList = ({
   const [tutors, setTutors] = useState<Profile[]>(initialTutors);
   const [meetings, setMeetings] = useState<Meeting[]>(initialMeetings);
 
-  const supabase = createClientComponentClient();
   const [open, setOpen] = React.useState(false);
   const [value, setValue] = React.useState("");
 
@@ -133,6 +218,9 @@ const EnrollmentList = ({
   const [currentPage, setCurrentPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [filterValue, setFilterValue] = useState("");
+  const [timeFilterDay, setTimeFilterDay] = useState("all");
+  const [timeFilterStart, setTimeFilterStart] = useState("");
+  const [timeFilterEnd, setTimeFilterEnd] = useState("");
   const [tutorSearch, setTutorSearch] = useState("");
   const [studentSearch, setStudentSearch] = useState("");
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -163,6 +251,7 @@ const EnrollmentList = ({
   const [meetingAvailability, setMeetingAvailability] = useState<{
     [key: string]: boolean;
   }>({});
+  const weeklySchedules: WeeklyMeetingSchedule[] = initialWeeklySchedules ?? [];
 
   const [hoursError, setHoursError] = useState<string | null>(null);
   const [editHoursError, setEditHoursError] = useState<string | null>(null);
@@ -177,8 +266,6 @@ const EnrollmentList = ({
     const filtered = enrollments.filter((enrollment) => {
       const searchTerm = filterValue.toLowerCase().trim();
 
-      if (!searchTerm) return true;
-
       const studentFirstName =
         enrollment.student?.firstName?.toLowerCase() || "";
       const studentLastName = enrollment.student?.lastName?.toLowerCase() || "";
@@ -188,7 +275,8 @@ const EnrollmentList = ({
       const tutorLastName = enrollment.tutor?.lastName?.toLowerCase() || "";
       const tutorEmail = enrollment.tutor?.email?.toLowerCase() || "";
 
-      return (
+      const matchesSearch =
+        !searchTerm ||
         studentFirstName.includes(searchTerm) ||
         studentLastName.includes(searchTerm) ||
         studentEmail.includes(searchTerm) ||
@@ -196,12 +284,21 @@ const EnrollmentList = ({
         tutorLastName.includes(searchTerm) ||
         tutorEmail.includes(searchTerm) ||
         (studentFirstName + " " + studentLastName).includes(searchTerm) ||
-        (tutorFirstName + " " + tutorLastName).includes(searchTerm)
+        (tutorFirstName + " " + tutorLastName).includes(searchTerm);
+
+      return (
+        matchesSearch &&
+        enrollmentMatchesTimeFilter(
+          enrollment,
+          timeFilterDay,
+          timeFilterStart,
+          timeFilterEnd,
+        )
       );
     });
     setFilteredEnrollments(filtered);
     setCurrentPage(1);
-  }, [filterValue, enrollments]);
+  }, [filterValue, enrollments, timeFilterDay, timeFilterStart, timeFilterEnd]);
 
   const studentsMap = useMemo(() => {
     return students.reduce(
@@ -270,7 +367,12 @@ const EnrollmentList = ({
     setIsCheckingMeetingAvailability(true);
 
     const updatedMeetingAvailability =
-      await checkAvailableMeetingForEnrollments(enroll, enrollments, meetings);
+      await checkAvailableMeetingForEnrollments(
+        enroll,
+        enrollments,
+        meetings,
+        weeklySchedules,
+      );
     setIsCheckingMeetingAvailability(false);
     setMeetingAvailability(updatedMeetingAvailability);
   };
@@ -281,16 +383,18 @@ const EnrollmentList = ({
   ) => {
     try {
       const now = new Date();
+      const enrollSchedule = getEnrollmentSchedule(enroll);
       const new_enrollment_date = new Date(
-        `${enroll.availability[0].day} ${enroll.availability[0].endTime}`,
+        `${enrollSchedule.day} ${enrollSchedule.endTime}`,
       );
       return !enrollments.some((enrollment) => {
         // Skip sessions without dates or meeting IDs
         if (!enrollment?.endDate || !enrollment?.meetingId) return false;
 
         try {
+          const enrollmentSchedule = getEnrollmentSchedule(enrollment);
           const sessionEndTime = new Date(
-            `${enrollment.availability[0].day}, ${enrollment.availability[0].endTime}`,
+            `${enrollmentSchedule.day}, ${enrollmentSchedule.endTime}`,
           );
           sessionEndTime.setHours(sessionEndTime.getHours() + 1.5);
           return (
@@ -503,6 +607,33 @@ const EnrollmentList = ({
     }
   };
 
+  const handleAvailabilityChange = (
+    availability: Availability[],
+    type: "add" | "edit",
+  ) => {
+    const scheduleFields = getEnrollmentScheduleFields({ availability });
+
+    if (type === "add") {
+      setAvailabilityList(availability);
+      setNewEnrollment((prev) => ({
+        ...prev,
+        availability,
+        ...scheduleFields,
+      }));
+      return;
+    }
+
+    setSelectedEnrollment((prev) =>
+      prev
+        ? {
+            ...prev,
+            availability,
+            ...scheduleFields,
+          }
+        : null,
+    );
+  };
+
   const handleAddEnrollment = async () => {
     try {
       const addedEnrollment = await addEnrollment(newEnrollment);
@@ -568,6 +699,9 @@ const EnrollmentList = ({
       startDate: "",
       endDate: null,
       availability: [{ day: "", startTime: "", endTime: "" }],
+      day: null,
+      startTime: null,
+      endTime: null,
       meetingId: "",
       paused: false,
       duration: 1,
@@ -620,7 +754,7 @@ const EnrollmentList = ({
       <div className="flex space-x-6">
         <div className="flex-grow bg-white rounded-lg shadow p-6">
           <div className="flex justify-between items-center mb-4">
-            <div className="flex space-x-2">
+            <div className="flex flex-wrap items-center gap-2">
               <Input
                 type="text"
                 placeholder="Filter enrollments..."
@@ -628,6 +762,51 @@ const EnrollmentList = ({
                 value={filterValue}
                 onChange={(e) => setFilterValue(e.target.value)}
               />
+              <Select value={timeFilterDay} onValueChange={setTimeFilterDay}>
+                <SelectTrigger className="w-[140px]" aria-label="Filter by day">
+                  <SelectValue placeholder="Any day" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Any day</SelectItem>
+                  {DAYS_OF_WEEK.map((day) => (
+                    <SelectItem key={day} value={day}>
+                      {day}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Input
+                type="time"
+                aria-label="Filter time from"
+                title="From time"
+                className="w-[120px]"
+                value={timeFilterStart}
+                onChange={(e) => setTimeFilterStart(e.target.value)}
+              />
+              <Input
+                type="time"
+                aria-label="Filter time to"
+                title="To time"
+                className="w-[120px]"
+                value={timeFilterEnd}
+                onChange={(e) => setTimeFilterEnd(e.target.value)}
+              />
+              {(filterValue ||
+                timeFilterDay !== "all" ||
+                timeFilterStart ||
+                timeFilterEnd) && (
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setFilterValue("");
+                    setTimeFilterDay("all");
+                    setTimeFilterStart("");
+                    setTimeFilterEnd("");
+                  }}
+                >
+                  Clear
+                </Button>
+              )}
               <Dialog open={isAddModalOpen} onOpenChange={setIsAddModalOpen}>
                 <DialogTrigger asChild>
                   <Button>
@@ -801,13 +980,9 @@ const EnrollmentList = ({
                       <AvailabilityForm
                         // availabilityList={newEnrollment.availability}
                         availabilityList={availabilityList} // new enrollment by default will not have an availability
-                        setAvailabilityList={(availability) => {
-                          setAvailabilityList(availability);
-                          setNewEnrollment({
-                            ...newEnrollment,
-                            availability,
-                          });
-                        }}
+                        setAvailabilityList={(availability) =>
+                          handleAvailabilityChange(availability, "add")
+                        }
                       />
                       <div className="grid grid-cols-[80px_1fr] items-center gap-4">
                         {/* <Label htmlFor="duration" className="text-right">
@@ -965,6 +1140,7 @@ const EnrollmentList = ({
                   "Frequency",
                   "Actions",
                   "Status",
+                  "Activity",
                   "Chat",
                 ].map((header) => (
                   <TableHead key={header}>{header}</TableHead>
@@ -983,7 +1159,7 @@ const EnrollmentList = ({
                   </TableCell>
                   <TableCell className="colspan-[40px]">
                     <AvailabilityFormat
-                      availability={enrollment.availability}
+                      availability={getEnrollmentAvailability(enrollment)}
                       card={false}
                     />{" "}
                   </TableCell>
@@ -1083,6 +1259,21 @@ const EnrollmentList = ({
                           Ongoing
                         </span>
                       )}
+                    </Button>
+                  </TableCell>
+                  <TableCell>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="gap-2"
+                      asChild
+                    >
+                      <Link
+                        href={`/dashboard/enrollments/${enrollment.id}/activity`}
+                      >
+                        <Activity className="h-4 w-4" />
+                        Activity
+                      </Link>
                     </Button>
                   </TableCell>
                   <TableCell>
@@ -1345,11 +1536,13 @@ const EnrollmentList = ({
                   </Popover>
                 </div>
                 <AvailabilityForm
-                  availabilityList={selectedEnrollment?.availability || []} // Default to empty array if undefined
+                  availabilityList={
+                    selectedEnrollment
+                      ? getEnrollmentAvailability(selectedEnrollment)
+                      : []
+                  } // Default to empty array if undefined
                   setAvailabilityList={(availability) =>
-                    handleInputChange({
-                      target: { name: "availability", value: availability },
-                    } as any)
+                    handleAvailabilityChange(availability, "edit")
                   }
                 />
                 <div className="grid grid-cols-[80px_1fr] items-center gap-4">

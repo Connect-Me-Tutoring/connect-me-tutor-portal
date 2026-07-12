@@ -1,10 +1,14 @@
 "use client";
 // lib/student.actions.ts
 import { supabase } from "@/lib/supabase/client";
-import { Enrollment, Availability } from "@/types";
+import { Enrollment, Availability, Session } from "@/types";
 import { Table } from "../supabase/tables";
-import { tableToInterfaceProfiles } from "../type-utils";
+import { tableToInterfaceProfiles, tableToInterfaceMeetings } from "../type-utils";
 import { SharedEnrollment } from "@/types/enrollment";
+import { addOneSession } from "./session.actions";
+import { handleCalculateDuration, isValidUUID } from "../utils";
+import { addDays, format } from "date-fns";
+import { fromZonedTime } from "date-fns-tz";
 
 export async function getEnrollments(
   tutorId: string,
@@ -189,3 +193,131 @@ const sql = `
  SELECT * FROM ${Table.Enrollments} LEFT JOIN ${Table.Profiles} ON ${Table.Profiles}.user_id = some inputted ID  WHERE tutor_id = ${Table.Profiles}.id OR student_id = ${Table.Profiles}.id
  ORDER BY created_at DESC
 `;
+
+export const sessionTimeFromEnrollment = (
+  availability: Availability,
+  start: string,
+): string => {
+  const dayMap: Record<string, number> = {
+    sunday: 0,
+    monday: 1,
+    tuesday: 2,
+    wednesday: 3,
+    thursday: 4,
+    friday: 5,
+    saturday: 6,
+  };
+
+  try {
+    const startDate: Date = new Date(start);
+    const startDateWeekDay: number = startDate.getDay();
+    const firstSessionWeekDay: number = dayMap[availability.day.toLowerCase()];
+
+    const additionalDays = firstSessionWeekDay >= startDateWeekDay ? 0 : 7;
+    const currentDate: Date = addDays(
+      startDate,
+      firstSessionWeekDay - startDateWeekDay + additionalDays,
+    );
+    const dateString = `${format(currentDate, "yyyy-MM-dd")}T${availability.startTime}:00`;
+    return fromZonedTime(dateString, "America/New_York").toISOString();
+  } catch (error) {
+    console.error("Unable to calculate session from enrollment");
+    throw error;
+  }
+};
+
+export const addEnrollment = async (
+  enrollment: Omit<Enrollment, "id" | "createdAt">,
+) => {
+  try {
+    if (enrollment.availability.length === 0) {
+      throw new Error("Please add an availability");
+    }
+
+    const duration = await handleCalculateDuration(
+      enrollment.availability[0].startTime,
+      enrollment.availability[0].endTime,
+    );
+
+    if (enrollment.duration <= 0)
+      throw new Error("Duration should be a positive amount");
+
+    if (!enrollment.student) throw new Error("Please select a Student");
+
+    if (enrollment.meetingId && !isValidUUID(enrollment.meetingId)) {
+      throw new Error("Invalid or no meeting link");
+    }
+
+    const { data, error } = await supabase
+      .from(Table.Enrollments)
+      .insert({
+        student_id: enrollment.student?.id,
+        tutor_id: enrollment.tutor?.id,
+        summary: enrollment.summary,
+        start_date: enrollment.startDate,
+        end_date: enrollment.endDate,
+        availability: enrollment.availability,
+        meetingId: enrollment.meetingId,
+        duration: duration,
+        frequency: enrollment.frequency,
+      })
+      .select(
+        `*,
+        student:Profiles!student_id(*),
+        tutor:Profiles!tutor_id(*),
+        meeting:Meetings!meetingId(*)
+        `,
+      )
+      .single();
+
+    if (error) {
+      console.error("Error adding enrollment:", error);
+      throw error;
+    }
+
+    if (data) {
+      const tutor = tableToInterfaceProfiles(data.tutor);
+      const student = tableToInterfaceProfiles(data.student);
+      const meeting = tableToInterfaceMeetings(data.meeting);
+      const date = sessionTimeFromEnrollment(
+        data.availability[0],
+        data.start_date,
+      );
+
+      const firstSession: Session = {
+        id: "",
+        enrollmentId: data.id,
+        createdAt: new Date().toISOString(),
+        date: date,
+        summary: data.summary,
+        student: student,
+        tutor: tutor,
+        meeting: meeting,
+        status: (enrollment as any).status || "Active",
+        session_exit_form: "",
+        isQuestionOrConcern: false,
+        isFirstSession: true,
+        isStandalone: false,
+        duration: data.duration,
+      };
+
+      await addOneSession(firstSession);
+    }
+
+    return {
+      createdAt: data?.created_at,
+      id: data?.id,
+      summary: data?.summary,
+      student: data?.student ? tableToInterfaceProfiles(data.student) : null,
+      tutor: data?.tutor ? tableToInterfaceProfiles(data.tutor) : null,
+      startDate: data?.start_date,
+      endDate: data?.end_date,
+      availability: data?.availability,
+      meetingId: data?.meetingId,
+      duration: data?.duration,
+      frequency: data?.frequency,
+    };
+  } catch (error) {
+    throw error;
+  }
+};

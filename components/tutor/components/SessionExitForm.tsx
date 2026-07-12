@@ -103,6 +103,7 @@ const SessionExitForm = ({
   // setNextClassConfirmed,
   handleSessionComplete,
   handleStatusChange,
+  actor = "tutor",
 }: any) => {
   const TC = useDashboardContext();
 
@@ -113,10 +114,9 @@ const SessionExitForm = ({
   return (
     <Dialog
       open={TC.isSessionExitFormOpen}
-      
-      onOpenChange={(open) =>{
+      onOpenChange={(open) => {
         TC.setIsSessionExitFormOpen(open);
-        if(!open){
+        if (!open) {
           setIsQuestionOrConcern(false);
           setCategory("");
         }
@@ -124,7 +124,7 @@ const SessionExitForm = ({
     >
       <DialogTrigger asChild>
         <HoverCard>
-          <HoverCardTrigger>
+          <HoverCardTrigger asChild>
             <Button
               variant="outline"
               disabled={
@@ -155,7 +155,7 @@ const SessionExitForm = ({
           <DialogTitle className="flex items-center justify-between">
             Session Exit Form
             <AlertDialog>
-              <AlertDialogTrigger>
+              <AlertDialogTrigger asChild>
                 <Button variant="outline">The session did not happen</Button>
               </AlertDialogTrigger>
               {TC.selectedSession ? (
@@ -163,6 +163,7 @@ const SessionExitForm = ({
                   session={TC.selectedSession}
                   handleStatusChange={handleStatusChange}
                   onClose={() => TC.setIsSessionExitFormOpen(false)}
+                  actor={actor}
                 />
               ) : (
                 ""
@@ -175,12 +176,10 @@ const SessionExitForm = ({
           <Checkbox
             id="question-or-concern"
             checked={isQuestionOrConcern}
-          
             onCheckedChange={(checked) => {
               const isChecked = checked === true;
               setIsQuestionOrConcern(isChecked);
               if (!isChecked) setCategory("");
-
             }}
           />
           <label htmlFor="next-class" className="text-sm font-medium">
@@ -197,19 +196,17 @@ const SessionExitForm = ({
               value={category}
               onChange={(e) => setCategory(e.target.value)}
               className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                <option value="" disabled>Select a category...</option>
-                <option value="attendance">Attendance & Engagement</option>
-                <option value="technical">Technical and Portal Issues</option>
-                <option value="behavior">Student Behavior and Support</option>
-                <option value="urgent">Urgent Escalation</option>
-
-              </select>
+            >
+              <option value="" disabled>
+                Select a category...
+              </option>
+              <option value="attendance">Attendance & Engagement</option>
+              <option value="technical">Technical and Portal Issues</option>
+              <option value="behavior">Student Behavior and Support</option>
+              <option value="urgent">Urgent Escalation</option>
+            </select>
           </div>
-
-
         )}
-
 
         <Textarea
           value={TC.notes}

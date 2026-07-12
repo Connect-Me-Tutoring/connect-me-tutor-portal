@@ -1,10 +1,8 @@
 "use client";
-import { Profile } from "@/types";
+import { Profile, Session } from "@/types";
 import { createClient } from "@supabase/supabase-js";
 import { supabase } from "../supabase/client";
 import { Table } from "../supabase/tables";
-
-import axios from "axios";
 
 // export async function getProfileWithProfileId(
 //   profileId: string
@@ -108,15 +106,6 @@ export async function updateProfileDetails({
     updates.subjects_of_interest = subjectsOfInterest;
   if (languagesSpoken !== undefined) updates.languages_spoken = languagesSpoken;
 
-  const updatedSubjects = updates["subjects_of_interest"] as string[];
-  if (updatedSubjects) {
-    const { data } = await axios.post("/api/pairing/embeds", {
-      subjects: updatedSubjects,
-    });
-    if (data.embed) updates["subject_embed"] = data.embed;
-  }
-
-
   const { error } = await supabase
     .from(Table.Profiles)
     .update(updates)
@@ -130,7 +119,20 @@ export async function updateProfileDetails({
   return { success: true };
 }
 
-export const switchAndGetProfileInfo = async () => {
+export const switchAndGetProfileInfo = async () => {};
 
+export function getStudentFromSession(session: Session): {
+  studentName: string;
+  studentEmail: string;
+} {
+  const student = session.student;
+
+  if (!student) {
+    throw new Error("Session has no student assigned");
+  }
+
+  return {
+    studentName: `${student.firstName} ${student.lastName}`.trim(),
+    studentEmail: student.email,
+  };
 }
-
