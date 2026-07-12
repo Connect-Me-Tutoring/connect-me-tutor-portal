@@ -32,6 +32,7 @@ import {
   sendScheduledEmailsBeforeSessions,
   sendStudentSessionCancellationEmail,
   sendTutorSessionCancellationEmail,
+  updateScheduledEmailBeforeSessions,
 } from "./email.server.actions";
 
 import {
@@ -381,7 +382,10 @@ export async function cancelSession(
       .single();
 
   if (existingSessionError || !existingSession) {
-    console.error("Error loading session before cancellation:", existingSessionError);
+    console.error(
+      "Error loading session before cancellation:",
+      existingSessionError,
+    );
     throw existingSessionError ?? new Error("Session not found");
   }
 
@@ -1349,6 +1353,68 @@ export async function updateSessionsStatus(
     if (error) throw error;
   } catch (error) {
     console.error("Error updating sessions status:", error);
+    throw error;
+  }
+}
+
+export async function updateSession(
+  updatedSession: Session,
+  updateEmail: boolean = true,
+) {
+  try {
+    const {
+      id,
+      status,
+      tutor,
+      student,
+      date,
+      duration,
+      summary,
+      meeting,
+      session_exit_form,
+      isQuestionOrConcern,
+      isFirstSession,
+    } = updatedSession;
+    const supabase = await createClient();
+    const { data, error } = await supabase
+      .from(Table.Sessions)
+      .update({
+        status: status,
+        student_id: student?.id,
+        tutor_id: tutor?.id,
+        date: date,
+        duration: duration,
+        summary: summary,
+        meeting_id: meeting?.id,
+        session_exit_form: session_exit_form,
+        is_question_or_concern: isQuestionOrConcern,
+        is_first_session: isFirstSession,
+      })
+      .eq("id", id)
+      .select(
+        `*,
+        tutor:Profiles!tutor_id(*),
+        student:Profiles!student_id(*),
+        meeting:Meetings!meeting_id(*)`,
+      )
+      .single();
+
+    if (error) {
+      console.error("Error updating session:", error);
+      return null;
+    }
+
+    if (data) {
+      return data[0];
+    } else {
+      console.error("NO DATA");
+    }
+    if (updateEmail && data) {
+      const newSession: Session = tableToInterfaceSessions(data);
+      await updateScheduledEmailBeforeSessions(newSession);
+    }
+  } catch (error) {
+    console.error("Unable to update session");
     throw error;
   }
 }
