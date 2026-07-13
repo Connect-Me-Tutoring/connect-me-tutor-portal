@@ -54,8 +54,8 @@ export default async function LoginPage() {
           </figcaption>
         </figure>
       </section>
-      <section className="w-full h-full lg:w-1/2 flex flex-col items-center justify-center p-4 lg:p-20">
-        <div className="w-full h-full flex flex-col items-center justify-center gap-8 px-5 lg:px-20 py-20 rounded-xl">
+      <section className="relative flex min-h-[680px] items-center justify-center overflow-hidden px-6 py-14 sm:px-10 lg:min-h-svh lg:px-14 lg:py-16">
+        <div className="relative z-10 w-full max-w-[540px]">
           <div className="flex flex-col gap-1 w-full">
             <h1 className="text-4xl text-center font-bold">Welcome Back</h1>
             <p className="text-sm text-center opacity-50">
