@@ -180,7 +180,7 @@ export default function LoginForm() {
                     </FormLabel>
                     <Link
                       href="/forgot-password"
-                      className="text-sm font-medium hover:text-blue-800 underline" // Added styling for the link
+                      className="text-sm font-semibold text-[#2f6fed] underline-offset-4 hover:underline focus-visible:rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2f6fed]/30"
                     >
                       Forgot password?
                     </Link>
@@ -188,6 +188,8 @@ export default function LoginForm() {
 
                   <FormControl>
                     <Input
+                      autoComplete="current-password"
+                      className="h-16 rounded-xl border-[#cbd8e8] bg-white px-5 text-base text-[#071329] placeholder:text-[#657895] focus-visible:border-[#2f6fed] focus-visible:ring-[#2f6fed]/20"
                       type="password"
                       placeholder="Enter your password"
                       {...field}
