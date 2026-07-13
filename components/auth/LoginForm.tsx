@@ -203,9 +203,9 @@ export default function LoginForm() {
             <Button
               disabled={isLoading}
               type="submit"
-              className="w-full bg-blue-400"
+              className="h-16 w-full rounded-xl bg-[#2f6fed] text-lg font-semibold text-white shadow-[0_10px_22px_rgba(47,111,237,0.18)] transition-colors hover:bg-[#255fd3] focus-visible:ring-[#2f6fed]/35"
             >
-              {isLoading ? "Logging in..." : "Login"}
+              {isLoading ? "Signing in..." : "Sign in"}
             </Button>
             <div className="after:border-border relative text-center text-sm after:absolute after:inset-0 after:top-1/2 after:z-0 after:flex after:items-center after:border-t">
               <span className="bg-background text-muted-foreground relative z-10 px-2">
