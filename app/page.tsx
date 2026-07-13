@@ -41,9 +41,11 @@ export default async function LoginPage() {
             Connect Me
           </span>
         </div>
+
         <h1 className="relative z-10 mt-16 max-w-[520px] text-[2.5rem] font-bold leading-[1.06] tracking-[-0.035em] text-balance sm:mt-20 sm:text-5xl lg:absolute lg:left-[10%] lg:top-[43%] lg:mt-0 lg:-translate-y-1/2 lg:text-[clamp(3.1rem,3.5vw,4.2rem)]">
           Learning is better together.
         </h1>
+
         <figure className="absolute bottom-[7%] left-[10%] z-10 hidden max-w-[470px] lg:block">
           <blockquote className="text-xl font-semibold leading-[1.38] tracking-[-0.015em]">
             &ldquo;Connect Me makes learning feel simple and less
@@ -54,6 +56,7 @@ export default async function LoginPage() {
           </figcaption>
         </figure>
       </section>
+
       <section className="relative flex min-h-[680px] items-center justify-center overflow-hidden px-6 py-14 sm:px-10 lg:min-h-svh lg:px-14 lg:py-16">
         <div
           aria-hidden="true"
