@@ -121,7 +121,7 @@ const CancellationForm: React.FC<CancellationFormProps> = ({
                 | "Complete"
                 | "Cancelled"
                 | "Rescheduled",
-              session_exit_form: isCancellationOther ? otherReason : "",
+              session_exit_form: isCancellationOther ? otherReason : cancellationReason || "",
             };
             handleStatusChange(updatedSession);
             onClose();
