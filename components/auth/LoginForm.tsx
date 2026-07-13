@@ -214,11 +214,11 @@ export default function LoginForm() {
             </div>
             <Button
               variant="outline"
-              className="w-full flex items-center justify-center gap-2"
+              className="h-16 w-full rounded-xl border-[#b9c9dc] bg-white text-base font-semibold text-[#2f6fed] transition-colors hover:border-[#2f6fed] hover:bg-[#f4f8ff] hover:text-[#255fd3] focus-visible:ring-[#2f6fed]/30"
               onClick={() => router.push("/auth/otp-login")}
               type="button"
             >
-              Login with OTP
+              Email me a sign-in code
             </Button>
           </form>
         </Form>
