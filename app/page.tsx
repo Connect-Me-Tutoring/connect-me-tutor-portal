@@ -9,11 +9,8 @@ export const metadata: Metadata = {
 
 export default async function LoginPage() {
   return (
-    <section className="flex flex-col md:flex-row ">
-      <section className="lg:hidden flex flex-col p-1 items-center justify-center bg-white shadow-md">
-        <Logo />
-      </section>
-      <section className="hidden lg:flex flex-col w-1/2 h-full lg:h-[100vh] bg-[#d9ebff] rounded-xl">
+    <main className="min-h-svh bg-white text-[#071329] lg:grid lg:min-h-[760px] lg:grid-cols-[48%_52%]">
+      <section className="relative min-h-[250px] overflow-hidden bg-[#dceeff] px-6 py-7 sm:min-h-[300px] sm:px-10 lg:min-h-svh lg:px-[10%] lg:py-12">
         <div className="absolute left-8 top-8">
           <Logo />
         </div>
@@ -37,6 +34,6 @@ export default async function LoginPage() {
           <LoginForm />
         </div>
       </section>
-    </section>
+    </main>
   );
 }
