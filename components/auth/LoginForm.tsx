@@ -220,6 +220,10 @@ export default function LoginForm() {
             >
               Email me a sign-in code
             </Button>
+
+            <p className="pt-2 text-center text-sm text-[#667792] sm:text-base">
+              For students, tutors, and families.
+            </p>
           </form>
         </Form>
       </Suspense>
