@@ -1,6 +1,6 @@
 import LoginForm from "@/components/auth/LoginForm";
-import Logo from "@/components/ui/logo";
 import type { Metadata } from "next";
+import Image from "next/image";
 
 export const metadata: Metadata = {
   title: "Log in | Connect Me",
@@ -11,8 +11,18 @@ export default async function LoginPage() {
   return (
     <main className="min-h-svh bg-white text-[#071329] lg:grid lg:min-h-[760px] lg:grid-cols-[48%_52%]">
       <section className="relative min-h-[250px] overflow-hidden bg-[#dceeff] px-6 py-7 sm:min-h-[300px] sm:px-10 lg:min-h-svh lg:px-[10%] lg:py-12">
-        <div className="absolute left-8 top-8">
-          <Logo />
+        <div className="relative z-10 flex items-center gap-3">
+          <Image
+            alt="Connect Me globe"
+            className="h-10 w-10 sm:h-11 sm:w-11"
+            height={44}
+            priority
+            src="/logo.png"
+            width={44}
+          />
+          <span className="text-xl font-bold tracking-[-0.02em] sm:text-2xl">
+            Connect Me
+          </span>
         </div>
         <div className="h-5/6" />
         <div className=" w-full h-fit text-lg p-8">
