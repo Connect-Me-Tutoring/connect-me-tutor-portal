@@ -147,14 +147,16 @@ export default function LoginForm() {
         <Form {...form} key="login-form">
           <form
             onSubmit={form.handleSubmit(onSubmit)}
-            className="w-full space-y-4 p-0 rounded-md"
+            className="w-full space-y-7 p-0"
           >
             <FormField
               control={form.control}
               name="email"
               render={({ field }) => (
-                <FormItem className="w-full">
-                  <FormLabel>Email</FormLabel>
+                <FormItem className="w-full space-y-3">
+                  <FormLabel className="text-base font-semibold text-[#071329]">
+                    Email
+                  </FormLabel>
                   <FormControl>
                     <Input placeholder="Enter your email address" {...field} />
                   </FormControl>
@@ -166,9 +168,11 @@ export default function LoginForm() {
               control={form.control}
               name="password"
               render={({ field }) => (
-                <FormItem>
+                <FormItem className="space-y-3">
                   <div className="flex justify-between items-center w-full">
-                    <FormLabel>Password</FormLabel>
+                    <FormLabel className="text-base font-semibold text-[#071329]">
+                      Password
+                    </FormLabel>
                     <Link
                       href="/forgot-password"
                       className="text-sm font-medium hover:text-blue-800 underline" // Added styling for the link
