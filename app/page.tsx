@@ -73,10 +73,12 @@ export default async function LoginPage() {
         />
 
         <div className="relative z-10 w-full max-w-[540px]">
-          <div className="flex flex-col gap-1 w-full">
-            <h1 className="text-4xl text-center font-bold">Welcome Back</h1>
-            <p className="text-sm text-center opacity-50">
-              Enter your email and password to continue.
+          <div className="mb-10 space-y-3">
+            <h2 className="text-[2.65rem] font-bold leading-none tracking-[-0.035em] sm:text-5xl">
+              Welcome back
+            </h2>
+            <p className="max-w-[520px] text-base leading-7 text-[#5f708d] sm:text-lg">
+              Pick up where you left off with your tutor.
             </p>
           </div>
 
