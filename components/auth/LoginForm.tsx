@@ -158,7 +158,12 @@ export default function LoginForm() {
                     Email
                   </FormLabel>
                   <FormControl>
-                    <Input placeholder="Enter your email address" {...field} />
+                    <Input
+                      autoComplete="email"
+                      className="h-16 rounded-xl border-[#cbd8e8] bg-white px-5 text-base text-[#071329] placeholder:text-[#657895] focus-visible:border-[#2f6fed] focus-visible:ring-[#2f6fed]/20"
+                      placeholder="Enter your email address"
+                      {...field}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
