@@ -44,12 +44,15 @@ export default async function LoginPage() {
         <h1 className="relative z-10 mt-16 max-w-[520px] text-[2.5rem] font-bold leading-[1.06] tracking-[-0.035em] text-balance sm:mt-20 sm:text-5xl lg:absolute lg:left-[10%] lg:top-[43%] lg:mt-0 lg:-translate-y-1/2 lg:text-[clamp(3.1rem,3.5vw,4.2rem)]">
           Learning is better together.
         </h1>
-        <div className=" w-full h-fit text-lg p-8">
-          &quot;Connect me has helped me explore new math topics and learn
-          critical problem solving skills. It makes learning so much fun&quot;
-          <br />
-          --Olivia M.
-        </div>
+        <figure className="absolute bottom-[7%] left-[10%] z-10 hidden max-w-[470px] lg:block">
+          <blockquote className="text-xl font-semibold leading-[1.38] tracking-[-0.015em]">
+            &ldquo;Connect Me makes learning feel simple and less
+            stressful.&rdquo;
+          </blockquote>
+          <figcaption className="mt-2 text-lg font-bold text-[#2f6fed]">
+            - Olivia M.
+          </figcaption>
+        </figure>
       </section>
       <section className="w-full h-full lg:w-1/2 flex flex-col items-center justify-center p-4 lg:p-20">
         <div className="w-full h-full flex flex-col items-center justify-center gap-8 px-5 lg:px-20 py-20 rounded-xl">
