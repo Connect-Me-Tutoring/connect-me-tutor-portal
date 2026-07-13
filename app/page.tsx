@@ -55,6 +55,23 @@ export default async function LoginPage() {
         </figure>
       </section>
       <section className="relative flex min-h-[680px] items-center justify-center overflow-hidden px-6 py-14 sm:px-10 lg:min-h-svh lg:px-14 lg:py-16">
+        <div
+          aria-hidden="true"
+          className="absolute right-[15%] top-5 h-20 w-20 rounded-full bg-[#f4f0c9]/75 lg:h-24 lg:w-24"
+        />
+        <div
+          aria-hidden="true"
+          className="absolute -right-10 top-[20%] h-24 w-24 rounded-full bg-[#b9dcff]/70 lg:-right-12 lg:h-28 lg:w-28"
+        />
+        <div
+          aria-hidden="true"
+          className="absolute -left-5 top-[62%] hidden h-16 w-16 rounded-full bg-[#ccecf4]/80 lg:block"
+        />
+        <div
+          aria-hidden="true"
+          className="absolute -bottom-40 -right-32 h-[330px] w-[330px] rounded-full bg-[#e9f6fc] lg:-bottom-48 lg:-right-36 lg:h-[390px] lg:w-[390px]"
+        />
+
         <div className="relative z-10 w-full max-w-[540px]">
           <div className="flex flex-col gap-1 w-full">
             <h1 className="text-4xl text-center font-bold">Welcome Back</h1>
