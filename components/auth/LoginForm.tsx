@@ -147,16 +147,23 @@ export default function LoginForm() {
         <Form {...form} key="login-form">
           <form
             onSubmit={form.handleSubmit(onSubmit)}
-            className="w-full space-y-4 p-0 rounded-md"
+            className="w-full space-y-7 p-0"
           >
             <FormField
               control={form.control}
               name="email"
               render={({ field }) => (
-                <FormItem className="w-full">
-                  <FormLabel>Email</FormLabel>
+                <FormItem className="w-full space-y-3">
+                  <FormLabel className="text-base font-semibold text-[#071329]">
+                    Email
+                  </FormLabel>
                   <FormControl>
-                    <Input placeholder="Enter your email address" {...field} />
+                    <Input
+                      autoComplete="email"
+                      className="h-16 rounded-xl border-[#cbd8e8] bg-white px-5 text-base text-[#071329] placeholder:text-[#657895] focus-visible:border-[#2f6fed] focus-visible:ring-[#2f6fed]/20"
+                      placeholder="Enter your email address"
+                      {...field}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -166,12 +173,14 @@ export default function LoginForm() {
               control={form.control}
               name="password"
               render={({ field }) => (
-                <FormItem>
+                <FormItem className="space-y-3">
                   <div className="flex justify-between items-center w-full">
-                    <FormLabel>Password</FormLabel>
+                    <FormLabel className="text-base font-semibold text-[#071329]">
+                      Password
+                    </FormLabel>
                     <Link
                       href="/forgot-password"
-                      className="text-sm font-medium hover:text-blue-800 underline" // Added styling for the link
+                      className="text-sm font-semibold text-[#2f6fed] underline-offset-4 hover:underline focus-visible:rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2f6fed]/30"
                     >
                       Forgot password?
                     </Link>
@@ -179,6 +188,8 @@ export default function LoginForm() {
 
                   <FormControl>
                     <Input
+                      autoComplete="current-password"
+                      className="h-16 rounded-xl border-[#cbd8e8] bg-white px-5 text-base text-[#071329] placeholder:text-[#657895] focus-visible:border-[#2f6fed] focus-visible:ring-[#2f6fed]/20"
                       type="password"
                       placeholder="Enter your password"
                       {...field}
@@ -192,23 +203,27 @@ export default function LoginForm() {
             <Button
               disabled={isLoading}
               type="submit"
-              className="w-full bg-blue-400"
+              className="h-16 w-full rounded-xl bg-[#2f6fed] text-lg font-semibold text-white shadow-[0_10px_22px_rgba(47,111,237,0.18)] transition-colors hover:bg-[#255fd3] focus-visible:ring-[#2f6fed]/35"
             >
-              {isLoading ? "Logging in..." : "Login"}
+              {isLoading ? "Signing in..." : "Sign in"}
             </Button>
-            <div className="after:border-border relative text-center text-sm after:absolute after:inset-0 after:top-1/2 after:z-0 after:flex after:items-center after:border-t">
-              <span className="bg-background text-muted-foreground relative z-10 px-2">
-                Or continue with
-              </span>
+            <div className="flex items-center gap-5 text-sm font-medium text-[#667792]">
+              <span className="h-px flex-1 bg-[#d6dfeb]" />
+              <span>or</span>
+              <span className="h-px flex-1 bg-[#d6dfeb]" />
             </div>
             <Button
               variant="outline"
-              className="w-full flex items-center justify-center gap-2"
+              className="h-16 w-full rounded-xl border-[#b9c9dc] bg-white text-base font-semibold text-[#2f6fed] transition-colors hover:border-[#2f6fed] hover:bg-[#f4f8ff] hover:text-[#255fd3] focus-visible:ring-[#2f6fed]/30"
               onClick={() => router.push("/auth/otp-login")}
               type="button"
             >
-              Login with OTP
+              Email me a sign-in code
             </Button>
+
+            <p className="pt-2 text-center text-sm text-[#667792] sm:text-base">
+              For students, tutors, and families.
+            </p>
           </form>
         </Form>
       </Suspense>
