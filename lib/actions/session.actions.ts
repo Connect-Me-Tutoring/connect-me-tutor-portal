@@ -515,7 +515,11 @@ export async function sendStudentSEFFeedbackEmail(
     const { studentName, studentEmail } = getStudentFromSession(session);
     const response = await fetch("/api/admin/email/student-SEF-feedback", {
       method: "POST",
-      body: JSON.stringify({ studentName, studentEmail }),
+      body: JSON.stringify({
+        studentName,
+        studentEmail,
+        userId: session.tutor.userId,
+      }),
       headers: {
         "Content-Type": "application/json",
       },
