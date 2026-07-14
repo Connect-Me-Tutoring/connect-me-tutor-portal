@@ -1,15 +1,15 @@
 import { NextResponse } from "next/server";
 import { Resend } from "resend";
 import FeedbackEmail from "@/components/emails/student-feedback-email";
-import { verifyAdmin } from "@/lib/actions/auth.server.actions";
+import { requireSelfOrAdmin } from "@/lib/actions/authz.server";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
 export async function POST(request: Request) {
   try {
-    await verifyAdmin();
+    const { studentEmail, studentName, userId } = await request.json();
 
-    const { studentEmail, studentName } = await request.json();
+    await requireSelfOrAdmin(userId);
 
     if (!studentEmail) {
       return NextResponse.json(

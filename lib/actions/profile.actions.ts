@@ -124,6 +124,7 @@ export const switchAndGetProfileInfo = async () => {};
 export function getStudentFromSession(session: Session): {
   studentName: string;
   studentEmail: string;
+  studentUserId: string;
 } {
   const student = session.student;
 
@@ -134,5 +135,6 @@ export function getStudentFromSession(session: Session): {
   return {
     studentName: `${student.firstName} ${student.lastName}`.trim(),
     studentEmail: student.email,
+    studentUserId: student.userId,
   };
 }
