@@ -24,7 +24,7 @@ import {
   getDay,
 } from "date-fns";
 import { toZonedTime } from "date-fns-tz";
-import { cn } from "@/lib/utils";
+import { cn, getEasternWeekBounds } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -108,8 +108,11 @@ const Schedule = () => {
     if (calendarView === "day") setCurrentWeek(selectedDay);
   }, [selectedDay, calendarView]);
 
-  const weekEnd = endOfWeek(currentWeek).toISOString();
-  const weekStart = startOfWeek(currentWeek).toISOString();
+  // Pinned to America/New_York regardless of the admin's own browser timezone.
+  const { weekStart: weekStartDate, weekEnd: weekEndDate } =
+    getEasternWeekBounds(currentWeek);
+  const weekEnd = weekEndDate.toISOString();
+  const weekStart = weekStartDate.toISOString();
   // adapts fetch range to whichever view is active
   const queryStart =
     calendarView === "month"
