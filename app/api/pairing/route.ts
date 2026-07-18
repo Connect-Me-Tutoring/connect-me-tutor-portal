@@ -20,6 +20,8 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
+  await verifyAdmin();
+
   const url = new URL(req.url);
   const dryRunParam = url.searchParams.get("dryRun");
   const debugParam = url.searchParams.get("debug");

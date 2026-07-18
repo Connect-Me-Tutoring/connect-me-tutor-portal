@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
-import { startOfWeek, endOfWeek } from "date-fns";
 import { addSessionsServer, getAllSessionsServer } from "@/lib/actions/session.server.actions";
 import { getAllActiveEnrollmentsServer } from "@/lib/actions/enrollment.server.actions";
+import { getEasternWeekBounds } from "@/lib/utils";
 
 export async function GET(request: Request) {
   const authHeader = request.headers.get("authorization");
@@ -14,8 +14,9 @@ export async function GET(request: Request) {
 
   try {
     const now = new Date();
-    const weekStartString = startOfWeek(now, { weekStartsOn: 0 }).toISOString();
-    const weekEndString = endOfWeek(now, { weekStartsOn: 0 }).toISOString();
+    const { weekStart, weekEnd } = getEasternWeekBounds(now);
+    const weekStartString = weekStart.toISOString();
+    const weekEndString = weekEnd.toISOString();
 
     // Fetch required enrollments and existing sessions
     const enrollments = await getAllActiveEnrollmentsServer(weekEndString);

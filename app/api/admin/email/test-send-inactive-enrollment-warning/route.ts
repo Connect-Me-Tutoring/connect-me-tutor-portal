@@ -7,6 +7,7 @@ import {
   tableToInterfaceProfiles,
 } from "@/lib/type-utils";
 import { Enrollment, Profile } from "@/types";
+import { verifyAdmin } from "@/lib/actions/auth.server.actions";
 
 export async function GET(request: NextRequest) {
   const enrollmentId = request.nextUrl.searchParams.get("enrollmentId");
@@ -18,6 +19,8 @@ export async function GET(request: NextRequest) {
     );
   }
   try {
+    await verifyAdmin();
+
     const supabase = await createAdminClient();
     const { data: enrollment, error } = await supabase
       .from(Table.Enrollments)
