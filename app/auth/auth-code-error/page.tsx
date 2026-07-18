@@ -1,6 +1,6 @@
 "use client";
 
-import { supabase } from "@/lib/supabase/client"
+import { supabase } from "@/lib/supabase/client";
 import toast, { Toaster, ValueFunction } from "react-hot-toast";
 import Logo from "@/components/ui/logo";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -10,7 +10,6 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 // import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
-//SanayK test branch
 import { Button } from "@/components/ui/button";
 import {
   Form,
