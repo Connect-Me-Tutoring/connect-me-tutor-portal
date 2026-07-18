@@ -1,10 +1,10 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/server";
 import { sendMonthlyCheckInEmail } from "@/lib/actions/email.server.actions";
+import { isCronRequestAuthorized } from "@/lib/security/cron";
 
 export async function GET(request: Request) {
-  const authHeader = request.headers.get("authorization");
-  if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+  if (!isCronRequestAuthorized(request)) {
     return new Response("Unauthorized", { status: 401 });
   }
 
@@ -25,7 +25,7 @@ export async function GET(request: Request) {
     }
 
     if (users && users.length > 0) {
-      const results = await Promise.all(
+      await Promise.all(
         users.map((user) => {
           if (!user.email || !user.first_name) return Promise.resolve();
 
@@ -36,7 +36,6 @@ export async function GET(request: Request) {
         })
       );
       
-      console.log("Email dispatch results:", JSON.stringify(results, null, 2));
     }
 
     return NextResponse.json({

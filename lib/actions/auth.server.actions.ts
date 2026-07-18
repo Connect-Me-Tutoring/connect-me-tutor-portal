@@ -10,6 +10,7 @@ import { profile } from "console";
 import { tableToInterfaceProfiles } from "../type-utils";
 import { createPassword } from "../utils";
 import { cachedGetUser, getProfileRole } from "./user.server.actions";
+import { isCronRequestAuthorized } from "@/lib/security/cron";
 
 interface UserMetadata {
   email: string;
@@ -98,8 +99,7 @@ export const verifyAdmin = async () => {
  */
 
 export const verifyCron = async (request: NextRequest) => {
-  const authHeader = request.headers.get("authorization");
-  if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+  if (!isCronRequestAuthorized(request)) {
     throw new Error("Unauthorized cron access");
   }
 };

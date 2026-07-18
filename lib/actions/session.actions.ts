@@ -93,8 +93,9 @@ export async function getSessionKeys(data?: Session[]) {
 
 /**
  * Add sessions for enrollments within the specified week range
- * @param weekStartString - ISO string of week start in Eastern Time
- * @param weekEndString - ISO string of week end in Eastern Time
+ * @param weekStartString - ISO string (UTC instant) of the Eastern-time week start,
+ *   e.g. from `getEasternWeekBounds()` — must already be a correct absolute instant.
+ * @param weekEndString - ISO string (UTC instant) of the Eastern-time week end
  * @param enrollments - List of enrollments to create sessions for
  * @param sessions - Existing sessions to avoid duplicates
  * @returns Newly created sessions
@@ -106,14 +107,8 @@ export async function addSessions(
   sessions: Session[],
 ) {
   try {
-    const weekStart: Date = fromZonedTime(
-      parseISO(weekStartString),
-      "America/New_York",
-    );
-    const weekEnd: Date = fromZonedTime(
-      parseISO(weekEndString),
-      "America/New_York",
-    );
+    const weekStart: Date = parseISO(weekStartString);
+    const weekEnd: Date = parseISO(weekEndString);
 
     const now: string = new Date().toISOString();
 

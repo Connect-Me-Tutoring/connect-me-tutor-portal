@@ -69,8 +69,9 @@ async function isSessioninPastWeek(enrollmentId: string, midWeek: Date) {
 
 /**
  * Add sessions for enrollments within the specified week range
- * @param weekStartString - ISO string of week start in Eastern Time
- * @param weekEndString - ISO string of week end in Eastern Time
+ * @param weekStartString - ISO string (UTC instant) of the Eastern-time week start,
+ *   e.g. from `getEasternWeekBounds()` — must already be a correct absolute instant.
+ * @param weekEndString - ISO string (UTC instant) of the Eastern-time week end
  * @param enrollments - List of enrollments to create sessions for
  * @param sessions - Existing sessions to avoid duplicates
  * @returns Newly created sessions
@@ -83,20 +84,14 @@ export async function addSessionsServer(
 ) {
   try {
     const supabase = await createClient();
-    const parsedWeekStart = parseISO(weekStartString);
-    const parsedWeekEnd = parseISO(weekEndString);
+    const weekStart = parseISO(weekStartString);
+    const weekEnd = parseISO(weekEndString);
 
-    if (
-      Number.isNaN(parsedWeekStart.getTime()) ||
-      Number.isNaN(parsedWeekEnd.getTime())
-    ) {
+    if (Number.isNaN(weekStart.getTime()) || Number.isNaN(weekEnd.getTime())) {
       throw new Error(
         `Invalid week range: weekStartString=${weekStartString}, weekEndString=${weekEndString}`,
       );
     }
-
-    const weekStart: Date = fromZonedTime(parsedWeekStart, "America/New_York");
-    const weekEnd: Date = fromZonedTime(parsedWeekEnd, "America/New_York");
 
     const scheduledSessions: Set<string> = new Set();
     sessions.forEach((session) => {

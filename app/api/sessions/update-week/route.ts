@@ -1,18 +1,21 @@
 import { getAllActiveEnrollmentsServer } from "@/lib/actions/enrollment.server.actions";
-import { endOfWeek, startOfWeek } from "date-fns";
 import { NextRequest, NextResponse } from "next/server";
 import {
   addSessionsServer,
   getAllSessionsServer,
 } from "@/lib/actions/session.server.actions";
 import { Session } from "@/types";
-import { verifyCron } from "@/lib/actions/auth.server.actions";
+import { getEasternWeekBounds } from "@/lib/utils";
+import { isCronRequestAuthorized } from "@/lib/security/cron";
 
 export const dynamic = "force-dynamic";
 
 export async function GET(request: NextRequest) {
+  if (!isCronRequestAuthorized(request)) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   try {
-    await verifyCron(request);
     const newSessions = await handleUpdateWeek();
 
     return NextResponse.json({ newSessions: newSessions }, { status: 200 });
@@ -29,8 +32,9 @@ const handleUpdateWeek = async (): Promise<Session[]> => {
   try {
     const today = new Date();
 
-    const weekStart = startOfWeek(today).toISOString();
-    const weekEnd = endOfWeek(today).toDateString();
+    const weekBounds = getEasternWeekBounds(today);
+    const weekStart = weekBounds.weekStart.toISOString();
+    const weekEnd = weekBounds.weekEnd.toISOString();
 
     const enrollments = await getAllActiveEnrollmentsServer(weekEnd);
     const sessions: Session[] = await getAllSessionsServer(
