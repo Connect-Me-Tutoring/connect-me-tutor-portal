@@ -36,10 +36,12 @@ export const StudentRescheduleNotificationEmail = ({
             <Heading style={h1}>Tutor Session Rescheduled</Heading>
             <Text style={text}>Hi {studentName},</Text>
             <Text style={text}>
-              This is a notification that your tutor, {tutorName}, has rescheduled your upcoming session.
+              This is a notification that your tutor, {tutorName}, has rescheduled your upcoming
+              session.
             </Text>
             <Text style={text}>
-              <strong>New Date:</strong> {newDate}<br />
+              <strong>New Date:</strong> {newDate}
+              <br />
               <strong>New Time:</strong> {newTime}
             </Text>
             {meetingLink && (
@@ -48,10 +50,13 @@ export const StudentRescheduleNotificationEmail = ({
               </Text>
             )}
             <Text style={text}>
-              If you have any questions or if this time does not work for you, please reach out to your tutor.
+              If you have any questions or if this time does not work for you, please reach out to
+              your tutor.
             </Text>
             <Text style={text}>
-              Best,<br /><br />
+              Best,
+              <br />
+              <br />
               The Connect Me Free Tutoring & Mentoring Team
             </Text>
           </Section>
@@ -63,7 +68,8 @@ export const StudentRescheduleNotificationEmail = ({
 
 const main = {
   backgroundColor: "#f6f9fc",
-  fontFamily: '-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Ubuntu,sans-serif',
+  fontFamily:
+    '-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Ubuntu,sans-serif',
 };
 
 const container = {

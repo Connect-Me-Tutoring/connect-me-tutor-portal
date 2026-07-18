@@ -67,18 +67,16 @@ const ensurePairingQueueForNewProfile = async (
     return;
   }
 
-  const { error: insertError } = await supabase
-    .from(Table.PairingRequests)
-    .insert([
-      {
-        user_id: profile.id,
-        type: normalizedRole,
-        status: "pending",
-        priority: 1,
-        in_queue: true,
-        notes: "Auto-enqueued on account creation",
-      },
-    ]);
+  const { error: insertError } = await supabase.from(Table.PairingRequests).insert([
+    {
+      user_id: profile.id,
+      type: normalizedRole,
+      status: "pending",
+      priority: 1,
+      in_queue: true,
+      notes: "Auto-enqueued on account creation",
+    },
+  ]);
   if (insertError) throw insertError;
 };
 
@@ -115,13 +113,15 @@ export const getUser = async () => {
 const inviteUser = async (newProfileData: CreatedProfileData) => {
   const supabase = await createAdminClient();
 
-  const { data: authData, error: authError } =
-    await supabase.auth.admin.inviteUserByEmail(newProfileData.email, {
+  const { data: authData, error: authError } = await supabase.auth.admin.inviteUserByEmail(
+    newProfileData.email,
+    {
       data: {
         first_name: newProfileData.firstName,
         last_name: newProfileData.lastName,
       },
-    });
+    },
+  );
 
   // await supabase.auth.admin.createUser({
   //   email: newProfileData.email,
@@ -210,8 +210,7 @@ export const createUser = async (newProfileData: CreatedProfileData) => {
       throw profileError;
     }
 
-    const createdProfileData: Profile =
-      tableToInterfaceProfiles(createdProfile);
+    const createdProfileData: Profile = tableToInterfaceProfiles(createdProfile);
 
     if (createdProfile?.id) {
       await ensurePairingQueueForNewProfile(supabase, {
@@ -234,9 +233,7 @@ const replaceLastActiveProfile = async (
 ) => {
   const supabase = await createClient();
   try {
-    const availableProfile = userProfileIds.find(
-      (profile) => profile.id != lastActiveProfileId,
-    );
+    const availableProfile = userProfileIds.find((profile) => profile.id != lastActiveProfileId);
     if (availableProfile === undefined)
       throw new Error(
         "Called replaceLastActiveProfile with only one or zero profileIds attached to userId",
@@ -294,10 +291,7 @@ export const deleteUser = async (profileId: string) => {
       );
 
       if (authError) throw authError;
-    } else if (
-      userSettings &&
-      userSettings.last_active_profile_id == profileId
-    ) {
+    } else if (userSettings && userSettings.last_active_profile_id == profileId) {
       replaceLastActiveProfile(
         userSettings.user_id,
         userSettings.last_active_profile_id,
@@ -305,11 +299,7 @@ export const deleteUser = async (profileId: string) => {
       );
     }
 
-    await adminSupabase
-      .from(Table.Profiles)
-      .delete()
-      .eq("id", profileId)
-      .throwOnError();
+    await adminSupabase.from(Table.Profiles).delete().eq("id", profileId).throwOnError();
   } catch (error: any) {
     console.error("Failed to delete user", error);
     throw error;

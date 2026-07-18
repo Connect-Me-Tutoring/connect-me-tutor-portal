@@ -15,7 +15,6 @@ export const useEnrollment = (enrollmentId: string) => {
       if (data) {
         setEnrollment(data as SharedEnrollment);
       }
-
     })();
   }, [enrollmentId]);
   return { enrollment };

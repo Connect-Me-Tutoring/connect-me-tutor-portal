@@ -2,10 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { sendInactiveEnrollmentWarning } from "@/lib/actions/enrollment.server.actions";
 import { createAdminClient } from "@/lib/supabase/server";
 import { Table } from "@/lib/supabase/tables";
-import {
-  tableToInterfaceEnrollments,
-  tableToInterfaceProfiles,
-} from "@/lib/type-utils";
+import { tableToInterfaceEnrollments, tableToInterfaceProfiles } from "@/lib/type-utils";
 import { Enrollment, Profile } from "@/types";
 import { verifyAdmin } from "@/lib/actions/auth.server.actions";
 
@@ -13,10 +10,7 @@ export async function GET(request: NextRequest) {
   const enrollmentId = request.nextUrl.searchParams.get("enrollmentId");
 
   if (!enrollmentId) {
-    return NextResponse.json(
-      { error: "Missing enrollmentId query param" },
-      { status: 400 },
-    );
+    return NextResponse.json({ error: "Missing enrollmentId query param" }, { status: 400 });
   }
   try {
     await verifyAdmin();
@@ -46,10 +40,7 @@ export async function GET(request: NextRequest) {
       .single();
 
     if (error || !enrollment) {
-      return NextResponse.json(
-        { error: "Enrollment not found", details: error },
-        { status: 404 },
-      );
+      return NextResponse.json({ error: "Enrollment not found", details: error }, { status: 404 });
     }
 
     const tutorData: Profile = tableToInterfaceProfiles(enrollment.tutor);

@@ -37,9 +37,7 @@ function splitDisplayName(fullName: string): {
   return { firstName: parts[0], lastName: parts.slice(1).join(" ") };
 }
 
-function normalizeRole(
-  role: string | undefined | null,
-): "student" | "tutor" | null {
+function normalizeRole(role: string | undefined | null): "student" | "tutor" | null {
   const r = role?.trim().toLowerCase();
   if (r === "student") return "student";
   if (r === "tutor") return "tutor";
@@ -52,10 +50,8 @@ function profileFromRpcJson(
   if (!profile) return null;
   const role = normalizeRole(profile.role);
   if (!role) return null;
-  const firstName =
-    profile.firstName ?? profile.first_name ?? "";
-  const lastName =
-    profile.lastName ?? profile.last_name ?? "";
+  const firstName = profile.firstName ?? profile.first_name ?? "";
+  const lastName = profile.lastName ?? profile.last_name ?? "";
   if (!firstName && !lastName) return null;
   return {
     firstName: firstName || "Unknown",
@@ -64,19 +60,13 @@ function profileFromRpcJson(
   };
 }
 
-function profileFromPreviewLog(
-  log: PairingLogSchemaType,
-): PairingDisplayLogProfile | null {
+function profileFromPreviewLog(log: PairingLogSchemaType): PairingDisplayLogProfile | null {
   const meta = log.metadata as Record<string, unknown> | undefined;
-  const role =
-    normalizeRole(log.role) ??
-    normalizeRole(meta?.requestor_role as string | undefined);
+  const role = normalizeRole(log.role) ?? normalizeRole(meta?.requestor_role as string | undefined);
   if (!role) {
     if (log.type === "pairing-match" && log.message.startsWith("Tutor ")) {
       const tutorRole = "tutor" as const;
-      const m = log.message.match(
-        /^Tutor\s+(.+?)\s+matched with\s+(.+)$/i,
-      );
+      const m = log.message.match(/^Tutor\s+(.+?)\s+matched with\s+(.+)$/i);
       if (m) {
         const { firstName, lastName } = splitDisplayName(m[1]);
         return { firstName, lastName, role: tutorRole };
@@ -93,8 +83,7 @@ function profileFromPreviewLog(
     return null;
   }
 
-  const requestorName =
-    typeof meta?.requestor_name === "string" ? meta.requestor_name : "";
+  const requestorName = typeof meta?.requestor_name === "string" ? meta.requestor_name : "";
   if (requestorName) {
     const { firstName, lastName } = splitDisplayName(requestorName);
     return { firstName, lastName, role };
@@ -119,16 +108,14 @@ function profileFromPreviewLog(
   return { firstName: "Unknown", lastName: "", role };
 }
 
-export function mapRpcPairingLog(
-  log: {
-    id: string;
-    type: string;
-    profile?: RpcProfile | null;
-    message: string;
-    status: string;
-    created_at?: string;
-  },
-): PairingDisplayLog {
+export function mapRpcPairingLog(log: {
+  id: string;
+  type: string;
+  profile?: RpcProfile | null;
+  message: string;
+  status: string;
+  created_at?: string;
+}): PairingDisplayLog {
   return {
     id: log.id,
     type: log.type as PairingDisplayLog["type"],
@@ -145,9 +132,7 @@ export function mapPreviewPairingLog(
   createdAt: string,
 ): PairingDisplayLog {
   const metadataTimestamp =
-    typeof log.metadata?.timestamp === "string"
-      ? log.metadata.timestamp
-      : undefined;
+    typeof log.metadata?.timestamp === "string" ? log.metadata.timestamp : undefined;
   return {
     id,
     type: (log.type as PairingDisplayLog["type"]) ?? "pairing-selection-failed",
@@ -163,7 +148,6 @@ export function pairingLogMatchesUserType(
   filterUserType: string,
 ): boolean {
   if (filterUserType === "all") return true;
-  const role =
-    normalizeRole(log.profile?.role) ?? normalizeRole(log.role);
+  const role = normalizeRole(log.profile?.role) ?? normalizeRole(log.role);
   return role === filterUserType;
 }

@@ -136,19 +136,14 @@ const StudentList = ({ initialStudents }: any) => {
       </div>
       <div className="md:hidden space-y-4">
         {paginatedStudents.map((student, index) => (
-          <div
-            key={index}
-            className="bg-white rounded-xl shadow p-4 space-y-3 border"
-          >
+          <div key={index} className="bg-white rounded-xl shadow p-4 space-y-3 border">
             <div className="flex justify-between items-start">
               <div className="font-semibold text-base">
                 {student.firstName} {student.lastName}
               </div>
               <DeletePairingForm student={student} tutor={profile} />
             </div>
-            <div className="text-sm text-muted-foreground">
-              Start Date: {student.startDate}
-            </div>
+            <div className="text-sm text-muted-foreground">Start Date: {student.startDate}</div>
             <div>
               <UserAvailabilities user={student} />
             </div>
@@ -162,10 +157,7 @@ const StudentList = ({ initialStudents }: any) => {
                 <div className="font-medium">Subjects:</div>
                 <div className="flex flex-wrap gap-2 mt-1">
                   {student.subjects_of_interest.map((subject, i) => (
-                    <span
-                      key={i}
-                      className="px-2 py-1 text-xs bg-muted rounded-md"
-                    >
+                    <span key={i} className="px-2 py-1 text-xs bg-muted rounded-md">
                       {subject}
                     </span>
                   ))}
@@ -180,10 +172,7 @@ const StudentList = ({ initialStudents }: any) => {
 
         <div className="flex items-center space-x-2">
           <span>Rows per page</span>
-          <Select
-            value={rowsPerPage.toString()}
-            onValueChange={handleRowsPerPageChange}
-          >
+          <Select value={rowsPerPage.toString()} onValueChange={handleRowsPerPageChange}>
             <SelectTrigger className="w-[70px]">
               <SelectValue />
             </SelectTrigger>

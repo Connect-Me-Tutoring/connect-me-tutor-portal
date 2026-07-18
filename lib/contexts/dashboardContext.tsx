@@ -108,35 +108,24 @@ export function DashboardContextProvider({
       ? use(promises.meetingsPromise)
       : [];
 
-  const [currentSessions, setCurrentSessions] = useState<Session[]>(
-    initialCurrentSessions,
-  );
-  const [pastSessions, setPastSessions] =
-    useState<Session[]>(initialPastSessions);
+  const [currentSessions, setCurrentSessions] = useState<Session[]>(initialCurrentSessions);
+  const [pastSessions, setPastSessions] = useState<Session[]>(initialPastSessions);
   const [sessions, setSessions] = useState<Session[]>(initialActiveSessions);
-  const [filteredSessions, setFilteredSessions] = useState<Session[]>(
-    initialActiveSessions,
-  );
-  const [filteredPastSessions, setFilteredPastSessions] =
-    useState<Session[]>(initialPastSessions);
+  const [filteredSessions, setFilteredSessions] = useState<Session[]>(initialActiveSessions);
+  const [filteredPastSessions, setFilteredPastSessions] = useState<Session[]>(initialPastSessions);
   const [meetings, setMeetings] = useState<Meeting[]>(initialMeetings || []);
   const [allSessions, setAllSessions] = useState<Session[]>([]);
   const [profile, setProfile] = useState<Profile | null>(initialProfile);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [currentPageActiveSessions, setCurrentPageActiveSessions] =
-    useState(1);
+  const [currentPageActiveSessions, setCurrentPageActiveSessions] = useState(1);
   const [currentPagePastSessions, setCurrentPagePastSessions] = useState(1);
-  const [rowsPerPageActiveSessions, setRowsPerPageActiveSessions] =
-    useState(5);
+  const [rowsPerPageActiveSessions, setRowsPerPageActiveSessions] = useState(5);
   const [rowsPerPagePastSessions, setRowsPerPagePastSessions] = useState(5);
-  const [filterValueActiveSessions, setFilterValueActiveSessions] =
-    useState<string>("");
+  const [filterValueActiveSessions, setFilterValueActiveSessions] = useState<string>("");
   const [filterValuePastSessions, setFilterValuePastSessions] = useState("");
   const [selectedSession, setSelectedSession] = useState<Session | null>(null);
-  const [selectedSessionDate, setSelectedSessionDate] = useState<string | null>(
-    null,
-  );
+  const [selectedSessionDate, setSelectedSessionDate] = useState<string | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isSessionExitFormOpen, setIsSessionExitFormOpen] = useState(false);
   const [notes, setNotes] = useState<string>("");
@@ -195,16 +184,11 @@ export function DashboardContextProvider({
     setNextClassConfirmed,
   };
 
-  return (
-    <DashboardContext.Provider value={contextValue}>
-      {children}
-    </DashboardContext.Provider>
-  );
+  return <DashboardContext.Provider value={contextValue}>{children}</DashboardContext.Provider>;
 }
 
 export function useDashboardContext(): DashboardContextValue {
   const context = useContext(DashboardContext);
-  if (context === null)
-    throw new Error("useContext must be used within DashboardContextProvider");
+  if (context === null) throw new Error("useContext must be used within DashboardContextProvider");
   return context;
 }

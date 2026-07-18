@@ -1,4 +1,4 @@
- export type PairingLogSchemaType = {
+export type PairingLogSchemaType = {
   message: string;
   type:
     | "pairing-que-entered"

@@ -31,9 +31,6 @@ export async function GET(request: NextRequest) {
     });
   } catch (error) {
     console.error("Unable to process early session check-ins:", error);
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 },
-    );
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }

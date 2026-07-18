@@ -16,7 +16,7 @@ export async function POST(req: NextRequest) {
       {
         err: "Webhook secret not configured",
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 

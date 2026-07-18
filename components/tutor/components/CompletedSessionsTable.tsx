@@ -88,8 +88,7 @@ const CompletedSessionsTable = ({
               </TableCell>
               <TableCell>{formatSessionDate(session.date)}</TableCell>
               <TableCell className="font-medium">
-                Tutoring Session with {session.student?.firstName}{" "}
-                {session.student?.lastName}
+                Tutoring Session with {session.student?.firstName} {session.student?.lastName}
               </TableCell>
               <TableCell>
                 {session.student?.firstName} {session.student?.lastName}
@@ -97,10 +96,7 @@ const CompletedSessionsTable = ({
               <TableCell>{formatSessionDuration(session.duration)}</TableCell>
               <TableCell>
                 <div className="flex flex-col space-y-2">
-                  <Dialog
-                    open={isMeetingNotesOpen}
-                    onOpenChange={setIsMeetingNotesOpen}
-                  >
+                  <Dialog open={isMeetingNotesOpen} onOpenChange={setIsMeetingNotesOpen}>
                     <DialogTrigger asChild>
                       <Button
                         variant="ghost"
@@ -116,9 +112,7 @@ const CompletedSessionsTable = ({
                       <DialogHeader>
                         <DialogTitle>Meeting Notes</DialogTitle>
                       </DialogHeader>
-                      <Textarea readOnly>
-                        {TC.selectedSession?.session_exit_form}
-                      </Textarea>
+                      <Textarea readOnly>{TC.selectedSession?.session_exit_form}</Textarea>
                     </DialogContent>
                   </Dialog>
                 </div>

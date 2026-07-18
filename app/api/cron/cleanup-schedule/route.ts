@@ -45,14 +45,11 @@ export async function GET(req: NextRequest) {
   results.deleteInactiveEnrollments = deleteResult;
 
   const hasErrors =
-    !results.cancelUnsubmittedSEF.success ||
-    !results.deleteInactiveEnrollments.success;
+    !results.cancelUnsubmittedSEF.success || !results.deleteInactiveEnrollments.success;
 
   return NextResponse.json(
     {
-      message: hasErrors
-        ? "Cleanup completed with errors"
-        : "Cleanup completed successfully",
+      message: hasErrors ? "Cleanup completed with errors" : "Cleanup completed successfully",
       results,
     },
     { status: hasErrors ? 207 : 200 },

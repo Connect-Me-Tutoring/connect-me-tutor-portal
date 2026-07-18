@@ -7,11 +7,7 @@ import { redirect } from "next/navigation";
 
 export const dynamic = "force-dynamic";
 
-export default async function Layout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default async function Layout({ children }: { children: React.ReactNode }) {
   const user = await cachedGetUser().catch((error) => {
     console.error("Unable to get user session", error);
     redirect("/");
@@ -20,9 +16,7 @@ export default async function Layout({
   if (!user) redirect("/");
 
   const profile = await cachedGetProfile(user.id);
-  const userProfiles = profile?.userId
-    ? getUserProfiles(profile.userId)
-    : Promise.resolve([]);
+  const userProfiles = profile?.userId ? getUserProfiles(profile.userId) : Promise.resolve([]);
 
   return (
     <>

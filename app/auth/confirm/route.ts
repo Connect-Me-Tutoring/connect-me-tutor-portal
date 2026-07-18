@@ -20,7 +20,7 @@ export async function GET(request: NextRequest) {
     if (!error) {
       return NextResponse.redirect(redirectTo);
     } else {
-      console.error("Auth Error", error)
+      console.error("Auth Error", error);
     }
   }
 

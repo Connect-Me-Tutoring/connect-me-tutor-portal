@@ -10,9 +10,7 @@ import { handleCalculateDuration, isValidUUID } from "../utils";
 import { addDays, format } from "date-fns";
 import { fromZonedTime } from "date-fns-tz";
 
-export async function getEnrollments(
-  tutorId: string,
-): Promise<Enrollment[] | null> {
+export async function getEnrollments(tutorId: string): Promise<Enrollment[] | null> {
   try {
     // Fetch meeting details from Supabase
     const { data, error } = await supabase
@@ -95,13 +93,10 @@ export const getOverlappingAvailabilites = async (
   }[],
 ): Promise<Availability[]> => {
   try {
-    const { data, error } = await supabase.rpc(
-      "get_overlapping_availabilities_array",
-      {
-        a: tutorAvailability,
-        b: studentAvailability,
-      },
-    );
+    const { data, error } = await supabase.rpc("get_overlapping_availabilities_array", {
+      a: tutorAvailability,
+      b: studentAvailability,
+    });
     if (error) throw error;
     return data;
   } catch (error) {
@@ -111,9 +106,7 @@ export const getOverlappingAvailabilites = async (
   }
 };
 
-export async function getAllActiveEnrollments(
-  endOfWeek: string,
-): Promise<Enrollment[]> {
+export async function getAllActiveEnrollments(endOfWeek: string): Promise<Enrollment[]> {
   try {
     // Fetch meeting details from Supabase
     const { data, error } = await supabase
@@ -174,12 +167,9 @@ export async function getAllActiveEnrollments(
 }
 
 export async function getAccountEnrollments(userId: string) {
-  const { data, error } = await supabase.rpc(
-    "get_user_enrollments_with_profiles",
-    {
-      requestor_auth_id: userId,
-    },
-  );
+  const { data, error } = await supabase.rpc("get_user_enrollments_with_profiles", {
+    requestor_auth_id: userId,
+  });
 
   if (error) {
     console.error("Error fetching enrollments:", error);
@@ -194,10 +184,7 @@ const sql = `
  ORDER BY created_at DESC
 `;
 
-export const sessionTimeFromEnrollment = (
-  availability: Availability,
-  start: string,
-): string => {
+export const sessionTimeFromEnrollment = (availability: Availability, start: string): string => {
   const dayMap: Record<string, number> = {
     sunday: 0,
     monday: 1,
@@ -226,9 +213,7 @@ export const sessionTimeFromEnrollment = (
   }
 };
 
-export const addEnrollment = async (
-  enrollment: Omit<Enrollment, "id" | "createdAt">,
-) => {
+export const addEnrollment = async (enrollment: Omit<Enrollment, "id" | "createdAt">) => {
   try {
     if (enrollment.availability.length === 0) {
       throw new Error("Please add an availability");
@@ -239,8 +224,7 @@ export const addEnrollment = async (
       enrollment.availability[0].endTime,
     );
 
-    if (enrollment.duration <= 0)
-      throw new Error("Duration should be a positive amount");
+    if (enrollment.duration <= 0) throw new Error("Duration should be a positive amount");
 
     if (!enrollment.student) throw new Error("Please select a Student");
 
@@ -279,10 +263,7 @@ export const addEnrollment = async (
       const tutor = tableToInterfaceProfiles(data.tutor);
       const student = tableToInterfaceProfiles(data.student);
       const meeting = tableToInterfaceMeetings(data.meeting);
-      const date = sessionTimeFromEnrollment(
-        data.availability[0],
-        data.start_date,
-      );
+      const date = sessionTimeFromEnrollment(data.availability[0], data.start_date);
 
       const firstSession: Session = {
         id: "",

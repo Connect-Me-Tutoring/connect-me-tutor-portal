@@ -19,15 +19,8 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import type {
-  PairingMatchPreview,
-  PairingOverlapSlot,
-  PairingRequest,
-} from "@/types/pairing";
-import {
-  computeOverlappingAvailabilitySlots,
-  intersectSubjects,
-} from "@/lib/pairing/overlap";
+import type { PairingMatchPreview, PairingOverlapSlot, PairingRequest } from "@/types/pairing";
+import { computeOverlappingAvailabilitySlots, intersectSubjects } from "@/lib/pairing/overlap";
 import { to12Hour } from "@/lib/utils";
 
 type GraphNode = {
@@ -75,24 +68,15 @@ function buildQueueEdges(requests: PairingRequest[]): GraphEdgeDetail[] {
         t.profile.availability,
       );
       if (subjects.length === 0 && slots.length === 0) continue;
-      const strength = Math.min(
-        1,
-        0.28 + subjects.length * 0.1 + slots.length * 0.07,
-      );
+      const strength = Math.min(1, 0.28 + subjects.length * 0.1 + slots.length * 0.07);
       edges.push({
         from: s.userId,
         to: t.userId,
         strength,
         subjects,
         slots,
-        studentName: truncate(
-          `${s.profile.firstName} ${s.profile.lastName}`,
-          40,
-        ),
-        tutorName: truncate(
-          `${t.profile.firstName} ${t.profile.lastName}`,
-          40,
-        ),
+        studentName: truncate(`${s.profile.firstName} ${s.profile.lastName}`, 40),
+        tutorName: truncate(`${t.profile.firstName} ${t.profile.lastName}`, 40),
       });
     }
   }
@@ -201,8 +185,7 @@ export function PairingCommitteeGraphDialog({
       const tutors = nodes.filter((n) => n.role === "tutor");
       students.sort((a, b) => a.label.localeCompare(b.label));
       tutors.sort((a, b) => a.label.localeCompare(b.label));
-      const canvasH =
-        PAD * 2 + Math.max(students.length, tutors.length, 1) * (NODE_H + GAP_Y);
+      const canvasH = PAD * 2 + Math.max(students.length, tutors.length, 1) * (NODE_H + GAP_Y);
       return {
         edges,
         nodes,
@@ -219,15 +202,10 @@ export function PairingCommitteeGraphDialog({
     const students = nodes.filter((n) => n.role === "student");
     const tutors = nodes.filter((n) => n.role === "tutor");
     students.sort(
-      (a, b) =>
-        (a.priority ?? 0) - (b.priority ?? 0) || a.label.localeCompare(b.label),
+      (a, b) => (a.priority ?? 0) - (b.priority ?? 0) || a.label.localeCompare(b.label),
     );
-    tutors.sort(
-      (a, b) =>
-        (a.priority ?? 0) - (b.priority ?? 0) || a.label.localeCompare(b.label),
-    );
-    const canvasH =
-      PAD * 2 + Math.max(students.length, tutors.length, 1) * (NODE_H + GAP_Y);
+    tutors.sort((a, b) => (a.priority ?? 0) - (b.priority ?? 0) || a.label.localeCompare(b.label));
+    const canvasH = PAD * 2 + Math.max(students.length, tutors.length, 1) * (NODE_H + GAP_Y);
     return {
       edges,
       nodes,
@@ -243,10 +221,7 @@ export function PairingCommitteeGraphDialog({
   const dialogTitle = title ?? "Pairing committee graph";
   const dialogDescription = description ?? subtitle;
 
-  const positions = useMemo(
-    () => layoutColumns(students, tutors),
-    [students, tutors],
-  );
+  const positions = useMemo(() => layoutColumns(students, tutors), [students, tutors]);
 
   const focusedLabel = useMemo(() => {
     if (!focusedNodeId) return null;
@@ -255,9 +230,7 @@ export function PairingCommitteeGraphDialog({
 
   const filteredEdges = useMemo(() => {
     if (!focusedNodeId) return edges;
-    return edges.filter(
-      (e) => e.from === focusedNodeId || e.to === focusedNodeId,
-    );
+    return edges.filter((e) => e.from === focusedNodeId || e.to === focusedNodeId);
   }, [edges, focusedNodeId]);
 
   const edgePaths = useMemo(() => {
@@ -330,10 +303,7 @@ export function PairingCommitteeGraphDialog({
     return () => document.removeEventListener("mousedown", onDown);
   }, [edgeTip]);
 
-  const empty =
-    mode === "queue"
-      ? requests.length === 0
-      : previews.length === 0;
+  const empty = mode === "queue" ? requests.length === 0 : previews.length === 0;
 
   const onNodeClick = (e: MouseEvent, id: string) => {
     e.stopPropagation();
@@ -372,16 +342,14 @@ export function PairingCommitteeGraphDialog({
         </div>
         <div className="flex-1 min-h-0 overflow-auto rounded-md border bg-muted/20 p-2 relative">
           {empty ? (
-            <p className="text-sm text-muted-foreground p-4">
-              Nothing to graph yet.
-            </p>
+            <p className="text-sm text-muted-foreground p-4">Nothing to graph yet.</p>
           ) : (
             <>
               {edges.length === 0 && mode === "queue" && (
                 <p className="text-sm text-amber-900 bg-amber-50 border border-amber-200 rounded-md p-2 mb-2">
-                  No subject or time overlap between any student and tutor in the
-                  queue. People are still shown below; add overlaps in profiles
-                  or run a preview to see proposed matches.
+                  No subject or time overlap between any student and tutor in the queue. People are
+                  still shown below; add overlaps in profiles or run a preview to see proposed
+                  matches.
                 </p>
               )}
               <svg
@@ -449,11 +417,7 @@ export function PairingCommitteeGraphDialog({
                         (e.from === n.id && e.to === focusedNodeId),
                     );
                   const fill = isStudent ? "#eff6ff" : "#ecfdf5";
-                  const stroke = isFocused
-                    ? "#2563eb"
-                    : isStudent
-                      ? "#60a5fa"
-                      : "#34d399";
+                  const stroke = isFocused ? "#2563eb" : isStudent ? "#60a5fa" : "#34d399";
                   const sub =
                     n.priority != null
                       ? `${isStudent ? "Student" : "Tutor"} · P${n.priority}`
@@ -582,9 +546,7 @@ export function PairingCommitteeGraphDialog({
                       ) : (
                         <ul className="text-xs space-y-1 list-disc pl-4">
                           {edgeTip.edge.slots.map((slot, i) => (
-                            <li key={`${slot.day}-${slot.startTime}-${i}`}>
-                              {formatSlot(slot)}
-                            </li>
+                            <li key={`${slot.day}-${slot.startTime}-${i}`}>{formatSlot(slot)}</li>
                           ))}
                         </ul>
                       )}

@@ -20,10 +20,7 @@ export async function POST(request: Request) {
     await requireSelfOrAdmin(userId);
 
     if (!studentEmail) {
-      return NextResponse.json(
-        { error: "Student email is required" },
-        { status: 400 },
-      );
+      return NextResponse.json({ error: "Student email is required" }, { status: 400 });
     }
 
     await getResend().emails.send({
@@ -39,9 +36,6 @@ export async function POST(request: Request) {
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error("Error sending email:", error);
-    return NextResponse.json(
-      { error: "Failed to send email" },
-      { status: 500 },
-    );
+    return NextResponse.json({ error: "Failed to send email" }, { status: 500 });
   }
 }

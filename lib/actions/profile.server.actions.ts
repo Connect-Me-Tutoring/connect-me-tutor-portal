@@ -103,10 +103,7 @@ export async function getAllProfiles(
     `;
 
     // Build query
-    let query = supabase
-      .from(Table.Profiles)
-      .select(profileFields)
-      .eq("role", role);
+    let query = supabase.from(Table.Profiles).select(profileFields).eq("role", role);
 
     if (status) {
       query = query.eq("status", status);
@@ -165,9 +162,7 @@ export async function getAllProfiles(
   }
 }
 
-export const getProfileFromUserSettings = async (
-  userId: string,
-): Promise<Profile | null> => {
+export const getProfileFromUserSettings = async (userId: string): Promise<Profile | null> => {
   try {
     await requireSelfOrAdmin(userId);
     const supabase = await createClient();
@@ -253,17 +248,15 @@ export const getTutorStudents = async (tutorId: string) => {
     const studentIds = pairings.map((pairing) => pairing.student_id);
 
     // parallel fetch - saves a round trip
-    const [
-      { data: studentProfiles, error: profileError },
-      { data: enrollments },
-    ] = await Promise.all([
-      supabase.from(Table.Profiles).select("*").in("id", studentIds),
-      supabase
-        .from(Table.Enrollments)
-        .select("student_id")
-        .eq("tutor_id", tutorId)
-        .eq("paused", false), // only active enrollments matter for sorting
-    ]);
+    const [{ data: studentProfiles, error: profileError }, { data: enrollments }] =
+      await Promise.all([
+        supabase.from(Table.Profiles).select("*").in("id", studentIds),
+        supabase
+          .from(Table.Enrollments)
+          .select("student_id")
+          .eq("tutor_id", tutorId)
+          .eq("paused", false), // only active enrollments matter for sorting
+      ]);
 
     if (profileError) {
       console.error("Error fetching student profile", profileError);
@@ -271,9 +264,7 @@ export const getTutorStudents = async (tutorId: string) => {
     }
 
     // set of student ids w/ an active enrollment - used to sort below
-    const enrolledIds = new Set(
-      (enrollments ?? []).map((e: any) => e.student_id),
-    );
+    const enrolledIds = new Set((enrollments ?? []).map((e: any) => e.student_id));
 
     // Mapping the fetched data to the Profile object
     const userProfiles: Profile[] = studentProfiles.map((profile: any) => ({

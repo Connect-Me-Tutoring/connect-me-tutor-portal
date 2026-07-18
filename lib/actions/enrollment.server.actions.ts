@@ -46,12 +46,9 @@ type EnrollmentTableRow = {
   tutor?: unknown;
 };
 
-const profileOrNull = (profile: unknown) =>
-  profile ? tableToInterfaceProfiles(profile) : null;
+const profileOrNull = (profile: unknown) => (profile ? tableToInterfaceProfiles(profile) : null);
 
-const tableEnrollmentToInterface = (
-  enrollment: EnrollmentTableRow,
-): Enrollment => {
+const tableEnrollmentToInterface = (enrollment: EnrollmentTableRow): Enrollment => {
   const schedule = getEnrollmentSchedule({
     availability: enrollment.availability,
     day: enrollment.day,
@@ -84,9 +81,7 @@ const tableEnrollmentToInterface = (
 };
 
 /* ENROLLMENTS */
-export async function getAllActiveEnrollmentsServer(
-  endOfWeek: string,
-): Promise<Enrollment[]> {
+export async function getAllActiveEnrollmentsServer(endOfWeek: string): Promise<Enrollment[]> {
   try {
     await requireAdmin();
     const supabase = await createClient();
@@ -179,9 +174,7 @@ export async function getAllEnrollments(): Promise<Enrollment[] | null> {
     // Mapping the fetched data to the Notification object
     const enrollments: Enrollment[] = data
       .filter((enrollment) => enrollment.student && enrollment.tutor)
-      .map((enrollment) =>
-        tableEnrollmentToInterface(enrollment as EnrollmentTableRow),
-      );
+      .map((enrollment) => tableEnrollmentToInterface(enrollment as EnrollmentTableRow));
 
     return enrollments; // Return the array of enrollments
   } catch (error) {
@@ -190,9 +183,7 @@ export async function getAllEnrollments(): Promise<Enrollment[] | null> {
   }
 }
 
-export async function getAllActiveEnrollments(
-  endOfWeek?: string,
-): Promise<Enrollment[]> {
+export async function getAllActiveEnrollments(endOfWeek?: string): Promise<Enrollment[]> {
   try {
     await requireAdmin();
     const supabase = await createClient();
@@ -275,10 +266,7 @@ export async function getAllActiveEnrollmentsForCron(): Promise<Enrollment[]> {
       .eq("paused", false);
 
     if (error) {
-      console.error(
-        "Error fetching active enrollments for cron:",
-        error.message,
-      );
+      console.error("Error fetching active enrollments for cron:", error.message);
       throw error;
     }
 
@@ -295,9 +283,7 @@ export async function getAllActiveEnrollmentsForCron(): Promise<Enrollment[]> {
   }
 }
 
-export async function getEnrollments(
-  tutorId: string,
-): Promise<Enrollment[] | null> {
+export async function getEnrollments(tutorId: string): Promise<Enrollment[] | null> {
   try {
     await requireTutorProfileAccess(tutorId);
     const supabase = await createClient();
@@ -349,10 +335,7 @@ export async function getEnrollments(
 export const cachedGetEnrollments = cache(getEnrollments);
 
 // added this in order to remove future sessions on the SCHEDULE after an enrollment is deleted.
-export const removeFutureSessions = async (
-  enrollmentId: string,
-  supabase: any,
-) => {
+export const removeFutureSessions = async (enrollmentId: string, supabase: any) => {
   try {
     const now: string = new Date().toISOString();
     await supabase
@@ -376,8 +359,10 @@ export const removeEnrollment = async (enrollmentId: string) => {
 
   const supabase = await createClient();
 
-  const { data: deleteEnrollmentData, error: deleteEnrollmentError } =
-    await supabase.from("Enrollments").delete().eq("id", enrollmentId);
+  const { data: deleteEnrollmentData, error: deleteEnrollmentError } = await supabase
+    .from("Enrollments")
+    .delete()
+    .eq("id", enrollmentId);
 
   if (deleteEnrollmentError) {
     console.error("Error removing enrollment:", deleteEnrollmentError);
@@ -395,31 +380,27 @@ export const updateEnrollment = async (enrollment: Enrollment) => {
       throw new Error("Please add an availability");
     }
 
-    enrollment.duration = await handleCalculateDuration(
-      schedule.startTime,
-      schedule.endTime,
-    );
+    enrollment.duration = await handleCalculateDuration(schedule.startTime, schedule.endTime);
 
-    const { data: updateEnrollmentData, error: updateEnrollmentError } =
-      await supabase
-        .from(Table.Enrollments)
-        .update({
-          student_id: enrollment.student?.id,
-          tutor_id: enrollment.tutor?.id,
-          summary: enrollment.summary,
-          start_date: enrollment.startDate,
-          end_date: enrollment.endDate,
-          availability,
-          day: schedule.day,
-          start_time: schedule.startTime,
-          end_time: schedule.endTime,
-          meetingId: enrollment.meetingId,
-          duration: enrollment.duration,
-          frequency: enrollment.frequency,
-        })
-        .eq("id", enrollment.id)
-        .select("*")
-        .single();
+    const { data: updateEnrollmentData, error: updateEnrollmentError } = await supabase
+      .from(Table.Enrollments)
+      .update({
+        student_id: enrollment.student?.id,
+        tutor_id: enrollment.tutor?.id,
+        summary: enrollment.summary,
+        start_date: enrollment.startDate,
+        end_date: enrollment.endDate,
+        availability,
+        day: schedule.day,
+        start_time: schedule.startTime,
+        end_time: schedule.endTime,
+        meetingId: enrollment.meetingId,
+        duration: enrollment.duration,
+        frequency: enrollment.frequency,
+      })
+      .eq("id", enrollment.id)
+      .select("*")
+      .single();
 
     if (updateEnrollmentError) {
       console.error("Error updating enrollment: ", updateEnrollmentError);
@@ -450,10 +431,7 @@ const updateFutureSessions = async (enrollment: Enrollment) => {
   if (error) throw error;
 };
 
-export const getEnrollmentsWithMissingSEF = async (
-  timeProvided: Date,
-  weeksMissingSEF: number,
-) => {
+export const getEnrollmentsWithMissingSEF = async (timeProvided: Date, weeksMissingSEF: number) => {
   const supabase = await createAdminClient();
   try {
     const now = new Date().toISOString();
@@ -493,8 +471,7 @@ export const addEnrollment = async (
   const auth = tutorId
     ? await requireTutorProfileAccess(tutorId)
     : await requireAuthenticatedProfile();
-  const enrollmentTutorId =
-    tutorId || (auth.profile.role === "Tutor" ? auth.profile.id : "");
+  const enrollmentTutorId = tutorId || (auth.profile.role === "Tutor" ? auth.profile.id : "");
 
   if (!enrollmentTutorId) throw new Error("Please select a Tutor");
 
@@ -506,13 +483,9 @@ export const addEnrollment = async (
       throw new Error("Please add an availability");
     }
 
-    const duration = await handleCalculateDuration(
-      schedule.startTime,
-      schedule.endTime,
-    );
+    const duration = await handleCalculateDuration(schedule.startTime, schedule.endTime);
 
-    if (enrollment.duration <= 0)
-      throw new Error("Duration should be a positive amount");
+    if (enrollment.duration <= 0) throw new Error("Duration should be a positive amount");
 
     if (!enrollment.student) throw new Error("Please select a Student");
 
@@ -673,18 +646,11 @@ export async function warnInactiveEnrollments() {
 async function inactiveEnrollmentsHelper(params: {
   deadline: Date;
   weeksMissing: number;
-  emailFn: (params: {
-    tutor: Profile;
-    student: Profile;
-    enrollment: Enrollment;
-  }) => Promise<void>;
+  emailFn: (params: { tutor: Profile; student: Profile; enrollment: Enrollment }) => Promise<void>;
 }) {
   const supabase = await createAdminClient();
   const { deadline, weeksMissing, emailFn } = params;
-  const targetEnrollments = await getEnrollmentsWithMissingSEF(
-    deadline,
-    weeksMissing,
-  );
+  const targetEnrollments = await getEnrollmentsWithMissingSEF(deadline, weeksMissing);
 
   if (!targetEnrollments || targetEnrollments.length === 0) {
     return [];
@@ -718,8 +684,7 @@ async function inactiveEnrollmentsHelper(params: {
     .throwOnError();
 
   const enrollments: Enrollment[] =
-    data?.map((enrollment: any) => tableToInterfaceEnrollments(enrollment)) ??
-    [];
+    data?.map((enrollment: any) => tableToInterfaceEnrollments(enrollment)) ?? [];
 
   await Promise.all(
     enrollments
@@ -757,11 +722,7 @@ async function sendEmailHelper(
     student: Profile;
     enrollment: Enrollment;
   },
-  msgTemplate: (params: {
-    tutor: Profile;
-    student: Profile;
-    enrollment: Enrollment;
-  }) => string,
+  msgTemplate: (params: { tutor: Profile; student: Profile; enrollment: Enrollment }) => string,
 ) {
   try {
     const { tutor } = params;

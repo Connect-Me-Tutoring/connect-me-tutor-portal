@@ -125,9 +125,7 @@ describe("GET /api/cron/cancel-unsubmitted-sef", () => {
   });
 
   it("should return 500 when update fails", async () => {
-    const mockSessions = [
-      { tutor_id: "tutor-1", session_date: "2024-01-01", status: "Active" },
-    ];
+    const mockSessions = [{ tutor_id: "tutor-1", session_date: "2024-01-01", status: "Active" }];
 
     let callCount = 0;
     mockFrom.mockImplementation(() => {
@@ -144,9 +142,7 @@ describe("GET /api/cron/cancel-unsubmitted-sef", () => {
         return {
           update: vi.fn().mockReturnValue({
             eq: vi.fn().mockReturnValue({
-              lt: vi
-                .fn()
-                .mockResolvedValue({ error: { message: "Update failed" } }),
+              lt: vi.fn().mockResolvedValue({ error: { message: "Update failed" } }),
             }),
           }),
         };

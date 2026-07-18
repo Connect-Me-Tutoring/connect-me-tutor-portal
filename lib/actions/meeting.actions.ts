@@ -97,10 +97,7 @@ export const checkAvailableMeeting = async (
     //
     // const requestedSessionStartTime = parseISO(session.date);\
     const requestedSessionStartTime = requestedDate;
-    const requestedSessionEndTime = addHours(
-      requestedSessionStartTime,
-      session.duration,
-    );
+    const requestedSessionEndTime = addHours(requestedSessionStartTime, session.duration);
 
     meetings.forEach((meeting) => {
       const hasConflict = sessionsToSearch
@@ -114,14 +111,9 @@ export const checkAvailableMeeting = async (
                   end: requestedSessionEndTime,
                 },
                 {
-                  start: existingSession.date
-                    ? parseISO(existingSession.date)
-                    : new Date(),
+                  start: existingSession.date ? parseISO(existingSession.date) : new Date(),
                   end: existingSession.date
-                    ? addHours(
-                        parseISO(existingSession.date),
-                        existingSession.duration,
-                      )
+                    ? addHours(parseISO(existingSession.date), existingSession.duration)
                     : new Date(),
                 },
               )
@@ -147,10 +139,9 @@ export const checkAvailableMeetingForEnrollments = async (
     updatedMeetingAvailability[meeting.id] = true;
   });
   const newEnrollmentAvailability = getEnrollmentAvailability(enroll);
-  const [newEnrollmentStartTime, newEnrollmentEndTime] =
-    newEnrollmentAvailability[0]
-      ? formatAvailabilityAsDate(newEnrollmentAvailability[0])
-      : [new Date(NaN), new Date(NaN)];
+  const [newEnrollmentStartTime, newEnrollmentEndTime] = newEnrollmentAvailability[0]
+    ? formatAvailabilityAsDate(newEnrollmentAvailability[0])
+    : [new Date(NaN), new Date(NaN)];
   const newRange = {
     start: newEnrollmentStartTime.getTime(),
     end: newEnrollmentEndTime.getTime(),

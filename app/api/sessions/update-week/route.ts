@@ -1,9 +1,6 @@
 import { getAllActiveEnrollmentsServer } from "@/lib/actions/enrollment.server.actions";
 import { NextRequest, NextResponse } from "next/server";
-import {
-  addSessionsServer,
-  getAllSessionsServer,
-} from "@/lib/actions/session.server.actions";
+import { addSessionsServer, getAllSessionsServer } from "@/lib/actions/session.server.actions";
 import { Session } from "@/types";
 import { getEasternWeekBounds } from "@/lib/utils";
 import { isCronRequestAuthorized } from "@/lib/security/cron";
@@ -21,10 +18,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ newSessions: newSessions }, { status: 200 });
   } catch (error) {
     const err = error as Error;
-    return NextResponse.json(
-      { error: `Update Week error ${err.message}` },
-      { status: 500 },
-    );
+    return NextResponse.json({ error: `Update Week error ${err.message}` }, { status: 500 });
   }
 }
 
@@ -37,19 +31,9 @@ const handleUpdateWeek = async (): Promise<Session[]> => {
     const weekEnd = weekBounds.weekEnd.toISOString();
 
     const enrollments = await getAllActiveEnrollmentsServer(weekEnd);
-    const sessions: Session[] = await getAllSessionsServer(
-      weekStart,
-      weekEnd,
-      "date",
-      true,
-    );
+    const sessions: Session[] = await getAllSessionsServer(weekStart, weekEnd, "date", true);
 
-    const newSessions = await addSessionsServer(
-      weekStart,
-      weekEnd,
-      enrollments,
-      sessions,
-    );
+    const newSessions = await addSessionsServer(weekStart, weekEnd, enrollments, sessions);
     if (!newSessions) {
       throw new Error("No sessions were created");
     }

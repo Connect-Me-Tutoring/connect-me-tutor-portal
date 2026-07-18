@@ -1,11 +1,4 @@
-import {
-  Profile,
-  Session,
-  Notification,
-  Event,
-  Enrollment,
-  Meeting,
-} from "@/types";
+import { Profile, Session, Notification, Event, Enrollment, Meeting } from "@/types";
 import {
   deleteScheduledEmailBeforeSessions,
   sendScheduledEmailsBeforeSessions,
@@ -117,9 +110,7 @@ export async function addSessions(
 
     // skip enrollments that already have a session this week, even if rescheduled to a different time
     const enrollmentsWithSessions: Set<string> = new Set(
-      sessions
-        .filter((s) => s.enrollmentId)
-        .map((s) => s.enrollmentId as string),
+      sessions.filter((s) => s.enrollmentId).map((s) => s.enrollmentId as string),
     );
 
     // Prepare bulk insert data
@@ -198,25 +189,15 @@ export async function addSessions(
           const [startHour, startMinute] = startTime.split(":").map(Number);
           const [endHour, endMinute] = endTime.split(":").map(Number);
 
-          if (
-            isNaN(startHour) ||
-            isNaN(startMinute) ||
-            isNaN(endHour) ||
-            isNaN(endMinute)
-          ) {
-            throw new Error(
-              `Invalid time format: start=${startTime}, end=${endTime}`,
-            );
+          if (isNaN(startHour) || isNaN(startMinute) || isNaN(endHour) || isNaN(endMinute)) {
+            throw new Error(`Invalid time format: start=${startTime}, end=${endTime}`);
           }
 
           // Create session date with correct time
           // * SetHours and SetMinutes are dependent on local timezone
 
           const dateString = `${format(currentDate, "yyyy-MM-dd")}T${startTime}:00`;
-          const sessionStartTime = fromZonedTime(
-            dateString,
-            "America/New_York",
-          ); // Automatically handles DST
+          const sessionStartTime = fromZonedTime(dateString, "America/New_York"); // Automatically handles DST
 
           if (sessionStartTime < startDate_asDate) {
             throw new Error("Session occurs before start date");
@@ -245,10 +226,7 @@ export async function addSessions(
             scheduledSessions.add(sessionKey);
           } ////
         } catch (err) {
-          console.error(
-            `Error processing time for ${day} ${startTime}-${endTime}:`,
-            err,
-          );
+          console.error(`Error processing time for ${day} ${startTime}-${endTime}:`, err);
         }
 
         // Move to next day
@@ -258,9 +236,7 @@ export async function addSessions(
 
     // Perform batch insert if we have sessions to create
     if (sessionsToCreate.length > 0) {
-      const { data, error } = await supabase
-        .from(Table.Sessions)
-        .insert(sessionsToCreate).select(`
+      const { data, error } = await supabase.from(Table.Sessions).insert(sessionsToCreate).select(`
           *,
           student:Profiles!student_id(*),
           tutor:Profiles!tutor_id(*),
@@ -271,9 +247,7 @@ export async function addSessions(
 
       if (data) {
         // Transform returned data to Session objects
-        const sessions: Session[] = data.map((session: any) =>
-          tableToInterfaceSessions(session),
-        );
+        const sessions: Session[] = data.map((session: any) => tableToInterfaceSessions(session));
         return sessions;
       }
     }
@@ -295,9 +269,7 @@ export async function getStudentSessions(
     ascending?: boolean;
   },
 ): Promise<Session[]> {
-  const { startDate, endDate, status, orderBy, ascending } = params
-    ? params
-    : {};
+  const { startDate, endDate, status, orderBy, ascending } = params ? params : {};
 
   let query = supabase
     .from(Table.Sessions)
@@ -339,9 +311,7 @@ export async function getStudentSessions(
 
   // Map the result to the Session interface
   const sessions: Session[] = data
-    .filter(
-      (session) => session.meeting && session.tutor_id && session.student_id,
-    )
+    .filter((session) => session.meeting && session.tutor_id && session.student_id)
     .map((session: any) => tableToInterfaceSessions(session));
 
   return sessions;
@@ -357,9 +327,7 @@ export async function getTutorSessions(
     ascending?: boolean;
   },
 ): Promise<Session[]> {
-  const { startDate, endDate, status, orderBy, ascending } = params
-    ? params
-    : {};
+  const { startDate, endDate, status, orderBy, ascending } = params ? params : {};
 
   let query = supabase
     .from(Table.Sessions)
@@ -408,11 +376,7 @@ export async function getTutorSessions(
 }
 
 export async function getSessionTimePassed(sessionId: string): Promise<number> {
-  const { data } = await supabase
-    .from("Sessions")
-    .select("date")
-    .single()
-    .throwOnError();
+  const { data } = await supabase.from("Sessions").select("date").single().throwOnError();
   if (!data || !data.date) throw new Error("Session Date Not Found");
   const sessionDate: Date = new Date(data.date);
   const now: Date = new Date();
@@ -503,9 +467,7 @@ export async function addOneSession(session: Session): Promise<Session | null> {
   }
 }
 
-export async function sendStudentSEFFeedbackEmail(
-  session: Session,
-): Promise<void> {
+export async function sendStudentSEFFeedbackEmail(session: Session): Promise<void> {
   try {
     const { studentName, studentEmail } = getStudentFromSession(session);
     const response = await fetch("/api/admin/email/student-SEF-feedback", {
@@ -521,12 +483,9 @@ export async function sendStudentSEFFeedbackEmail(
     });
 
     if (!response.ok) {
-      const errorData = await response
-        .json()
-        .catch(() => ({ message: "Unknown error" }));
+      const errorData = await response.json().catch(() => ({ message: "Unknown error" }));
       throw new Error(
-        errorData.message ||
-          `HTTP ${response.status}: Unable to send student SEF feedback email`,
+        errorData.message || `HTTP ${response.status}: Unable to send student SEF feedback email`,
       );
     }
 

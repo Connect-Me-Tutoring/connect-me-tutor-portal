@@ -12,9 +12,7 @@ export async function GET(request: NextRequest) {
   try {
     const supabase = await createClient();
     const now = new Date();
-    const fortyEightHoursAgo = new Date(
-      now.getTime() - 48 * 60 * 60 * 1000,
-    ).toISOString();
+    const fortyEightHoursAgo = new Date(now.getTime() - 48 * 60 * 60 * 1000).toISOString();
 
     const { data: sessions, error: fetchError } = await supabase
       .from("Sessions")
@@ -24,10 +22,7 @@ export async function GET(request: NextRequest) {
 
     if (fetchError) {
       console.error("Error fetching sessions to cancel:", fetchError);
-      return NextResponse.json(
-        { error: "Failed to fetch sessions" },
-        { status: 500 },
-      );
+      return NextResponse.json({ error: "Failed to fetch sessions" }, { status: 500 });
     }
 
     if (!sessions || sessions.length === 0) {
@@ -45,10 +40,7 @@ export async function GET(request: NextRequest) {
 
     if (updateError) {
       console.error("Error cancelling sessions:", updateError);
-      return NextResponse.json(
-        { error: "Failed to cancel sessions" },
-        { status: 500 },
-      );
+      return NextResponse.json({ error: "Failed to cancel sessions" }, { status: 500 });
     }
 
     return NextResponse.json({
@@ -57,9 +49,6 @@ export async function GET(request: NextRequest) {
     });
   } catch (error) {
     console.error("Unable to cancel unsubmitted SEF:", error);
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 },
-    );
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }

@@ -22,22 +22,11 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import {
-  Clock,
-  Users,
-  AlertCircle,
-  Calendar,
-  XCircle,
-  CheckCircle,
-  Waypoints,
-} from "lucide-react";
+import { Clock, Users, AlertCircle, Calendar, XCircle, CheckCircle, Waypoints } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { getPairingLogs } from "@/lib/actions/pairing.actions";
-import type {
-  PairingMatchPreview,
-  PairingWorkflowPreviewPayload,
-} from "@/types/pairing";
+import type { PairingMatchPreview, PairingWorkflowPreviewPayload } from "@/types/pairing";
 import { normalizePairingWorkflowPreviewPayload } from "@/lib/pairing/normalizePreviewPayload";
 import type { PairingLogSchemaType } from "@/lib/pairing/types";
 import { filterPairingPreviewLogsForKeys } from "@/lib/pairing/filterPreviewLogs";
@@ -124,13 +113,9 @@ export function PairingLogsTable() {
   const [dateTo, setDateTo] = useState<string>(formatDate(tomorrow));
   const [previewRun, setPreviewRun] = useState<StoredPairingRun | null>(null);
   const [selectedKeys, setSelectedKeys] = useState<Set<string>>(new Set());
-  const [graphScope, setGraphScope] = useState<"closed" | "selected" | "complete">(
-    "closed",
-  );
+  const [graphScope, setGraphScope] = useState<"closed" | "selected" | "complete">("closed");
 
-  const hasOverlapPreviews = Boolean(
-    previewRun?.preview.matchPreviews?.length,
-  );
+  const hasOverlapPreviews = Boolean(previewRun?.preview.matchPreviews?.length);
   const isLegacyPreview = previewRun && !hasOverlapPreviews;
 
   useEffect(() => {
@@ -138,11 +123,7 @@ export function PairingLogsTable() {
       setSelectedKeys(new Set());
       return;
     }
-    setSelectedKeys(
-      new Set(
-        previewRun.preview.matchPreviews.map((p) => previewKey(p)),
-      ),
-    );
+    setSelectedKeys(new Set(previewRun.preview.matchPreviews.map((p) => previewKey(p))));
   }, [previewRun?.runId, previewRun?.createdAt]);
 
   const togglePreviewKey = useCallback((key: string, checked: boolean) => {
@@ -156,9 +137,7 @@ export function PairingLogsTable() {
 
   const selectAllPreviews = useCallback(() => {
     if (!previewRun?.preview.matchPreviews?.length) return;
-    setSelectedKeys(
-      new Set(previewRun.preview.matchPreviews.map((p) => previewKey(p))),
-    );
+    setSelectedKeys(new Set(previewRun.preview.matchPreviews.map((p) => previewKey(p))));
   }, [previewRun]);
 
   const clearPreviewSelection = useCallback(() => {
@@ -185,14 +164,11 @@ export function PairingLogsTable() {
 
   const selectedGraphPreviews = useMemo(() => {
     if (!previewRun?.preview.matchPreviews?.length) return [];
-    return previewRun.preview.matchPreviews.filter((p) =>
-      selectedKeys.has(previewKey(p)),
-    );
+    return previewRun.preview.matchPreviews.filter((p) => selectedKeys.has(previewKey(p)));
   }, [previewRun, selectedKeys]);
 
   const canShowCompleteGraph = completeGraphPreviews.length > 0;
-  const canShowSelectedGraph =
-    hasOverlapPreviews && selectedGraphPreviews.length > 0;
+  const canShowSelectedGraph = hasOverlapPreviews && selectedGraphPreviews.length > 0;
 
   const previewActionLabel = previewRun?.appliedAt
     ? "Queue Already Saved"
@@ -209,9 +185,7 @@ export function PairingLogsTable() {
       setLoading(true);
       setError(null);
       try {
-        const raw = window.sessionStorage.getItem(
-          `${PREVIEW_RUN_STORAGE_PREFIX}${previewRunId}`,
-        );
+        const raw = window.sessionStorage.getItem(`${PREVIEW_RUN_STORAGE_PREFIX}${previewRunId}`);
         if (!raw) {
           setPreviewRun(null);
           setError("No saved preview run found for this run id");
@@ -268,10 +242,7 @@ export function PairingLogsTable() {
   const filteredLogs = logs.filter((log) => {
     if (filterType !== "all" && log.type !== filterType) return false;
     if (!pairingLogMatchesUserType(log, filterUserType)) return false;
-    if (
-      filterStatus !== "all" &&
-      log.status.toLowerCase() !== filterStatus.toLowerCase()
-    )
+    if (filterStatus !== "all" && log.status.toLowerCase() !== filterStatus.toLowerCase())
       return false;
 
     return true;
@@ -287,16 +258,12 @@ export function PairingLogsTable() {
   };
 
   // Get unique status values from actual data for filter options
-  const uniqueStatuses = Array.from(
-    new Set(logs.map((log) => log.status.toLowerCase()))
-  );
+  const uniqueStatuses = Array.from(new Set(logs.map((log) => log.status.toLowerCase())));
 
   const handleRefresh = async () => {
     if (previewRunId) {
       if (typeof window === "undefined") return;
-      const raw = window.sessionStorage.getItem(
-        `${PREVIEW_RUN_STORAGE_PREFIX}${previewRunId}`,
-      );
+      const raw = window.sessionStorage.getItem(`${PREVIEW_RUN_STORAGE_PREFIX}${previewRunId}`);
       if (!raw) {
         setError("No saved preview run found for this run id");
         setLogs([]);
@@ -362,10 +329,7 @@ export function PairingLogsTable() {
         tutor_id: p.tutor_id,
         similarity: p.similarity,
       }));
-      logs = filterPairingPreviewLogsForKeys(
-        previewRun.preview.logs,
-        selectedKeys,
-      );
+      logs = filterPairingPreviewLogsForKeys(previewRun.preview.logs, selectedKeys);
     }
 
     setIsApplying(true);
@@ -464,9 +428,7 @@ export function PairingLogsTable() {
       {previewRun && (
         <Card>
           <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle>
-              Preview Actions ({previewRun.runId.slice(0, 8)})
-            </CardTitle>
+            <CardTitle>Preview Actions ({previewRun.runId.slice(0, 8)})</CardTitle>
             <div className="flex flex-wrap items-center gap-2">
               {canShowCompleteGraph && hasOverlapPreviews && (
                 <>
@@ -521,12 +483,7 @@ export function PairingLogsTable() {
               >
                 {previewActionLabel}
               </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleRefresh}
-                disabled={loading}
-              >
+              <Button variant="outline" size="sm" onClick={handleRefresh} disabled={loading}>
                 {loading ? "Refreshing..." : "Reload Preview"}
               </Button>
             </div>
@@ -537,9 +494,8 @@ export function PairingLogsTable() {
       {previewRun && isLegacyPreview && !previewRun.appliedAt && (
         <Card className="border-amber-200 bg-amber-50">
           <CardContent className="pt-4 text-sm text-amber-900">
-            This preview has no overlap metadata. Saving will apply all proposed
-            matches. Run a new preview from the queue for overlap review and
-            selective save.
+            This preview has no overlap metadata. Saving will apply all proposed matches. Run a new
+            preview from the queue for overlap review and selective save.
           </CardContent>
         </Card>
       )}
@@ -590,24 +546,16 @@ export function PairingLogsTable() {
                           <Checkbox
                             checked={selectedKeys.has(key)}
                             disabled={Boolean(previewRun.appliedAt)}
-                            onCheckedChange={(v) =>
-                              togglePreviewKey(key, v === true)
-                            }
+                            onCheckedChange={(v) => togglePreviewKey(key, v === true)}
                             aria-label={`Select ${p.student_name}`}
                           />
                         </TableCell>
-                        <TableCell className="font-medium text-sm">
-                          {p.student_name}
-                        </TableCell>
-                        <TableCell className="font-medium text-sm">
-                          {p.tutor_name}
-                        </TableCell>
+                        <TableCell className="font-medium text-sm">{p.student_name}</TableCell>
+                        <TableCell className="font-medium text-sm">{p.tutor_name}</TableCell>
                         <TableCell>
                           <div className="flex flex-wrap gap-1 max-w-[200px]">
                             {p.overlapping_subjects.length === 0 ? (
-                              <span className="text-xs text-muted-foreground">
-                                None
-                              </span>
+                              <span className="text-xs text-muted-foreground">None</span>
                             ) : (
                               p.overlapping_subjects.map((s) => (
                                 <Badge key={s} variant="secondary" className="text-xs">
@@ -620,9 +568,7 @@ export function PairingLogsTable() {
                         <TableCell>
                           <div className="flex flex-col gap-1 max-w-[220px]">
                             {p.overlapping_slots.length === 0 ? (
-                              <span className="text-xs text-muted-foreground">
-                                None
-                              </span>
+                              <span className="text-xs text-muted-foreground">None</span>
                             ) : (
                               p.overlapping_slots.map((slot, i) => (
                                 <Badge
@@ -630,8 +576,7 @@ export function PairingLogsTable() {
                                   variant="outline"
                                   className="text-xs w-fit"
                                 >
-                                  {slot.day}: {to12Hour(slot.startTime)} –{" "}
-                                  {to12Hour(slot.endTime)}
+                                  {slot.day}: {to12Hour(slot.startTime)} – {to12Hour(slot.endTime)}
                                 </Badge>
                               ))
                             )}
@@ -662,9 +607,7 @@ export function PairingLogsTable() {
             </Card>
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">
-                  Matches Created
-                </CardTitle>
+                <CardTitle className="text-sm font-medium">Matches Created</CardTitle>
                 <Users className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
@@ -705,12 +648,7 @@ export function PairingLogsTable() {
             <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle>Filters</CardTitle>
               <div className="flex flex-wrap items-center gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleRefresh}
-                  disabled={loading}
-                >
+                <Button variant="outline" size="sm" onClick={handleRefresh} disabled={loading}>
                   {loading ? "Refreshing..." : "Refresh"}
                 </Button>
               </div>
@@ -750,24 +688,15 @@ export function PairingLogsTable() {
                     <SelectContent>
                       <SelectItem value="all">All Types</SelectItem>
                       <SelectItem value="pairing-match">Pairing Match</SelectItem>
-                      <SelectItem value="pairing-match-accepted">
-                        Match Accepted
-                      </SelectItem>
-                      <SelectItem value="pairing-match-rejected">
-                        Match Rejected
-                      </SelectItem>
-                      <SelectItem value="pairing-selection-failed">
-                        Selection Failed
-                      </SelectItem>
+                      <SelectItem value="pairing-match-accepted">Match Accepted</SelectItem>
+                      <SelectItem value="pairing-match-rejected">Match Rejected</SelectItem>
+                      <SelectItem value="pairing-selection-failed">Selection Failed</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
                 <div className="space-y-2">
                   <label className="text-sm font-medium">User Type</label>
-                  <Select
-                    value={filterUserType}
-                    onValueChange={setFilterUserType}
-                  >
+                  <Select value={filterUserType} onValueChange={setFilterUserType}>
                     <SelectTrigger className="w-[180px]">
                       <SelectValue />
                     </SelectTrigger>
@@ -839,10 +768,7 @@ export function PairingLogsTable() {
                       </TableRow>
                     ) : filteredLogs.length === 0 ? (
                       <TableRow>
-                        <TableCell
-                          colSpan={5}
-                          className="text-center py-8 text-muted-foreground"
-                        >
+                        <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
                           {logs.length === 0
                             ? "No pairing logs found"
                             : "No logs match the current filters"}
@@ -852,16 +778,12 @@ export function PairingLogsTable() {
                       filteredLogs.map((log) => (
                         <TableRow key={log.id}>
                           <TableCell className="font-mono text-sm">
-                            {log.created_at
-                              ? new Date(log.created_at).toLocaleString()
-                              : "-"}
+                            {log.created_at ? new Date(log.created_at).toLocaleString() : "-"}
                           </TableCell>
                           <TableCell>
                             <div className="flex items-center gap-2">
                               {getTypeIcon(log.type)}
-                              <span className="capitalize">
-                                {log.type.replace(/-/g, " ")}
-                              </span>
+                              <span className="capitalize">{log.type.replace(/-/g, " ")}</span>
                             </div>
                           </TableCell>
                           <TableCell>
@@ -877,9 +799,7 @@ export function PairingLogsTable() {
                             )}
                           </TableCell>
                           <TableCell>
-                            <Badge className={getStatusColor(log.status)}>
-                              {log.status}
-                            </Badge>
+                            <Badge className={getStatusColor(log.status)}>{log.status}</Badge>
                           </TableCell>
                           <TableCell className="max-w-md">
                             <div className="truncate" title={log.message}>
@@ -897,6 +817,5 @@ export function PairingLogsTable() {
         </>
       )}
     </div>
-  
   );
 }

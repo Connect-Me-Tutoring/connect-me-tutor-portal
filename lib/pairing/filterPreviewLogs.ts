@@ -24,12 +24,9 @@ export function filterPairingPreviewLogsForKeys(
       if (log.type === "pairing-selection-failed") return true;
       if (log.type !== "pairing-match") return false;
       const meta = log.metadata as
-        | { pairing_request_id?: string; match_profile_id?: string }
-        | undefined;
+        { pairing_request_id?: string; match_profile_id?: string } | undefined;
       if (!meta?.pairing_request_id || !meta?.match_profile_id) return false;
-      return selectedKeys.has(
-        `${meta.pairing_request_id}:${meta.match_profile_id}`,
-      );
+      return selectedKeys.has(`${meta.pairing_request_id}:${meta.match_profile_id}`);
     })
     .sort((a, b) => getLogTimestampMs(b) - getLogTimestampMs(a)) as PairingLogSchemaType[];
 }

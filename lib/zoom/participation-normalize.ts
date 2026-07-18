@@ -86,8 +86,7 @@ function ensureOpensWithJoin(
   if (sorted.length === 0) return sorted;
   if (sorted[0].action === "joined") return sorted;
   const firstTs = new Date(sorted[0].timestamp);
-  const joinTs =
-    firstTs.getTime() < sessionStart.getTime() ? firstTs : sessionStart;
+  const joinTs = firstTs.getTime() < sessionStart.getTime() ? firstTs : sessionStart;
   const inferredJoin: NormalizedParticipationEvent = {
     id: `inferred-join-${participantId}-${sorted[0].id}`,
     participantId,
@@ -127,10 +126,8 @@ function summarizeParticipantChain(
   let totalMinutes = 0;
   let joinCount = 0;
   let joinTime: number | null = null;
-  const firstJoined =
-    chain.find((e) => e.action === "joined")?.timestamp ?? "";
-  let lastActivity =
-    chain.length > 0 ? chain[chain.length - 1].timestamp : firstJoined;
+  const firstJoined = chain.find((e) => e.action === "joined")?.timestamp ?? "";
+  let lastActivity = chain.length > 0 ? chain[chain.length - 1].timestamp : firstJoined;
   const joinedBeforeScheduledStart = chain.some(
     (e) => e.action === "joined" && e.joinedBeforeScheduledStart,
   );
@@ -164,8 +161,7 @@ function summarizeParticipantChain(
     }
   }
 
-  const effectiveJoinCount =
-    joinCount > 0 ? joinCount : hadInferredJoin ? 1 : 0;
+  const effectiveJoinCount = joinCount > 0 ? joinCount : hadInferredJoin ? 1 : 0;
 
   return {
     id: participantId,
@@ -232,8 +228,7 @@ export function normalizeZoomParticipationEvents(
 
   for (const [, bucket] of byKey) {
     const sortedRaw = [...bucket.raw].sort(
-      (a, b) =>
-        new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime(),
+      (a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime(),
     );
 
     let chain: NormalizedParticipationEvent[] = sortedRaw.map((r) => ({
@@ -273,10 +268,7 @@ export function normalizeZoomParticipationEvents(
     allNormalized.push(...chain);
   }
 
-  allNormalized.sort(
-    (a, b) =>
-      new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime(),
-  );
+  allNormalized.sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
   participantSummaries.sort((a, b) => b.totalDuration - a.totalDuration);
 
   return { events: allNormalized, participantSummaries };

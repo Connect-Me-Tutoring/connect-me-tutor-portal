@@ -1,13 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import {
-  RefreshCw,
-  ExternalLink,
-  Calendar,
-  BookOpen,
-  Languages,
-} from "lucide-react";
+import { RefreshCw, ExternalLink, Calendar, BookOpen, Languages } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
@@ -48,15 +42,8 @@ export function ProfilePreview() {
     <div className="space-y-4">
       <div className="flex justify-between items-center">
         <h3 className="font-medium">Profile Settings</h3>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={handleRefresh}
-          disabled={refreshing}
-        >
-          <RefreshCw
-            className={`h-4 w-4 mr-1 ${refreshing ? "animate-spin" : ""}`}
-          />
+        <Button variant="outline" size="sm" onClick={handleRefresh} disabled={refreshing}>
+          <RefreshCw className={`h-4 w-4 mr-1 ${refreshing ? "animate-spin" : ""}`} />
           Refresh
         </Button>
       </div>
@@ -77,9 +64,7 @@ export function ProfilePreview() {
                 ))}
               </div>
             ) : (
-              <p className="text-sm text-muted-foreground">
-                No availability set
-              </p>
+              <p className="text-sm text-muted-foreground">No availability set</p>
             )}
           </div>
         </div>
@@ -89,17 +74,14 @@ export function ProfilePreview() {
           <div className="flex-1">
             <p className="text-sm font-medium">Subjects</p>
             <div className="flex flex-wrap gap-1 mt-1">
-              {profile.subjects_of_interest &&
-              profile.subjects_of_interest.length > 0 ? (
+              {profile.subjects_of_interest && profile.subjects_of_interest.length > 0 ? (
                 profile.subjects_of_interest.map((subject, i) => (
                   <Badge key={i} variant="secondary">
                     {subject}
                   </Badge>
                 ))
               ) : (
-                <p className="text-sm text-muted-foreground">
-                  No subjects added
-                </p>
+                <p className="text-sm text-muted-foreground">No subjects added</p>
               )}
             </div>
           </div>
@@ -110,17 +92,14 @@ export function ProfilePreview() {
           <div className="flex-1">
             <p className="text-sm font-medium">Languages</p>
             <div className="flex flex-wrap gap-1 mt-1">
-              {profile.languages_spoken &&
-              profile.languages_spoken.length > 0 ? (
+              {profile.languages_spoken && profile.languages_spoken.length > 0 ? (
                 profile.languages_spoken.map((language, i) => (
                   <Badge key={i} variant="outline">
                     {language}
                   </Badge>
                 ))
               ) : (
-                <p className="text-sm text-muted-foreground">
-                  No languages added
-                </p>
+                <p className="text-sm text-muted-foreground">No languages added</p>
               )}
             </div>
           </div>

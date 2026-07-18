@@ -2,34 +2,22 @@ import { writeSpreadSheet } from "@/lib/google-sheet";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { CATEGORY_LABELS } from "@/constants/sessionExitForm";
-import {
-  SessionExitFormCategory,
-  SessionExitFormPayload,
-} from "@/types/sessionExitForm";
-
-
+import { SessionExitFormCategory, SessionExitFormPayload } from "@/types/sessionExitForm";
 
 export const dynamic = "force-dynamic";
 
 const optionalText = (max: number) =>
-  z.preprocess(
-    (value) => {
-      if (value === null || value === undefined || value === "") {
-        return undefined;
-      }
-      return typeof value === "string" ? value.trim() : value;
-    },
-    z.string().max(max).optional(),
-  );
-
-const optionalEmail = z.preprocess(
-  (value) => {
-    if (value === null || value === undefined || value === "") return undefined;
+  z.preprocess((value) => {
+    if (value === null || value === undefined || value === "") {
+      return undefined;
+    }
     return typeof value === "string" ? value.trim() : value;
-  },
-  z.string().email().max(254).optional(),
-);
+  }, z.string().max(max).optional());
 
+const optionalEmail = z.preprocess((value) => {
+  if (value === null || value === undefined || value === "") return undefined;
+  return typeof value === "string" ? value.trim() : value;
+}, z.string().email().max(254).optional());
 
 const formSchema = z
   .object({
@@ -62,19 +50,13 @@ export async function POST(request: NextRequest) {
   try {
     body = await request.json();
   } catch {
-    return NextResponse.json(
-      { success: false, error: "Invalid JSON body" },
-      { status: 400 },
-    );
+    return NextResponse.json({ success: false, error: "Invalid JSON body" }, { status: 400 });
   }
 
   const parsed = formSchema.safeParse(body);
 
   if (!parsed.success) {
-    return NextResponse.json(
-      { success: false, error: "Invalid request body" },
-      { status: 400 },
-    );
+    return NextResponse.json({ success: false, error: "Invalid request body" }, { status: 400 });
   }
 
   const formData: SessionExitFormPayload = parsed.data;
@@ -83,9 +65,7 @@ export async function POST(request: NextRequest) {
     const label = CATEGORY_LABELS[formData.category as SessionExitFormCategory];
 
     if (!label) {
-      console.warn(
-        `[session-exit-form] Missing or unrecognized category "${formData.category}"`,
-      );
+      console.warn(`[session-exit-form] Missing or unrecognized category "${formData.category}"`);
       return NextResponse.json(
         { success: false, error: "A valid category is required." },
         { status: 400 },

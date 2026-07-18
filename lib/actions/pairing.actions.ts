@@ -26,13 +26,8 @@ import { getProfileWithProfileId } from "./user.actions";
 import { getMeeting } from "./meeting.actions";
 import { sendPairingAlertToWebhook } from "./pairing.server.actions";
 
-export const getAllPairingRequests = async (
-  profileType: "student" | "tutor",
-) => {
-  if (
-    !process.env.NEXT_PUBLIC_SUPABASE_URL ||
-    !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-  ) {
+export const getAllPairingRequests = async (profileType: "student" | "tutor") => {
+  if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
     throw new Error("Missing Supabase environment variables");
   }
 
@@ -60,19 +55,13 @@ export const getAllPairingRequests = async (
       userId: row.userId ?? row.user_id ?? "",
       profile: {
         ...profile,
-        firstName:
-          profile.firstName ?? profile.first_name ?? profile.firstname ?? "",
-        lastName:
-          profile.lastName ?? profile.last_name ?? profile.lastname ?? "",
-        availability: Array.isArray(profile.availability)
-          ? profile.availability
-          : [],
+        firstName: profile.firstName ?? profile.first_name ?? profile.firstname ?? "",
+        lastName: profile.lastName ?? profile.last_name ?? profile.lastname ?? "",
+        availability: Array.isArray(profile.availability) ? profile.availability : [],
         subjects_of_interest: Array.isArray(profile.subjects_of_interest)
           ? profile.subjects_of_interest
           : [],
-        languages_spoken: Array.isArray(profile.languages_spoken)
-          ? profile.languages_spoken
-          : [],
+        languages_spoken: Array.isArray(profile.languages_spoken) ? profile.languages_spoken : [],
       },
     };
   }) as PairingRequest[];
@@ -80,10 +69,7 @@ export const getAllPairingRequests = async (
   const missingProfileIds = Array.from(
     new Set(
       rows
-        .filter(
-          (row) =>
-            !hasRenderableProfileData(row.profile as Record<string, any>),
-        )
+        .filter((row) => !hasRenderableProfileData(row.profile as Record<string, any>))
         .map((row) => row.userId)
         .filter((id): id is string => Boolean(id)),
     ),
@@ -126,8 +112,7 @@ export const getAllPairingRequests = async (
     }
 
     for (const row of rows) {
-      if (hasRenderableProfileData(row.profile as Record<string, any>))
-        continue;
+      if (hasRenderableProfileData(row.profile as Record<string, any>)) continue;
       const fallback = fallbackByKey.get(row.userId);
       if (!fallback) continue;
       row.profile = {
@@ -189,13 +174,8 @@ export type MyPairingRequest = {
   inQueue: boolean;
 };
 
-export const getProfilePairingQueueState = async (
-  profileId: string,
-): Promise<boolean> => {
-  if (
-    !process.env.NEXT_PUBLIC_SUPABASE_URL ||
-    !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-  ) {
+export const getProfilePairingQueueState = async (profileId: string): Promise<boolean> => {
+  if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
     throw new Error("Missing Supabase environment variables");
   }
 
@@ -220,21 +200,14 @@ export const getProfilePairingQueueState = async (
   return data?.in_queue === true;
 };
 
-export const getMyPairingRequest = async (
-  profileId: string,
-): Promise<MyPairingRequest | null> => {
-  if (
-    !process.env.NEXT_PUBLIC_SUPABASE_URL ||
-    !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-  ) {
+export const getMyPairingRequest = async (profileId: string): Promise<MyPairingRequest | null> => {
+  if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
     throw new Error("Missing Supabase environment variables");
   }
 
   const { data, error } = await supabase
     .from(Table.PairingRequests)
-    .select(
-      "id, type, status, priority, notes, created_at, exclude_rejected_tutors, in_queue",
-    )
+    .select("id, type, status, priority, notes, created_at, exclude_rejected_tutors, in_queue")
     .eq("user_id", profileId)
     .order("created_at", { ascending: false })
     .limit(1)
@@ -275,10 +248,7 @@ export const createPairingRequest = async (
   notes: string,
   excludeRejectedTutors: boolean = true,
 ) => {
-  if (
-    !process.env.NEXT_PUBLIC_SUPABASE_URL ||
-    !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-  ) {
+  if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
     throw new Error("Missing Supabase environment variables");
   }
 
@@ -388,10 +358,7 @@ export const updatePairingRequest = async (
     priority?: number;
   },
 ) => {
-  if (
-    !process.env.NEXT_PUBLIC_SUPABASE_URL ||
-    !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-  ) {
+  if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
     throw new Error("Missing Supabase environment variables");
   }
 
@@ -408,10 +375,7 @@ export const updatePairingRequest = async (
 
   if (Object.keys(payload).length === 0) return;
 
-  const { error } = await supabase
-    .from("pairing_requests")
-    .update(payload)
-    .eq("id", requestId);
+  const { error } = await supabase.from("pairing_requests").update(payload).eq("id", requestId);
 
   if (error) throw error;
 };
@@ -420,10 +384,7 @@ export const setExcludeRejectedTutorsPreference = async (
   userId: string,
   excludeRejectedTutors: boolean,
 ) => {
-  if (
-    !process.env.NEXT_PUBLIC_SUPABASE_URL ||
-    !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-  ) {
+  if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
     throw new Error("Missing Supabase environment variables");
   }
 
@@ -485,10 +446,7 @@ export const getPairingLogs = async (
   start_time: string,
   end_time: string,
 ): Promise<PairingLog[]> => {
-  if (
-    !process.env.NEXT_PUBLIC_SUPABASE_URL ||
-    !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-  ) {
+  if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
     throw new Error("Missing Supabase environment variables");
   }
 
@@ -513,26 +471,18 @@ export type IncomingPairingMatch = {
 };
 
 export const getIncomingPairingMatches = async (profileId: string) => {
-  if (
-    !process.env.NEXT_PUBLIC_SUPABASE_URL ||
-    !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-  ) {
+  if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
     throw new Error("Missing Supabase environment variables");
   }
 
-  const { data, error } = await supabase.rpc(
-    "get_pairing_matches_with_profiles",
-    {
-      requestor: profileId,
-    },
-  );
+  const { data, error } = await supabase.rpc("get_pairing_matches_with_profiles", {
+    requestor: profileId,
+  });
 
   if (error || !data) return data;
 
   const list = data as IncomingPairingMatch[];
-  return list.filter(
-    (m) => m.tutor_status !== "rejected" && m.tutor_status !== "accepted",
-  );
+  return list.filter((m) => m.tutor_status !== "rejected" && m.tutor_status !== "accepted");
 };
 
 export const deletePairing = async (tutorId: string, studentId: string) => {
@@ -547,9 +497,7 @@ export const deletePairing = async (tutorId: string, studentId: string) => {
 
     if (enrollments && enrollments.length > 0) {
       const now = new Date().toISOString();
-      const enrollmentIds = enrollments
-        .map((enrollment: any) => enrollment.id)
-        .filter(Boolean);
+      const enrollmentIds = enrollments.map((enrollment: any) => enrollment.id).filter(Boolean);
 
       const { error: deleteSessionsError } = await supabase
         .from("Sessions")
@@ -645,12 +593,7 @@ function getAverageTimeWithDuration(
   };
 }
 
-const isOverlap = (
-  start1: number,
-  end1: number,
-  start2: number,
-  end2: number,
-) => {
+const isOverlap = (start1: number, end1: number, start2: number, end2: number) => {
   try {
     return start1 < end2 && start2 < end1;
   } catch (error) {
@@ -658,11 +601,7 @@ const isOverlap = (
   }
 };
 
-export const getAvailableMeetingLink = async (
-  start: string,
-  end: string,
-  day: string,
-) => {
+export const getAvailableMeetingLink = async (start: string, end: string, day: string) => {
   try {
     // Get all enrollments since we can't easily filter JSON arrays in Supabase
     const { data: allEnrollments, error } = await supabase
@@ -674,9 +613,7 @@ export const getAvailableMeetingLink = async (
     // Filter in JavaScript for arrays
     const availableMeetings =
       allEnrollments?.filter(
-        (enrollment: {
-          availability: { day: string; startTime: string; endTime: string }[];
-        }) => {
+        (enrollment: { availability: { day: string; startTime: string; endTime: string }[] }) => {
           // Check if this enrollment has any availability slots for the requested day
           const daySlots = enrollment.availability.filter(
             (slot: { day: string }) => slot.day === day,
@@ -688,13 +625,11 @@ export const getAvailableMeetingLink = async (
           }
 
           // Check if ALL slots for this day have no overlap with requested time
-          const hasConflict = daySlots.some(
-            (slot: { startTime: string; endTime: string }) => {
-              // Two ranges overlap if: slot.start < end AND slot.end > start
-              const overlap = slot.startTime < end && slot.endTime > start;
-              return overlap;
-            },
-          );
+          const hasConflict = daySlots.some((slot: { startTime: string; endTime: string }) => {
+            // Two ranges overlap if: slot.start < end AND slot.end > start
+            const overlap = slot.startTime < end && slot.endTime > start;
+            return overlap;
+          });
 
           // Return true if NO conflict (available)
           return !hasConflict;
@@ -708,11 +643,7 @@ export const getAvailableMeetingLink = async (
   }
 };
 
-export const getAutoAvailableSessionTimes = async (
-  start: string,
-  end: string,
-  day: string,
-) => {
+export const getAutoAvailableSessionTimes = async (start: string, end: string, day: string) => {
   try {
     let autoAvailability = null;
     let meetingId = null;
@@ -724,8 +655,7 @@ export const getAutoAvailableSessionTimes = async (
         autoAvailability.endTime,
         autoAvailability.day,
       );
-      if (meetingId)
-        return { availability: autoAvailability, meeting: meetingId };
+      if (meetingId) return { availability: autoAvailability, meeting: meetingId };
     }
     return null;
   } catch (error) {}
@@ -751,8 +681,7 @@ export const getAutomaticEnrollment = async (
         firstAvailability.day,
       );
 
-      if (!autoAvailability)
-        throw new Error("Unable to automatically set availability");
+      if (!autoAvailability) throw new Error("Unable to automatically set availability");
 
       const autoEnrollment: Omit<Enrollment, "id" | "createdAt"> = {
         student: student,
@@ -782,8 +711,7 @@ export const updatePairingMatchStatus = async (
   status: "accepted" | "rejected",
   enrollment: Enrollment | null = null,
 ) => {
-  let autoEnrollment: Omit<Enrollment, "id" | "createdAt"> | null | undefined =
-    null;
+  let autoEnrollment: Omit<Enrollment, "id" | "createdAt"> | null | undefined = null;
 
   const { data: pmRaw, error: pmError } = await supabase
     .rpc("get_pairing_match", {
@@ -810,9 +738,7 @@ export const updatePairingMatchStatus = async (
       return;
     }
 
-    const studentData: Profile | null = await getProfileWithProfileId(
-      student.id,
-    );
+    const studentData: Profile | null = await getProfileWithProfileId(student.id);
     const tutorData: Profile | null = await getProfileWithProfileId(tutor.id);
 
     if (!studentData) throw new Error("Unable to fetch student information");
@@ -854,9 +780,7 @@ export const updatePairingMatchStatus = async (
       throw new Error("Unable to automatically find availability");
     }
 
-    const meetingData: Meeting | null = await getMeeting(
-      autoEnrollment.meetingId,
-    );
+    const meetingData: Meeting | null = await getMeeting(autoEnrollment.meetingId);
 
     if (!meetingData) throw new Error("Unable to get meeting information");
 

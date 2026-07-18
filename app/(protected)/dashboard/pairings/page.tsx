@@ -10,8 +10,7 @@ export default async function PairingPage() {
       <div>
         <h1 className="text-3xl font-bold tracking-tight">Pairing Dashboard</h1>
         <p className="text-muted-foreground">
-          Find your perfect learning match or help others by sharing your
-          knowledge.
+          Find your perfect learning match or help others by sharing your knowledge.
         </p>
       </div>
 

@@ -80,9 +80,7 @@ const HoursManager = () => {
     [key: string]: Session[];
   }>({});
   const [eventsData, setEventsData] = useState<{ [key: string]: Event[] }>({});
-  const [allTimeHours, setAllTimeHours] = useState<{ [key: string]: number }>(
-    {}
-  );
+  const [allTimeHours, setAllTimeHours] = useState<{ [key: string]: number }>({});
   const [allTimeSessionHours, setAllTimeSessionHours] = useState<{
     [key: string]: number;
   }>({});
@@ -95,9 +93,7 @@ const HoursManager = () => {
     [key: string]: { [key: string]: number };
   }>({});
 
-  const [monthlyHours, setMonthlyHours] = useState<{ [key: string]: number }>(
-    {}
-  );
+  const [monthlyHours, setMonthlyHours] = useState<{ [key: string]: number }>({});
   const [totalSessionHours, setTotalSessionHours] = useState<{
     [key: string]: number;
   }>({});
@@ -111,14 +107,10 @@ const HoursManager = () => {
 
   const [isAddEventModalOpen, setIsAddEventModalOpen] = useState(false);
   const [isRemoveEventModalOpen, setIsRemoveEventModalOpen] = useState(false);
-  const [selectedTutorForEvent, setSelectedTutorForEvent] = useState<
-    string | null
-  >(null);
+  const [selectedTutorForEvent, setSelectedTutorForEvent] = useState<string | null>(null);
   const [newEvent, setNewEvent] = useState<Partial<Event>>({});
   const [eventsToRemove, setEventsToRemove] = useState<Event[]>([]);
-  const [selectedEventToRemove, setSelectedEventToRemove] = useState<
-    string | null
-  >(null);
+  const [selectedEventToRemove, setSelectedEventToRemove] = useState<string | null>(null);
   const [filterValue, setFilterValue] = useState<string>("");
   const [filteredTutors, setFilteredTutors] = useState<Profile[]>([]);
   const [eventType, setEventType] = useState("");
@@ -212,14 +204,11 @@ const HoursManager = () => {
       getTutorSessions(
         tutor.id,
         startOfMonth(selectedDate).toISOString(),
-        endOfMonth(selectedDate).toISOString()
-      )
+        endOfMonth(selectedDate).toISOString(),
+      ),
     );
     const eventsPromises = tutors.map((tutor) =>
-      getEventsWithTutorMonth(
-        tutor?.id,
-        startOfMonth(selectedDate).toISOString()
-      )
+      getEventsWithTutorMonth(tutor?.id, startOfMonth(selectedDate).toISOString()),
     );
 
     try {
@@ -298,11 +287,10 @@ const HoursManager = () => {
       const firstDay = startOfWeek(startOfMonth(selectedDate));
       const lastDay = endOfWeek(endOfMonth(selectedDate));
 
-      const data: { [key: string]: { [key: string]: number } } =
-        await getEventHoursRangeBatch(
-          firstDay.toISOString(),
-          lastDay.toISOString()
-        );
+      const data: { [key: string]: { [key: string]: number } } = await getEventHoursRangeBatch(
+        firstDay.toISOString(),
+        lastDay.toISOString(),
+      );
       setEventHoursData(data);
     } catch (error) {
       toast.error("Unable to get event hours");
@@ -318,14 +306,13 @@ const HoursManager = () => {
   };
 
   const calculateWeeklyHoursForMonth = async () => {
-    const monthlySessionHours: { [key: string]: { [key: string]: number } } =
-      {};
+    const monthlySessionHours: { [key: string]: { [key: string]: number } } = {};
 
     const weekPromises = weeksInMonth.map(async (week) => {
       const nextWeek = addDays(week, 7);
       const data: { [key: string]: number } = await getSessionHoursRangeBatch(
         week.toISOString(),
-        nextWeek.toISOString()
+        nextWeek.toISOString(),
       );
       return {
         weekKey: week.getTime().toString(),
@@ -352,7 +339,7 @@ const HoursManager = () => {
 
       const data: { [key: string]: number } = await getHoursRangeBatch(
         firstDay.toISOString(),
-        lastDay.toISOString()
+        lastDay.toISOString(),
       );
       setMonthlyHours(data);
     } catch (error) {
@@ -362,8 +349,7 @@ const HoursManager = () => {
 
   const calculateAllTimeEventHours = async () => {
     try {
-      const data: { [key: string]: { [key: string]: number } } =
-        await getAllEventHoursBatch();
+      const data: { [key: string]: { [key: string]: number } } = await getAllEventHoursBatch();
       setEventHoursData(data);
     } catch (error) {
       toast.error("Error fetching All Time Event Hours");
@@ -375,10 +361,7 @@ const HoursManager = () => {
       const firstDay = startOfWeek(startOfMonth(selectedDate));
       const lastDay = endOfWeek(endOfMonth(selectedDate));
 
-      const data: number = await getTotalHoursRange(
-        firstDay.toISOString(),
-        lastDay.toISOString()
-      );
+      const data: number = await getTotalHoursRange(firstDay.toISOString(), lastDay.toISOString());
       setTotalMonthlyHours(data);
     } catch (error) {
       toast.error("Error fetching total monthly hours");
@@ -424,7 +407,7 @@ const HoursManager = () => {
 
         const data: number = await getTotalSessionHoursRange(
           week.toISOString(),
-          nextWeek.toISOString()
+          nextWeek.toISOString(),
         );
         return {
           weekKey: week.getTime().toString(),
@@ -452,7 +435,7 @@ const HoursManager = () => {
       const lastDay = endOfWeek(endOfMonth(selectedDate));
       const data: { [key: string]: number } = await getTotalEventHoursRange(
         firstDay.toISOString(),
-        lastDay.toISOString()
+        lastDay.toISOString(),
       );
 
       setTotalEventHours(data);
@@ -475,9 +458,7 @@ const HoursManager = () => {
   };
 
   const calculateExtraHours = (tutorId: string) => {
-    return (
-      eventsData[tutorId]?.reduce((total, event) => total + event.hours, 0) || 0
-    );
+    return eventsData[tutorId]?.reduce((total, event) => total + event.hours, 0) || 0;
   };
 
   // const calculateMonthHours = (tutorId: string) => {
@@ -501,13 +482,7 @@ const HoursManager = () => {
   });
 
   const handleAddEvent = async () => {
-    if (
-      newEvent.tutorId &&
-      newEvent.date &&
-      newEvent.hours &&
-      newEvent.summary &&
-      newEvent.type
-    ) {
+    if (newEvent.tutorId && newEvent.date && newEvent.hours && newEvent.summary && newEvent.type) {
       try {
         await createEvent(newEvent as Event);
         toast.success("Event added successfully.");
@@ -528,8 +503,7 @@ const HoursManager = () => {
     if (selectedEventToRemove) {
       try {
         const res = await removeEvent(selectedEventToRemove);
-        if (res)
-          toast.success("Event removed successfully. Refresh to view update.");
+        if (res) toast.success("Event removed successfully. Refresh to view update.");
         else toast.error("Unable to remove event");
         setIsRemoveEventModalOpen(false);
         setSelectedEventToRemove(null);
@@ -585,9 +559,7 @@ const HoursManager = () => {
   // toggle tutor in multi-select list
   const toggleSubTutor = (tutorId: string) => {
     setSelectedSubTutors((prev) =>
-      prev.includes(tutorId)
-        ? prev.filter((id) => id !== tutorId)
-        : [...prev, tutorId]
+      prev.includes(tutorId) ? prev.filter((id) => id !== tutorId) : [...prev, tutorId],
     );
   };
 
@@ -674,11 +646,7 @@ const HoursManager = () => {
               />
               <div className="flex space-x-4">
                 <Select
-                  value={
-                    allTimeView
-                      ? "All Time"
-                      : selectedDate?.toISOString() || "placeholder"
-                  }
+                  value={allTimeView ? "All Time" : selectedDate?.toISOString() || "placeholder"}
                   onValueChange={(value) => {
                     if (value === "All Time") {
                       setAllTimeView(true);
@@ -697,21 +665,18 @@ const HoursManager = () => {
                       All Time
                     </SelectItem>
                     {monthYearOptions.map((date) => (
-                      <SelectItem
-                        key={date.toISOString()}
-                        value={date.toISOString()}
-                      >
+                      <SelectItem key={date.toISOString()} value={date.toISOString()}>
                         {format(date, "MMMM yyyy")}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
-                <Dialog
-                  open={isAddEventModalOpen}
-                  onOpenChange={setIsAddEventModalOpen}
-                >
+                <Dialog open={isAddEventModalOpen} onOpenChange={setIsAddEventModalOpen}>
                   <DialogTrigger asChild>
-                    <Button className = "bg-connect-me-blue-2" onClick={() => setIsAddEventModalOpen(true)}>
+                    <Button
+                      className="bg-connect-me-blue-2"
+                      onClick={() => setIsAddEventModalOpen(true)}
+                    >
                       Add Event
                     </Button>
                   </DialogTrigger>
@@ -727,9 +692,7 @@ const HoursManager = () => {
                           label: `${tutor.firstName} ${tutor.lastName} - ${tutor.email}`,
                         }))}
                       category="tutor"
-                      onValueChange={(value) =>
-                        setNewEvent({ ...newEvent, tutorId: value })
-                      }
+                      onValueChange={(value) => setNewEvent({ ...newEvent, tutorId: value })}
                     />
                     <Select
                       value={eventType}
@@ -742,27 +705,19 @@ const HoursManager = () => {
                         <SelectValue placeholder={"Select Type"} />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="Tutor Referral">
-                          Tutor Referral
-                        </SelectItem>
+                        <SelectItem value="Tutor Referral">Tutor Referral</SelectItem>
                         <SelectItem value="Sub Hotline">Sub Hotline</SelectItem>
                         <SelectItem value="Additional Tutoring Hours">
                           Additional Tutoring Hours
                         </SelectItem>
-                        <SelectItem value="School Tutoring">
-                          School Tutoring
-                        </SelectItem>
-                        <SelectItem value="Biweekly Meeting">
-                          Biweekly Meeting
-                        </SelectItem>
+                        <SelectItem value="School Tutoring">School Tutoring</SelectItem>
+                        <SelectItem value="Biweekly Meeting">Biweekly Meeting</SelectItem>
                         <SelectItem value="Other">Other</SelectItem>
                       </SelectContent>
                     </Select>
                     <Input
                       type="date"
-                      onChange={(e) =>
-                        setNewEvent({ ...newEvent, date: e.target.value })
-                      }
+                      onChange={(e) => setNewEvent({ ...newEvent, date: e.target.value })}
                       placeholder="Date"
                     />
                     <Input
@@ -778,20 +733,20 @@ const HoursManager = () => {
 
                     <Input
                       type="text"
-                      onChange={(e) =>
-                        setNewEvent({ ...newEvent, summary: e.target.value })
-                      }
+                      onChange={(e) => setNewEvent({ ...newEvent, summary: e.target.value })}
                       placeholder="Summary"
                     />
-                    <Button className = "bg-connect-me-blue-2" onClick={handleAddEvent}>Add Event</Button>
+                    <Button className="bg-connect-me-blue-2" onClick={handleAddEvent}>
+                      Add Event
+                    </Button>
                   </DialogContent>
                 </Dialog>
-                <Dialog
-                  open={isRemoveEventModalOpen}
-                  onOpenChange={setIsRemoveEventModalOpen}
-                >
+                <Dialog open={isRemoveEventModalOpen} onOpenChange={setIsRemoveEventModalOpen}>
                   <DialogTrigger asChild>
-                    <Button className = "bg-connect-me-blue-3" onClick={() => setIsRemoveEventModalOpen(true)}>
+                    <Button
+                      className="bg-connect-me-blue-3"
+                      onClick={() => setIsRemoveEventModalOpen(true)}
+                    >
                       Remove Event
                     </Button>
                   </DialogTrigger>
@@ -810,11 +765,7 @@ const HoursManager = () => {
                       onValueChange={(value) => handleFetchEvents(value)}
                     />
                     {eventsToRemove && (
-                      <Select
-                        onValueChange={(value) =>
-                          setSelectedEventToRemove(value)
-                        }
-                      >
+                      <Select onValueChange={(value) => setSelectedEventToRemove(value)}>
                         <SelectTrigger>
                           <SelectValue placeholder="Select Event to Remove" />
                         </SelectTrigger>
@@ -823,28 +774,27 @@ const HoursManager = () => {
                             <SelectItem key={event.id} value={event.id}>
                               <div className="flex justify-between w-full">
                                 <span>
-                                  {format(parseISO(event.date), "yyyy-MM-dd")} -{" "}
-                                  {event.summary}
+                                  {format(parseISO(event.date), "yyyy-MM-dd")} - {event.summary}
                                 </span>
-                                <span className="font-semibold ml-2">
-                                  {event.hours} hrs
-                                </span>
+                                <span className="font-semibold ml-2">{event.hours} hrs</span>
                               </div>
                             </SelectItem>
                           ))}
                         </SelectContent>
                       </Select>
                     )}
-                    <Button className = "bg-connect-me-3" onClick={handleRemoveEvent}>Remove Event</Button>
+                    <Button className="bg-connect-me-3" onClick={handleRemoveEvent}>
+                      Remove Event
+                    </Button>
                   </DialogContent>
                 </Dialog>
 
-                <Dialog
-                  open={isSubHoursModalOpen}
-                  onOpenChange={setIsSubHoursModalOpen}
-                >
+                <Dialog open={isSubHoursModalOpen} onOpenChange={setIsSubHoursModalOpen}>
                   <DialogTrigger asChild>
-                    <Button className="bg-connect-me-blue-2" onClick={() => setIsSubHoursModalOpen(true)}>
+                    <Button
+                      className="bg-connect-me-blue-2"
+                      onClick={() => setIsSubHoursModalOpen(true)}
+                    >
                       Add Sub Hours
                     </Button>
                   </DialogTrigger>
@@ -910,7 +860,9 @@ const HoursManager = () => {
                         onClick={() => setShowSelectedList((v) => !v)}
                       >
                         {selectedSubTutors.length} selected
-                        <ChevronDown className={`h-4 w-4 transition-transform ${showSelectedList ? "rotate-180" : ""}`} />
+                        <ChevronDown
+                          className={`h-4 w-4 transition-transform ${showSelectedList ? "rotate-180" : ""}`}
+                        />
                       </button>
                       <Button className="bg-connect-me-blue-2" onClick={handleAddSubHours}>
                         Add Hours
@@ -922,8 +874,13 @@ const HoursManager = () => {
                         {tutors
                           .filter((t) => selectedSubTutors.includes(t.id))
                           .map((t) => (
-                            <div key={t.id} className="flex items-center justify-between px-2 py-0.5">
-                              <span>{t.firstName} {t.lastName}</span>
+                            <div
+                              key={t.id}
+                              className="flex items-center justify-between px-2 py-0.5"
+                            >
+                              <span>
+                                {t.firstName} {t.lastName}
+                              </span>
                               <button
                                 type="button"
                                 className="text-xs text-red-400 hover:text-red-600"
@@ -941,14 +898,10 @@ const HoursManager = () => {
                 <Button
                   disabled={reportLoading}
                   onClick={handleDownloadHoursReport}
-                  className = "bg-connect-me-blue-4"
+                  className="bg-connect-me-blue-4"
                 >
                   Download Report
-                  {reportLoading ? (
-                    <Loader2 className="h-4 w-4 animate-spin ml-2" />
-                  ) : (
-                    ""
-                  )}
+                  {reportLoading ? <Loader2 className="h-4 w-4 animate-spin ml-2" /> : ""}
                 </Button>
               </div>
             </div>
@@ -957,9 +910,7 @@ const HoursManager = () => {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead className="sticky left-0 z-10 bg-white">
-                  Tutor Name
-                </TableHead>
+                <TableHead className="sticky left-0 z-10 bg-white">Tutor Name</TableHead>
                 {allTimeView ? (
                   <>
                     <TableHead>All Sessions</TableHead>
@@ -973,8 +924,7 @@ const HoursManager = () => {
                   <>
                     {weeksInMonth.map((week) => (
                       <TableHead key={week.toISOString()}>
-                        {format(week, "MMM d")} -{" "}
-                        {format(addDays(week, 6), "MMM d")}
+                        {format(week, "MMM d")} - {format(addDays(week, 6), "MMM d")}
                       </TableHead>
                     ))}
                     <TableHead>Biweekly Meetings</TableHead>
@@ -1016,9 +966,7 @@ const HoursManager = () => {
                   {allTimeView ? (
                     <>
                       {" "}
-                      <TableCell>
-                        {allTimeSessionHours[tutor.id] || ""}
-                      </TableCell>
+                      <TableCell>{allTimeSessionHours[tutor.id] || ""}</TableCell>
                       <TableCell>
                         {eventHoursData[tutor.id]
                           ? eventHoursData[tutor.id]["Biweekly Meeting"] || ""
@@ -1037,9 +985,7 @@ const HoursManager = () => {
                       <TableCell>
                         {/* {calculateExtraHours(tutor.id).toFixed(2)}
                          */}
-                        {eventHoursData[tutor.id]
-                          ? eventHoursData[tutor.id]["Other"] || ""
-                          : ""}
+                        {eventHoursData[tutor.id] ? eventHoursData[tutor.id]["Other"] || "" : ""}
                       </TableCell>
                       <TableCell>{allTimeHours[tutor.id] || ""}</TableCell>
                     </>
@@ -1047,14 +993,10 @@ const HoursManager = () => {
                     <>
                       {weeksInMonth.map((week) => {
                         const hours = weeklySessionHours[tutor.id]
-                          ? weeklySessionHours[tutor.id][
-                              week.getTime().toString()
-                            ] || ""
+                          ? weeklySessionHours[tutor.id][week.getTime().toString()] || ""
                           : "";
 
-                        return (
-                          <TableCell key={week.toString()}>{hours}</TableCell>
-                        );
+                        return <TableCell key={week.toString()}>{hours}</TableCell>;
                       })}
                       <TableCell>
                         {eventHoursData[tutor.id]
@@ -1075,9 +1017,7 @@ const HoursManager = () => {
                       <TableCell>
                         {/* {calculateExtraHours(tutor.id).toFixed(2)}
                          */}
-                        {eventHoursData[tutor.id]
-                          ? eventHoursData[tutor.id]["Other"] || ""
-                          : ""}
+                        {eventHoursData[tutor.id] ? eventHoursData[tutor.id]["Other"] || "" : ""}
                       </TableCell>
                       <TableCell>{monthlyHours[tutor.id] || ""}</TableCell>
                       <TableCell>{allTimeHours[tutor.id] || ""}</TableCell>

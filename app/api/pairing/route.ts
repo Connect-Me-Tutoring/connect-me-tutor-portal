@@ -32,18 +32,10 @@ export async function POST(req: NextRequest) {
 
   if (mode === "apply-preview") {
     const preview = body?.preview as
-      | Pick<PairingWorkflowResult, "matchesToInsert" | "logs">
-      | undefined;
+      Pick<PairingWorkflowResult, "matchesToInsert" | "logs"> | undefined;
 
-    if (
-      !preview ||
-      !Array.isArray(preview.matchesToInsert) ||
-      !Array.isArray(preview.logs)
-    ) {
-      return NextResponse.json(
-        { message: "Invalid preview payload" },
-        { status: 400 },
-      );
+    if (!preview || !Array.isArray(preview.matchesToInsert) || !Array.isArray(preview.logs)) {
+      return NextResponse.json({ message: "Invalid preview payload" }, { status: 400 });
     }
 
     const persisted = await applyPairingWorkflowPreview(preview, { debug });

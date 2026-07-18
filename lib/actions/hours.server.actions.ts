@@ -32,12 +32,9 @@ export const getAllEventDetailsForTutor = async (tutorId: string) => {
   await requireTutorProfileAccess(tutorId);
   try {
     const supabase = await createClient();
-    const { data, error } = await supabase.rpc(
-      "get_all_event_details_for_tutor",
-      {
-        p_tutor_id: tutorId,
-      },
-    );
+    const { data, error } = await supabase.rpc("get_all_event_details_for_tutor", {
+      p_tutor_id: tutorId,
+    });
     if (error) throw error;
     return data;
   } catch (error) {

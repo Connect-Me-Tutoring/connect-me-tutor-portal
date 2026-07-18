@@ -11,7 +11,7 @@ export async function GET(request: Request) {
   try {
     const supabase = await createAdminClient();
 
-    // Fetch active users that need to be checked in on. 
+    // Fetch active users that need to be checked in on.
     // TODO: Update the query below to match your actual Supabase schema rules for active profiles
     //  and other relevant criteria
     const { data: users, error } = await supabase
@@ -31,11 +31,10 @@ export async function GET(request: Request) {
 
           return sendMonthlyCheckInEmail(
             { firstName: user.first_name, role: user.role as any },
-            user.email
+            user.email,
           );
-        })
+        }),
       );
-      
     }
 
     return NextResponse.json({

@@ -37,7 +37,7 @@ const DeleteStudentForm = ({
   return (
     <Dialog>
       <DialogTrigger asChild>
-        <Button className = "bg-connect-me-blue-3">Delete Student</Button>
+        <Button className="bg-connect-me-blue-3">Delete Student</Button>
       </DialogTrigger>
       <DialogContent className="max-w-md">
         <DialogHeader>
@@ -60,11 +60,7 @@ const DeleteStudentForm = ({
             />
           </div>
         </div>
-        <Button
-          onClick={handleDeleteStudent}
-          disabled={!selectedStudentId}
-          className="w-full"
-        >
+        <Button onClick={handleDeleteStudent} disabled={!selectedStudentId} className="w-full">
           Confirm Deletion
         </Button>
       </DialogContent>

@@ -16,14 +16,8 @@ export function getEasternWeekBounds(
 ): { weekStart: Date; weekEnd: Date } {
   const zonedReference = toZonedTime(referenceDate, EASTERN_TIMEZONE);
   return {
-    weekStart: fromZonedTime(
-      startOfWeek(zonedReference, { weekStartsOn }),
-      EASTERN_TIMEZONE,
-    ),
-    weekEnd: fromZonedTime(
-      endOfWeek(zonedReference, { weekStartsOn }),
-      EASTERN_TIMEZONE,
-    ),
+    weekStart: fromZonedTime(startOfWeek(zonedReference, { weekStartsOn }), EASTERN_TIMEZONE),
+    weekEnd: fromZonedTime(endOfWeek(zonedReference, { weekStartsOn }), EASTERN_TIMEZONE),
   };
 }
 
@@ -101,13 +95,7 @@ export function formatDateWithOptions(
     minute?: boolean;
     second?: boolean;
     timeZone?: string;
-    timeZoneName?:
-      | "short"
-      | "long"
-      | "shortOffset"
-      | "longOffset"
-      | "shortGeneric"
-      | "longGeneric";
+    timeZoneName?: "short" | "long" | "shortOffset" | "longOffset" | "shortGeneric" | "longGeneric";
   },
 ): string {
   const date: Date = new Date(dateString);

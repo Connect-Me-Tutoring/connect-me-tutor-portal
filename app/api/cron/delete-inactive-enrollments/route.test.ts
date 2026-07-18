@@ -74,9 +74,7 @@ describe("DELETE /api/cron/delete-inactive-enrollments", () => {
       { id: "enrollment-3" },
     ];
 
-    (
-      getEnrollmentsWithMissingSEF as ReturnType<typeof vi.fn>
-    ).mockResolvedValue(mockEnrollments);
+    (getEnrollmentsWithMissingSEF as ReturnType<typeof vi.fn>).mockResolvedValue(mockEnrollments);
 
     const mockIn = vi.fn().mockResolvedValue({ error: null });
     mockFromDelete.mockReturnValue({
@@ -91,17 +89,11 @@ describe("DELETE /api/cron/delete-inactive-enrollments", () => {
     expect(response.status).toBe(200);
     expect(json.message).toBe("Successfully deleted inactive enrollments");
     expect(json.deleted).toBe(3);
-    expect(mockIn).toHaveBeenCalledWith("id", [
-      "enrollment-1",
-      "enrollment-2",
-      "enrollment-3",
-    ]);
+    expect(mockIn).toHaveBeenCalledWith("id", ["enrollment-1", "enrollment-2", "enrollment-3"]);
   });
 
   it("should return 0 deleted when no enrollments match", async () => {
-    (
-      getEnrollmentsWithMissingSEF as ReturnType<typeof vi.fn>
-    ).mockResolvedValue([]);
+    (getEnrollmentsWithMissingSEF as ReturnType<typeof vi.fn>).mockResolvedValue([]);
 
     const response = await GET(authorizedRequest());
     const json = await response.json();
@@ -112,9 +104,9 @@ describe("DELETE /api/cron/delete-inactive-enrollments", () => {
   });
 
   it("should return 500 when getEnrollmentsWithMissingSEF throws", async () => {
-    (
-      getEnrollmentsWithMissingSEF as ReturnType<typeof vi.fn>
-    ).mockRejectedValue(new Error("Database error"));
+    (getEnrollmentsWithMissingSEF as ReturnType<typeof vi.fn>).mockRejectedValue(
+      new Error("Database error"),
+    );
 
     const response = await GET(authorizedRequest());
     const json = await response.json();
@@ -125,13 +117,9 @@ describe("DELETE /api/cron/delete-inactive-enrollments", () => {
 
   it("should return 500 when delete fails", async () => {
     const mockEnrollments = [{ id: "enrollment-1" }];
-    (
-      getEnrollmentsWithMissingSEF as ReturnType<typeof vi.fn>
-    ).mockResolvedValue(mockEnrollments);
+    (getEnrollmentsWithMissingSEF as ReturnType<typeof vi.fn>).mockResolvedValue(mockEnrollments);
 
-    const mockIn = vi
-      .fn()
-      .mockResolvedValue({ error: { message: "Delete failed" } });
+    const mockIn = vi.fn().mockResolvedValue({ error: { message: "Delete failed" } });
     mockFromDelete.mockReturnValue({
       delete: vi.fn().mockReturnValue({
         in: mockIn,

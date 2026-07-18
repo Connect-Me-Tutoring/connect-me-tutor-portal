@@ -26,9 +26,6 @@ export async function POST(request: NextRequest) {
     });
   } catch (error) {
     console.error("PDF generation error:", error);
-    return NextResponse.json(
-      { message: "Error generating PDF" },
-      { status: 500 },
-    );
+    return NextResponse.json({ message: "Error generating PDF" }, { status: 500 });
   }
 }

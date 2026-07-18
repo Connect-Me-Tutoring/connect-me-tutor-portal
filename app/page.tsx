@@ -19,8 +19,8 @@ export default async function LoginPage() {
         </div>
         <div className="h-5/6" />
         <div className=" w-full h-fit text-lg p-8">
-          &quot;Connect me has helped me explore new math topics and learn
-          critical problem solving skills. It makes learning so much fun&quot;
+          &quot;Connect me has helped me explore new math topics and learn critical problem solving
+          skills. It makes learning so much fun&quot;
           <br />
           --Olivia M.
         </div>

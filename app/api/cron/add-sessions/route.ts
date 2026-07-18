@@ -1,9 +1,6 @@
 import { NextResponse } from "next/server";
 import { startOfWeek, endOfWeek } from "date-fns";
-import {
-  addSessionsServer,
-  getAllSessionsServer,
-} from "@/lib/actions/session.server.actions";
+import { addSessionsServer, getAllSessionsServer } from "@/lib/actions/session.server.actions";
 import { getAllActiveEnrollmentsServer } from "@/lib/actions/enrollment.server.actions";
 import { isCronRequestAuthorized } from "@/lib/security/cron";
 import { getEasternWeekBounds } from "@/lib/utils";
@@ -35,9 +32,6 @@ export async function GET(request: Request) {
     });
   } catch (error) {
     console.error("Cron job add-sessions failed:", error);
-    return NextResponse.json(
-      { success: false, error: "Internal Server Error" },
-      { status: 500 },
-    );
+    return NextResponse.json({ success: false, error: "Internal Server Error" }, { status: 500 });
   }
 }
