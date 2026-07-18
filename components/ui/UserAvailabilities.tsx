@@ -1,12 +1,6 @@
 import React from "react";
 import { useState } from "react";
-import {
-  RefreshCw,
-  ExternalLink,
-  Calendar,
-  BookOpen,
-  Languages,
-} from "lucide-react";
+import { RefreshCw, ExternalLink, Calendar, BookOpen, Languages } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
@@ -34,11 +28,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import {
-  HoverCard,
-  HoverCardContent,
-  HoverCardTrigger,
-} from "@/components/ui/hover-card";
+import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
 import {
   AlertDialog,
   AlertDialogHeader,
@@ -54,7 +44,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card } from "@/components/ui/card";
 import { Profile } from "@/types";
-import AvailabiltyFormat from "@/components/student/AvailabilityFormat"
+import AvailabiltyFormat from "@/components/student/AvailabilityFormat";
 
 interface UserAvailabilitiesProps {
   user: Profile;
@@ -88,15 +78,8 @@ export const UserAvailabilities = ({ user }: UserAvailabilitiesProps) => {
                 <h3 className="font-medium">
                   {user.firstName + " " + user.lastName || "User Profile"}
                 </h3>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleRefresh}
-                  disabled={refreshing}
-                >
-                  <RefreshCw
-                    className={`h-4 w-4 mr-1 ${refreshing ? "animate-spin" : ""}`}
-                  />
+                <Button variant="outline" size="sm" onClick={handleRefresh} disabled={refreshing}>
+                  <RefreshCw className={`h-4 w-4 mr-1 ${refreshing ? "animate-spin" : ""}`} />
                   Refresh
                 </Button>
               </div>
@@ -118,9 +101,7 @@ export const UserAvailabilities = ({ user }: UserAvailabilitiesProps) => {
                         <AvailabiltyFormat availability={user.availability} />
                       </div>
                     ) : (
-                      <p className="text-sm text-muted-foreground">
-                        No availability set
-                      </p>
+                      <p className="text-sm text-muted-foreground">No availability set</p>
                     )}
                   </div>
                 </div>
@@ -130,17 +111,14 @@ export const UserAvailabilities = ({ user }: UserAvailabilitiesProps) => {
                   <div className="flex-1">
                     <p className="text-sm font-medium">Subjects</p>
                     <div className="flex flex-wrap gap-1 mt-1">
-                      {user.subjects_of_interest &&
-                      user.subjects_of_interest.length > 0 ? (
+                      {user.subjects_of_interest && user.subjects_of_interest.length > 0 ? (
                         user.subjects_of_interest.map((subject, i) => (
                           <Badge key={i} variant="secondary">
                             {subject}
                           </Badge>
                         ))
                       ) : (
-                        <p className="text-sm text-muted-foreground">
-                          No subjects added
-                        </p>
+                        <p className="text-sm text-muted-foreground">No subjects added</p>
                       )}
                     </div>
                   </div>
@@ -151,17 +129,14 @@ export const UserAvailabilities = ({ user }: UserAvailabilitiesProps) => {
                   <div className="flex-1">
                     <p className="text-sm font-medium">Languages</p>
                     <div className="flex flex-wrap gap-1 mt-1">
-                      {user.languages_spoken &&
-                      user.languages_spoken.length > 0 ? (
+                      {user.languages_spoken && user.languages_spoken.length > 0 ? (
                         user.languages_spoken.map((language, i) => (
                           <Badge key={i} variant="outline">
                             {language}
                           </Badge>
                         ))
                       ) : (
-                        <p className="text-sm text-muted-foreground">
-                          No languages added
-                        </p>
+                        <p className="text-sm text-muted-foreground">No languages added</p>
                       )}
                     </div>
                   </div>

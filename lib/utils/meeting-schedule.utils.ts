@@ -4,11 +4,18 @@ import { Meeting } from "@/types";
 import { WeeklyMeetingSchedule } from "@/types/meeting";
 
 const DAY_INDEX: Record<WeeklyMeetingSchedule["dayOfWeek"], number> = {
-  Sunday: 0, Monday: 1, Tuesday: 2, Wednesday: 3,
-  Thursday: 4, Friday: 5, Saturday: 6,
+  Sunday: 0,
+  Monday: 1,
+  Tuesday: 2,
+  Wednesday: 3,
+  Thursday: 4,
+  Friday: 5,
+  Saturday: 6,
 };
 
-const scheduleToRange = (s: Pick<WeeklyMeetingSchedule, "dayOfWeek" | "startTime" | "endTime">) => ({
+const scheduleToRange = (
+  s: Pick<WeeklyMeetingSchedule, "dayOfWeek" | "startTime" | "endTime">,
+) => ({
   start: toDateTime(s.startTime, DAY_INDEX[s.dayOfWeek]),
   end: toDateTime(s.endTime, DAY_INDEX[s.dayOfWeek]),
 });
@@ -16,10 +23,10 @@ const scheduleToRange = (s: Pick<WeeklyMeetingSchedule, "dayOfWeek" | "startTime
 export const checkAvailableMeetingForWeeklySchedules = (
   newSchedule: Pick<WeeklyMeetingSchedule, "dayOfWeek" | "startTime" | "endTime">,
   existingSchedules: WeeklyMeetingSchedule[],
-  meetings: Meeting[]
+  meetings: Meeting[],
 ): Record<string, boolean> => {
   const availability: Record<string, boolean> = Object.fromEntries(
-    meetings.map((m) => [m.id, true])
+    meetings.map((m) => [m.id, true]),
   );
 
   const newRange = scheduleToRange(newSchedule);

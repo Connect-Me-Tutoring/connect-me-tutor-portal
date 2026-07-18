@@ -4,10 +4,7 @@ import { Profile, Session } from "@/types";
 import { getProfileWithProfileId } from "./user.actions";
 import { getMeeting } from "./admin.actions";
 import { Table } from "../supabase/tables";
-import {
-  tableToInterfaceMeetings,
-  tableToInterfaceProfiles,
-} from "@/lib/type-utils";
+import { tableToInterfaceMeetings, tableToInterfaceProfiles } from "@/lib/type-utils";
 
 export async function getStudentSessions(
   profileId: string,
@@ -98,17 +95,15 @@ export async function rescheduleSession(
     }
 
     // Create a notification for the admin
-    const { error: notificationError } = await supabase
-      .from("Notifications")
-      .insert({
-        session_id: sessionId,
-        previous_date: sessionData.date,
-        suggested_date: newDate,
-        student_id: studentId,
-        tutor_id: sessionData.tutor_id,
-        type: "RESCHEDULE_REQUEST",
-        status: "PENDING",
-      });
+    const { error: notificationError } = await supabase.from("Notifications").insert({
+      session_id: sessionId,
+      previous_date: sessionData.date,
+      suggested_date: newDate,
+      student_id: studentId,
+      tutor_id: sessionData.tutor_id,
+      type: "RESCHEDULE_REQUEST",
+      status: "PENDING",
+    });
 
     if (notificationError) {
       throw notificationError;
@@ -177,11 +172,7 @@ export async function getStudentTutor(studentId: string) {
   }
 }
 
-export async function submitFeedback(
-  sessionId: string,
-  feedback: string,
-  rating: number,
-) {
+export async function submitFeedback(sessionId: string, feedback: string, rating: number) {
   try {
     const { data, error } = await supabase
       .from("session_feedback")

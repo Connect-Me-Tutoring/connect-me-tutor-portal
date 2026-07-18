@@ -22,11 +22,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  HoverCard,
-  HoverCardContent,
-  HoverCardTrigger,
-} from "@/components/ui/hover-card";
+import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -89,11 +85,7 @@ interface SessionsTableProps {
   setNotes: (notes: string) => void;
   setNextClassConfirmed: (confirmed: boolean) => void;
   handleStatusChange: (session: Session) => void;
-  handleReschedule: (
-    sessionId: string,
-    newDate: string,
-    meetingId: string,
-  ) => void;
+  handleReschedule: (sessionId: string, newDate: string, meetingId: string) => void;
   handleSessionComplete: (
     session: Session,
     notes: string,
@@ -184,8 +176,7 @@ const ActiveSessionsTable = ({
               </TableCell>
               <TableCell>{formatSessionDate(session.date)}</TableCell>
               <TableCell className="font-medium">
-                Tutoring Session with {session.student?.firstName}{" "}
-                {session.student?.lastName}
+                Tutoring Session with {session.student?.firstName} {session.student?.lastName}
               </TableCell>
               <TableCell>
                 {session.student?.firstName} {session.student?.lastName}
@@ -194,9 +185,7 @@ const ActiveSessionsTable = ({
               <TableCell>
                 {session?.meeting?.meetingId ? (
                   <button
-                    onClick={() =>
-                      (window.location.href = `/meeting/${session?.meeting?.id}`)
-                    }
+                    onClick={() => (window.location.href = `/meeting/${session?.meeting?.id}`)}
                     className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-connect-me-blue-2 transition-colors"
                   >
                     <Video className="h-4 w-4" />
@@ -232,8 +221,7 @@ const ActiveSessionsTable = ({
                       />
                       <DropdownMenuItem
                         onClick={() =>
-                          (window.location.href =
-                            "https://forms.gle/AC4an7K6NSNumDwKA")
+                          (window.location.href = "https://forms.gle/AC4an7K6NSNumDwKA")
                         }
                       >
                         <UserRoundPlus className="h-4 w-4 mr-2" />
@@ -255,17 +243,13 @@ const ActiveSessionsTable = ({
                             <AlertDialogTitle>Cancel Session?</AlertDialogTitle>
                             <AlertDialogDescription>
                               Are you sure you want to cancel this session with{" "}
-                              {session.student?.firstName}{" "}
-                              {session.student?.lastName} on{" "}
-                              {formatSessionDate(session.date)}? This action
-                              cannot be undone.
+                              {session.student?.firstName} {session.student?.lastName} on{" "}
+                              {formatSessionDate(session.date)}? This action cannot be undone.
                             </AlertDialogDescription>
                           </AlertDialogHeader>
                           <AlertDialogFooter>
                             <AlertDialogCancel>Cancel</AlertDialogCancel>
-                            <AlertDialogAction
-                              onClick={() => handleStatusChange(session)}
-                            >
+                            <AlertDialogAction onClick={() => handleStatusChange(session)}>
                               Confirm Cancellation
                             </AlertDialogAction>
                           </AlertDialogFooter>

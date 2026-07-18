@@ -15,10 +15,7 @@ export async function GET(request: NextRequest) {
     const now = new Date();
     const oneMonthAgo = new Date(now.setMonth(now.getMonth() - 1));
 
-    const targetEnrollments = await getEnrollmentsWithMissingSEF(
-      oneMonthAgo,
-      4,
-    );
+    const targetEnrollments = await getEnrollmentsWithMissingSEF(oneMonthAgo, 4);
 
     if (!targetEnrollments || targetEnrollments.length === 0) {
       return NextResponse.json({
@@ -36,10 +33,7 @@ export async function GET(request: NextRequest) {
 
     if (deleteError) {
       console.error("Error deleting enrollments:", deleteError);
-      return NextResponse.json(
-        { error: "Failed to delete enrollments" },
-        { status: 500 },
-      );
+      return NextResponse.json({ error: "Failed to delete enrollments" }, { status: 500 });
     }
 
     return NextResponse.json({
@@ -48,9 +42,6 @@ export async function GET(request: NextRequest) {
     });
   } catch (error) {
     console.error("Unable to delete inactive enrollments:", error);
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 },
-    );
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }

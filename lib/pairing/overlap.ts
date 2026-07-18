@@ -14,9 +14,7 @@ function parseTimeToMinutes(time: string): number {
 
 function normalizeSubjectList(raw: unknown): string[] {
   if (!Array.isArray(raw)) return [];
-  return raw
-    .map((s) => (typeof s === "string" ? s.trim().toLowerCase() : ""))
-    .filter(Boolean);
+  return raw.map((s) => (typeof s === "string" ? s.trim().toLowerCase() : "")).filter(Boolean);
 }
 
 export function intersectSubjects(a: unknown, b: unknown): string[] {
@@ -51,11 +49,7 @@ function normalizeAvailability(raw: unknown): AvailabilitySlot[] {
           ? o.start_time
           : "";
     const endTime =
-      typeof o.endTime === "string"
-        ? o.endTime
-        : typeof o.end_time === "string"
-          ? o.end_time
-          : "";
+      typeof o.endTime === "string" ? o.endTime : typeof o.end_time === "string" ? o.end_time : "";
     if (day && startTime && endTime) {
       slots.push({ day, startTime, endTime });
     }
@@ -98,9 +92,7 @@ export function computeOverlappingAvailabilitySlots(
               ? a.startTime
               : b.startTime,
           endTime:
-            parseTimeToMinutes(a.endTime) <= parseTimeToMinutes(b.endTime)
-              ? a.endTime
-              : b.endTime,
+            parseTimeToMinutes(a.endTime) <= parseTimeToMinutes(b.endTime) ? a.endTime : b.endTime,
         });
         if (out.length >= maxSlots) return dedupeSlots(out);
       }

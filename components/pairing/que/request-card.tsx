@@ -2,13 +2,7 @@
 
 import type React from "react";
 import { useState, useEffect, useCallback } from "react";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
@@ -43,11 +37,7 @@ interface PairingRequestCardProps {
   role: string;
 }
 
-export function PairingRequestCard({
-  userId,
-  profileId,
-  role,
-}: PairingRequestCardProps) {
+export function PairingRequestCard({ userId, profileId, role }: PairingRequestCardProps) {
   const [notes, setNotes] = useState("");
   const [excludeRejectedTutors, setExcludeRejectedTutors] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -116,11 +106,7 @@ export function PairingRequestCard({
     if (!myRequest) return;
     setIsSubmitting(true);
     try {
-      const promise = createPairingRequest(
-        userId,
-        myRequest.notes ?? "",
-        excludeRejectedTutors,
-      );
+      const promise = createPairingRequest(userId, myRequest.notes ?? "", excludeRejectedTutors);
       toast.promise(promise, {
         success: "You’re back in the pairing queue",
         loading: "Rejoining queue",
@@ -244,10 +230,7 @@ export function PairingRequestCard({
   const queueSwitch = (
     <div className="rounded-xl bg-muted/50 p-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
       <div className="space-y-1 min-w-0">
-        <Label
-          htmlFor="pairing-queue-switch"
-          className="text-base font-semibold"
-        >
+        <Label htmlFor="pairing-queue-switch" className="text-base font-semibold">
           In pairing queue
         </Label>
         <p className="text-sm text-muted-foreground">
@@ -309,7 +292,8 @@ export function PairingRequestCard({
             <CardTitle className="text-2xl">Pairing Queue</CardTitle>
           </div>
           <CardDescription className="text-base leading-relaxed">
-            You are in the pairing queue. You will be matched based on availability and compatibility.
+            You are in the pairing queue. You will be matched based on availability and
+            compatibility.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
@@ -354,9 +338,9 @@ export function PairingRequestCard({
           <CardTitle className="text-2xl">Submit Pairing Request</CardTitle>
         </div>
         <CardDescription className="text-base leading-relaxed">
-          Submit a request to be paired with a tutor or student. Your request
-          will be reviewed and matched based on availability, subject expertise,
-          and compatibility. The matching process typically takes 24-48 hours.
+          Submit a request to be paired with a tutor or student. Your request will be reviewed and
+          matched based on availability, subject expertise, and compatibility. The matching process
+          typically takes 24-48 hours.
         </CardDescription>
       </CardHeader>
 
@@ -368,19 +352,29 @@ export function PairingRequestCard({
           </h3>
           <div className="space-y-2 text-sm">
             <div className="flex items-start gap-2">
-              <Badge variant="outline" className="mt-0.5 text-xs">1</Badge>
-              <span>Turn on <strong>In pairing queue</strong> above (add optional notes first)</span>
+              <Badge variant="outline" className="mt-0.5 text-xs">
+                1
+              </Badge>
+              <span>
+                Turn on <strong>In pairing queue</strong> above (add optional notes first)
+              </span>
             </div>
             <div className="flex items-start gap-2">
-              <Badge variant="outline" className="mt-0.5 text-xs">2</Badge>
+              <Badge variant="outline" className="mt-0.5 text-xs">
+                2
+              </Badge>
               <span>Our system matches you based on availability and compatibility</span>
             </div>
             <div className="flex items-start gap-2">
-              <Badge variant="outline" className="mt-0.5 text-xs">3</Badge>
+              <Badge variant="outline" className="mt-0.5 text-xs">
+                3
+              </Badge>
               <span>You’ll receive a notification when a match is found</span>
             </div>
             <div className="flex items-start gap-2">
-              <Badge variant="outline" className="mt-0.5 text-xs">4</Badge>
+              <Badge variant="outline" className="mt-0.5 text-xs">
+                4
+              </Badge>
               <span>Connect with your paired partner to begin your learning journey</span>
             </div>
           </div>

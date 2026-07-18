@@ -26,21 +26,13 @@ export async function dispatchChatMessageEmails({
 }: DispatchArgs): Promise<void> {
   try {
     const admin = await createAdminClient();
-    const recipients = await resolveChatRecipientProfiles(
-      admin,
-      roomId,
-      roomType,
-    );
+    const recipients = await resolveChatRecipientProfiles(admin, roomId, roomType);
 
-    const senderName =
-      `${senderFirstName} ${senderLastName}`.trim() || "Someone";
-    const siteUrl =
-      process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.connectmego.app";
+    const senderName = `${senderFirstName} ${senderLastName}`.trim() || "Someone";
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.connectmego.app";
     const chatRoomUrl = buildChatRoomUrl(siteUrl, roomType, roomId);
     const preview =
-      messagePreview.length > 500
-        ? `${messagePreview.slice(0, 497)}...`
-        : messagePreview;
+      messagePreview.length > 500 ? `${messagePreview.slice(0, 497)}...` : messagePreview;
 
     for (const r of recipients) {
       if (r.id === senderProfileId) continue;

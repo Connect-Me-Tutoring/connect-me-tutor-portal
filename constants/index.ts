@@ -1,3 +1,1 @@
-export const tutorResources = [
-    
-]
+export const tutorResources = [];

@@ -1,10 +1,10 @@
-import type { ProfilePairingMetadata } from "@/types/profile"
+import type { ProfilePairingMetadata } from "@/types/profile";
 
 // Mock data for demonstration
 // In a real app, this would fetch from your API
 export async function fetchProfileData(): Promise<ProfilePairingMetadata> {
   // Simulate API call delay
-  await new Promise((resolve) => setTimeout(resolve, 800))
+  await new Promise((resolve) => setTimeout(resolve, 800));
 
   return {
     profileId: "current-user-id",
@@ -14,14 +14,16 @@ export async function fetchProfileData(): Promise<ProfilePairingMetadata> {
     ],
     subjectsOfInterest: ["Mathematics", "Computer Science", "Physics"],
     languagesSpoken: ["English", "Spanish"],
-  }
+  };
 }
 
-export async function updateProfileData(data: ProfilePairingMetadata): Promise<ProfilePairingMetadata> {
+export async function updateProfileData(
+  data: ProfilePairingMetadata,
+): Promise<ProfilePairingMetadata> {
   // Simulate API call delay
-  await new Promise((resolve) => setTimeout(resolve, 1000))
+  await new Promise((resolve) => setTimeout(resolve, 1000));
 
   // In a real app, this would send data to your API
 
-  return data
+  return data;
 }

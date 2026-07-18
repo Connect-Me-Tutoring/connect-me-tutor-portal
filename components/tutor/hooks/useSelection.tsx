@@ -1,5 +1,5 @@
-import { useState, useMemo } from 'react';
-import { Profile } from '@/types';
+import { useState, useMemo } from "react";
+import { Profile } from "@/types";
 
 interface UseSelectionOptions {
   onSelect?: (id: string, profile: Profile) => void;
@@ -22,13 +22,13 @@ export interface SelectionState {
 
 export function useSelection(
   profiles: Profile[],
-  options: UseSelectionOptions = {}
+  options: UseSelectionOptions = {},
 ): SelectionState {
-  const { onSelect, initialSelectedId = '' } = options;
+  const { onSelect, initialSelectedId = "" } = options;
 
   const [open, setOpen] = useState(false);
   const [selectedId, setSelectedId] = useState(initialSelectedId);
-  const [search, setSearch] = useState('');
+  const [search, setSearch] = useState("");
 
   const filteredList = useMemo(() => {
     if (!search) return profiles;
@@ -48,13 +48,13 @@ export function useSelection(
   const handleSelect = (profile: Profile) => {
     setSelectedId(profile.id);
     setOpen(false);
-    setSearch('');
+    setSearch("");
     onSelect?.(profile.id, profile);
   };
 
   const reset = () => {
     setSelectedId(initialSelectedId);
-    setSearch('');
+    setSearch("");
     setOpen(false);
   };
 

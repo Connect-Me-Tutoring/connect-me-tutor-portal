@@ -1,9 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/types/database.types";
-import {
-  StudentAnnouncementsRoomId,
-  TutorAnnouncementRoomId,
-} from "@/constants/chat";
+import { StudentAnnouncementsRoomId, TutorAnnouncementRoomId } from "@/constants/chat";
 
 export type ChatRoomType = "pairing" | "announcements" | "admin";
 
@@ -47,9 +44,7 @@ async function fetchProfilesByIds(
     return [];
   }
 
-  const rows = (data ?? []) as Array<
-    ChatRecipientRow & { user_id: string | null }
-  >;
+  const rows = (data ?? []) as Array<ChatRecipientRow & { user_id: string | null }>;
   const missingEmailRows = rows.filter((r) => !r.email && r.user_id);
 
   if (missingEmailRows.length === 0) {
@@ -79,8 +74,7 @@ async function fetchProfilesByIds(
 
   const withFallback = rows.map((r) => ({
     id: r.id,
-    email:
-      r.email ?? (r.user_id ? (userIdToEmail.get(r.user_id) ?? null) : null),
+    email: r.email ?? (r.user_id ? (userIdToEmail.get(r.user_id) ?? null) : null),
     first_name: r.first_name,
     last_name: r.last_name,
   }));
@@ -88,13 +82,8 @@ async function fetchProfilesByIds(
   return withFallback;
 }
 
-async function fetchAdminProfileIds(
-  admin: SupabaseClient<Database>,
-): Promise<string[]> {
-  const { data, error } = await admin
-    .from("Profiles")
-    .select("id")
-    .eq("role", "Admin");
+async function fetchAdminProfileIds(admin: SupabaseClient<Database>): Promise<string[]> {
+  const { data, error } = await admin.from("Profiles").select("id").eq("role", "Admin");
 
   if (error) {
     console.error("fetchAdminProfileIds", error);
@@ -150,10 +139,7 @@ export async function resolveChatRecipientProfiles(
 
     if (!roleFilter) return [];
 
-    const { data, error } = await admin
-      .from("Profiles")
-      .select("id")
-      .eq("role", roleFilter);
+    const { data, error } = await admin.from("Profiles").select("id").eq("role", roleFilter);
 
     if (error) {
       console.error("resolveChatRecipientProfiles announcements", error);
@@ -167,11 +153,7 @@ export async function resolveChatRecipientProfiles(
   return [];
 }
 
-export function buildChatRoomUrl(
-  siteUrl: string,
-  roomType: ChatRoomType,
-  roomId: string,
-): string {
+export function buildChatRoomUrl(siteUrl: string, roomType: ChatRoomType, roomId: string): string {
   const base = siteUrl.replace(/\/$/, "");
   if (roomType === "pairing") {
     return `${base}/dashboard/pairings/${roomId}/chat`;

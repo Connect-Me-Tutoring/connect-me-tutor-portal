@@ -3,15 +3,7 @@
 
 // lib/student.actions.ts
 import { getSupabase, supabase, supabaseClient } from "@/lib/supabase/client";
-import {
-  Profile,
-  Session,
-  Notification,
-  Event,
-  Enrollment,
-  Meeting,
-  Availability,
-} from "@/types";
+import { Profile, Session, Notification, Event, Enrollment, Meeting, Availability } from "@/types";
 import {
   deleteScheduledEmailBeforeSessions,
   sendScheduledEmailsBeforeSessions,
@@ -42,14 +34,8 @@ import toast from "react-hot-toast";
 import { DatabaseIcon } from "lucide-react";
 import { Table } from "../supabase/tables";
 import { handleCalculateDuration } from "@/lib/utils";
-import {
-  tableToInterfaceProfiles,
-  tableToInterfaceSessions,
-} from "../type-utils";
-import {
-  getEnrollmentAvailability,
-  getEnrollmentSchedule,
-} from "../enrollment-schedule";
+import { tableToInterfaceProfiles, tableToInterfaceSessions } from "../type-utils";
+import { getEnrollmentAvailability, getEnrollmentSchedule } from "../enrollment-schedule";
 import { createPairingRequest } from "./pairing.actions";
 import { scheduleMultipleSessionReminders } from "../twilio";
 import { removeFutureSessions } from "./enrollment.server.actions";
@@ -57,8 +43,7 @@ import { removeFutureSessions } from "./enrollment.server.actions";
 
 const { fromZonedTime } = DateFNS;
 
-const uuidRegex =
-  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 const chunkArray = <T>(items: T[], size: number) =>
   Array.from({ length: Math.ceil(items.length / size) }, (_, index) =>
@@ -119,10 +104,7 @@ export async function getAllProfiles(
     `;
 
     // Build query
-    let query = supabase
-      .from(Table.Profiles)
-      .select(profileFields)
-      .eq("role", role);
+    let query = supabase.from(Table.Profiles).select(profileFields).eq("role", role);
 
     if (status) {
       query = query.eq("status", status);
@@ -325,10 +307,7 @@ export const sendConfirmationEmail = async (email: string) => {
   }
 };
 
-export const createConfirmationEmail = async (
-  email: string,
-  tempPassword: string,
-) => {
+export const createConfirmationEmail = async (email: string, tempPassword: string) => {
   try {
     const { data, error } = await supabase.auth.admin.generateLink({
       type: "signup",
@@ -362,10 +341,7 @@ export const resendEmailConfirmation = async (email: string) => {
 
 /* SESSIONS */
 export async function createSession(sessionData: any) {
-  const { data, error } = await supabase
-    .from(Table.Sessions)
-    .insert(sessionData)
-    .single();
+  const { data, error } = await supabase.from(Table.Sessions).insert(sessionData).single();
 
   if (error) throw error;
   return data;
@@ -534,10 +510,7 @@ async function isSessioninPastWeek(enrollmentId: string, midWeek: Date) {
   return Object.keys(data).length > 0;
 }
 
-export async function removeSession(
-  sessionId: string,
-  updateEmail: boolean = true,
-) {
+export async function removeSession(sessionId: string, updateEmail: boolean = true) {
   const { error: notificationError } = await supabase
     .from(Table.Notifications)
     .delete()
@@ -556,10 +529,7 @@ export async function removeSession(
     throw participantEventError;
   }
 
-  const { error: eventError } = await supabase
-    .from(Table.Sessions)
-    .delete()
-    .eq("id", sessionId);
+  const { error: eventError } = await supabase.from(Table.Sessions).delete().eq("id", sessionId);
 
   if (eventError) {
     throw eventError;
@@ -776,9 +746,7 @@ export async function getEventsWithTutorMonth(
       .lt(
         "date",
         new Date(
-          new Date(selectedMonth).setMonth(
-            new Date(selectedMonth).getMonth() + 1,
-          ),
+          new Date(selectedMonth).setMonth(new Date(selectedMonth).getMonth() + 1),
         ).toISOString(),
       ); // Filter before the start of the next month
 
@@ -900,14 +868,8 @@ export async function getAllNotifications(): Promise<Notification[] | null> {
     const profileIds = [
       ...new Set(
         data
-          .flatMap((notification: any) => [
-            notification.student_id,
-            notification.tutor_id,
-          ])
-          .filter(
-            (id: unknown): id is string =>
-              typeof id === "string" && uuidRegex.test(id),
-          ),
+          .flatMap((notification: any) => [notification.student_id, notification.tutor_id])
+          .filter((id: unknown): id is string => typeof id === "string" && uuidRegex.test(id)),
       ),
     ];
 
@@ -920,19 +882,14 @@ export async function getAllNotifications(): Promise<Notification[] | null> {
         .in("id", profileIdChunk);
 
       if (profilesError) {
-        console.warn(
-          "Unable to load notification profiles:",
-          profilesError.message,
-        );
+        console.warn("Unable to load notification profiles:", profilesError.message);
         continue;
       }
 
       profileRows.push(...(profiles ?? []));
     }
 
-    const profilesById = new Map(
-      profileRows.map((profile: any) => [profile.id, profile]),
-    );
+    const profilesById = new Map(profileRows.map((profile: any) => [profile.id, profile]));
 
     const notifications: Notification[] = data.map((notification: any) => ({
       createdAt: notification.created_at,
@@ -957,10 +914,7 @@ export async function getAllNotifications(): Promise<Notification[] | null> {
   }
 }
 
-export const updateNotification = async (
-  notificationId: string,
-  status: "Active" | "Resolved",
-) => {
+export const updateNotification = async (notificationId: string, status: "Active" | "Resolved") => {
   try {
     const { data, error } = await supabase
       .from("Notifications") // Adjust this table name to match your database

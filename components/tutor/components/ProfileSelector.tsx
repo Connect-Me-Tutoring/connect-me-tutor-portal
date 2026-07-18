@@ -8,25 +8,21 @@ import {
   CommandList,
 } from "@/components/ui/command";
 import { Label } from "@/components/ui/label";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 import { SelectionState } from "@/components/tutor/hooks/useSelection";
 import { Check, ChevronDown } from "lucide-react";
 import { Profile } from "@/types";
 
 interface ProfileSelectorProps {
-    openOptions: boolean;
-    selectedUserId: string;
-    usersMap: Record<string, Profile>
-    userSearch: string;
-    users: Profile[]
-    setOpenUserOptions: (value: boolean) => void;
-    setSelectedUserId: (value: string) => string;
-    setUserSearch: (value: string) => void;
+  openOptions: boolean;
+  selectedUserId: string;
+  usersMap: Record<string, Profile>;
+  userSearch: string;
+  users: Profile[];
+  setOpenUserOptions: (value: boolean) => void;
+  setSelectedUserId: (value: string) => string;
+  setUserSearch: (value: string) => void;
 }
 
 export const ProfileSelector = ({
@@ -37,7 +33,7 @@ export const ProfileSelector = ({
   users,
   setOpenUserOptions,
   setSelectedUserId,
-  setUserSearch
+  setUserSearch,
 }: ProfileSelectorProps) => {
   return (
     <div className="grid grid-cols-4 items-center gap-4">
@@ -73,11 +69,7 @@ export const ProfileSelector = ({
                   <CommandItem
                     key={student.id}
                     value={student.id}
-                    keywords={[
-                      student.firstName,
-                      student.lastName,
-                      student.email,
-                    ]}
+                    keywords={[student.firstName, student.lastName, student.email]}
                     onSelect={() => {
                       handleStudentSelect(student);
                     }}
@@ -85,9 +77,7 @@ export const ProfileSelector = ({
                     <Check
                       className={cn(
                         "mr-2 h-4 w-4",
-                        selectedStudentId === student.id
-                          ? "opacity-100"
-                          : "opacity-0"
+                        selectedStudentId === student.id ? "opacity-100" : "opacity-0",
                       )}
                     />
                     {student.firstName} {student.lastName} - {student.email}

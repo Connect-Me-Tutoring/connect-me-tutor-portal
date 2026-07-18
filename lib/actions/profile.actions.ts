@@ -102,14 +102,10 @@ export async function updateProfileDetails({
 }: UpdateProfileInput): Promise<{ success: boolean; error?: string }> {
   const updates: Record<string, any> = {};
   if (availability !== undefined) updates.availability = availability;
-  if (subjectsOfInterest !== undefined)
-    updates.subjects_of_interest = subjectsOfInterest;
+  if (subjectsOfInterest !== undefined) updates.subjects_of_interest = subjectsOfInterest;
   if (languagesSpoken !== undefined) updates.languages_spoken = languagesSpoken;
 
-  const { error } = await supabase
-    .from(Table.Profiles)
-    .update(updates)
-    .eq("user_id", userId);
+  const { error } = await supabase.from(Table.Profiles).update(updates).eq("user_id", userId);
 
   if (error) {
     console.error("Error updating profile:", error.message);

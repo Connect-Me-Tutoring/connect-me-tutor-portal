@@ -1,8 +1,4 @@
-export type SessionExitFormCategory =
-  | "attendance"
-  | "technical"
-  | "behavior"
-  | "urgent";
+export type SessionExitFormCategory = "attendance" | "technical" | "behavior" | "urgent";
 
 export interface SessionExitFormPayload {
   tutorFirstName?: string;

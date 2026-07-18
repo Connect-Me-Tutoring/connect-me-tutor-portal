@@ -29,11 +29,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import {
-  HoverCard,
-  HoverCardContent,
-  HoverCardTrigger,
-} from "@/components/ui/hover-card";
+import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
 import {
   Circle,
   Loader2,
@@ -106,18 +102,14 @@ const CompletedSessionsTable = ({
               </TableCell>
               <TableCell>{formatSessionDate(session.date)}</TableCell>
               <TableCell className="font-medium">
-                Tutoring Session with {session.tutor?.firstName}{" "}
-                {session.tutor?.lastName}
+                Tutoring Session with {session.tutor?.firstName} {session.tutor?.lastName}
               </TableCell>
               <TableCell>
                 {session.tutor?.firstName} {session.tutor?.lastName}
               </TableCell>
 
               <TableCell>
-                <Dialog
-                  open={isMeetingNotesOpen}
-                  onOpenChange={setIsMeetingNotesOpen}
-                >
+                <Dialog open={isMeetingNotesOpen} onOpenChange={setIsMeetingNotesOpen}>
                   <DialogTrigger asChild>
                     <Button
                       variant="ghost"

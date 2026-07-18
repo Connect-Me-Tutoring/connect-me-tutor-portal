@@ -62,11 +62,7 @@ const AvailabilityForm: React.FC<AvailabilityFormProps> = ({
           <Label htmlFor="day" className="text-right">
             Day:
           </Label>
-          <Select
-            name="day"
-            value={selectedDay}
-            onValueChange={(value) => setSelectedDay(value)}
-          >
+          <Select name="day" value={selectedDay} onValueChange={(value) => setSelectedDay(value)}>
             <SelectTrigger>
               <SelectValue placeholder="Select a day" />
             </SelectTrigger>

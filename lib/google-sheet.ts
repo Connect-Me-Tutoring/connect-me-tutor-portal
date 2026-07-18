@@ -6,9 +6,7 @@ import { SessionExitFormPayload } from "@/types/sessionExitForm";
 const SHEET_RANGE_COLUMNS = "B:G";
 
 async function authenticate() {
-  const credentials = JSON.parse(
-    process.env.GOOGLE_APPLICATION_CREDENTIALS || "{}",
-  );
+  const credentials = JSON.parse(process.env.GOOGLE_APPLICATION_CREDENTIALS || "{}");
 
   const auth = new google.auth.GoogleAuth({
     credentials,
@@ -87,12 +85,8 @@ export async function writeSpreadSheet(formData: SessionExitFormPayload) {
 
   const values = [
     [
-      sanitizeForSheetCell(
-        joinName(formData.tutorFirstName, formData.tutorLastName),
-      ),
-      sanitizeForSheetCell(
-        joinName(formData.studentFirstName, formData.studentLastName),
-      ),
+      sanitizeForSheetCell(joinName(formData.tutorFirstName, formData.tutorLastName)),
+      sanitizeForSheetCell(joinName(formData.studentFirstName, formData.studentLastName)),
       sanitizeForSheetCell(formData.tutorEmail),
       sanitizeForSheetCell(formData.studentEmail),
       sanitizeForSheetCell(formData.formContent),
@@ -117,10 +111,7 @@ export async function writeSpreadSheet(formData: SessionExitFormPayload) {
   }
 }
 
-async function sendDiscordNotification(
-  rowIdx: number,
-  formData: SessionExitFormPayload,
-) {
+async function sendDiscordNotification(rowIdx: number, formData: SessionExitFormPayload) {
   try {
     await fetch(
       "https://script.google.com/macros/s/AKfycbz642YwN0t9gUAKycvrKq5WEJueL_PfDQwug7LK36EYsF6gf9ZVpbBkCc1p88Nf83qD/exec",

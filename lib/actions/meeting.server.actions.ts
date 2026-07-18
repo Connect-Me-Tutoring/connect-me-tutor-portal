@@ -51,9 +51,7 @@ export async function getMeeting(id: string): Promise<Meeting | null> {
   }
 }
 
-export async function getMeetings(options?: {
-  omit?: string[];
-}): Promise<Meeting[] | null> {
+export async function getMeetings(options?: { omit?: string[] }): Promise<Meeting[] | null> {
   const supabase = await createClient();
   try {
     const omittedLinks = options ? (options.omit ? options.omit : []) : [];

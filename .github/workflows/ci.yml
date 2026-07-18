@@ -4,10 +4,10 @@ on:
   workflow_dispatch:
   push:
     branches:
-      - main
+      - dev
   pull_request:
     branches:
-      - main
+      - dev
 
 jobs:
   style-lint-build:
@@ -19,17 +19,17 @@ jobs:
         with:
           ref: ${{ github.head_ref }}
 
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
+      - name: Setup npm
+        uses: npm/action-setup@v4
 
       - name: Install dependencies
-        run: pnpm install
+        run: npm install
 
       - name: Run Prettier
-        run: pnpm prettier --check .
+        run: npm run format:check
 
       - name: Run ESLint
-        run: pnpm lint
+        run: npm run lint
 
       - name: Build the project
-        run: pnpm build
+        run: npm run build

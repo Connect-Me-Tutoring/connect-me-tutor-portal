@@ -18,11 +18,7 @@ async function MyStatsData() {
   ]);
 
   return (
-    <Stats
-      key={profile.id}
-      enrollmentDetails={enrollmentDetails}
-      eventDetails={eventDetails}
-    />
+    <Stats key={profile.id} enrollmentDetails={enrollmentDetails} eventDetails={eventDetails} />
   );
 }
 

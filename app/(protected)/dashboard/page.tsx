@@ -33,10 +33,7 @@ async function TutorDashboardPage({
 
   const pastTutorSessions = sessions.then((sessions) =>
     sessions
-      .filter(
-        (session) =>
-          session.status == "Complete" || session.status == "Cancelled",
-      )
+      .filter((session) => session.status == "Complete" || session.status == "Cancelled")
       .toReversed(),
   );
 
@@ -96,10 +93,7 @@ async function StudentDashboardPage({
 
   const pastStudentSessions = sessions.then((sessions) =>
     sessions
-      .filter(
-        (session) =>
-          session.status == "Complete" || session.status == "Cancelled",
-      )
+      .filter((session) => session.status == "Complete" || session.status == "Cancelled")
       .toReversed(),
   );
 
@@ -134,18 +128,10 @@ export default async function DashboardPage() {
   return (
     <>
       {profile.role === "Student" && (
-        <StudentDashboardPage
-          key={profile.id}
-          profile={profile}
-          meetings={meetings}
-        />
+        <StudentDashboardPage key={profile.id} profile={profile} meetings={meetings} />
       )}
       {profile.role === "Tutor" && (
-        <TutorDashboardPage
-          key={profile.id}
-          profile={profile}
-          meetings={meetings}
-        />
+        <TutorDashboardPage key={profile.id} profile={profile} meetings={meetings} />
       )}
       {profile.role === "Admin" && <AdminDashboard />}
     </>

@@ -30,15 +30,7 @@ interface CondensedProfileFormProps {
   isStudent?: boolean; // Flag to determine if this is for student or tutor
 }
 
-const DAYS_OF_WEEK = [
-  "Monday",
-  "Tuesday",
-  "Wednesday",
-  "Thursday",
-  "Friday",
-  "Saturday",
-  "Sunday",
-];
+const DAYS_OF_WEEK = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
 
 export default function CondensedProfileForm({
   profile,
@@ -66,7 +58,7 @@ export default function CondensedProfileForm({
   const updateAvailabilitySlot = (
     index: number,
     field: keyof { day: string; startTime: string; endTime: string },
-    value: string
+    value: string,
   ) => {
     if (!localProfile.availability) return;
 
@@ -83,44 +75,28 @@ export default function CondensedProfileForm({
   };
 
   const addSubject = () => {
-    if (
-      newSubject.trim() &&
-      !(localProfile.subjectsOfInterest || []).includes(newSubject.trim())
-    ) {
-      const newSubjects = [
-        ...(localProfile.subjectsOfInterest || []),
-        newSubject.trim(),
-      ];
+    if (newSubject.trim() && !(localProfile.subjectsOfInterest || []).includes(newSubject.trim())) {
+      const newSubjects = [...(localProfile.subjectsOfInterest || []), newSubject.trim()];
       updateProfile({ subjectsOfInterest: newSubjects });
       setNewSubject("");
     }
   };
 
   const removeSubject = (subject: string) => {
-    const filtered = (localProfile.subjectsOfInterest || []).filter(
-      (s) => s !== subject
-    );
+    const filtered = (localProfile.subjectsOfInterest || []).filter((s) => s !== subject);
     updateProfile({ subjectsOfInterest: filtered });
   };
 
   const addLanguage = () => {
-    if (
-      newLanguage.trim() &&
-      !(localProfile.languages_spoken || []).includes(newLanguage.trim())
-    ) {
-      const newLanguages = [
-        ...(localProfile.languages_spoken || []),
-        newLanguage.trim(),
-      ];
+    if (newLanguage.trim() && !(localProfile.languages_spoken || []).includes(newLanguage.trim())) {
+      const newLanguages = [...(localProfile.languages_spoken || []), newLanguage.trim()];
       updateProfile({ languages_spoken: newLanguages });
       setNewLanguage("");
     }
   };
 
   const removeLanguage = (language: string) => {
-    const filtered = (localProfile.languages_spoken || []).filter(
-      (l) => l !== language
-    );
+    const filtered = (localProfile.languages_spoken || []).filter((l) => l !== language);
     updateProfile({ languages_spoken: filtered });
   };
 
@@ -132,8 +108,7 @@ export default function CondensedProfileForm({
           {isStudent ? "Student" : "Tutor"} Profile Details
         </h3>
         <p className="text-sm text-gray-600">
-          {localProfile.firstName} {localProfile.lastName} -{" "}
-          {localProfile.email}
+          {localProfile.firstName} {localProfile.lastName} - {localProfile.email}
         </p>
       </div>
 
@@ -156,9 +131,7 @@ export default function CondensedProfileForm({
                   <Label className="text-xs text-gray-500">Day</Label>
                   <Select
                     value={slot.day}
-                    onValueChange={(value) =>
-                      updateAvailabilitySlot(index, "day", value)
-                    }
+                    onValueChange={(value) => updateAvailabilitySlot(index, "day", value)}
                   >
                     <SelectTrigger className="h-8">
                       <SelectValue />
@@ -177,9 +150,7 @@ export default function CondensedProfileForm({
                   <Input
                     type="time"
                     value={slot.startTime}
-                    onChange={(e) =>
-                      updateAvailabilitySlot(index, "startTime", e.target.value)
-                    }
+                    onChange={(e) => updateAvailabilitySlot(index, "startTime", e.target.value)}
                     className="h-8"
                   />
                 </div>
@@ -188,9 +159,7 @@ export default function CondensedProfileForm({
                   <Input
                     type="time"
                     value={slot.endTime}
-                    onChange={(e) =>
-                      updateAvailabilitySlot(index, "endTime", e.target.value)
-                    }
+                    onChange={(e) => updateAvailabilitySlot(index, "endTime", e.target.value)}
                     className="h-8"
                   />
                 </div>
@@ -236,17 +205,10 @@ export default function CondensedProfileForm({
                   placeholder="e.g., Math, Physics"
                   value={newSubject}
                   onChange={(e) => setNewSubject(e.target.value)}
-                  onKeyPress={(e) =>
-                    e.key === "Enter" && (e.preventDefault(), addSubject())
-                  }
+                  onKeyPress={(e) => e.key === "Enter" && (e.preventDefault(), addSubject())}
                   className="h-8 text-sm"
                 />
-                <Button
-                  type="button"
-                  onClick={addSubject}
-                  size="sm"
-                  className="h-8"
-                >
+                <Button type="button" onClick={addSubject} size="sm" className="h-8">
                   <Plus className="h-3 w-3" />
                 </Button>
               </div>
@@ -288,17 +250,10 @@ export default function CondensedProfileForm({
                   placeholder="e.g., English, Spanish"
                   value={newLanguage}
                   onChange={(e) => setNewLanguage(e.target.value)}
-                  onKeyPress={(e) =>
-                    e.key === "Enter" && (e.preventDefault(), addLanguage())
-                  }
+                  onKeyPress={(e) => e.key === "Enter" && (e.preventDefault(), addLanguage())}
                   className="h-8 text-sm"
                 />
-                <Button
-                  type="button"
-                  onClick={addLanguage}
-                  size="sm"
-                  className="h-8"
-                >
+                <Button type="button" onClick={addLanguage} size="sm" className="h-8">
                   <Plus className="h-3 w-3" />
                 </Button>
               </div>

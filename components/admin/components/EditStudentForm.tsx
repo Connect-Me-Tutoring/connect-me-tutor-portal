@@ -31,9 +31,7 @@ interface EditStudentFormProps {
   handleGetSelectedStudent: (value: string | null) => void;
   selectedStudent: Profile | null;
   handleInputChangeForEdit: (
-    e: React.ChangeEvent<
-      HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
-    >,
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>,
   ) => void;
   handleGradeChangeForEdit: (value: string) => void;
   handleGenderForEdit: (value: string) => void;
@@ -44,15 +42,7 @@ interface EditStudentFormProps {
   handleEditStudent: () => void;
 }
 
-const DAYS_OF_WEEK = [
-  "Monday",
-  "Tuesday",
-  "Wednesday",
-  "Thursday",
-  "Friday",
-  "Saturday",
-  "Sunday",
-];
+const DAYS_OF_WEEK = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
 
 const EditStudentForm = ({
   students,
@@ -69,8 +59,7 @@ const EditStudentForm = ({
   getOrdinalSuffix,
   handleEditStudent,
 }: EditStudentFormProps) => {
-  const [isReactivateModalOpen, setIsReactivateModalOpen] =
-    useState<boolean>(false);
+  const [isReactivateModalOpen, setIsReactivateModalOpen] = useState<boolean>(false);
 
   const [activeTab, setActiveTab] = useState("basic");
   const [subjectInput, setSubjectInput] = useState("");
@@ -113,10 +102,7 @@ const EditStudentForm = ({
   const addSubject = () => {
     if (!selectedStudent || !subjectInput.trim()) return;
 
-    const updated = [
-      ...(selectedStudent.subjects_of_interest ?? []),
-      subjectInput.trim(),
-    ];
+    const updated = [...(selectedStudent.subjects_of_interest ?? []), subjectInput.trim()];
 
     handleEditProfile("subjects_of_interest", updated);
 
@@ -126,9 +112,7 @@ const EditStudentForm = ({
   const removeSubject = (subject: string) => {
     if (!selectedStudent || !selectedStudent.subjects_of_interest) return;
 
-    const updated = selectedStudent.subjects_of_interest.filter(
-      (s) => s !== subject,
-    );
+    const updated = selectedStudent.subjects_of_interest.filter((s) => s !== subject);
 
     handleEditProfile("subjects_of_interest", updated);
   };
@@ -136,10 +120,7 @@ const EditStudentForm = ({
   const addLanguage = () => {
     if (!selectedStudent || !languageInput.trim()) return;
 
-    const updated = [
-      ...(selectedStudent.languages_spoken ?? []),
-      languageInput.trim(),
-    ];
+    const updated = [...(selectedStudent.languages_spoken ?? []), languageInput.trim()];
 
     handleEditProfile("languages_spoken", updated);
 
@@ -149,18 +130,13 @@ const EditStudentForm = ({
   const removeLanguage = (language: string) => {
     if (!selectedStudent || !selectedStudent.languages_spoken) return;
 
-    const updated = selectedStudent.languages_spoken.filter(
-      (l) => l !== language,
-    );
+    const updated = selectedStudent.languages_spoken.filter((l) => l !== language);
 
     handleEditProfile("languages_spoken", updated);
   };
 
   return (
-    <Dialog
-      open={isReactivateModalOpen}
-      onOpenChange={setIsReactivateModalOpen}
-    >
+    <Dialog open={isReactivateModalOpen} onOpenChange={setIsReactivateModalOpen}>
       <DialogTrigger asChild>
         <Button className="bg-connect-me-blue-4">Edit Student</Button>
       </DialogTrigger>
@@ -293,9 +269,7 @@ const EditStudentForm = ({
                             <SelectValue placeholder="" />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="Kindergarten">
-                              Kindergarten
-                            </SelectItem>
+                            <SelectItem value="Kindergarten">Kindergarten</SelectItem>
                             {Array.from({ length: 12 }, (_, i) => (
                               <SelectItem
                                 key={i}
@@ -437,10 +411,7 @@ const EditStudentForm = ({
                       {selectedStudent &&
                         selectedStudent.availability &&
                         selectedStudent.availability.map((slot, index) => (
-                          <div
-                            key={index}
-                            className="flex gap-2 p-3 border rounded-lg bg-gray-50"
-                          >
+                          <div key={index} className="flex gap-2 p-3 border rounded-lg bg-gray-50">
                             <div className="flex-1">
                               <Select
                                 value={slot.day}
@@ -465,11 +436,7 @@ const EditStudentForm = ({
                                 type="time"
                                 value={slot.startTime}
                                 onChange={(e) =>
-                                  updateAvailabilitySlot(
-                                    index,
-                                    "startTime",
-                                    e.target.value,
-                                  )
+                                  updateAvailabilitySlot(index, "startTime", e.target.value)
                                 }
                               />
                             </div>
@@ -478,11 +445,7 @@ const EditStudentForm = ({
                                 type="time"
                                 value={slot.endTime}
                                 onChange={(e) =>
-                                  updateAvailabilitySlot(
-                                    index,
-                                    "endTime",
-                                    e.target.value,
-                                  )
+                                  updateAvailabilitySlot(index, "endTime", e.target.value)
                                 }
                               />
                             </div>
@@ -509,9 +472,7 @@ const EditStudentForm = ({
 
                     {/* Subjects Section */}
                     <div className="space-y-4">
-                      <h3 className="text-lg font-semibold">
-                        Subjects of Interest
-                      </h3>
+                      <h3 className="text-lg font-semibold">Subjects of Interest</h3>
                       <div className="flex gap-2">
                         <Input
                           type="text"
@@ -519,8 +480,7 @@ const EditStudentForm = ({
                           value={subjectInput}
                           onChange={(e) => setSubjectInput(e.target.value)}
                           onKeyPress={(e) =>
-                            e.key === "Enter" &&
-                            (e.preventDefault(), addSubject())
+                            e.key === "Enter" && (e.preventDefault(), addSubject())
                           }
                         />
                         <Button type="button" onClick={addSubject} size="sm">
@@ -531,33 +491,29 @@ const EditStudentForm = ({
                         selectedStudent.subjects_of_interest &&
                         selectedStudent.subjects_of_interest.length > 0 && (
                           <div className="flex flex-wrap gap-2">
-                            {selectedStudent.subjects_of_interest.map(
-                              (subject) => (
-                                <Badge
-                                  key={subject}
-                                  variant="secondary"
-                                  className="flex items-center gap-1"
+                            {selectedStudent.subjects_of_interest.map((subject) => (
+                              <Badge
+                                key={subject}
+                                variant="secondary"
+                                className="flex items-center gap-1"
+                              >
+                                {subject}
+                                <button
+                                  type="button"
+                                  onClick={() => removeSubject(subject)}
+                                  className="ml-1 hover:bg-destructive/20 rounded-full p-0.5"
                                 >
-                                  {subject}
-                                  <button
-                                    type="button"
-                                    onClick={() => removeSubject(subject)}
-                                    className="ml-1 hover:bg-destructive/20 rounded-full p-0.5"
-                                  >
-                                    <X className="h-3 w-3" />
-                                  </button>
-                                </Badge>
-                              ),
-                            )}
+                                  <X className="h-3 w-3" />
+                                </button>
+                              </Badge>
+                            ))}
                           </div>
                         )}
                     </div>
 
                     {/* Languages Section */}
                     <div className="space-y-4">
-                      <h3 className="text-lg font-semibold">
-                        Languages Spoken
-                      </h3>
+                      <h3 className="text-lg font-semibold">Languages Spoken</h3>
                       <div className="flex gap-2">
                         <Input
                           type="text"
@@ -565,8 +521,7 @@ const EditStudentForm = ({
                           value={languageInput}
                           onChange={(e) => setLanguageInput(e.target.value)}
                           onKeyPress={(e) =>
-                            e.key === "Enter" &&
-                            (e.preventDefault(), addLanguage())
+                            e.key === "Enter" && (e.preventDefault(), addLanguage())
                           }
                         />
                         <Button type="button" onClick={addLanguage} size="sm">
@@ -577,24 +532,22 @@ const EditStudentForm = ({
                         selectedStudent.languages_spoken &&
                         selectedStudent.languages_spoken.length > 0 && (
                           <div className="flex flex-wrap gap-2">
-                            {selectedStudent.languages_spoken.map(
-                              (language) => (
-                                <Badge
-                                  key={language}
-                                  variant="secondary"
-                                  className="flex items-center gap-1"
+                            {selectedStudent.languages_spoken.map((language) => (
+                              <Badge
+                                key={language}
+                                variant="secondary"
+                                className="flex items-center gap-1"
+                              >
+                                {language}
+                                <button
+                                  type="button"
+                                  onClick={() => removeLanguage(language)}
+                                  className="ml-1 hover:bg-destructive/20 rounded-full p-0.5"
                                 >
-                                  {language}
-                                  <button
-                                    type="button"
-                                    onClick={() => removeLanguage(language)}
-                                    className="ml-1 hover:bg-destructive/20 rounded-full p-0.5"
-                                  >
-                                    <X className="h-3 w-3" />
-                                  </button>
-                                </Badge>
-                              ),
-                            )}
+                                  <X className="h-3 w-3" />
+                                </button>
+                              </Badge>
+                            ))}
                           </div>
                         )}
                     </div>
@@ -602,9 +555,7 @@ const EditStudentForm = ({
                 </ScrollArea>
               )}
 
-              <Button onClick={handleEditStudent}>
-                Finish editing student
-              </Button>
+              <Button onClick={handleEditStudent}>Finish editing student</Button>
             </div>
           </DialogContent>
         </Dialog>

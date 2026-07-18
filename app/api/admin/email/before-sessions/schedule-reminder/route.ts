@@ -83,12 +83,8 @@ export async function POST(request: NextRequest) {
  */
 
 const createMessage = (session: Session, tutor: Profile, student: Profile) => {
-  const tutorName: string = tutor
-    ? ` ${tutor.firstName} ${tutor.lastName}`
-    : "";
-  const studentName: string = student
-    ? `${student.firstName} ${student.lastName}`
-    : "your student";
+  const tutorName: string = tutor ? ` ${tutor.firstName} ${tutor.lastName}` : "";
+  const studentName: string = student ? `${student.firstName} ${student.lastName}` : "your student";
 
   return `
     <p>Hi ${tutorName},<br><br>

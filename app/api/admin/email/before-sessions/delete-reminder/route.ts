@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 // import { createClient } from "@supabase/supabase-js";
-import { createClient } from "@/lib/supabase/server"
+import { createClient } from "@/lib/supabase/server";
 import { deleteMsg } from "@/lib/actions/email.server.actions";
 import { getSupabase } from "@/lib/supabase-server/serverClient";
 import { verifyAdmin } from "@/lib/actions/auth.server.actions";
@@ -9,7 +9,7 @@ export const dynamic = "force-dynamic";
 
 export async function POST(request: NextRequest) {
   try {
-    await verifyAdmin()
+    await verifyAdmin();
     const supabase = await createClient();
 
     const data = await request.json();
@@ -20,7 +20,7 @@ export async function POST(request: NextRequest) {
         {
           message: "SessionId is required",
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -38,7 +38,7 @@ export async function POST(request: NextRequest) {
           },
           {
             status: 200,
-          }
+          },
         );
       }
       console.error("Error fetching messageId", fetchError);
@@ -49,22 +49,16 @@ export async function POST(request: NextRequest) {
       console.error("No Scheduled Email found");
       return NextResponse.json(
         { message: "Scheduled email found but no message_id" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
     await deleteMsg(emailData.message_id);
 
-    const { error: deleteDbError } = await supabase
-      .from("Emails")
-      .delete()
-      .eq("id", emailData.id);
+    const { error: deleteDbError } = await supabase.from("Emails").delete().eq("id", emailData.id);
 
     if (deleteDbError) {
-      console.error(
-        "Error deleting email record from Supabase:",
-        deleteDbError
-      );
+      console.error("Error deleting email record from Supabase:", deleteDbError);
       throw deleteDbError; // Let the generic catch handle it
     }
 

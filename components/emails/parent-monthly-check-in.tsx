@@ -1,12 +1,4 @@
-import {
-  Html,
-  Head,
-  Body,
-  Container,
-  Text,
-  Link,
-  Section,
-} from "@react-email/components";
+import { Html, Head, Body, Container, Text, Link, Section } from "@react-email/components";
 import { ParentMonthlyCheckInEmailProps } from "@/types/email";
 
 export default function ParentMonthlyCheckInEmail({
@@ -52,7 +44,9 @@ export default function ParentMonthlyCheckInEmail({
             margin: "0 0 16px 0",
           }}
         >
-          It&apos;s been {monthsSinceStart} month{monthsSinceStart !== 1 ? 's' : ''} since {student.firstName} started tutoring sessions with {tutor.firstName} {tutor.lastName}. We hope everything has been going smoothly!
+          It&apos;s been {monthsSinceStart} month{monthsSinceStart !== 1 ? "s" : ""} since{" "}
+          {student.firstName} started tutoring sessions with {tutor.firstName} {tutor.lastName}. We
+          hope everything has been going smoothly!
         </Text>
 
         <Section
@@ -103,7 +97,8 @@ export default function ParentMonthlyCheckInEmail({
               margin: "0 0 8px 0",
             }}
           >
-            • Have you noticed any improvements in {student.firstName}&apos;s academic performance or confidence?
+            • Have you noticed any improvements in {student.firstName}&apos;s academic performance
+            or confidence?
           </Text>
           <Text
             style={{
@@ -125,7 +120,9 @@ export default function ParentMonthlyCheckInEmail({
             margin: "0 0 16px 0",
           }}
         >
-          Your feedback is invaluable in helping us provide the best possible tutoring experience for your child. Please don&apos;t hesitate to contact us with any thought or concerns you may have
+          Your feedback is invaluable in helping us provide the best possible tutoring experience
+          for your child. Please don&apos;t hesitate to contact us with any thought or concerns you
+          may have
         </Text>
 
         <Text
@@ -136,7 +133,8 @@ export default function ParentMonthlyCheckInEmail({
             margin: "0 0 24px 0",
           }}
         >
-          Thank you for being part of the Connect Me community and supporting your child&apos;s education!
+          Thank you for being part of the Connect Me community and supporting your child&apos;s
+          education!
         </Text>
 
         <Text
@@ -147,8 +145,10 @@ export default function ParentMonthlyCheckInEmail({
             margin: "0",
           }}
         >
-          Best regards,<br />
-          The Connect Me Team<br />
+          Best regards,
+          <br />
+          The Connect Me Team
+          <br />
           <Link
             href="mailto:support@connectme.org"
             style={{

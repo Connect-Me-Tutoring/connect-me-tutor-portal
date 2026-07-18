@@ -9,10 +9,7 @@ export async function GET(req: NextRequest, props: { params: Promise<{ sessionId
     const sessionId = params.sessionId;
 
     if (!sessionId) {
-      return NextResponse.json(
-        { error: "Session ID is required" },
-        { status: 400 },
-      );
+      return NextResponse.json({ error: "Session ID is required" }, { status: 400 });
     }
 
     const enrollmentId = req.nextUrl.searchParams.get("enrollmentId");
@@ -25,9 +22,6 @@ export async function GET(req: NextRequest, props: { params: Promise<{ sessionId
     return NextResponse.json(data);
   } catch (error) {
     console.error("Error fetching participation data:", error);
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 },
-    );
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }

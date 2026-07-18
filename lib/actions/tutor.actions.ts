@@ -6,10 +6,7 @@ import { getProfileWithProfileId } from "./user.actions";
 import { getMeeting } from "./admin.actions";
 import { Stats } from "fs";
 import { Table } from "../supabase/tables";
-import {
-  tableToInterfaceMeetings,
-  tableToInterfaceProfiles,
-} from "../type-utils";
+import { tableToInterfaceMeetings, tableToInterfaceProfiles } from "../type-utils";
 
 /** 
 @params 
@@ -144,10 +141,7 @@ export async function getTutorStudents(tutorId: string) {
 }
 
 // changed to allow tutors to restore cancelled sessions back to their original status
-export async function undoCancelSession(
-  sessionId: string,
-  originalStatus: string = "Active",
-) {
+export async function undoCancelSession(sessionId: string, originalStatus: string = "Active") {
   const { data, error } = await supabase
     .from(Table.Sessions)
     .update({
@@ -183,10 +177,7 @@ export async function getTutorAvailability(tutorId: string) {
   return data;
 }
 //
-export async function updateTutorAvailability(
-  tutorId: string,
-  availabilityData: any,
-) {
+export async function updateTutorAvailability(tutorId: string, availabilityData: any) {
   const { data, error } = await supabase
     .from("tutor_availability")
     .upsert({ tutor_id: tutorId, ...availabilityData })
@@ -203,10 +194,7 @@ export async function getTutorResources() {
   return data;
 }
 
-export async function logSessionAttendance(
-  sessionId: string,
-  attended: boolean,
-) {
+export async function logSessionAttendance(sessionId: string, attended: boolean) {
   const { data, error } = await supabase
     .from(Table.Sessions)
     .update({

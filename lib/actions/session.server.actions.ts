@@ -23,10 +23,7 @@ import {
   getParticipantEventCountsBySessionIds,
 } from "./zoom.server.actions";
 import { normalizeZoomParticipationEvents } from "@/lib/zoom/participation-normalize";
-import {
-  tableToInterfaceEnrollments,
-  tableToInterfaceSessions,
-} from "../type-utils";
+import { tableToInterfaceEnrollments, tableToInterfaceSessions } from "../type-utils";
 import {
   deleteScheduledEmailBeforeSessions,
   sendScheduledEmailsBeforeSessions,
@@ -35,14 +32,7 @@ import {
   updateScheduledEmailBeforeSessions,
 } from "./email.server.actions";
 
-import {
-  startOfWeek,
-  endOfWeek,
-  subDays,
-  parseISO,
-  format,
-  addDays,
-} from "date-fns"; // Only use date-fns
+import { startOfWeek, endOfWeek, subDays, parseISO, format, addDays } from "date-fns"; // Only use date-fns
 
 import * as DateFNS from "date-fns-tz";
 const { fromZonedTime } = DateFNS;
@@ -106,24 +96,14 @@ export async function addSessionsServer(
     });
 
     const enrollmentsWithSessions: Set<string> = new Set(
-      sessions
-        .filter((s) => s.enrollmentId)
-        .map((s) => s.enrollmentId as string),
+      sessions.filter((s) => s.enrollmentId).map((s) => s.enrollmentId as string),
     );
 
     const sessionsToCreate: any[] = [];
 
     for (const enrollment of enrollments) {
-      const {
-        id,
-        student,
-        tutor,
-        availability,
-        meetingId,
-        summary,
-        startDate,
-        duration,
-      } = enrollment;
+      const { id, student, tutor, availability, meetingId, summary, startDate, duration } =
+        enrollment;
 
       if (enrollment.paused) {
         continue;
@@ -168,22 +148,12 @@ export async function addSessionsServer(
           const [startHour, startMinute] = startTime.split(":").map(Number);
           const [endHour, endMinute] = endTime.split(":").map(Number);
 
-          if (
-            isNaN(startHour) ||
-            isNaN(startMinute) ||
-            isNaN(endHour) ||
-            isNaN(endMinute)
-          ) {
-            throw new Error(
-              `Invalid time format: start=${startTime}, end=${endTime}`,
-            );
+          if (isNaN(startHour) || isNaN(startMinute) || isNaN(endHour) || isNaN(endMinute)) {
+            throw new Error(`Invalid time format: start=${startTime}, end=${endTime}`);
           }
 
           const dateString = `${format(currentDate, "yyyy-MM-dd")}T${startTime}:00`;
-          const sessionStartTime = fromZonedTime(
-            dateString,
-            "America/New_York",
-          );
+          const sessionStartTime = fromZonedTime(dateString, "America/New_York");
 
           if (sessionStartTime < startDate_asDate) {
             throw new Error("Session occurs before start date");
@@ -209,13 +179,7 @@ export async function addSessionsServer(
             scheduledSessions.add(sessionKey);
           }
         } catch (err) {
-          console.error(
-            "Error processing time for %s %s-%s:",
-            day,
-            startTime,
-            endTime,
-            err,
-          );
+          console.error("Error processing time for %s %s-%s:", day, startTime, endTime, err);
         }
 
         currentDate = addDays(currentDate, 1);
@@ -223,9 +187,7 @@ export async function addSessionsServer(
     }
 
     if (sessionsToCreate.length > 0) {
-      const { data, error } = await supabase
-        .from(Table.Sessions)
-        .insert(sessionsToCreate).select(`
+      const { data, error } = await supabase.from(Table.Sessions).insert(sessionsToCreate).select(`
           *,
           student:Profiles!student_id(*),
           tutor:Profiles!tutor_id(*),
@@ -309,9 +271,7 @@ export async function findMeetingByNormalizedId(
     const normalizedSearch = normalizeMeetingId(zoomMeetingNumber);
 
     // Fetch all meetings and filter by normalized meeting_id
-    const { data: meetings, error } = await supabase
-      .from(Table.Meetings)
-      .select("id, meeting_id");
+    const { data: meetings, error } = await supabase.from(Table.Meetings).select("id, meeting_id");
 
     if (error) {
       console.error("Error fetching meetings:", error);
@@ -362,25 +322,18 @@ export async function getActiveSessionFromMeetingID(meetingID: string) {
   return data || [];
 }
 
-export async function cancelSession(
-  session: Session,
-  actor: "tutor" | "student",
-) {
+export async function cancelSession(session: Session, actor: "tutor" | "student") {
   const authSupabase = await createClient();
   const adminSupabase = await createAdminClient();
 
-  const { data: existingSession, error: existingSessionError } =
-    await authSupabase
-      .from(Table.Sessions)
-      .select("id, tutor_id, student_id")
-      .eq("id", session.id)
-      .single();
+  const { data: existingSession, error: existingSessionError } = await authSupabase
+    .from(Table.Sessions)
+    .select("id, tutor_id, student_id")
+    .eq("id", session.id)
+    .single();
 
   if (existingSessionError || !existingSession) {
-    console.error(
-      "Error loading session before cancellation:",
-      existingSessionError,
-    );
+    console.error("Error loading session before cancellation:", existingSessionError);
     throw existingSessionError ?? new Error("Session not found");
   }
 
@@ -400,18 +353,12 @@ export async function cancelSession(
   }
 
   try {
-    const sessionDate = session.date
-      ? format(new Date(session.date), "MMMM d, yyyy")
-      : "";
-    const sessionTime = session.date
-      ? format(new Date(session.date), "h:mm a")
-      : "";
+    const sessionDate = session.date ? format(new Date(session.date), "MMMM d, yyyy") : "";
+    const sessionTime = session.date ? format(new Date(session.date), "h:mm a") : "";
     const studentName =
-      `${session.student?.firstName ?? ""} ${session.student?.lastName ?? ""}`.trim() ||
-      "Student";
+      `${session.student?.firstName ?? ""} ${session.student?.lastName ?? ""}`.trim() || "Student";
     const tutorName =
-      `${session.tutor?.firstName ?? ""} ${session.tutor?.lastName ?? ""}`.trim() ||
-      "Your Tutor";
+      `${session.tutor?.firstName ?? ""} ${session.tutor?.lastName ?? ""}`.trim() || "Your Tutor";
     const reason = session.session_exit_form || undefined;
 
     if (actor === "tutor" && session.student?.email) {
@@ -433,10 +380,7 @@ export async function cancelSession(
   return { ...session, status: "Cancelled" as const };
 }
 
-export async function removeSessionServer(
-  sessionId: string,
-  updateEmail: boolean = true,
-) {
+export async function removeSessionServer(sessionId: string, updateEmail: boolean = true) {
   await requireAdmin();
   const supabase = await createAdminClient();
 
@@ -454,10 +398,7 @@ export async function removeSessionServer(
 
   if (participantEventError) throw participantEventError;
 
-  const { error: sessionError } = await supabase
-    .from(Table.Sessions)
-    .delete()
-    .eq("id", sessionId);
+  const { error: sessionError } = await supabase.from(Table.Sessions).delete().eq("id", sessionId);
 
   if (sessionError) throw sessionError;
 
@@ -502,11 +443,9 @@ export async function resolveAppSessionFromZoomWebhookObject(
   payloadObject: Record<string, unknown> | null | undefined,
 ): Promise<ZoomSessionResolution> {
   const raw = payloadObject?.id ?? payloadObject?.meeting_number;
-  const meetingNumber =
-    raw !== undefined && raw !== null ? String(raw) : undefined;
+  const meetingNumber = raw !== undefined && raw !== null ? String(raw) : undefined;
   const uuidRaw = payloadObject?.uuid;
-  const zoomMeetingUuid =
-    uuidRaw !== undefined && uuidRaw !== null ? String(uuidRaw) : undefined;
+  const zoomMeetingUuid = uuidRaw !== undefined && uuidRaw !== null ? String(uuidRaw) : undefined;
 
   if (!meetingNumber) {
     return {
@@ -518,8 +457,7 @@ export async function resolveAppSessionFromZoomWebhookObject(
     };
   }
 
-  const resolved =
-    await resolvePortalSessionForZoomMeetingNumber(meetingNumber);
+  const resolved = await resolvePortalSessionForZoomMeetingNumber(meetingNumber);
   if (!resolved) {
     return {
       zoomMeetingNumber: meetingNumber,
@@ -563,10 +501,7 @@ export async function resolvePortalSessionForZoomMeetingNumber(
   const supabase = await createAdminClient();
   const normalizedSearch = normalizeMeetingId(zoomMeetingNumber);
 
-  const meetingRecord = await findMeetingRecordByNormalizedZoomNumber(
-    supabase,
-    normalizedSearch,
-  );
+  const meetingRecord = await findMeetingRecordByNormalizedZoomNumber(supabase, normalizedSearch);
 
   if (!meetingRecord) {
     return null;
@@ -620,10 +555,7 @@ export async function resolvePortalSessionForZoomMeetingNumber(
   return { meetingRecord, sessionId: null };
 }
 
-export async function getSessions(
-  start: string,
-  end: string,
-): Promise<Session[]> {
+export async function getSessions(start: string, end: string): Promise<Session[]> {
   try {
     await requireAdmin();
     const supabase = await createAdminClient();
@@ -817,9 +749,7 @@ export async function getEnrollmentSessionsActivityData(
     }
 
     if (!enRow.student || !enRow.tutor) {
-      console.error(
-        "getEnrollmentSessionsActivityData: enrollment missing student or tutor",
-      );
+      console.error("getEnrollmentSessionsActivityData: enrollment missing student or tutor");
       return null;
     }
 
@@ -847,19 +777,17 @@ export async function getEnrollmentSessionsActivityData(
     const sessionIds = (sessRows || []).map((r: { id: string }) => r.id);
     const counts = await getParticipantEventCountsBySessionIds(sessionIds);
 
-    const sessions: EnrollmentActivitySessionRow[] = (sessRows || []).map(
-      (r: any) => {
-        const m = Array.isArray(r.meeting) ? r.meeting[0] : r.meeting;
-        return {
-          id: r.id,
-          date: r.date ?? "",
-          status: r.status,
-          meetingTitle: m?.name || "Meeting",
-          meetingId: m?.meeting_id || "",
-          zoomEventCount: counts[r.id] ?? 0,
-        };
-      },
-    );
+    const sessions: EnrollmentActivitySessionRow[] = (sessRows || []).map((r: any) => {
+      const m = Array.isArray(r.meeting) ? r.meeting[0] : r.meeting;
+      return {
+        id: r.id,
+        date: r.date ?? "",
+        status: r.status,
+        meetingTitle: m?.name || "Meeting",
+        meetingId: m?.meeting_id || "",
+        zoomEventCount: counts[r.id] ?? 0,
+      };
+    });
 
     return {
       enrollment: {
@@ -985,9 +913,7 @@ export async function getParticipationData(
       return { ...base, enrollmentQueryMismatch: true };
     }
 
-    const activity = await getEnrollmentSessionsActivityData(
-      session.enrollmentId,
-    );
+    const activity = await getEnrollmentSessionsActivityData(session.enrollmentId);
     if (!activity) {
       return { ...base, enrollmentQueryMismatch: true };
     }
@@ -1066,9 +992,7 @@ export async function getTutorSessions(
 ): Promise<Session[]> {
   await requireTutorProfileAccess(profileId);
   const supabase = await createClient();
-  const { startDate, endDate, status, orderBy, ascending } = params
-    ? params
-    : {};
+  const { startDate, endDate, status, orderBy, ascending } = params ? params : {};
 
   let query = supabase
     .from(Table.Sessions)
@@ -1127,9 +1051,7 @@ export async function getStudentSessions(
 ): Promise<Session[]> {
   await requireStudentProfileAccess(profileId);
   const supabase = await createClient();
-  const { startDate, endDate, status, orderBy, ascending } = params
-    ? params
-    : {};
+  const { startDate, endDate, status, orderBy, ascending } = params ? params : {};
 
   let query = supabase
     .from(Table.Sessions)
@@ -1170,9 +1092,7 @@ export async function getStudentSessions(
   }
 
   const sessions: Session[] = data
-    .filter(
-      (session) => session.meeting && session.tutor_id && session.student_id,
-    )
+    .filter((session) => session.meeting && session.tutor_id && session.student_id)
     .map((session: any) => tableToInterfaceSessions(session));
 
   return sessions;
@@ -1202,17 +1122,15 @@ export async function rescheduleSession(
 
     if (error) throw error;
 
-    const { error: notificationError } = await supabase
-      .from("Notifications")
-      .insert({
-        session_id: sessionId,
-        previous_date: sessionData.date,
-        suggested_date: newDate,
-        tutor_id: sessionData.tutor_id,
-        student_id: sessionData.student_id,
-        type: "RESCHEDULE_REQUEST",
-        status: "Active",
-      });
+    const { error: notificationError } = await supabase.from("Notifications").insert({
+      session_id: sessionId,
+      previous_date: sessionData.date,
+      suggested_date: newDate,
+      tutor_id: sessionData.tutor_id,
+      student_id: sessionData.student_id,
+      type: "RESCHEDULE_REQUEST",
+      status: "Active",
+    });
 
     if (notificationError) throw notificationError;
     if (sessionData) {
@@ -1283,9 +1201,7 @@ export async function cancelUnsubmittedSEF(profile: Profile) {
   try {
     const supabase = await createClient();
     const now = new Date();
-    const fortyEightHoursAgo = new Date(
-      now.getTime() - 48 * 60 * 60 * 1000,
-    ).toISOString();
+    const fortyEightHoursAgo = new Date(now.getTime() - 48 * 60 * 60 * 1000).toISOString();
 
     await supabase
       .from("Sessions")
@@ -1300,9 +1216,7 @@ export async function cancelUnsubmittedSEF(profile: Profile) {
 export async function cancelUnsubmittedSEFCron() {
   const supabase = await createAdminClient();
   const now = new Date();
-  const fortyEightHoursAgo = new Date(
-    now.getTime() - 48 * 60 * 60 * 1000,
-  ).toISOString();
+  const fortyEightHoursAgo = new Date(now.getTime() - 48 * 60 * 60 * 1000).toISOString();
 
   // First, fetch sessions that need to be cancelled
   const { data: sessions, error: fetchError } = await supabase
@@ -1334,16 +1248,10 @@ export async function cancelUnsubmittedSEFCron() {
   return { success: true, error: undefined, cancelled: sessions.length };
 }
 
-export async function updateSessionsStatus(
-  sessionIds: string[],
-  status: string,
-) {
+export async function updateSessionsStatus(sessionIds: string[], status: string) {
   try {
     const supabase = await createClient();
-    const { error } = await supabase
-      .from(Table.Sessions)
-      .update({ status })
-      .in("id", sessionIds);
+    const { error } = await supabase.from(Table.Sessions).update({ status }).in("id", sessionIds);
 
     if (error) throw error;
   } catch (error) {
@@ -1352,10 +1260,7 @@ export async function updateSessionsStatus(
   }
 }
 
-export async function updateSession(
-  updatedSession: Session,
-  updateEmail: boolean = true,
-) {
+export async function updateSession(updatedSession: Session, updateEmail: boolean = true) {
   try {
     const {
       id,
