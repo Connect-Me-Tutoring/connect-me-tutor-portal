@@ -60,7 +60,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Circle, Loader2, ChevronDown, Check } from "lucide-react";
 import {
-  updateSession,
   getMeetings,
   getAllProfiles,
   getMeeting,
@@ -71,6 +70,7 @@ import {
 import {
   addStandaloneSession,
   removeSessionServer,
+  updateSession,
 } from "@/lib/actions/session.server.actions";
 import { addHours, areIntervalsOverlapping } from "date-fns";
 

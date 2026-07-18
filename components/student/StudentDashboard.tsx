@@ -6,7 +6,7 @@ import ActiveSessionsTable from "./components/ActiveSessionsTable";
 import CurrentSessionsTable from "./components/CurrentSessionsTable";
 import CompletedSessionsTable from "./components/CompletedSessionsTable";
 import { getProfile } from "@/lib/actions/user.actions";
-import { updateSession, getMeetings } from "@/lib/actions/admin.actions";
+import { getMeetings } from "@/lib/actions/admin.actions";
 import {
   getTutorSessions,
   recordSessionExitForm,
@@ -15,6 +15,7 @@ import { getAllSessions } from "@/lib/actions/session.actions";
 import {
   rescheduleSession,
   cancelSession,
+  updateSession,
 } from "@/lib/actions/session.server.actions";
 import { Session, Profile, Meeting } from "@/types";
 import toast from "react-hot-toast";
