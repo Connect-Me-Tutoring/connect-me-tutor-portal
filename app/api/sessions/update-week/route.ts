@@ -5,23 +5,22 @@ import {
   getAllSessionsServer,
 } from "@/lib/actions/session.server.actions";
 import { Session } from "@/types";
-import { verifyCron } from "@/lib/actions/auth.server.actions";
 import { getEasternWeekBounds } from "@/lib/utils";
+import { isCronRequestAuthorized } from "@/lib/security/cron";
 
 export const dynamic = "force-dynamic";
 
 export async function GET(request: NextRequest) {
+  if (!isCronRequestAuthorized(request)) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   try {
-    await verifyCron(request);
     const newSessions = await handleUpdateWeek();
 
     return NextResponse.json({ newSessions: newSessions }, { status: 200 });
   } catch (error) {
     const err = error as Error;
-    if (err.message === "Unauthorized cron access") {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
     return NextResponse.json(
       { error: `Update Week error ${err.message}` },
       { status: 500 },
