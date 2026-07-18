@@ -31,8 +31,16 @@ import {
 } from "date-fns";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import CancellationForm from "./CancellationForm";
 import { useDashboardContext } from "@/lib/contexts/dashboardContext";
+import { CATEGORY_LABELS } from "@/constants/sessionExitForm";
 
 interface SessionExitFormProps {
   currSession: Session;
@@ -49,7 +57,8 @@ interface SessionExitFormProps {
     notes: string,
     isQuestionOrConcern: boolean,
     isFirstSession: boolean,
-  ) => void;
+    category?: string,
+  ) => Promise<void>;
   handleStatusChange: (session: Session) => void;
 }
 
@@ -109,10 +118,23 @@ const SessionExitForm = ({
   const [isCancellation, setisCancellation] = useState(false);
   const [isFirstSession, setIsFirstSession] = useState(false);
   const [isQuestionOrConcern, setIsQuestionOrConcern] = useState(false);
+  const [category, setCategory] = useState("");
+
+  const resetLocalFormState = () => {
+    setIsQuestionOrConcern(false);
+    setCategory("");
+    setIsFirstSession(false);
+  };
+
   return (
     <Dialog
       open={TC.isSessionExitFormOpen}
-      onOpenChange={TC.setIsSessionExitFormOpen}
+      onOpenChange={(open) => {
+        TC.setIsSessionExitFormOpen(open);
+        if (!open) {
+          resetLocalFormState();
+        }
+      }}
     >
       <DialogTrigger asChild>
         <HoverCard>
@@ -154,7 +176,10 @@ const SessionExitForm = ({
                 <CancellationForm
                   session={TC.selectedSession}
                   handleStatusChange={handleStatusChange}
-                  onClose={() => TC.setIsSessionExitFormOpen(false)}
+                  onClose={() => {
+                    TC.setIsSessionExitFormOpen(false);
+                    resetLocalFormState();
+                  }}
                   actor={actor}
                 />
               ) : (
@@ -168,18 +193,35 @@ const SessionExitForm = ({
           <Checkbox
             id="question-or-concern"
             checked={isQuestionOrConcern}
-            onCheckedChange={(checked) =>
-              setIsQuestionOrConcern(checked === true)
-            }
+            onCheckedChange={(checked) => {
+              const isChecked = checked === true;
+              setIsQuestionOrConcern(isChecked);
+              if (!isChecked) setCategory("");
+            }}
           />
           <label htmlFor="next-class" className="text-sm font-medium">
             I have a question or a concern
           </label>
         </div>
-
-        {/* 
-          TODO: ADD CHECK BOXES HERE
-          */}
+        {isQuestionOrConcern && (
+          <div className="flex flex-col space-y-1.5">
+            <label htmlFor="category" className="text-sm font-medium">
+              Issue Category <span className="text-red-500">*</span>
+            </label>
+            <Select value={category} onValueChange={setCategory}>
+              <SelectTrigger id="category">
+                <SelectValue placeholder="Select a category..." />
+              </SelectTrigger>
+              <SelectContent>
+                {Object.entries(CATEGORY_LABELS).map(([value, label]) => (
+                  <SelectItem key={value} value={value}>
+                    {label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        )}
 
         <Textarea
           value={TC.notes}
@@ -207,18 +249,22 @@ const SessionExitForm = ({
           </div>
         </div>
         <Button
-          onClick={() => {
+          onClick={async () => {
             if (TC.selectedSession) {
-              handleSessionComplete(
+              await handleSessionComplete(
                 TC.selectedSession,
                 TC.notes,
                 isQuestionOrConcern,
                 isFirstSession,
+                category,
               );
+              resetLocalFormState();
             }
           }}
           disabled={
-            !TC.notes || (!TC.nextClassConfirmed && !isQuestionOrConcern)
+            !TC.notes ||
+            (!TC.nextClassConfirmed && !isQuestionOrConcern) ||
+            (isQuestionOrConcern && !category)
           }
         >
           Submit

@@ -6,6 +6,7 @@ import {
 } from "@/lib/actions/session.server.actions";
 import { getAllActiveEnrollmentsServer } from "@/lib/actions/enrollment.server.actions";
 import { isCronRequestAuthorized } from "@/lib/security/cron";
+import { getEasternWeekBounds } from "@/lib/utils";
 
 export async function GET(request: Request) {
   if (!isCronRequestAuthorized(request)) {
@@ -14,8 +15,9 @@ export async function GET(request: Request) {
 
   try {
     const now = new Date();
-    const weekStartString = startOfWeek(now, { weekStartsOn: 0 }).toISOString();
-    const weekEndString = endOfWeek(now, { weekStartsOn: 0 }).toISOString();
+    const { weekStart, weekEnd } = getEasternWeekBounds(now);
+    const weekStartString = weekStart.toISOString();
+    const weekEndString = weekEnd.toISOString();
 
     const enrollments = await getAllActiveEnrollmentsServer(weekEndString);
     const sessions = await getAllSessionsServer(weekStartString, weekEndString);

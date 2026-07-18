@@ -1,6 +1,13 @@
 import { writeSpreadSheet } from "@/lib/google-sheet";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
+import { CATEGORY_LABELS } from "@/constants/sessionExitForm";
+import {
+  SessionExitFormCategory,
+  SessionExitFormPayload,
+} from "@/types/sessionExitForm";
+
+
 
 export const dynamic = "force-dynamic";
 
@@ -23,6 +30,7 @@ const optionalEmail = z.preprocess(
   z.string().email().max(254).optional(),
 );
 
+
 const formSchema = z
   .object({
     tutorFirstName: optionalText(100),
@@ -35,6 +43,7 @@ const formSchema = z
     ),
     tutorEmail: optionalEmail,
     studentEmail: optionalEmail,
+    category: optionalText(100),
   })
   .strict();
 
@@ -68,8 +77,25 @@ export async function POST(request: NextRequest) {
     );
   }
 
+  const formData: SessionExitFormPayload = parsed.data;
+
+  if (formData.category) {
+    const label = CATEGORY_LABELS[formData.category as SessionExitFormCategory];
+
+    if (!label) {
+      console.warn(
+        `[session-exit-form] Missing or unrecognized category "${formData.category}"`,
+      );
+      return NextResponse.json(
+        { success: false, error: "A valid category is required." },
+        { status: 400 },
+      );
+    }
+    formData.category = label;
+  }
+
   try {
-    await writeSpreadSheet(parsed.data);
+    await writeSpreadSheet(formData);
 
     return NextResponse.json({ success: true }, { status: 200 });
   } catch (error) {

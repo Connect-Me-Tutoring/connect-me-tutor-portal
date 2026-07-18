@@ -60,7 +60,7 @@ const { fromZonedTime } = DateFNS;
 const uuidRegex =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
-const chunkArray = <T,>(items: T[], size: number) =>
+const chunkArray = <T>(items: T[], size: number) =>
   Array.from({ length: Math.ceil(items.length / size) }, (_, index) =>
     items.slice(index * size, index * size + size),
   );
@@ -474,7 +474,7 @@ export async function getSessionKeys(data?: Session[]) {
 export async function isSingleMeetingAvailable(
   meetingId: string,
   session: Session,
-): Promise<void> { }
+): Promise<void> {}
 
 /**
  * Checks availability of multiple meetings at once
@@ -532,68 +532,6 @@ async function isSessioninPastWeek(enrollmentId: string, midWeek: Date) {
   if (error) throw error;
 
   return Object.keys(data).length > 0;
-}
-
-export async function updateSession(
-  updatedSession: Session,
-  updateEmail: boolean = true,
-) {
-  try {
-    const {
-      id,
-      status,
-      tutor,
-      student,
-      date,
-      duration,
-      summary,
-      meeting,
-      session_exit_form,
-      isQuestionOrConcern,
-      isFirstSession,
-    } = updatedSession;
-
-    const { data, error } = await supabase
-      .from(Table.Sessions)
-      .update({
-        status: status,
-        student_id: student?.id,
-        tutor_id: tutor?.id,
-        date: date,
-        duration: duration,
-        summary: summary,
-        meeting_id: meeting?.id,
-        session_exit_form: session_exit_form,
-        is_question_or_concern: isQuestionOrConcern,
-        is_first_session: isFirstSession,
-      })
-      .eq("id", id)
-      .select(
-        `*,
-        tutor:Profiles!tutor_id(*),
-        student:Profiles!student_id(*),
-        meeting:Meetings!meeting_id(*)`,
-      )
-      .single();
-
-    if (error) {
-      console.error("Error updating session:", error);
-      return null;
-    }
-
-    if (data) {
-      return data[0];
-    } else {
-      console.error("NO DATA");
-    }
-    if (updateEmail && data) {
-      const newSession: Session = tableToInterfaceSessions(data);
-      await updateScheduledEmailBeforeSessions(newSession);
-    }
-  } catch (error) {
-    console.error("Unable to update session");
-    throw error;
-  }
 }
 
 export async function removeSession(
@@ -966,8 +904,9 @@ export async function getAllNotifications(): Promise<Notification[] | null> {
             notification.student_id,
             notification.tutor_id,
           ])
-          .filter((id: unknown): id is string =>
-            typeof id === "string" && uuidRegex.test(id),
+          .filter(
+            (id: unknown): id is string =>
+              typeof id === "string" && uuidRegex.test(id),
           ),
       ),
     ];

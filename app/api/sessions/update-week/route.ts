@@ -1,5 +1,4 @@
 import { getAllActiveEnrollmentsServer } from "@/lib/actions/enrollment.server.actions";
-import { endOfWeek, startOfWeek } from "date-fns";
 import { NextRequest, NextResponse } from "next/server";
 import {
   addSessionsServer,
@@ -7,6 +6,7 @@ import {
 } from "@/lib/actions/session.server.actions";
 import { Session } from "@/types";
 import { verifyCron } from "@/lib/actions/auth.server.actions";
+import { getEasternWeekBounds } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
 
@@ -33,8 +33,9 @@ const handleUpdateWeek = async (): Promise<Session[]> => {
   try {
     const today = new Date();
 
-    const weekStart = startOfWeek(today).toISOString();
-    const weekEnd = endOfWeek(today).toDateString();
+    const weekBounds = getEasternWeekBounds(today);
+    const weekStart = weekBounds.weekStart.toISOString();
+    const weekEnd = weekBounds.weekEnd.toISOString();
 
     const enrollments = await getAllActiveEnrollmentsServer(weekEnd);
     const sessions: Session[] = await getAllSessionsServer(
