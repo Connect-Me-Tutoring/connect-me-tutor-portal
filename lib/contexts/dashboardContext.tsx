@@ -24,8 +24,10 @@ export interface DashboardContextValue {
   loading: boolean;
   error: string | null;
 
-  currentPage: number;
-  rowsPerPage: number;
+  currentPageActiveSessions: number;
+  currentPagePastSessions: number;
+  rowsPerPageActiveSessions: number;
+  rowsPerPagePastSessions: number;
   filterValueActiveSessions: string;
   filterValuePastSessions: string;
 
@@ -46,8 +48,10 @@ export interface DashboardContextValue {
   setProfile: Dispatch<SetStateAction<Profile | null>>;
   setLoading: Dispatch<SetStateAction<boolean>>;
   setError: Dispatch<SetStateAction<string | null>>;
-  setCurrentPage: Dispatch<SetStateAction<number>>;
-  setRowsPerPage: Dispatch<SetStateAction<number>>;
+  setCurrentPageActiveSessions: Dispatch<SetStateAction<number>>;
+  setCurrentPagePastSessions: Dispatch<SetStateAction<number>>;
+  setRowsPerPageActiveSessions: Dispatch<SetStateAction<number>>;
+  setRowsPerPagePastSessions: Dispatch<SetStateAction<number>>;
   setFilterValueActiveSessions: Dispatch<SetStateAction<string>>;
   setFilterValuePastSessions: Dispatch<SetStateAction<string>>;
   setSelectedSession: Dispatch<SetStateAction<Session | null>>;
@@ -120,8 +124,12 @@ export function DashboardContextProvider({
   const [profile, setProfile] = useState<Profile | null>(initialProfile);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [rowsPerPage, setRowsPerPage] = useState(5);
+  const [currentPageActiveSessions, setCurrentPageActiveSessions] =
+    useState(1);
+  const [currentPagePastSessions, setCurrentPagePastSessions] = useState(1);
+  const [rowsPerPageActiveSessions, setRowsPerPageActiveSessions] =
+    useState(5);
+  const [rowsPerPagePastSessions, setRowsPerPagePastSessions] = useState(5);
   const [filterValueActiveSessions, setFilterValueActiveSessions] =
     useState<string>("");
   const [filterValuePastSessions, setFilterValuePastSessions] = useState("");
@@ -147,8 +155,10 @@ export function DashboardContextProvider({
     error,
 
     // --- Pagination & Filters ---
-    currentPage,
-    rowsPerPage,
+    currentPageActiveSessions,
+    currentPagePastSessions,
+    rowsPerPageActiveSessions,
+    rowsPerPagePastSessions,
     filterValueActiveSessions,
     filterValuePastSessions,
 
@@ -171,8 +181,10 @@ export function DashboardContextProvider({
     setProfile,
     setLoading,
     setError,
-    setCurrentPage,
-    setRowsPerPage,
+    setCurrentPageActiveSessions,
+    setCurrentPagePastSessions,
+    setRowsPerPageActiveSessions,
+    setRowsPerPagePastSessions,
     setFilterValueActiveSessions,
     setFilterValuePastSessions,
     setSelectedSession,

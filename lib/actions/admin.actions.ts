@@ -10,6 +10,7 @@ import {
   Event,
   Enrollment,
   Meeting,
+  Availability,
 } from "@/types";
 import {
   deleteScheduledEmailBeforeSessions,
@@ -37,22 +38,50 @@ import * as DateFNS from "date-fns-tz";
 import ResetPassword from "@/app/(auth)/set-password/page";
 import { getStudentSessions } from "./student.actions";
 import { date } from "zod";
-import { withCoalescedInvoke } from "next/dist/lib/coalesced-function";
 import toast from "react-hot-toast";
 import { DatabaseIcon } from "lucide-react";
-import { SYSTEM_ENTRYPOINTS } from "next/dist/shared/lib/constants";
 import { Table } from "../supabase/tables";
 import { handleCalculateDuration } from "@/lib/utils";
 import {
   tableToInterfaceProfiles,
   tableToInterfaceSessions,
 } from "../type-utils";
+import {
+  getEnrollmentAvailability,
+  getEnrollmentSchedule,
+} from "../enrollment-schedule";
 import { createPairingRequest } from "./pairing.actions";
 import { scheduleMultipleSessionReminders } from "../twilio";
 import { removeFutureSessions } from "./enrollment.server.actions";
 // import { getMeeting } from "./meeting.actions";
 
 const { fromZonedTime } = DateFNS;
+
+const uuidRegex =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+const chunkArray = <T>(items: T[], size: number) =>
+  Array.from({ length: Math.ceil(items.length / size) }, (_, index) =>
+    items.slice(index * size, index * size + size),
+  );
+
+type EnrollmentTableRow = {
+  availability?: Availability[] | null;
+  created_at?: string | null;
+  day?: string | null;
+  duration?: number | null;
+  end_date?: string | null;
+  end_time?: string | null;
+  frequency?: string | null;
+  id?: string | null;
+  meetingId?: string | null;
+  paused?: boolean | null;
+  start_date?: string | null;
+  start_time?: string | null;
+  student?: unknown;
+  summary?: string | null;
+  tutor?: unknown;
+};
 
 /* PROFILES */
 export async function getAllProfiles(
@@ -505,71 +534,28 @@ async function isSessioninPastWeek(enrollmentId: string, midWeek: Date) {
   return Object.keys(data).length > 0;
 }
 
-export async function updateSession(
-  updatedSession: Session,
-  updateEmail: boolean = true,
-) {
-  try {
-    const {
-      id,
-      status,
-      tutor,
-      student,
-      date,
-      summary,
-      meeting,
-      session_exit_form,
-      isQuestionOrConcern,
-      isFirstSession,
-    } = updatedSession;
-
-    const { data, error } = await supabase
-      .from(Table.Sessions)
-      .update({
-        status: status,
-        student_id: student?.id,
-        tutor_id: tutor?.id,
-        date: date,
-        summary: summary,
-        meeting_id: meeting?.id,
-        session_exit_form: session_exit_form,
-        is_question_or_concern: isQuestionOrConcern,
-        is_first_session: isFirstSession,
-      })
-      .eq("id", id)
-      .select(
-        `*,
-        tutor:Profiles!tutor_id(*),
-        student:Profiles!student_id(*),
-        meeting:Meetings!meeting_id(*)`,
-      )
-      .single();
-
-    if (error) {
-      console.error("Error updating session:", error);
-      return null;
-    }
-
-    if (data) {
-      return data[0];
-    } else {
-      console.error("NO DATA");
-    }
-    if (updateEmail && data) {
-      const newSession: Session = tableToInterfaceSessions(data);
-      await updateScheduledEmailBeforeSessions(newSession);
-    }
-  } catch (error) {
-    console.error("Unable to update session");
-    throw error;
-  }
-}
-
 export async function removeSession(
   sessionId: string,
   updateEmail: boolean = true,
 ) {
-  // Create a notification for the admin
+  const { error: notificationError } = await supabase
+    .from(Table.Notifications)
+    .delete()
+    .eq("session_id", sessionId);
+
+  if (notificationError) {
+    throw notificationError;
+  }
+
+  const { error: participantEventError } = await supabase
+    .from("zoom_participant_events")
+    .update({ session_id: null })
+    .eq("session_id", sessionId);
+
+  if (participantEventError) {
+    throw participantEventError;
+  }
+
   const { error: eventError } = await supabase
     .from(Table.Sessions)
     .delete()
@@ -641,6 +627,9 @@ export async function getAllEnrollments(): Promise<Enrollment[] | null> {
         start_date,
         end_date,
         availability,
+        day,
+        start_time,
+        end_time,
         meetingId,
         paused,
         duration,
@@ -663,20 +652,38 @@ export async function getAllEnrollments(): Promise<Enrollment[] | null> {
     // Mapping the fetched data to the Notification object
     const enrollments: Enrollment[] = data
       .filter((enrollment) => enrollment.student && enrollment.tutor)
-      .map((enrollment: any) => ({
-        createdAt: enrollment.created_at,
-        id: enrollment.id,
-        summary: enrollment.summary,
-        student: tableToInterfaceProfiles(enrollment.student),
-        tutor: tableToInterfaceProfiles(enrollment.tutor),
-        startDate: enrollment.start_date,
-        endDate: enrollment.end_date,
-        availability: enrollment.availability,
-        meetingId: enrollment.meetingId,
-        paused: enrollment.paused,
-        duration: enrollment.duration,
-        frequency: enrollment.frequency,
-      }));
+      .map((enrollment) => {
+        const enrollmentRow = enrollment as EnrollmentTableRow;
+        const schedule = getEnrollmentSchedule({
+          availability: enrollmentRow.availability,
+          day: enrollmentRow.day,
+          startTime: enrollmentRow.start_time,
+          endTime: enrollmentRow.end_time,
+        });
+
+        return {
+          createdAt: enrollmentRow.created_at || "",
+          id: enrollmentRow.id || "",
+          summary: enrollmentRow.summary || "",
+          student: tableToInterfaceProfiles(enrollmentRow.student),
+          tutor: tableToInterfaceProfiles(enrollmentRow.tutor),
+          startDate: enrollmentRow.start_date || "",
+          endDate: enrollmentRow.end_date || null,
+          availability: getEnrollmentAvailability({
+            availability: enrollmentRow.availability,
+            day: enrollmentRow.day,
+            startTime: enrollmentRow.start_time,
+            endTime: enrollmentRow.end_time,
+          }),
+          day: schedule.day || null,
+          startTime: schedule.startTime || null,
+          endTime: schedule.endTime || null,
+          meetingId: enrollmentRow.meetingId || "",
+          paused: Boolean(enrollmentRow.paused),
+          duration: enrollmentRow.duration || 0,
+          frequency: enrollmentRow.frequency || "weekly",
+        };
+      });
 
     return enrollments; // Return the array of enrollments
   } catch (error) {
@@ -819,6 +826,20 @@ export async function createEvent(event: Event) {
   }
 }
 
+// batch insert events -- used by multi-select sub hours
+export async function createEventsBatch(events: Event[]) {
+  const rows = events.map((e) => ({
+    date: e.date,
+    summary: e.summary,
+    tutor_id: e.tutorId,
+    hours: e.hours,
+    type: e.type,
+  }));
+
+  const { error } = await supabase.from("Events").insert(rows);
+  if (error) throw error;
+}
+
 export async function removeEvent(eventId: string): Promise<boolean> {
   try {
     // Validate eventId format
@@ -855,7 +876,6 @@ export async function removeEvent(eventId: string): Promise<boolean> {
 /* NOTIFICATIONS */
 export async function getAllNotifications(): Promise<Notification[] | null> {
   try {
-    // Fetch meeting details from Supabase
     const { data, error } = await supabase.from("Notifications").select(`
         id,
         created_at,
@@ -865,23 +885,55 @@ export async function getAllNotifications(): Promise<Notification[] | null> {
         tutor_id,
         student_id,
         status,
-        summary,
-        student:Profiles!student_id(*),
-        tutor:Profiles!tutor_id(*)
+        summary
       `);
 
-    // Check for errors and log them
     if (error) {
       console.error("Error fetching notification details:", error.message);
-      return null; // Returning null here is valid since the function returns Promise<Notification[] | null>
+      return null;
     }
 
-    // Check if data exists
     if (!data) {
-      return null; // Valid return
+      return null;
     }
 
-    // Mapping the fetched data to the Notification object
+    const profileIds = [
+      ...new Set(
+        data
+          .flatMap((notification: any) => [
+            notification.student_id,
+            notification.tutor_id,
+          ])
+          .filter(
+            (id: unknown): id is string =>
+              typeof id === "string" && uuidRegex.test(id),
+          ),
+      ),
+    ];
+
+    const profileRows = [];
+
+    for (const profileIdChunk of chunkArray(profileIds, 50)) {
+      const { data: profiles, error: profilesError } = await supabase
+        .from(Table.Profiles)
+        .select("*")
+        .in("id", profileIdChunk);
+
+      if (profilesError) {
+        console.warn(
+          "Unable to load notification profiles:",
+          profilesError.message,
+        );
+        continue;
+      }
+
+      profileRows.push(...(profiles ?? []));
+    }
+
+    const profilesById = new Map(
+      profileRows.map((profile: any) => [profile.id, profile]),
+    );
+
     const notifications: Notification[] = data.map((notification: any) => ({
       createdAt: notification.created_at,
       id: notification.id,
@@ -889,15 +941,19 @@ export async function getAllNotifications(): Promise<Notification[] | null> {
       sessionId: notification.session_id,
       previousDate: notification.previous_date,
       suggestedDate: notification.suggested_date,
-      student: tableToInterfaceProfiles(notification.student_id),
-      tutor: tableToInterfaceProfiles(notification.tutor_id),
+      student: profilesById.has(notification.student_id)
+        ? tableToInterfaceProfiles(profilesById.get(notification.student_id))
+        : null,
+      tutor: profilesById.has(notification.tutor_id)
+        ? tableToInterfaceProfiles(profilesById.get(notification.tutor_id))
+        : null,
       status: notification.status,
     }));
 
-    return notifications; // Return the array of notifications
+    return notifications;
   } catch (error) {
     console.error("Unexpected error in getMeeting:", error);
-    return null; // Valid return
+    return null;
   }
 }
 

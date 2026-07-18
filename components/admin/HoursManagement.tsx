@@ -10,6 +10,7 @@ import {
   startOfWeek,
   addDays,
   getMonth,
+  subDays,
 } from "date-fns";
 import {
   Table,
@@ -42,6 +43,7 @@ import {
   getAllProfiles,
   getEventsWithTutorMonth,
   createEvent,
+  createEventsBatch,
   removeEvent,
 } from "@/lib/actions/admin.actions";
 import { getEvents } from "@/lib/actions/event.client.actions";
@@ -50,6 +52,7 @@ import { Profile, Session, Event } from "@/types";
 import { toast, Toaster } from "react-hot-toast";
 import { Combobox } from "../ui/combobox";
 import { Combobox2 } from "../ui/combobox2";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   getAllEventHoursBatch,
   getAllEventHoursBatchWithType,
@@ -67,7 +70,7 @@ import {
 } from "@/lib/actions/hours.actions";
 import { resourceLimits } from "worker_threads";
 import { number } from "zod";
-import { Loader2 } from "lucide-react";
+import { Loader2, ChevronDown } from "lucide-react";
 import { useEvents } from "@/hooks/events";
 
 const HoursManager = () => {
@@ -122,6 +125,15 @@ const HoursManager = () => {
   const [allTimeView, setAllTimeView] = useState(false);
   const [loading, setLoading] = useState(false);
   const [reportLoading, setReportLoading] = useState(false);
+
+  // sub hours multi-select state
+  const [isSubHoursModalOpen, setIsSubHoursModalOpen] = useState(false);
+  const [selectedSubTutors, setSelectedSubTutors] = useState<string[]>([]);
+  const [subHoursDate, setSubHoursDate] = useState(format(subDays(new Date(), 1), "yyyy-MM-dd")); // defaults yesterday
+  const [subHoursAmount, setSubHoursAmount] = useState<number>(1);
+  const [subHoursSummary, setSubHoursSummary] = useState("");
+  const [subHoursFilter, setSubHoursFilter] = useState("");
+  const [showSelectedList, setShowSelectedList] = useState(false); // toggle selected tutors dropdown
 
   useEffect(() => {
     fetchTutors();
@@ -536,6 +548,49 @@ const HoursManager = () => {
     } catch (error) {}
   };
 
+  // bulk add sub hotline hours to selected tutors
+  const handleAddSubHours = async () => {
+    if (selectedSubTutors.length === 0) {
+      toast.error("Select at least one tutor");
+      return;
+    }
+    if (!subHoursDate || !subHoursAmount) {
+      toast.error("Fill in date and hours");
+      return;
+    }
+    try {
+      const events: Event[] = selectedSubTutors.map((tutorId) => ({
+        id: "",
+        createdAt: "",
+        tutorId,
+        date: subHoursDate,
+        hours: subHoursAmount,
+        type: "Sub Hotline",
+        summary: subHoursSummary || "sub hours",
+      }));
+      await createEventsBatch(events);
+      toast.success(`Added sub hours to ${selectedSubTutors.length} tutor(s)`);
+      setIsSubHoursModalOpen(false);
+      setSelectedSubTutors([]);
+      setSubHoursSummary("");
+      setSubHoursAmount(1);
+      setSubHoursDate(format(subDays(new Date(), 1), "yyyy-MM-dd")); // reset to yesterday
+      fetchSessionsAndEvents();
+    } catch (error) {
+      console.error("Failed to add sub hours:", error);
+      toast.error("Failed to add sub hours");
+    }
+  };
+
+  // toggle tutor in multi-select list
+  const toggleSubTutor = (tutorId: string) => {
+    setSelectedSubTutors((prev) =>
+      prev.includes(tutorId)
+        ? prev.filter((id) => id !== tutorId)
+        : [...prev, tutorId]
+    );
+  };
+
   const handleFetchEvents = async (value: string) => {
     try {
       // Show loading state
@@ -781,6 +836,105 @@ const HoursManager = () => {
                       </Select>
                     )}
                     <Button className = "bg-connect-me-3" onClick={handleRemoveEvent}>Remove Event</Button>
+                  </DialogContent>
+                </Dialog>
+
+                <Dialog
+                  open={isSubHoursModalOpen}
+                  onOpenChange={setIsSubHoursModalOpen}
+                >
+                  <DialogTrigger asChild>
+                    <Button className="bg-connect-me-blue-2" onClick={() => setIsSubHoursModalOpen(true)}>
+                      Add Sub Hours
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="max-h-[80vh] flex flex-col">
+                    <DialogHeader>
+                      <DialogTitle>Add Sub Hours</DialogTitle>
+                    </DialogHeader>
+                    {/* date defaults to yesterday, still editable */}
+                    <Input
+                      type="date"
+                      value={subHoursDate}
+                      onChange={(e) => setSubHoursDate(e.target.value)}
+                    />
+                    <Input
+                      type="number"
+                      value={subHoursAmount}
+                      onChange={(e) => setSubHoursAmount(parseFloat(e.target.value))}
+                      placeholder="Hours"
+                    />
+                    <Input
+                      type="text"
+                      value={subHoursSummary}
+                      onChange={(e) => setSubHoursSummary(e.target.value)}
+                      placeholder="Summary (optional)"
+                    />
+                    {/* multi-select tutor list w/ filter */}
+                    <Input
+                      type="text"
+                      placeholder="Filter tutors..."
+                      value={subHoursFilter}
+                      onChange={(e) => setSubHoursFilter(e.target.value)}
+                    />
+                    <div className="overflow-y-auto max-h-[300px] border rounded-md p-2 space-y-1">
+                      {tutors
+                        .filter((t) => {
+                          const q = subHoursFilter.toLowerCase();
+                          if (!q) return true;
+                          return (
+                            (t.firstName?.toLowerCase() || "").includes(q) ||
+                            (t.lastName?.toLowerCase() || "").includes(q) ||
+                            (t.email?.toLowerCase() || "").includes(q)
+                          );
+                        })
+                        .map((tutor) => (
+                          <label
+                            key={tutor.id}
+                            className="flex items-center gap-2 px-2 py-1 rounded hover:bg-gray-50 cursor-pointer text-sm"
+                          >
+                            <Checkbox
+                              checked={selectedSubTutors.includes(tutor.id)}
+                              onCheckedChange={() => toggleSubTutor(tutor.id)}
+                            />
+                            {tutor.firstName} {tutor.lastName}
+                            <span className="text-gray-400 ml-auto text-xs">{tutor.email}</span>
+                          </label>
+                        ))}
+                    </div>
+                    <div className="flex items-center justify-between">
+                      {/* selected count w/ expandable list */}
+                      <button
+                        type="button"
+                        className="flex items-center gap-1 text-sm text-gray-500 hover:text-gray-700"
+                        onClick={() => setShowSelectedList((v) => !v)}
+                      >
+                        {selectedSubTutors.length} selected
+                        <ChevronDown className={`h-4 w-4 transition-transform ${showSelectedList ? "rotate-180" : ""}`} />
+                      </button>
+                      <Button className="bg-connect-me-blue-2" onClick={handleAddSubHours}>
+                        Add Hours
+                      </Button>
+                    </div>
+                    {/* dropdown showing who's selected */}
+                    {showSelectedList && selectedSubTutors.length > 0 && (
+                      <div className="border rounded-md p-2 space-y-1 max-h-[150px] overflow-y-auto bg-gray-50 text-sm">
+                        {tutors
+                          .filter((t) => selectedSubTutors.includes(t.id))
+                          .map((t) => (
+                            <div key={t.id} className="flex items-center justify-between px-2 py-0.5">
+                              <span>{t.firstName} {t.lastName}</span>
+                              <button
+                                type="button"
+                                className="text-xs text-red-400 hover:text-red-600"
+                                onClick={() => toggleSubTutor(t.id)}
+                              >
+                                remove
+                              </button>
+                            </div>
+                          ))}
+                      </div>
+                    )}
                   </DialogContent>
                 </Dialog>
 

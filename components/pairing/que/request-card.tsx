@@ -1,8 +1,7 @@
 "use client";
 
 import type React from "react";
-
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
   Card,
   CardContent,
@@ -13,18 +12,26 @@ import {
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Badge } from "@/components/ui/badge";
+import { Switch } from "@/components/ui/switch";
 import { Users, Clock, CheckCircle, XCircle, AlertCircle } from "lucide-react";
-import { createPairingRequest } from "@/lib/actions/pairing.actions";
+import {
+  createPairingRequest,
+  getProfilePairingQueueState,
+  getMyPairingRequest,
+  removePairingRequest,
+  setExcludeRejectedTutorsPreference,
+  updatePairingRequest,
+  type MyPairingRequest,
+} from "@/lib/actions/pairing.actions";
 import toast from "react-hot-toast";
 
 export type PairingRequest = {
-  id: string; //uuid
-  to: string; //uuid
+  id: string;
+  to: string;
   type: "student" | "tutor";
-  userId: string; //uuid
-  profile: any; // Profile type not defined
+  userId: string;
+  profile: unknown;
   status: "pending" | "accepted" | "rejected";
   priority: number;
   createdAt: Date;
@@ -32,33 +39,170 @@ export type PairingRequest = {
 
 interface PairingRequestCardProps {
   userId: string;
+  profileId: string;
+  role: string;
 }
-export function PairingRequestCard({ userId }: PairingRequestCardProps) {
+
+export function PairingRequestCard({
+  userId,
+  profileId,
+  role,
+}: PairingRequestCardProps) {
   const [notes, setNotes] = useState("");
-  const [requestType, setRequestType] = useState<"student" | "tutor">(
-    "student"
-  );
+  const [excludeRejectedTutors, setExcludeRejectedTutors] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isLeaving, setIsLeaving] = useState(false);
+  const [myRequest, setMyRequest] = useState<MyPairingRequest | null>(null);
+  const [isLoadingRequest, setIsLoadingRequest] = useState(true);
+  const [isInQueue, setIsInQueue] = useState(false);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const isStudent = role?.toLowerCase() === "student";
+  const isDraftRequest = myRequest?.status === "draft";
+  const isArchivedRequest = !!myRequest && myRequest.inQueue === false && !isDraftRequest;
+
+  const refetch = useCallback(async () => {
+    const [req, queueState] = await Promise.all([
+      getMyPairingRequest(profileId),
+      getProfilePairingQueueState(profileId),
+    ]);
+
+    setMyRequest(req ?? null);
+    setIsInQueue(queueState);
+    if (req) {
+      setNotes(req.notes ?? "");
+      setExcludeRejectedTutors(req.excludeRejectedTutors ?? true);
+    }
+  }, [profileId]);
+
+  useEffect(() => {
+    refetch().finally(() => setIsLoadingRequest(false));
+  }, [refetch]);
+
+  const joinQueue = async () => {
     setIsSubmitting(true);
+    try {
+      const promise = createPairingRequest(userId, notes, excludeRejectedTutors);
+      toast.promise(promise, {
+        success: "Successfully added to pairing queue",
+        loading: "Creating pairing request",
+        error: "Failed to add to pairing queue",
+      });
+      await promise;
+      setNotes("");
+      await refetch();
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1500));
+  const handleLeaveQueue = async () => {
+    if (!myRequest) return;
+    setIsLeaving(true);
+    try {
+      const promise = removePairingRequest(myRequest.id);
+      toast.promise(promise, {
+        success: "Removed from active queue (your request is saved)",
+        loading: "Leaving queue",
+        error: "Failed to leave queue",
+      });
+      await promise;
+      await refetch();
+    } finally {
+      setIsLeaving(false);
+    }
+  };
 
-    const promise = createPairingRequest(userId, notes);
+  const handleRejoinQueue = async () => {
+    if (!myRequest) return;
+    setIsSubmitting(true);
+    try {
+      const promise = createPairingRequest(
+        userId,
+        myRequest.notes ?? "",
+        excludeRejectedTutors,
+      );
+      toast.promise(promise, {
+        success: "You’re back in the pairing queue",
+        loading: "Rejoining queue",
+        error: (e: Error) => e.message || "Failed to rejoin",
+      });
+      await promise;
+      await refetch();
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleQueueSwitch = async (checked: boolean) => {
+    if (isLoadingRequest) return;
+    if (checked === isInQueue) return;
+
+    const previousIsInQueue = isInQueue;
+    const previousRequest = myRequest;
+
+    setIsInQueue(checked);
+    if (myRequest) {
+      setMyRequest({
+        ...myRequest,
+        inQueue: checked,
+      });
+    }
+
+    try {
+      if (checked) {
+        if (myRequest?.inQueue) return;
+        if (myRequest && myRequest.inQueue === false) {
+          await handleRejoinQueue();
+          return;
+        }
+        if (!myRequest) {
+          await joinQueue();
+        }
+      } else if (myRequest?.inQueue) {
+        await handleLeaveQueue();
+      }
+    } catch (error) {
+      setIsInQueue(previousIsInQueue);
+      setMyRequest(previousRequest);
+      throw error;
+    }
+  };
+
+  const handleToggleExcludeRejected = async (checked: boolean) => {
+    const previousValue = excludeRejectedTutors;
+    setExcludeRejectedTutors(checked);
+    if (myRequest) {
+      setMyRequest({
+        ...myRequest,
+        excludeRejectedTutors: checked,
+      });
+    }
+
+    const promise = myRequest
+      ? updatePairingRequest(myRequest.id, {
+          exclude_rejected_tutors: checked,
+        })
+      : setExcludeRejectedTutorsPreference(userId, checked);
 
     toast.promise(promise, {
-      success: "Successfully Added to Pairing Que",
-      loading: "Creating Pairing Request",
-      error: `Failed to Add To Pairing Que `,
+      loading: "Updating preference",
+      success: "Preference updated",
+      error: "Failed to update preference",
     });
 
-    promise.then(() => setNotes(""));
-    promise.finally(() => {
-      setIsSubmitting(false);
-    });
+    try {
+      await promise;
+      await refetch();
+    } catch (error) {
+      setExcludeRejectedTutors(previousValue);
+      if (myRequest) {
+        setMyRequest({
+          ...myRequest,
+          excludeRejectedTutors: previousValue,
+        });
+      }
+      throw error;
+    }
   };
 
   const getStatusIcon = (status: string) => {
@@ -87,17 +231,128 @@ export function PairingRequestCard({ userId }: PairingRequestCardProps) {
     }
   };
 
+  if (isLoadingRequest) {
+    return (
+      <Card className="w-full mx-auto border-0 shadow-none">
+        <CardContent className="p-6">
+          <p className="text-muted-foreground text-sm">Loading...</p>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  const queueSwitch = (
+    <div className="rounded-xl bg-muted/50 p-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      <div className="space-y-1 min-w-0">
+        <Label
+          htmlFor="pairing-queue-switch"
+          className="text-base font-semibold"
+        >
+          In pairing queue
+        </Label>
+        <p className="text-sm text-muted-foreground">
+          {isInQueue
+            ? "You can be matched while this is on. Turn it off to pause without losing your saved details."
+            : isArchivedRequest
+              ? "You left the active queue. Turn this on to rejoin with your saved preferences."
+              : "Turn this on to join the queue. You can add optional notes below first."}
+        </p>
+      </div>
+      <Switch
+        id="pairing-queue-switch"
+        checked={isInQueue}
+        onCheckedChange={handleQueueSwitch}
+        disabled={isLoadingRequest || isSubmitting || isLeaving}
+        className="shrink-0 data-[state=checked]:bg-primary"
+      />
+    </div>
+  );
+
+  if (isArchivedRequest) {
+    return (
+      <Card className="w-full mx-auto border-0 shadow-none">
+        <CardHeader className="space-y-4">
+          <div className="flex items-center gap-2">
+            <Users className="h-6 w-6 text-primary" />
+            <CardTitle className="text-2xl">Pairing queue (archived)</CardTitle>
+          </div>
+          <CardDescription className="text-base leading-relaxed">
+            You left the active queue. Your notes and preferences are saved; you won’t be matched
+            until you rejoin.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          {queueSwitch}
+          <div className="flex flex-wrap items-center gap-2">
+            <Badge variant="secondary" className="capitalize">
+              Archived
+            </Badge>
+            <Badge variant="outline">Priority {myRequest.priority}</Badge>
+          </div>
+          {myRequest.notes ? (
+            <div className="rounded-md bg-muted/30 p-3 text-sm">
+              <span className="font-medium text-muted-foreground">Saved notes</span>
+              <p className="mt-1 whitespace-pre-wrap">{myRequest.notes}</p>
+            </div>
+          ) : null}
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (myRequest && !isDraftRequest) {
+    return (
+      <Card className="w-full mx-auto border-0 shadow-none">
+        <CardHeader className="space-y-4">
+          <div className="flex items-center gap-2">
+            <Users className="h-6 w-6 text-primary" />
+            <CardTitle className="text-2xl">Pairing Queue</CardTitle>
+          </div>
+          <CardDescription className="text-base leading-relaxed">
+            You are in the pairing queue. You will be matched based on availability and compatibility.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          {queueSwitch}
+          <div className="flex flex-wrap items-center gap-2">
+            <Badge
+              className={`${getStatusColor(myRequest.status)} flex items-center gap-1 capitalize`}
+            >
+              {getStatusIcon(myRequest.status)}
+              {myRequest.status}
+            </Badge>
+            <Badge variant="outline">Priority {myRequest.priority}</Badge>
+          </div>
+
+          {isStudent && (
+            <div className="flex items-center justify-between rounded-lg p-4">
+              <div className="space-y-0.5">
+                <Label htmlFor="block-rejected" className="text-base">
+                  Block tutors who declined me in the past
+                </Label>
+                <p className="text-sm text-muted-foreground">
+                  When on, you won’t be matched with tutors who previously declined your request.
+                </p>
+              </div>
+              <Switch
+                id="block-rejected"
+                checked={excludeRejectedTutors}
+                onCheckedChange={handleToggleExcludeRejected}
+              />
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    );
+  }
+
   return (
-    <Card className="w-full  mx-auto">
+    <Card className="w-full mx-auto border-0 shadow-none">
       <CardHeader className="space-y-4">
         <div className="flex items-center gap-2">
           <Users className="h-6 w-6 text-primary" />
           <CardTitle className="text-2xl">Submit Pairing Request</CardTitle>
-          <span className="px-2 py-0.5 text-xs font-medium bg-yellow-100 text-yellow-800 rounded-full border border-yellow-200">
-            In Development
-          </span>
         </div>
-
         <CardDescription className="text-base leading-relaxed">
           Submit a request to be paired with a tutor or student. Your request
           will be reviewed and matched based on availability, subject expertise,
@@ -106,55 +361,36 @@ export function PairingRequestCard({ userId }: PairingRequestCardProps) {
       </CardHeader>
 
       <CardContent className="space-y-6">
-        {/* Process Description */}
+        {queueSwitch}
         <div className="bg-muted/50 p-4 rounded-lg space-y-3">
           <h3 className="font-semibold text-sm uppercase tracking-wide text-muted-foreground">
             How It Works
           </h3>
           <div className="space-y-2 text-sm">
             <div className="flex items-start gap-2">
-              <Badge variant="outline" className="mt-0.5 text-xs">
-                1
-              </Badge>
-              <span>
-                Submit your pairing request with your preferences and notes
-              </span>
+              <Badge variant="outline" className="mt-0.5 text-xs">1</Badge>
+              <span>Turn on <strong>In pairing queue</strong> above (add optional notes first)</span>
             </div>
             <div className="flex items-start gap-2">
-              <Badge variant="outline" className="mt-0.5 text-xs">
-                2
-              </Badge>
-              <span>
-                Our system matches you based on availability and compatibility
-              </span>
+              <Badge variant="outline" className="mt-0.5 text-xs">2</Badge>
+              <span>Our system matches you based on availability and compatibility</span>
             </div>
             <div className="flex items-start gap-2">
-              <Badge variant="outline" className="mt-0.5 text-xs">
-                3
-              </Badge>
-              <span>
-                {"You'll receive a notification when a match is found"}
-              </span>
+              <Badge variant="outline" className="mt-0.5 text-xs">3</Badge>
+              <span>You’ll receive a notification when a match is found</span>
             </div>
             <div className="flex items-start gap-2">
-              <Badge variant="outline" className="mt-0.5 text-xs">
-                4
-              </Badge>
-              <span>
-                Connect with your paired partner to begin your learning journey
-              </span>
+              <Badge variant="outline" className="mt-0.5 text-xs">4</Badge>
+              <span>Connect with your paired partner to begin your learning journey</span>
             </div>
           </div>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Notes Field */}
+        <div className="space-y-6">
           <div className="space-y-3">
             <Label htmlFor="notes" className="text-base font-medium">
               Additional Notes
-              <span className="text-sm font-normal text-muted-foreground ml-2">
-                (Optional)
-              </span>
+              <span className="text-sm font-normal text-muted-foreground ml-2">(Optional)</span>
             </Label>
             <Textarea
               id="notes"
@@ -169,49 +405,39 @@ export function PairingRequestCard({ userId }: PairingRequestCardProps) {
             </div>
           </div>
 
-          {/* Submit Button */}
-          <Button
-            type="submit"
-            className="w-full"
-            // disabled={isSubmitting}
-            disabled={true}
-            size="lg"
-          >
-            {isSubmitting ? (
-              <>
-                <Clock className="mr-2 h-4 w-4 animate-spin" />
-                Submitting Request...
-              </>
-            ) : (
-              <>
-                <Users className="mr-2 h-4 w-4" />
-                Submit Pairing Request
-              </>
-            )}
-          </Button>
-        </form>
+          {isStudent && (
+            <div className="flex items-center justify-between rounded-lg p-4">
+              <div className="space-y-0.5">
+                <Label htmlFor="block-rejected-form" className="text-base">
+                  Block tutors who declined me in the past
+                </Label>
+                <p className="text-sm text-muted-foreground">
+                  When on, you won’t be matched with tutors who previously declined your request.
+                </p>
+              </div>
+              <Switch
+                id="block-rejected-form"
+                checked={excludeRejectedTutors}
+                onCheckedChange={setExcludeRejectedTutors}
+              />
+            </div>
+          )}
+        </div>
 
-        {/* Status Examples */}
-        <div className="pt-4 border-t">
+        <div className="pt-4">
           <h4 className="text-sm font-medium mb-3 text-muted-foreground">
-            Request Status Examples:
+            Request Status Examples
           </h4>
           <div className="flex flex-wrap gap-2">
-            <Badge
-              className={`${getStatusColor("pending")} flex items-center gap-1`}
-            >
+            <Badge className={`${getStatusColor("pending")} flex items-center gap-1`}>
               {getStatusIcon("pending")}
               Pending Review
             </Badge>
-            <Badge
-              className={`${getStatusColor("accepted")} flex items-center gap-1`}
-            >
+            <Badge className={`${getStatusColor("accepted")} flex items-center gap-1`}>
               {getStatusIcon("accepted")}
               Match Found
             </Badge>
-            <Badge
-              className={`${getStatusColor("rejected")} flex items-center gap-1`}
-            >
+            <Badge className={`${getStatusColor("rejected")} flex items-center gap-1`}>
               {getStatusIcon("rejected")}
               No Match Available
             </Badge>

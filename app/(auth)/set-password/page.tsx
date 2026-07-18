@@ -2,7 +2,7 @@
 
 import Logo from "@/components/ui/logo";
 
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
+import { createClient } from "@/lib/supabase/client";
 import { setDefaultAutoSelectFamily } from "net";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState, useEffect } from "react";
@@ -42,7 +42,7 @@ const formSchema = z
   });
 
 export default function ResetPassword() {
-  const supabase = createClientComponentClient();
+  const supabase = createClient();
   const router = useRouter();
 
   // const [isVerifying, setIsVerifying ] = useState(true)

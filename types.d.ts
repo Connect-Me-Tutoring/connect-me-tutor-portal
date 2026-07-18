@@ -1,5 +1,3 @@
-import { PHASE_DEVELOPMENT_SERVER } from "next/dist/shared/lib/constants";
-
 interface Profile {
   id: string;
   createdAt: string;

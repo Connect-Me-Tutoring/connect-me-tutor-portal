@@ -1,0 +1,98 @@
+{
+  "requestor_role": "student",
+  "requestor_subjects": ["math", "reading"],
+  "exclude_ids": [],
+  "limit": 10,
+  "candidates": [
+    {
+      "id": "t1",
+      "role": "tutor",
+      "priority": 1,
+      "subjects": ["math", "algebra", "science", "physics"],
+      "first_name": "Bob",
+      "last_name": "Alpha",
+      "email": "tutor01@example.com"
+    },
+    {
+      "id": "t2",
+      "role": "tutor",
+      "priority": 2,
+      "subjects": ["reading", "writing", "social_studies"],
+      "first_name": "Carol",
+      "last_name": "Beta",
+      "email": "tutor02@example.com"
+    },
+    {
+      "id": "t3",
+      "role": "tutor",
+      "priority": 2,
+      "subjects": ["history", "art"],
+      "first_name": "Dan",
+      "last_name": "Gamma",
+      "email": "tutor03@example.com"
+    },
+    {
+      "id": "t4",
+      "role": "tutor",
+      "priority": 1,
+      "subjects": ["geometry"],
+      "first_name": "Eve",
+      "last_name": "Delta",
+      "email": "tutor04@example.com"
+    },
+    {
+      "id": "t5",
+      "role": "tutor",
+      "priority": 3,
+      "subjects": ["math", "reading", "writing", "science", "computer_science"],
+      "first_name": "Finn",
+      "last_name": "Epsilon",
+      "email": "tutor05@example.com"
+    },
+    {
+      "id": "t6",
+      "role": "tutor",
+      "priority": 1,
+      "subjects": ["biology", "chemistry", "reading"],
+      "first_name": "Gia",
+      "last_name": "Zeta",
+      "email": "tutor06@example.com"
+    },
+    {
+      "id": "t7",
+      "role": "tutor",
+      "priority": 2,
+      "subjects": ["spanish", "music"],
+      "first_name": "Hal",
+      "last_name": "Eta",
+      "email": "tutor07@example.com"
+    },
+    {
+      "id": "t8",
+      "role": "tutor",
+      "priority": 2,
+      "subjects": ["math", "reading"],
+      "first_name": "Ivy",
+      "last_name": "Theta",
+      "email": "tutor08@example.com"
+    },
+    {
+      "id": "t9",
+      "role": "tutor",
+      "priority": 3,
+      "subjects": ["reading", "history", "writing"],
+      "first_name": "Jules",
+      "last_name": "Iota",
+      "email": "tutor09@example.com"
+    },
+    {
+      "id": "t10",
+      "role": "tutor",
+      "priority": 1,
+      "subjects": ["science", "earth_science"],
+      "first_name": "Kai",
+      "last_name": "Kappa",
+      "email": "tutor10@example.com"
+    }
+  ]
+}

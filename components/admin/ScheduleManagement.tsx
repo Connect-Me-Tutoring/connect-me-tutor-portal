@@ -24,7 +24,7 @@ import {
   getDay,
 } from "date-fns";
 import { toZonedTime } from "date-fns-tz";
-import { cn } from "@/lib/utils";
+import { cn, getEasternWeekBounds } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -63,13 +63,15 @@ import {
   updateSession,
   getMeetings,
   getAllProfiles,
-  removeSession,
   getMeeting,
 
   // checkMeetingsAvailability,
   // isMeetingAvailable,
 } from "@/lib/actions/admin.actions";
-import { addStandaloneSession } from "@/lib/actions/session.server.actions";
+import {
+  addStandaloneSession,
+  removeSessionServer,
+} from "@/lib/actions/session.server.actions";
 import { addHours, areIntervalsOverlapping } from "date-fns";
 
 import { getAllSessions } from "@/lib/actions/session.actions";
@@ -106,8 +108,11 @@ const Schedule = () => {
     if (calendarView === "day") setCurrentWeek(selectedDay);
   }, [selectedDay, calendarView]);
 
-  const weekEnd = endOfWeek(currentWeek).toISOString();
-  const weekStart = startOfWeek(currentWeek).toISOString();
+  // Pinned to America/New_York regardless of the admin's own browser timezone.
+  const { weekStart: weekStartDate, weekEnd: weekEndDate } =
+    getEasternWeekBounds(currentWeek);
+  const weekEnd = weekEndDate.toISOString();
+  const weekStart = weekStartDate.toISOString();
   // adapts fetch range to whichever view is active
   const queryStart =
     calendarView === "month"
@@ -466,7 +471,7 @@ const Schedule = () => {
     sessionsByDay.get(format(day, "yyyy-MM-dd")) || [];
 
   const removeSessionMutation = useMutation({
-    mutationFn: (sessionId: string) => removeSession(sessionId),
+    mutationFn: (sessionId: string) => removeSessionServer(sessionId),
     onMutate: async (sessionId: string) => {
       await queryClient.cancelQueries({ queryKey: ["sessions"] });
       const prevSessions = queryClient.getQueryData<Session[]>([
@@ -1364,7 +1369,11 @@ const Schedule = () => {
                 })()}
                 <div className="flex flex-col gap-3">
                   <Link
-                    href={`/dashboard/session/${selectedSession.id}/participation`}
+                    href={`/dashboard/session/${selectedSession.id}/participation${
+                      selectedSession.enrollmentId
+                        ? `?enrollmentId=${selectedSession.enrollmentId}`
+                        : ""
+                    }`}
                     className="w-full"
                   >
                     <Button variant="outline" className="w-full">

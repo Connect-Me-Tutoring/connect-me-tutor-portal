@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { supabase } from "@/lib/supabase/client";
-import { useParams } from "next/navigation";
+import { useState, useEffect, Suspense } from "react";
+import { useParams, useSearchParams } from "next/navigation";
+import Link from "next/link";
+import type { EnrollmentActivitySessionRow } from "@/lib/actions/session.server.actions";
 import {
   Card,
   CardContent,
@@ -23,7 +24,11 @@ import {
   UserX,
   RefreshCw,
   AlertCircle,
+  Info,
+  Layers,
+  ExternalLink,
 } from "lucide-react";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getParticipationData } from "@/lib/actions/session.server.actions";
 import ExcelJS from "exceljs";
@@ -35,6 +40,8 @@ interface ParticipantEvent {
   email: string;
   action: "joined" | "left";
   timestamp: Date;
+  inferred?: boolean;
+  joinedBeforeScheduledStart?: boolean;
 }
 
 interface ParticipantSummary {
@@ -47,15 +54,21 @@ interface ParticipantSummary {
   currentlyInMeeting: boolean;
   firstJoined: Date;
   lastActivity: Date;
+  hadInferredJoin?: boolean;
+  joinedBeforeScheduledStart?: boolean;
 }
 
-export default function MeetingParticipation() {
+function MeetingParticipationInner() {
   const params = useParams();
+  const searchParams = useSearchParams();
   const sessionId = params.sessionID as string;
+  const enrollmentIdParam = searchParams.get("enrollmentId");
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [meetingData, setMeetingData] = useState<{
+    sessionId: string;
+    enrollmentId: string | null;
     meetingId: string;
     meetingTitle: string;
     startTime: Date;
@@ -67,6 +80,18 @@ export default function MeetingParticipation() {
     ParticipantSummary[]
   >([]);
   const [refreshing, setRefreshing] = useState(false);
+  const [enrollmentBreakdown, setEnrollmentBreakdown] = useState<{
+    enrollment: {
+      id: string;
+      summary: string;
+      frequency: string;
+      studentName: string;
+      tutorName: string;
+    };
+    sessions: EnrollmentActivitySessionRow[];
+  } | null>(null);
+  const [enrollmentQueryMismatch, setEnrollmentQueryMismatch] =
+    useState(false);
 
   const fetchParticipationData = async () => {
     try {
@@ -77,14 +102,19 @@ export default function MeetingParticipation() {
         setLoading(true);
       }
 
-      const data = await getParticipationData(sessionId);
+      const data = await getParticipationData(sessionId, enrollmentIdParam);
 
       if (!data) {
         throw new Error("Session not found");
       }
 
+      setEnrollmentBreakdown(data.enrollmentBreakdown ?? null);
+      setEnrollmentQueryMismatch(!!data.enrollmentQueryMismatch);
+
       // Transform session data
       setMeetingData({
+        sessionId: data.session.id,
+        enrollmentId: data.session.enrollmentId,
         meetingId: data.session.meetingId || "N/A",
         meetingTitle: data.session.meetingTitle || "Tutoring Session",
         startTime: new Date(data.session.startTime),
@@ -101,6 +131,8 @@ export default function MeetingParticipation() {
           email: event.email,
           action: event.action,
           timestamp: new Date(event.timestamp),
+          inferred: event.inferred,
+          joinedBeforeScheduledStart: event.joinedBeforeScheduledStart,
         })
       );
       setEvents(transformedEvents);
@@ -116,6 +148,8 @@ export default function MeetingParticipation() {
           currentlyInMeeting: summary.currentlyInMeeting,
           firstJoined: new Date(summary.firstJoined),
           lastActivity: new Date(summary.lastActivity),
+          hadInferredJoin: summary.hadInferredJoin,
+          joinedBeforeScheduledStart: summary.joinedBeforeScheduledStart,
         }));
       setParticipantSummaries(transformedSummaries);
     } catch (err) {
@@ -133,7 +167,7 @@ export default function MeetingParticipation() {
     if (sessionId) {
       fetchParticipationData();
     }
-  }, [sessionId]);
+  }, [sessionId, enrollmentIdParam]);
 
   const handleRefresh = () => {
     fetchParticipationData();
@@ -336,6 +370,12 @@ export default function MeetingParticipation() {
         )
       : 0;
 
+  const showNormalizationCallout =
+    participantSummaries.some(
+      (p) => p.hadInferredJoin || p.joinedBeforeScheduledStart
+    ) ||
+    events.some((e) => e.inferred || e.joinedBeforeScheduledStart);
+
   return (
     <div className="max-w-6xl mx-auto p-6 space-y-6">
       {/* Meeting Header */}
@@ -369,6 +409,132 @@ export default function MeetingParticipation() {
           </Button>
         </div>
       </div>
+
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-2 text-sm">
+        {meetingData.enrollmentId ? (
+          <>
+            <Button variant="link" className="h-auto p-0 gap-1" asChild>
+              <Link
+                href={`/dashboard/enrollments/${meetingData.enrollmentId}/activity`}
+              >
+                <Layers className="h-4 w-4 shrink-0" />
+                Enrollment activity
+                <ExternalLink className="h-3 w-3 shrink-0 opacity-70" />
+              </Link>
+            </Button>
+            {!enrollmentIdParam && (
+              <Button variant="link" className="h-auto p-0 text-muted-foreground" asChild>
+                <Link
+                  href={`/dashboard/session/${meetingData.sessionId}/participation?enrollmentId=${meetingData.enrollmentId}`}
+                >
+                  Show enrollment session list with Zoom
+                </Link>
+              </Button>
+            )}
+          </>
+        ) : (
+          <span className="text-muted-foreground">
+            This session is not linked to an enrollment.
+          </span>
+        )}
+      </div>
+
+      {enrollmentQueryMismatch && (
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>Enrollment mismatch</AlertTitle>
+          <AlertDescription>
+            The <code className="text-xs">enrollmentId</code> in the URL does not
+            match this session&apos;s enrollment, or the enrollment could not be
+            loaded. Remove the query parameter or open attendance from the
+            enrollment activity page.
+          </AlertDescription>
+        </Alert>
+      )}
+
+      {enrollmentBreakdown && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Enrollment Zoom context</CardTitle>
+            <CardDescription>
+              {enrollmentBreakdown.enrollment.studentName} ↔{" "}
+              {enrollmentBreakdown.enrollment.tutorName} · Frequency{" "}
+              <Badge variant="secondary" className="font-normal">
+                {enrollmentBreakdown.enrollment.frequency}
+              </Badge>
+              {enrollmentBreakdown.enrollment.summary ? (
+                <span className="block mt-2 text-muted-foreground">
+                  {enrollmentBreakdown.enrollment.summary}
+                </span>
+              ) : null}
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm text-muted-foreground mb-3">
+              All sessions on this enrollment. Open another session to see its
+              Zoom join/leave log; this page shows the log for the current session
+              only.
+            </p>
+            <div className="rounded-md border max-h-72 overflow-y-auto divide-y">
+              {enrollmentBreakdown.sessions.map((s) => {
+                const isCurrent = s.id === meetingData.sessionId;
+                return (
+                  <div
+                    key={s.id}
+                    className={`flex flex-wrap items-center justify-between gap-2 p-3 text-sm ${
+                      isCurrent ? "bg-muted/60" : ""
+                    }`}
+                  >
+                    <div>
+                      <div className="font-medium">
+                        {s.date
+                          ? new Date(s.date).toLocaleString(undefined, {
+                              dateStyle: "medium",
+                              timeStyle: "short",
+                            })
+                          : "—"}
+                        {isCurrent && (
+                          <Badge className="ml-2 align-middle">This session</Badge>
+                        )}
+                      </div>
+                      <div className="text-muted-foreground text-xs mt-0.5">
+                        {s.meetingTitle} · {s.status || "—"} · {s.zoomEventCount}{" "}
+                        Zoom events
+                      </div>
+                    </div>
+                    {!isCurrent ? (
+                      <Button variant="outline" size="sm" asChild>
+                        <Link
+                          href={`/dashboard/session/${s.id}/participation?enrollmentId=${enrollmentBreakdown.enrollment.id}`}
+                        >
+                          Open
+                        </Link>
+                      </Button>
+                    ) : (
+                      <Badge variant="outline">Viewing</Badge>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {showNormalizationCallout && (
+        <Alert>
+          <Info className="h-4 w-4" />
+          <AlertTitle>Adjusted attendance</AlertTitle>
+          <AlertDescription className="text-muted-foreground">
+            Logs are aggregated per person (email when available, otherwise Zoom
+            user id or display name). Duplicate back-to-back events from Zoom are
+            merged. If someone was already in the meeting before the portal could
+            log a join, an estimated join may appear. Joins before the scheduled
+            start time are labeled; minutes in the summary count from scheduled
+            start through leave, or through the scheduled end if they stayed on.
+          </AlertDescription>
+        </Alert>
+      )}
 
       {/* Meeting Stats */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -481,6 +647,21 @@ export default function MeetingParticipation() {
                       {formatDuration(participant.totalDuration)} •{" "}
                       {participant.joinCount} joins
                     </div>
+                    {(participant.hadInferredJoin ||
+                      participant.joinedBeforeScheduledStart) && (
+                      <div className="flex flex-wrap gap-1 justify-end mt-2">
+                        {participant.hadInferredJoin && (
+                          <Badge variant="outline" className="text-xs font-normal">
+                            Estimated join
+                          </Badge>
+                        )}
+                        {participant.joinedBeforeScheduledStart && (
+                          <Badge variant="outline" className="text-xs font-normal">
+                            Early join
+                          </Badge>
+                        )}
+                      </div>
+                    )}
                   </div>
                 </div>
               ))
@@ -498,7 +679,6 @@ export default function MeetingParticipation() {
           </CardHeader>
           <CardContent>
             <div className="space-y-4 max-h-96 overflow-y-auto">
-              ن{" "}
               {events.length === 0 ? (
                 <p className="text-center text-muted-foreground py-8">
                   No activity yet
@@ -519,7 +699,7 @@ export default function MeetingParticipation() {
                         </AvatarFallback>
                       </Avatar>
                       <div className="flex-1">
-                        <div className="flex items-center gap-2">
+                        <div className="flex flex-wrap items-center gap-2">
                           <span className="font-medium">{event.name}</span>
                           <Badge
                             variant={
@@ -539,9 +719,32 @@ export default function MeetingParticipation() {
                               </>
                             )}
                           </Badge>
+                          {event.inferred && (
+                            <Badge variant="outline" className="text-xs font-normal">
+                              Estimated
+                            </Badge>
+                          )}
+                          {event.joinedBeforeScheduledStart && (
+                            <Badge variant="outline" className="text-xs font-normal">
+                              Before start
+                            </Badge>
+                          )}
                         </div>
                         <div className="text-sm text-muted-foreground">
-                          {formatTime(event.timestamp)}
+                          {event.timestamp.toLocaleString(undefined, {
+                            month: "short",
+                            day: "numeric",
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })}
+                          {meetingData &&
+                            event.action === "joined" &&
+                            event.timestamp < meetingData.startTime && (
+                              <span className="block text-xs mt-0.5">
+                                Before scheduled session start (
+                                {formatTime(meetingData.startTime)})
+                              </span>
+                            )}
                         </div>
                       </div>
                     </div>
@@ -556,5 +759,24 @@ export default function MeetingParticipation() {
         </Card>
       </div>
     </div>
+  );
+}
+
+export default function MeetingParticipation() {
+  return (
+    <Suspense
+      fallback={
+        <div className="max-w-6xl mx-auto p-6 space-y-6">
+          <Skeleton className="h-12 w-64" />
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            {[1, 2, 3, 4].map((i) => (
+              <Skeleton key={i} className="h-24" />
+            ))}
+          </div>
+        </div>
+      }
+    >
+      <MeetingParticipationInner />
+    </Suspense>
   );
 }

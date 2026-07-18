@@ -11,6 +11,7 @@ import {
   ChevronLeft,
   ChevronRight,
   RefreshCcw,
+  Download,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import {
@@ -53,7 +54,7 @@ import {
 import { editProfile } from "@/lib/actions/profile.server.actions"
 import { deleteUser } from "@/lib/actions/auth.server.actions";
 import { addUser } from "@/lib/actions/auth.actions";
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
+import { createClient } from "@/lib/supabase/client";
 import { Profile } from "@/types";
 import {
   Dialog,
@@ -96,7 +97,7 @@ const StudentList = ({ initialStudents }: any) =>
   //   onDeactivate: (studentId: string) => void;
   // }
   {
-    const supabase = createClientComponentClient();
+    const supabase = createClient();
     const [students, setStudents] = useState<Profile[]>(initialStudents);
     const [filteredStudents, setFilteredStudents] = useState<Profile[]>(initialStudents);
     const [profile, setProfile] = useState<Profile | null>(null);
@@ -506,6 +507,31 @@ const StudentList = ({ initialStudents }: any) =>
       }
     };
 
+    const handleExportCSV = () => {
+      const headers = ["First Name", "Last Name", "Email"];
+      const csvData = filteredStudents.map((student) => [
+        student.firstName,
+        student.lastName,
+        student.email,
+      ]);
+
+      const csvContent = [
+        headers.join(","),
+        ...csvData.map((row) =>
+          row.map((cell) => `"${(cell || "").replace(/"/g, '""')}"`).join(",")
+        ),
+      ].join("\n");
+
+      const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.setAttribute("href", url);
+      link.setAttribute("download", "students_export.csv");
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+    };
+
     return (
       <>
         <div className="flex justify-between items-center mb-4">
@@ -517,6 +543,9 @@ const StudentList = ({ initialStudents }: any) =>
               value={filterValue}
               onChange={(e) => setFilterValue(e.target.value)}
             />
+            <Button variant="outline" onClick={handleExportCSV}>
+              <Download className="mr-2 h-4 w-4" /> Export CSV
+            </Button>
             {/*Add Student*/}
             <AddStudentForm
               newStudent={newStudent}
