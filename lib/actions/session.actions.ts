@@ -475,7 +475,7 @@ export async function sendStudentSEFFeedbackEmail(session: Session): Promise<voi
       body: JSON.stringify({
         studentName,
         studentEmail,
-        userId: session.tutor.userId,
+        userId: session.tutor?.userId,
       }),
       headers: {
         "Content-Type": "application/json",

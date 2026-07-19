@@ -67,6 +67,7 @@ export async function getStudentSessions(
     session_exit_form: session.session_exit_form,
     isQuestionOrConcern: session.isQuestionOrConcern,
     isFirstSession: session.isFirstSession,
+    isStandalone: session.is_standalone,
     duration: session.duration,
   }));
 

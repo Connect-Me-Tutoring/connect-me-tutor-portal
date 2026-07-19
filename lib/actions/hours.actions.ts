@@ -24,7 +24,6 @@ import { getStudentSessions } from "./student.actions";
 import { date } from "zod";
 import toast from "react-hot-toast";
 import { DatabaseIcon, UserRoundIcon } from "lucide-react";
-import { getAllSessions } from "./admin.actions";
 import { timeStrToHours } from "../utils";
 import { supabase } from "@/lib/supabase/client";
 // import { getMeeting } from "./meeting.actions";

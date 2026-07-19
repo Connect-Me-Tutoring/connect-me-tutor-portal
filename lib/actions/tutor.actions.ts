@@ -77,6 +77,7 @@ export async function getTutorSessions(
       session_exit_form: session.session_exit_form,
       isQuestionOrConcern: Boolean(session.isQuestionOrConcernO),
       isFirstSession: Boolean(session.isFirstSession),
+      isStandalone: Boolean(session.is_standalone),
       duration: session.duration,
     };
   });
