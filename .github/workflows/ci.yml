@@ -41,4 +41,8 @@ jobs:
 
       - name: Run TypeScript check
         run: npm run typecheck
-        continue-on-error: true
+        continue-on-error: false
+
+      - name: Run knip (dead code check)
+        run: npm run knip
+        continue-on-error: false
