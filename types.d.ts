@@ -1,4 +1,4 @@
-interface Profile {
+export interface Profile {
   id: string;
   createdAt: string;
   role: "Student" | "Tutor" | "Admin";
@@ -25,7 +25,7 @@ interface Profile {
   languages_spoken: string[];
 }
 
-interface Session {
+export interface Session {
   id: string;
   enrollmentId: string | null;
   createdAt: string;
@@ -42,7 +42,7 @@ interface Session {
   isStandalone: boolean;
 }
 
-interface Meeting {
+export interface Meeting {
   id: string;
   createdAt: string;
   password: string;
@@ -51,7 +51,7 @@ interface Meeting {
   name: string;
 }
 
-interface Notification {
+export interface Notification {
   createdAt: string;
   id: string;
   summary: string;
@@ -64,7 +64,7 @@ interface Notification {
 }
 
 // Type for Events
-interface Event {
+export interface Event {
   createdAt: string;
   date: string;
   summary: string;
@@ -75,7 +75,7 @@ interface Event {
 }
 
 // Type for Student s
-interface Enrollment {
+export interface Enrollment {
   id: string;
   createdAt: string;
   student: Profile | null;
@@ -93,13 +93,13 @@ interface Enrollment {
   frequency: string;
 }
 
-interface Availability {
+export interface Availability {
   day: string;
   startTime: string;
   endTime: string;
 }
 
-interface CreatedProfileData {
+export interface CreatedProfileData {
   role: "Student" | "Tutor" | "Admin";
   firstName: string;
   lastName: string;
