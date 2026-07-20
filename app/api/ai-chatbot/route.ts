@@ -13,7 +13,8 @@ export async function POST(req: Request) {
       );
     }
 
-    const response = await fetch('http://localhost:8000/chat/stream', {
+    const aiApiUrl = process.env.AI_API_URL || 'http://localhost:8000';
+    const response = await fetch(`${aiApiUrl}/chat/stream`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
