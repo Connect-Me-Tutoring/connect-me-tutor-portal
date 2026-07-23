@@ -35,7 +35,6 @@ const AvailabilityForm: React.FC<AvailabilityFormProps> = ({
   const addAvailability = () => {
     if (selectedDay && selectedStartTime && selectedEndTime) {
       const updatedList = [
-        ...availabilityList,
         {
           day: selectedDay,
           startTime: selectedStartTime,
@@ -56,7 +55,7 @@ const AvailabilityForm: React.FC<AvailabilityFormProps> = ({
 
   return (
     <div className="availability-form">
-      <Label>Manage Availability (EST)</Label>
+      <Label>Enrollment Schedule (EST)</Label>
       <div className="grid grid-cols-3 gap-4">
         <div>
           <Label htmlFor="day" className="text-right">
@@ -110,11 +109,11 @@ const AvailabilityForm: React.FC<AvailabilityFormProps> = ({
       </div>
 
       <Button onClick={addAvailability} className="mt-4">
-        Add Availability
+        Set Schedule
       </Button>
 
       <div className="mt-4">
-        <Label>Availability List:</Label>
+        <Label>Current Schedule:</Label>
         <ul className="list-disc pl-5">
           {availabilityList.length > 0 ? (
             availabilityList?.map((availability, index) => (

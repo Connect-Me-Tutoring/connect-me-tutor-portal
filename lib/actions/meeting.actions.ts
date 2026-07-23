@@ -7,7 +7,7 @@ import { string } from "zod";
 import { fetchDaySessionsFromSchedule } from "./session.actions";
 import { addHours, areIntervalsOverlapping, isValid, parseISO } from "date-fns";
 import { formatAvailabilityAsDate } from "../utils";
-import { getEnrollmentAvailability } from "../enrollment-schedule";
+import { getEnrollmentSchedule } from "../enrollment-schedule";
 
 const supabase = createClientComponentClient({
   supabaseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL,
@@ -151,21 +151,30 @@ export const checkAvailableMeetingForEnrollments = async (
   meetings.forEach((meeting) => {
     updatedMeetingAvailability[meeting.id] = true;
   });
-  const newEnrollmentAvailability = getEnrollmentAvailability(enroll);
+  const newEnrollmentSchedule = getEnrollmentSchedule(enroll);
   const [newEnrollmentStartTime, newEnrollmentEndTime] =
-    newEnrollmentAvailability[0]
-      ? formatAvailabilityAsDate(newEnrollmentAvailability[0])
+    newEnrollmentSchedule.day &&
+    newEnrollmentSchedule.startTime &&
+    newEnrollmentSchedule.endTime
+      ? formatAvailabilityAsDate(newEnrollmentSchedule)
       : [new Date(NaN), new Date(NaN)];
   const newRange = {
     start: newEnrollmentStartTime.getTime(),
     end: newEnrollmentEndTime.getTime(),
   };
   for (const enrollment of enrollments) {
-    const enrollmentAvailability = getEnrollmentAvailability(enrollment);
-    if (!enrollmentAvailability[0] || !enrollment?.meetingId) continue;
+    const enrollmentSchedule = getEnrollmentSchedule(enrollment);
+    if (
+      !enrollmentSchedule.day ||
+      !enrollmentSchedule.startTime ||
+      !enrollmentSchedule.endTime ||
+      !enrollment?.meetingId
+    ) {
+      continue;
+    }
     try {
       const [existingStartTime, existingEndTime] = formatAvailabilityAsDate(
-        enrollmentAvailability[0],
+        enrollmentSchedule,
       );
       const isOverlap = areIntervalsOverlapping(newRange, {
         start: existingStartTime.getTime(),

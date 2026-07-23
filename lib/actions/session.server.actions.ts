@@ -118,7 +118,7 @@ export async function addSessionsServer(
         continue;
       }
 
-      if (!student?.id || !tutor?.id || !day || !startTime || !endTime) {
+      if (!student?.id || !tutor?.id || !day) {
         continue;
       }
 

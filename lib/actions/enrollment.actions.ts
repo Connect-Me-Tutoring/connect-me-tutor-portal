@@ -181,7 +181,7 @@ const sql = `
 `;
 
 export const sessionTimeFromEnrollment = (
-  availability: Availability,
+  schedule: Availability,
   start: string,
 ): string => {
   const dayMap: Record<string, number> = {
@@ -197,14 +197,14 @@ export const sessionTimeFromEnrollment = (
   try {
     const startDate: Date = new Date(start);
     const startDateWeekDay: number = startDate.getDay();
-    const firstSessionWeekDay: number = dayMap[availability.day.toLowerCase()];
+    const firstSessionWeekDay: number = dayMap[schedule.day.toLowerCase()];
 
     const additionalDays = firstSessionWeekDay >= startDateWeekDay ? 0 : 7;
     const currentDate: Date = addDays(
       startDate,
       firstSessionWeekDay - startDateWeekDay + additionalDays,
     );
-    const dateString = `${format(currentDate, "yyyy-MM-dd")}T${availability.startTime}:00`;
+    const dateString = `${format(currentDate, "yyyy-MM-dd")}T${schedule.startTime}:00`;
     return fromZonedTime(dateString, "America/New_York").toISOString();
   } catch (error) {
     console.error("Unable to calculate session from enrollment");
@@ -217,7 +217,7 @@ export const addEnrollment = async (
 ) => {
   try {
     if (!enrollment.day || !enrollment.startTime || !enrollment.endTime) {
-      throw new Error("Please add an availability");
+      throw new Error("Please add an enrollment schedule");
     }
 
     const duration = await handleCalculateDuration(

@@ -126,7 +126,6 @@ export type Database = {
       }
       Enrollments: {
         Row: {
-          availability: Json | null
           created_at: string
           day: string | null
           duration: number
@@ -144,7 +143,6 @@ export type Database = {
           tutor_id: string | null
         }
         Insert: {
-          availability?: Json | null
           created_at?: string
           day?: string | null
           duration: number
@@ -162,7 +160,6 @@ export type Database = {
           tutor_id?: string | null
         }
         Update: {
-          availability?: Json | null
           created_at?: string
           day?: string | null
           duration?: number
@@ -981,13 +978,15 @@ export type Database = {
       get_enrollment_with_profiles: {
         Args: { enrollment_uuid: string }
         Returns: {
-          availability: Json
           created_at: string
+          day: string | null
           duration: number
           end_date: string
+          end_time: string | null
           id: string
           meetingid: string
           start_date: string
+          start_time: string | null
           student: Json
           student_id: string
           summary: string
@@ -999,11 +998,12 @@ export type Database = {
       get_enrollments_with_student_profile: {
         Args: never
         Returns: {
-          availability: Json
           created_at: string
+          day: string | null
           duration: number
           email: string
           end_date: string
+          end_time: string | null
           first_name: string
           id: string
           last_name: string
@@ -1011,6 +1011,7 @@ export type Database = {
           profile_id: string
           profile_user_id: string
           start_date: string
+          start_time: string | null
           student_id: string
           summary: string
           summer_paused: boolean
@@ -1173,10 +1174,11 @@ export type Database = {
       get_user_enrollments: {
         Args: { input_user_id: string }
         Returns: {
-          availability: Json
           created_at: string
+          day: string | null
           duration: number
           end_date: string
+          end_time: string | null
           id: string
           meetingId: string
           profile_email: string
@@ -1184,6 +1186,7 @@ export type Database = {
           profile_name: string
           profile_user_id: string
           start_date: string
+          start_time: string | null
           student_id: string
           summary: string
           summer_paused: boolean
@@ -1193,13 +1196,15 @@ export type Database = {
       get_user_enrollments_with_profiles: {
         Args: { requestor_auth_id: string }
         Returns: {
-          availability: Json
           created_at: string
+          day: string | null
           duration: number
           end_date: string
+          end_time: string | null
           id: string
           meetingid: string
           start_date: string
+          start_time: string | null
           student: Json
           summary: string
           summer_paused: boolean
@@ -1209,13 +1214,15 @@ export type Database = {
       get_user_enrollments_with_student_profile: {
         Args: { requestor_auth_id: string }
         Returns: {
-          availability: Json
           created_at: string
+          day: string | null
           duration: number
           end_date: string
+          end_time: string | null
           id: string
           meetingid: string
           start_date: string
+          start_time: string | null
           student_email: string
           student_first_name: string
           student_id: string

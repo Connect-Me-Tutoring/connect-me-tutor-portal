@@ -262,13 +262,12 @@ const EnrollmentForm = ({
               </Popover>
             </div>
             <AvailabilityForm
-              // availabilityList={newEnrollment.availability}
               availabilityList={availabilityList} // new enrollment by default will not have an availability
               setAvailabilityList={(availability) => {
                 setAvailabilityList(availability);
                 setNewEnrollment({
                   ...newEnrollment,
-                  ...getEnrollmentScheduleFields({ availability }),
+                  ...getEnrollmentScheduleFields(availability[0]),
                 });
               }}
             />

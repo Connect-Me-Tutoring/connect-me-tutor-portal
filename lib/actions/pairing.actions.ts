@@ -231,7 +231,7 @@ export const findAvailableSessionTimes = async () => {
 
 // Function to convert time string to minutes since midnight
 function timeToMinutes(timeString: string): number {
-  const [hours, minutes, seconds] = timeString.split(":").map(Number);
+  const [hours, minutes, seconds = 0] = timeString.split(":").map(Number);
   return hours * 60 + minutes + seconds / 60;
 }
 
@@ -294,6 +294,13 @@ export const getAvailableMeetingLink = async (
   day: string,
 ) => {
   try {
+    const requestedStart = timeToMinutes(start);
+    const requestedEnd = timeToMinutes(end);
+
+    if (!Number.isFinite(requestedStart) || !Number.isFinite(requestedEnd)) {
+      throw new Error(`Invalid requested meeting time: ${start}-${end}`);
+    }
+
     const { data: allEnrollments, error } = await supabase
       .from("Enrollments")
       .select("meetingId, day, start_time, end_time");
@@ -308,11 +315,23 @@ export const getAvailableMeetingLink = async (
           return true;
         }
 
-        // Conflict if the enrollment's slot overlaps the requested time
-        // Two ranges overlap if: slot.start < end AND slot.end > start
-        const hasConflict =
-          (enrollment.start_time ?? "") < end &&
-          (enrollment.end_time ?? "") > start;
+        const enrollmentStart = timeToMinutes(enrollment.start_time ?? "");
+        const enrollmentEnd = timeToMinutes(enrollment.end_time ?? "");
+
+        // An incomplete schedule cannot conflict with the requested slot.
+        if (
+          !Number.isFinite(enrollmentStart) ||
+          !Number.isFinite(enrollmentEnd)
+        ) {
+          return true;
+        }
+
+        const hasConflict = isOverlap(
+          enrollmentStart,
+          enrollmentEnd,
+          requestedStart,
+          requestedEnd,
+        );
 
         // Return true if NO conflict (available)
         return !hasConflict;
@@ -341,8 +360,7 @@ export const getAutoAvailableSessionTimes = async (
         autoAvailability.endTime,
         autoAvailability.day,
       );
-      if (meetingId)
-        return { availability: autoAvailability, meeting: meetingId };
+      if (meetingId) return { schedule: autoAvailability, meeting: meetingId };
     }
     return null;
   } catch (error) {}
@@ -374,9 +392,9 @@ export const getAutomaticEnrollment = async (
       const autoEnrollment: Omit<Enrollment, "id" | "createdAt"> = {
         student: student,
         tutor: tutor,
-        day: autoAvailability.availability.day,
-        startTime: autoAvailability.availability.startTime,
-        endTime: autoAvailability.availability.endTime,
+        day: autoAvailability.schedule.day,
+        startTime: autoAvailability.schedule.startTime,
+        endTime: autoAvailability.schedule.endTime,
         meetingId: autoAvailability.meeting.meetingId,
         paused: false,
         duration: 1,
