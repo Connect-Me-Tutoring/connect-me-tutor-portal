@@ -98,7 +98,7 @@ export const UserAvailabilities = ({ user }: UserAvailabilitiesProps) => {
                             {slot.day}: {slot.startTime} - {slot.endTime}
                           </p>
                         ))} */}
-                        <AvailabiltyFormat availability={user.availability} />
+                        <AvailabiltyFormat availability={user.availability} card />
                       </div>
                     ) : (
                       <p className="text-sm text-muted-foreground">No availability set</p>

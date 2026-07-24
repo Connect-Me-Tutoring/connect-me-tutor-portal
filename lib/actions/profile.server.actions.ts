@@ -15,6 +15,7 @@ import {
   requireSelfOrAdmin,
   requireTutorProfileAccess,
 } from "./authz.server";
+import { logError } from "@/lib/posthog";
 
 export const switchProfile = async (userId: string, profileId: string) => {
   try {
@@ -62,6 +63,7 @@ export const getUserProfiles = async (userId: string) => {
     return profiles;
   } catch (error) {
     console.error("Unable to get user profiles", error);
+    await logError(error, { action: "getUserProfiles", userId }, "profile_error");
     throw error;
   }
 };
@@ -119,6 +121,11 @@ export async function getAllProfiles(
 
     if (error) {
       console.error("Error fetching profiles:", error.message);
+      await logError(
+        error,
+        { action: "getAllProfiles", role, orderBy, ascending, status },
+        "profile_error",
+      );
       return null;
     }
 
@@ -127,37 +134,16 @@ export async function getAllProfiles(
     }
 
     // Map database fields to camelCase Profile model
-    const userProfiles: Profile[] = data.map((profile) => ({
-      id: profile.id,
-      createdAt: profile.created_at,
-      role: profile.role,
-      userId: profile.user_id,
-      age: profile.age,
-      grade: profile.grade,
-      gender: profile.gender,
-      firstName: profile.first_name,
-      lastName: profile.last_name,
-      dateOfBirth: profile.date_of_birth,
-      startDate: profile.start_date,
-      availability: profile.availability,
-      email: profile.email,
-      phoneNumber: profile.phone_number,
-      parentName: profile.parent_name,
-      parentPhone: profile.parent_phone,
-      parentEmail: profile.parent_email,
-      tutorIds: profile.tutor_ids,
-      timeZone: profile.timezone,
-      subjectsOfInterest: profile.subjects_of_interest,
-      status: profile.status,
-      studentNumber: profile.student_number,
-      settingsId: profile.settings_id,
-      subjects_of_interest: profile.subjects_of_interest,
-      languages_spoken: profile.languages_spoken,
-    }));
+    const userProfiles: Profile[] = data.map(tableToInterfaceProfiles);
 
     return userProfiles;
   } catch (error) {
     console.error("Unexpected error in getProfile:", error);
+    await logError(
+      error,
+      { action: "getAllProfiles", role, orderBy, ascending, status },
+      "profile_error",
+    );
     return null;
   }
 }
@@ -201,6 +187,7 @@ export const getProfileFromUserSettings = async (userId: string): Promise<Profil
     if (error) {
       console.error("Error fetching profile in getProfile:", error.message);
       console.error("Error details:", error);
+      await logError(error, { action: "getProfileFromUserSettings", userId }, "profile_error");
       throw error;
     }
 
@@ -217,12 +204,20 @@ export const getProfileFromUserSettings = async (userId: string): Promise<Profil
 export async function getProfile(userId: string) {
   if (!userId) {
     console.error("User ID is required to fetch profile data");
+    await logError(
+      new Error("User ID is required to fetch profile data"),
+      {
+        action: "getProfile",
+      },
+      "profile_error",
+    );
     return null;
   }
   try {
     return await getProfileFromUserSettings(userId);
   } catch (error) {
     console.error("Unexpected error in getProfile:", error);
+    await logError(error, { action: "getProfile", userId }, "profile_error");
     return null;
   }
 }
@@ -242,6 +237,7 @@ export const getTutorStudents = async (tutorId: string) => {
 
     if (pairingsError) {
       console.error("Error fetching enrollments:", pairingsError);
+      await logError(pairingsError, { action: "getTutorStudents", tutorId }, "profile_error");
       return null;
     }
 
@@ -260,6 +256,7 @@ export const getTutorStudents = async (tutorId: string) => {
 
     if (profileError) {
       console.error("Error fetching student profile", profileError);
+      await logError(profileError, { action: "getTutorStudents", tutorId }, "profile_error");
       return null;
     }
 
@@ -301,6 +298,7 @@ export const getTutorStudents = async (tutorId: string) => {
     return userProfiles;
   } catch (error) {
     console.error("Unexpected error in getProfile:", error);
+    await logError(error, { action: "getTutorStudents", tutorId }, "profile_error");
     return null;
   }
 };
@@ -372,6 +370,7 @@ export async function editProfile(profile: Profile) {
     return data;
   } catch (error) {
     console.error("Error updating user", error);
+    await logError(error, { action: "editProfile", profileId: id }, "profile_error");
     throw new Error("Unable to edit User");
   }
 }

@@ -4,10 +4,23 @@ import {
   runPairingWorkflow,
 } from "@/lib/pairing";
 import { verifyAdmin } from "@/lib/actions/auth.server.actions";
+import { isCronRequestAuthorized } from "@/lib/security/cron";
 import { NextRequest, NextResponse } from "next/server";
 
-/** Opening this URL in a browser uses GET; the workflow only runs on POST */
+/**
+ * Vercel cron invokes this path with GET (see vercel.json); a CRON_SECRET-authorized
+ * GET runs the workflow. A plain browser visit gets an informational response only.
+ */
 export async function GET(req: NextRequest) {
+  if (isCronRequestAuthorized(req)) {
+    const result = await runPairingWorkflow({ dryRun: false, debug: false });
+    return NextResponse.json({
+      message: "Successfully completed scheduled pairing process",
+      dryRun: false,
+      result,
+    });
+  }
+
   const url = new URL(req.url);
   return NextResponse.json(
     {

@@ -1,6 +1,7 @@
 import WorksheetsList from "@/components/tutor/WorksheetsList";
 import { createClient } from "@/lib/supabase/server";
 import type { FileObject } from "@supabase/storage-js";
+import { logError } from "@/lib/posthog";
 
 export type WorksheetResource = {
   name: string;
@@ -35,6 +36,7 @@ const Worksheets = async () => {
 
     if (error) {
       console.error("Failed to load worksheets:", error);
+      await logError(error, { prefix }, "worksheets_load_error");
       return [];
     }
 
