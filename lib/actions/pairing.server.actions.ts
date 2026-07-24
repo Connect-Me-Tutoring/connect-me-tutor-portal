@@ -49,7 +49,7 @@ export async function getAccountPairings(userId: string) {
       return null;
     }
 
-    return data as SharedPairing[];
+    return data as unknown as SharedPairing[];
   } catch (error) {
     console.error("Unable to get account pairings", error);
     await logError(error, { function: "getAccountPairings", user_id: userId }, "pairing_error");

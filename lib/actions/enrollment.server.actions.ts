@@ -28,6 +28,7 @@ import {
   requireEnrollmentAccess,
   requireTutorProfileAccess,
 } from "./authz.server";
+import type { Database, Json } from "@/types/database.types";
 
 type EnrollmentTableRow = {
   availability?: Availability[] | null;
@@ -36,7 +37,7 @@ type EnrollmentTableRow = {
   duration?: number | null;
   end_date?: string | null;
   end_time?: string | null;
-  frequency?: string | null;
+  frequency?: Database["public"]["Enums"]["session_frequency"] | null;
   id?: string | null;
   meetingId?: string | null;
   paused?: boolean | null;
@@ -403,7 +404,7 @@ export const updateEnrollment = async (enrollment: Enrollment) => {
         summary: enrollment.summary,
         start_date: enrollment.startDate,
         end_date: enrollment.endDate,
-        availability,
+        availability: availability as unknown as Json,
         day: schedule.day,
         start_time: schedule.startTime,
         end_time: schedule.endTime,
@@ -517,7 +518,7 @@ export const addEnrollment = async (
         summary: enrollment.summary,
         start_date: enrollment.startDate,
         end_date: enrollment.endDate,
-        availability,
+        availability: availability as unknown as Json,
         day: schedule.day,
         start_time: schedule.startTime,
         end_time: schedule.endTime,
@@ -548,14 +549,17 @@ export const addEnrollment = async (
       const tutor = tableToInterfaceProfiles(data.tutor);
       const student = tableToInterfaceProfiles(data.student);
       const meeting = tableToInterfaceMeetings(data.meeting);
-      const date = await sessionTimeFromEnrollment(schedule, data.start_date);
+      const date = await sessionTimeFromEnrollment(
+        schedule,
+        data.start_date ?? enrollment.startDate,
+      );
 
       const firstSession: Session = {
         id: "",
         enrollmentId: data.id,
         createdAt: new Date().toISOString(),
         date: date,
-        summary: data.summary,
+        summary: data.summary ?? enrollment.summary,
         student: student,
         tutor: tutor,
         meeting: meeting,
@@ -574,22 +578,7 @@ export const addEnrollment = async (
       });
     }
 
-    return {
-      createdAt: data.created_at,
-      id: data.id,
-      summary: data.summary,
-      student: tableToInterfaceProfiles(data.student),
-      tutor: tableToInterfaceProfiles(data.tutor),
-      startDate: data.start_date,
-      endDate: data.end_date,
-      availability,
-      day: data.day,
-      startTime: data.start_time?.slice(0, 5) || null,
-      endTime: data.end_time?.slice(0, 5) || null,
-      meetingId: data.meetingId,
-      duration: data.duration,
-      frequency: data.frequency,
-    };
+    return tableToInterfaceEnrollments(data);
   } catch (error) {
     throw error;
   }

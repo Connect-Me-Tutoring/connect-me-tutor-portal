@@ -41,3 +41,11 @@ jobs:
 
       - name: Run TypeScript check
         run: npm run typecheck
+
+      - name: Check Supabase types are up to date
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
+        run: |
+          npm run gen:types
+          git diff --exit-code types/database.types.ts

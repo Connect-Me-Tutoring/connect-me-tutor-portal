@@ -8,6 +8,7 @@ import { fetchDaySessionsFromSchedule } from "./session.actions";
 import { addHours, areIntervalsOverlapping, isValid, parseISO } from "date-fns";
 import { formatAvailabilityAsDate } from "../utils";
 import { getEnrollmentAvailability } from "../enrollment-schedule";
+import { tableToInterfaceMeetings } from "../type-utils";
 
 export const MEETING_CONFIG = {
   meetings: [
@@ -63,14 +64,7 @@ export async function getMeeting(meetingId: string): Promise<Meeting | null> {
     }
 
     // Map the fetched data to the Meeting object
-    const meeting: Meeting = {
-      id: data.id,
-      createdAt: data.created_at,
-      password: data.password,
-      meetingId: data.meeting_id,
-      link: data.link,
-      name: data.name,
-    };
+    const meeting: Meeting = tableToInterfaceMeetings(data);
 
     return meeting;
   } catch (error) {

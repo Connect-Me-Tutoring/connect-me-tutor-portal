@@ -34,11 +34,16 @@ import toast from "react-hot-toast";
 import { DatabaseIcon } from "lucide-react";
 import { Table } from "../supabase/tables";
 import { handleCalculateDuration } from "@/lib/utils";
-import { tableToInterfaceProfiles, tableToInterfaceSessions } from "../type-utils";
+import {
+  tableToInterfaceProfiles,
+  tableToInterfaceSessions,
+  tableToInterfaceMeetings,
+} from "../type-utils";
 import { getEnrollmentAvailability, getEnrollmentSchedule } from "../enrollment-schedule";
 import { createPairingRequest } from "./pairing.actions";
 import { scheduleMultipleSessionReminders } from "../twilio";
 import { removeFutureSessions } from "./enrollment.server.actions";
+import type { Database } from "@/types/database.types";
 // import { getMeeting } from "./meeting.actions";
 
 const { fromZonedTime } = DateFNS;
@@ -57,7 +62,7 @@ type EnrollmentTableRow = {
   duration?: number | null;
   end_date?: string | null;
   end_time?: string | null;
-  frequency?: string | null;
+  frequency?: Database["public"]["Enums"]["session_frequency"] | null;
   id?: string | null;
   meetingId?: string | null;
   paused?: boolean | null;
@@ -128,33 +133,7 @@ export async function getAllProfiles(
     }
 
     // Map database fields to camelCase Profile model
-    const userProfiles: Profile[] = data.map((profile) => ({
-      id: profile.id,
-      createdAt: profile.created_at,
-      role: profile.role,
-      userId: profile.user_id,
-      age: profile.age,
-      grade: profile.grade,
-      gender: profile.gender,
-      firstName: profile.first_name,
-      lastName: profile.last_name,
-      dateOfBirth: profile.date_of_birth,
-      startDate: profile.start_date,
-      availability: profile.availability,
-      email: profile.email,
-      phoneNumber: profile.phone_number,
-      parentName: profile.parent_name,
-      parentPhone: profile.parent_phone,
-      parentEmail: profile.parent_email,
-      tutorIds: profile.tutor_ids,
-      timeZone: profile.timezone,
-      subjectsOfInterest: profile.subjects_of_interest,
-      status: profile.status,
-      studentNumber: profile.student_number,
-      settingsId: profile.settings_id,
-      subjects_of_interest: profile.subjects_of_interest,
-      languages_spoken: profile.languages_spoken,
-    }));
+    const userProfiles: Profile[] = data.map(tableToInterfaceProfiles);
 
     return userProfiles;
   } catch (error) {
@@ -230,32 +209,7 @@ export async function getUserFromId(profileId: string) {
     }
     if (!profile) return null;
 
-    const userProfile: Profile = {
-      id: profile.id,
-      createdAt: profile.created_at,
-      role: profile.role,
-      userId: profile.user_id,
-      firstName: profile.first_name,
-      lastName: profile.last_name,
-      age: profile.age,
-      grade: profile.grade,
-      gender: profile.gender,
-      dateOfBirth: profile.date_of_birth,
-      startDate: profile.start_date,
-      availability: profile.availability,
-      email: profile.email,
-      phoneNumber: profile.phone_number,
-      parentName: profile.parent_name,
-      parentPhone: profile.parent_phone,
-      parentEmail: profile.parent_email,
-      tutorIds: profile.tutor_ids,
-      timeZone: profile.timezone,
-      subjects_of_interest: profile.subjects_of_interest,
-      languages_spoken: profile.languages_spoken,
-      status: profile.status,
-      studentNumber: profile.student_number,
-      settingsId: profile.settings_id,
-    };
+    const userProfile: Profile = tableToInterfaceProfiles(profile);
     return userProfile;
   } catch (error) {
     console.error("Failed to fetch user");
@@ -708,14 +662,7 @@ export async function getMeeting(id: string): Promise<Meeting | null> {
       return null; // Valid return
     }
     // Mapping the fetched data to the Notification object
-    const meeting: Meeting = {
-      id: data.id,
-      name: data.name,
-      meetingId: data.meeting_id,
-      password: data.password,
-      link: data.link,
-      createdAt: data.created_at,
-    };
+    const meeting: Meeting = tableToInterfaceMeetings(data);
     return meeting; // Return the array of notifications
   } catch (error) {
     console.error("Unexpected error in getMeeting:", error);

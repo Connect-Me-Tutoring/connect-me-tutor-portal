@@ -3,12 +3,17 @@
 import { supabase } from "@/lib/supabase/client";
 import { Enrollment, Availability, Session } from "@/types";
 import { Table } from "../supabase/tables";
-import { tableToInterfaceProfiles, tableToInterfaceMeetings } from "../type-utils";
+import {
+  tableToInterfaceProfiles,
+  tableToInterfaceMeetings,
+  tableToInterfaceEnrollments,
+} from "../type-utils";
 import { SharedEnrollment } from "@/types/enrollment";
 import { addOneSession } from "./session.actions";
 import { handleCalculateDuration, isValidUUID } from "../utils";
 import { addDays, format } from "date-fns";
 import { fromZonedTime } from "date-fns-tz";
+import type { Json } from "@/types/database.types";
 
 export async function getEnrollments(tutorId: string): Promise<Enrollment[] | null> {
   try {
@@ -98,7 +103,7 @@ export const getOverlappingAvailabilites = async (
       b: studentAvailability,
     });
     if (error) throw error;
-    return data;
+    return (data ?? []) as unknown as Availability[];
   } catch (error) {
     console.error("Failed to get overlapping availabilities");
     throw error;
@@ -176,7 +181,7 @@ export async function getAccountEnrollments(userId: string) {
     return null;
   }
 
-  return (data as SharedEnrollment[]) || ([] as SharedEnrollment[]);
+  return (data as unknown as SharedEnrollment[]) || ([] as SharedEnrollment[]);
 }
 
 const sql = `
@@ -240,7 +245,7 @@ export const addEnrollment = async (enrollment: Omit<Enrollment, "id" | "created
         summary: enrollment.summary,
         start_date: enrollment.startDate,
         end_date: enrollment.endDate,
-        availability: enrollment.availability,
+        availability: enrollment.availability as unknown as Json,
         meetingId: enrollment.meetingId,
         duration: duration,
         frequency: enrollment.frequency,
@@ -259,18 +264,25 @@ export const addEnrollment = async (enrollment: Omit<Enrollment, "id" | "created
       throw error;
     }
 
-    if (data) {
+    if (!data) {
+      throw new Error("No data returned when adding enrollment");
+    }
+
+    {
       const tutor = tableToInterfaceProfiles(data.tutor);
       const student = tableToInterfaceProfiles(data.student);
       const meeting = tableToInterfaceMeetings(data.meeting);
-      const date = sessionTimeFromEnrollment(data.availability[0], data.start_date);
+      const date = sessionTimeFromEnrollment(
+        (data.availability as unknown as Availability[])[0],
+        data.start_date ?? enrollment.startDate,
+      );
 
       const firstSession: Session = {
         id: "",
         enrollmentId: data.id,
         createdAt: new Date().toISOString(),
         date: date,
-        summary: data.summary,
+        summary: data.summary ?? enrollment.summary,
         student: student,
         tutor: tutor,
         meeting: meeting,
@@ -285,19 +297,7 @@ export const addEnrollment = async (enrollment: Omit<Enrollment, "id" | "created
       await addOneSession(firstSession);
     }
 
-    return {
-      createdAt: data?.created_at,
-      id: data?.id,
-      summary: data?.summary,
-      student: data?.student ? tableToInterfaceProfiles(data.student) : null,
-      tutor: data?.tutor ? tableToInterfaceProfiles(data.tutor) : null,
-      startDate: data?.start_date,
-      endDate: data?.end_date,
-      availability: data?.availability,
-      meetingId: data?.meetingId,
-      duration: data?.duration,
-      frequency: data?.frequency,
-    };
+    return tableToInterfaceEnrollments(data);
   } catch (error) {
     throw error;
   }
