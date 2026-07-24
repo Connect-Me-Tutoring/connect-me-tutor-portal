@@ -458,7 +458,7 @@ export const getPairingLogs = async (
   if (error) throw error;
   if (!logs) return [];
 
-  return logs.map(mapRpcPairingLog);
+  return logs.map((log) => mapRpcPairingLog(log as unknown as Parameters<typeof mapRpcPairingLog>[0]));
 };
 
 export type IncomingPairingMatch = {
@@ -481,7 +481,7 @@ export const getIncomingPairingMatches = async (profileId: string) => {
 
   if (error || !data) return data;
 
-  const list = data as IncomingPairingMatch[];
+  const list = data as unknown as IncomingPairingMatch[];
   return list.filter((m) => m.tutor_status !== "rejected" && m.tutor_status !== "accepted");
 };
 
@@ -604,11 +604,16 @@ const isOverlap = (start1: number, end1: number, start2: number, end2: number) =
 export const getAvailableMeetingLink = async (start: string, end: string, day: string) => {
   try {
     // Get all enrollments since we can't easily filter JSON arrays in Supabase
-    const { data: allEnrollments, error } = await supabase
+    const { data: allEnrollmentsRaw, error } = await supabase
       .from("Enrollments")
       .select("meetingId, availability");
 
     if (error) throw error;
+
+    const allEnrollments = allEnrollmentsRaw as unknown as {
+      meetingId: string | null;
+      availability: { day: string; startTime: string; endTime: string }[];
+    }[];
 
     // Filter in JavaScript for arrays
     const availableMeetings =
@@ -687,7 +692,7 @@ export const getAutomaticEnrollment = async (
         student: student,
         tutor: tutor,
         availability: [autoAvailability.availability],
-        meetingId: autoAvailability.meeting.meetingId,
+        meetingId: autoAvailability.meeting.meetingId || "",
         paused: false,
         duration: 1,
         startDate: new Date().toISOString(),
@@ -724,7 +729,7 @@ export const updatePairingMatchStatus = async (
     return;
   }
 
-  const pairingMatch = pmRaw as IncomingPairingMatch;
+  const pairingMatch = pmRaw as unknown as IncomingPairingMatch;
   const { student, tutor } = pairingMatch;
 
   if (status === "accepted") {

@@ -23,6 +23,7 @@ import { Profile } from "@/types";
 import toast, { Toaster } from "react-hot-toast";
 import { switchProfile, getProfileUncached } from "@/lib/actions/profile.server.actions";
 import { useProfile } from "@/lib/contexts/profileContext";
+import type { Database } from "@/types/database.types";
 import { getUserProfiles } from "@/lib/actions/profile.server.actions";
 
 interface AccountFormType {
@@ -207,7 +208,10 @@ export default function SettingsPage({
         updatePayload.status = accountStatus;
       }
 
-      const { error } = await supabase.from("Profiles").update(updatePayload).eq("id", profile.id);
+      const { error } = await supabase
+        .from("Profiles")
+        .update(updatePayload as Database["public"]["Tables"]["Profiles"]["Update"])
+        .eq("id", profile.id);
 
       if (error) throw error;
 

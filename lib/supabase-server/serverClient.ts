@@ -1,10 +1,11 @@
 "use server";
 
 import { createClient, SupabaseClient } from "@supabase/supabase-js";
+import type { Database } from "@/types/database.types";
 
-let supabaseInstance: SupabaseClient | null = null;
+let supabaseInstance: SupabaseClient<Database> | null = null;
 
-export const getSupabase = (): SupabaseClient => {
+export const getSupabase = (): SupabaseClient<Database> => {
   if (!supabaseInstance) {
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
     const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -13,7 +14,7 @@ export const getSupabase = (): SupabaseClient => {
       throw new Error("Missing supabase environment variables");
     }
 
-    supabaseInstance = createClient(supabaseUrl, supabaseServiceKey);
+    supabaseInstance = createClient<Database>(supabaseUrl, supabaseServiceKey);
   }
 
   return supabaseInstance;

@@ -71,7 +71,7 @@ export interface Event {
   tutorId: string;
   id: string;
   hours: number;
-  type: string;
+  type: import("@/types/database.types").Database["public"]["Enums"]["event_type"];
 }
 
 // Type for Student s
@@ -90,7 +90,7 @@ export interface Enrollment {
   meetingId: string;
   paused: boolean;
   duration: number;
-  frequency: string;
+  frequency: import("@/types/database.types").Database["public"]["Enums"]["session_frequency"];
 }
 
 export interface Availability {
