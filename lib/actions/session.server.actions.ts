@@ -1,6 +1,9 @@
 "use server";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { Enrollment, Meeting, Session } from "@/types";
+import type { Database } from "@/types/database.types";
+
+type SessionStatus = Database["public"]["Enums"]["session_status"];
 import { toast } from "react-hot-toast";
 import { Client } from "@upstash/qstash";
 import { createAdminClient, createClient } from "@/lib/supabase/server";
@@ -14,7 +17,6 @@ import {
   requireTutorProfileAccess,
 } from "./authz.server";
 import { Profile } from "@/types";
-import { getProfileWithProfileId } from "./user.actions";
 import { getMeeting } from "./meeting.server.actions";
 import { createServerClient } from "../supabase/server";
 import { Table } from "../supabase/tables";
@@ -998,11 +1000,6 @@ export async function getSessionById(
       return null;
     }
 
-    const [student, tutor] = await Promise.all([
-      getProfileWithProfileId(sessionData.student_id),
-      getProfileWithProfileId(sessionData.tutor_id),
-    ]);
-
     const session: Session = tableToInterfaceSessions(sessionData);
 
     if (!options?.skipAccessCheck) {
@@ -1022,7 +1019,7 @@ export async function getTutorSessions(
   params: {
     startDate?: string;
     endDate?: string;
-    status?: string | string[];
+    status?: SessionStatus | SessionStatus[];
     orderBy?: string;
     ascending?: boolean;
   },
@@ -1082,7 +1079,7 @@ export async function getStudentSessions(
   params?: {
     startDate?: string;
     endDate?: string;
-    status?: string | string[];
+    status?: SessionStatus | SessionStatus[];
     orderBy?: string;
     ascending?: boolean;
   },
@@ -1156,7 +1153,12 @@ export async function rescheduleSession(
         meeting_id: meetingId,
       })
       .eq("id", sessionId)
-      .select("*")
+      .select(
+        `*,
+        tutor:Profiles!tutor_id(*),
+        student:Profiles!student_id(*),
+        meeting:Meetings!meeting_id(*)`,
+      )
       .single();
 
     if (error) throw error;
@@ -1173,7 +1175,7 @@ export async function rescheduleSession(
 
     if (notificationError) throw notificationError;
     if (sessionData) {
-      return sessionData;
+      return tableToInterfaceSessions(sessionData);
     }
   } catch (error) {
     console.error("Unable to reschedule", error);
@@ -1290,7 +1292,7 @@ export async function cancelUnsubmittedSEFCron() {
   return { success: true, error: undefined, cancelled: sessions.length };
 }
 
-export async function updateSessionsStatus(sessionIds: string[], status: string) {
+export async function updateSessionsStatus(sessionIds: string[], status: SessionStatus) {
   try {
     const supabase = await createClient();
     const { error } = await supabase.from(Table.Sessions).update({ status }).in("id", sessionIds);
@@ -1348,16 +1350,19 @@ export async function updateSession(updatedSession: Session, updateEmail: boolea
       return null;
     }
 
-    if (data) {
-      return data[0];
-    } else {
+    if (!data) {
       console.error("NO DATA");
       await logError(new Error("No data returned when updating session"), { session_id: id }, "session_error");
+      return null;
     }
-    if (updateEmail && data) {
-      const newSession: Session = tableToInterfaceSessions(data);
+
+    const newSession: Session = tableToInterfaceSessions(data);
+
+    if (updateEmail) {
       await updateScheduledEmailBeforeSessions(newSession);
     }
+
+    return newSession;
   } catch (error) {
     console.error("Unable to update session");
     await logError(error, { session_id: updatedSession.id }, "session_error");

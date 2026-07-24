@@ -7,6 +7,7 @@ import { fetchDaySessionsFromSchedule } from "./session.actions";
 import { addHours, areIntervalsOverlapping, isValid, parseISO } from "date-fns";
 import { Table } from "../supabase/tables";
 import { logError } from "@/lib/posthog";
+import { tableToInterfaceMeetings } from "../type-utils";
 
 export async function getMeeting(id: string): Promise<Meeting | null> {
   try {
@@ -38,14 +39,7 @@ export async function getMeeting(id: string): Promise<Meeting | null> {
       return null; // Valid return
     }
     // Mapping the fetched data to the Notification object
-    const meeting: Meeting = {
-      id: data.id,
-      name: data.name,
-      meetingId: data.meeting_id,
-      password: data.password,
-      link: data.link,
-      createdAt: data.created_at,
-    };
+    const meeting: Meeting = tableToInterfaceMeetings(data);
     return meeting; // Return the array of notifications
   } catch (error) {
     console.error("Unexpected error in getMeeting:", error);
@@ -60,10 +54,8 @@ export async function getMeetings(options?: { omit?: string[] }): Promise<Meetin
     const omittedLinks = options ? (options.omit ? options.omit : []) : [];
 
     // Fetch meeting details from Supabase
-    const { data, error } = await supabase
-      .from(Table.Meetings)
-      .select(
-        `
+    let query = supabase.from(Table.Meetings).select(
+      `
         id,
         link,
         meeting_id,
@@ -71,8 +63,13 @@ export async function getMeetings(options?: { omit?: string[] }): Promise<Meetin
         created_at,
         name
       `,
-      )
-      .neq("name", omittedLinks);
+    );
+
+    if (omittedLinks.length > 0) {
+      query = query.not("name", "in", `(${omittedLinks.join(",")})`);
+    }
+
+    const { data, error } = await query;
 
     // Check for errors and log them
     if (error) {
@@ -87,17 +84,7 @@ export async function getMeetings(options?: { omit?: string[] }): Promise<Meetin
     }
 
     // Mapping the fetched data to the Notification object
-    const meetings: Meeting[] = await Promise.all(
-      data.map(async (meeting: any) => ({
-        id: meeting.id,
-        name: meeting.name,
-        meetingId: meeting.meeting_id,
-        password: meeting.password,
-        link: meeting.link,
-        createdAt: meeting.created_at,
-        // name: meeting.name,
-      })),
-    );
+    const meetings: Meeting[] = data.map(tableToInterfaceMeetings);
 
     return meetings; // Return the array of notifications
   } catch (error) {

@@ -1,4 +1,7 @@
 import { Profile, Session, Notification, Event, Enrollment, Meeting } from "@/types";
+import type { Database } from "@/types/database.types";
+
+type SessionStatus = Database["public"]["Enums"]["session_status"];
 import {
   deleteScheduledEmailBeforeSessions,
   sendScheduledEmailsBeforeSessions,
@@ -264,7 +267,7 @@ export async function getStudentSessions(
   params?: {
     startDate?: string;
     endDate?: string;
-    status?: string | string[];
+    status?: SessionStatus | SessionStatus[];
     orderBy?: string;
     ascending?: boolean;
   },
@@ -322,7 +325,7 @@ export async function getTutorSessions(
   params: {
     startDate?: string;
     endDate?: string;
-    status?: string | string[];
+    status?: SessionStatus | SessionStatus[];
     orderBy?: string;
     ascending?: boolean;
   },

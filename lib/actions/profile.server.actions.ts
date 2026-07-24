@@ -130,33 +130,7 @@ export async function getAllProfiles(
     }
 
     // Map database fields to camelCase Profile model
-    const userProfiles: Profile[] = data.map((profile) => ({
-      id: profile.id,
-      createdAt: profile.created_at,
-      role: profile.role,
-      userId: profile.user_id,
-      age: profile.age,
-      grade: profile.grade,
-      gender: profile.gender,
-      firstName: profile.first_name,
-      lastName: profile.last_name,
-      dateOfBirth: profile.date_of_birth,
-      startDate: profile.start_date,
-      availability: profile.availability,
-      email: profile.email,
-      phoneNumber: profile.phone_number,
-      parentName: profile.parent_name,
-      parentPhone: profile.parent_phone,
-      parentEmail: profile.parent_email,
-      tutorIds: profile.tutor_ids,
-      timeZone: profile.timezone,
-      subjectsOfInterest: profile.subjects_of_interest,
-      status: profile.status,
-      studentNumber: profile.student_number,
-      settingsId: profile.settings_id,
-      subjects_of_interest: profile.subjects_of_interest,
-      languages_spoken: profile.languages_spoken,
-    }));
+    const userProfiles: Profile[] = data.map(tableToInterfaceProfiles);
 
     return userProfiles;
   } catch (error) {

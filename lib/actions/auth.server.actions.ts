@@ -12,6 +12,7 @@ import { createPassword } from "../utils";
 import { cachedGetUser, getProfileRole } from "./user.server.actions";
 import { isCronRequestAuthorized } from "@/lib/security/cron";
 import { logError } from "@/lib/posthog";
+import type { Database } from "@/types/database.types";
 
 interface UserMetadata {
   email: string;
@@ -167,7 +168,8 @@ export const createUser = async (newProfileData: CreatedProfileData) => {
         const { data } = await supabase.rpc("get_user_by_email", {
           email: newProfileData.email,
         });
-        if (data) await supabase.auth.admin.deleteUser(data.id);
+        const userRecord = data as unknown as { id: string } | null;
+        if (userRecord) await supabase.auth.admin.deleteUser(userRecord.id);
         throw authError;
       }
       userId = newUserId;
@@ -197,7 +199,7 @@ export const createUser = async (newProfileData: CreatedProfileData) => {
 
     const { data: createdProfile, error: profileError } = await supabase
       .from("Profiles")
-      .insert(userMetadata)
+      .insert(userMetadata as unknown as Database["public"]["Tables"]["Profiles"]["Insert"])
       .select()
       .single();
 
@@ -266,12 +268,13 @@ export const deleteUser = async (profileId: string) => {
       .single()
       .throwOnError();
 
+    if (!profile.user_id) {
+      throw new Error(`Profile ${profileId} has no associated user_id`);
+    }
+    const userId = profile.user_id;
+
     const [res1, res2] = await Promise.all([
-      adminSupabase
-        .from(Table.Profiles)
-        .select("id, user_id")
-        .eq("user_id", profile.user_id)
-        .throwOnError(),
+      adminSupabase.from(Table.Profiles).select("id, user_id").eq("user_id", userId).throwOnError(),
       adminSupabase
         .from("user_settings")
         .select(
@@ -281,7 +284,7 @@ export const deleteUser = async (profileId: string) => {
         `,
         )
         .eq("last_active_profile_id", profileId)
-        .eq("user_id", profile.user_id)
+        .eq("user_id", userId)
         .maybeSingle()
         .throwOnError(),
     ]);
@@ -290,9 +293,11 @@ export const deleteUser = async (profileId: string) => {
     const userSettings = res2.data;
 
     if (relatedProfiles.length == 1) {
-      const { error: authError } = await adminSupabase.auth.admin.deleteUser(
-        relatedProfiles[0].user_id,
-      );
+      const relatedUserId = relatedProfiles[0].user_id;
+      if (!relatedUserId) {
+        throw new Error(`Related profile ${relatedProfiles[0].id} has no associated user_id`);
+      }
+      const { error: authError } = await adminSupabase.auth.admin.deleteUser(relatedUserId);
 
       if (authError) throw authError;
     } else if (userSettings && userSettings.last_active_profile_id == profileId) {
