@@ -6,5 +6,5 @@ import { supabase } from "@/lib/supabase/client";
 
 export async function fetchAdminConversations() {
   const { data, error } = await supabase.rpc("get_admin_conversations");
-  return data as AdminConversation[];
+  return data as unknown as AdminConversation[];
 }

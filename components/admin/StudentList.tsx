@@ -51,7 +51,7 @@ import {
   getUserFromId,
   resendEmailConfirmation,
 } from "@/lib/actions/admin.actions";
-import { editProfile } from "@/lib/actions/profile.server.actions"
+import { editProfile } from "@/lib/actions/profile.server.actions";
 import { deleteUser } from "@/lib/actions/auth.server.actions";
 import { addUser } from "@/lib/actions/auth.actions";
 import { createClient } from "@/lib/supabase/client";
@@ -127,15 +127,11 @@ const StudentList = ({ initialStudents }: any) =>
       tutorIds: [],
       studentNumber: "",
     });
-    const [selectedStudent, setSelectedStudent] = useState<Profile | null>(
-      null
-    );
+    const [selectedStudent, setSelectedStudent] = useState<Profile | null>(null);
 
     //---Modals
     const [isDeactivateModalOpen, setIsDeactivateModalOpen] = useState(false);
-    const [selectedStudentId, setSelectedStudentId] = useState<string | null>(
-      null
-    );
+    const [selectedStudentId, setSelectedStudentId] = useState<string | null>(null);
     const [isReactivateModalOpen, setIsReactivateModalOpen] = useState(false);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
@@ -158,25 +154,18 @@ const StudentList = ({ initialStudents }: any) =>
 
         setProfile(profileData);
 
-        const studentsData = await getAllProfiles(
-          "Student",
-          "created_at",
-          false
-        );
+        const studentsData = await getAllProfiles("Student", "created_at", false);
         if (!studentsData) throw new Error("No students found");
 
         setStudents(studentsData);
         setFilteredStudents(studentsData);
       } catch (error) {
         console.error("Error fetching tutor data:", error);
-        setError(
-          error instanceof Error ? error.message : "An unknown error occurred"
-        );
+        setError(error instanceof Error ? error.message : "An unknown error occurred");
       } finally {
         setLoading(false);
       }
     };
-
 
     useEffect(() => {
       const filtered = students.filter((student) => {
@@ -231,9 +220,7 @@ const StudentList = ({ initialStudents }: any) =>
     };
 
     const handleTimeZoneForEdit = (value: string) => {
-      setSelectedStudent((prev) =>
-        prev ? { ...prev, timeZone: value } : null
-      );
+      setSelectedStudent((prev) => (prev ? { ...prev, timeZone: value } : null));
     };
 
     const handleGender = (value: string) => {
@@ -251,39 +238,28 @@ const StudentList = ({ initialStudents }: any) =>
 
     const paginatedStudents = filteredStudents.slice(
       (currentPage - 1) * rowsPerPage,
-      currentPage * rowsPerPage
+      currentPage * rowsPerPage,
     );
 
     const handleInputChange = (
-      e: React.ChangeEvent<
-        HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
-      >
+      e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>,
     ) => {
       const { name, value } = e.target;
       setNewStudent((prev) => ({ ...prev, [name]: value }));
     };
 
     const handleInputChangeForEdit = (
-      e: React.ChangeEvent<
-        HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
-      >
+      e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>,
     ) => {
       const { name, value } = e.target;
-      setSelectedStudent((prev) =>
-        prev ? ({ ...prev, [name]: value } as Profile) : null
-      );
+      setSelectedStudent((prev) => (prev ? ({ ...prev, [name]: value } as Profile) : null));
     };
 
     const handleEditProfile = (name: string, value: any) => {
-      setSelectedStudent((prev) =>
-        prev ? ({ ...prev, [name]: value } as Profile) : null
-      );
+      setSelectedStudent((prev) => (prev ? ({ ...prev, [name]: value } as Profile) : null));
     };
 
-    const handleAvailabilityChange = (
-      e: React.ChangeEvent<HTMLInputElement>,
-      index: number
-    ) => {
+    const handleAvailabilityChange = (e: React.ChangeEvent<HTMLInputElement>, index: number) => {
       const { name, value } = e.target;
       setNewStudent((prev) => {
         const newAvailability = [...(prev.availability || [])];
@@ -293,21 +269,13 @@ const StudentList = ({ initialStudents }: any) =>
     };
 
     const handleSubjectsChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-      const subjects = e.target.value
-        .split(",")
-        .map((subject) => subject.trim());
+      const subjects = e.target.value.split(",").map((subject) => subject.trim());
       setNewStudent((prev) => ({ ...prev, subjectsOfInterest: subjects }));
     };
 
-    const handleSubjectsChangeForEdit = (
-      e: React.ChangeEvent<HTMLInputElement>
-    ) => {
-      const subjects = e.target.value
-        .split(",")
-        .map((subject) => subject.trim());
-      setSelectedStudent(
-        (prev) => ({ ...prev, subjectsOfInterest: subjects }) as Profile
-      );
+    const handleSubjectsChangeForEdit = (e: React.ChangeEvent<HTMLInputElement>) => {
+      const subjects = e.target.value.split(",").map((subject) => subject.trim());
+      setSelectedStudent((prev) => ({ ...prev, subjectsOfInterest: subjects }) as Profile);
     };
 
     const handleAddStudentWithParam = async (student: Partial<Profile>) => {
@@ -346,10 +314,12 @@ const StudentList = ({ initialStudents }: any) =>
       } catch (error) {
         const err = error as Error;
         console.error("Error adding student:", err.message);
-        
+
         // Provide more descriptive error messages
         if (err.message.includes("Email")) {
-          toast.error("Failed to add student. Please check the email address and ensure it is valid and unique.");
+          toast.error(
+            "Failed to add student. Please check the email address and ensure it is valid and unique.",
+          );
         } else if (err.message.includes("required")) {
           toast.error(`Failed to add student. Required field error: ${err.message}`);
         } else {
@@ -364,11 +334,7 @@ const StudentList = ({ initialStudents }: any) =>
       try {
         setAddingStudent(true);
         // Ensure addStudent returns a Profile
-        const addedStudent: Profile = await addUser(
-          newStudent,
-          "Student",
-          true
-        );
+        const addedStudent: Profile = await addUser(newStudent, "Student", true);
 
         // Update local state
         setStudents((prevStudents) => {
@@ -418,10 +384,12 @@ const StudentList = ({ initialStudents }: any) =>
       } catch (error) {
         const err = error as Error;
         console.error("Error adding student:", err.message);
-        
+
         // Provide more descriptive error messages
         if (err.message.includes("Email")) {
-          toast.error("Failed to add student. Please check the email address and ensure it is valid and unique.");
+          toast.error(
+            "Failed to add student. Please check the email address and ensure it is valid and unique.",
+          );
         } else if (err.message.includes("required")) {
           toast.error(`Failed to add student. Required field error: ${err.message}`);
         } else {
@@ -518,7 +486,7 @@ const StudentList = ({ initialStudents }: any) =>
       const csvContent = [
         headers.join(","),
         ...csvData.map((row) =>
-          row.map((cell) => `"${(cell || "").replace(/"/g, '""')}"`).join(",")
+          row.map((cell) => `"${(cell || "").replace(/"/g, '""')}"`).join(","),
         ),
       ].join("\n");
 
@@ -634,8 +602,8 @@ const StudentList = ({ initialStudents }: any) =>
                         </AlertDialogTitle>
                         <AlertDialogDescription>
                           {" "}
-                          Note: Will not resend confirmation email if the user
-                          has already signed in before
+                          Note: Will not resend confirmation email if the user has already signed in
+                          before
                         </AlertDialogDescription>
                       </AlertDialogHeader>
                       <AlertDialogFooter>
@@ -643,12 +611,8 @@ const StudentList = ({ initialStudents }: any) =>
                         <AlertDialogAction
                           onClick={() =>
                             resendEmailConfirmation(student.email)
-                              .then(() =>
-                                toast.success("Resent Email Confirmation")
-                              )
-                              .catch(() =>
-                                toast.error("Failed to resend email")
-                              )
+                              .then(() => toast.success("Resent Email Confirmation"))
+                              .catch(() => toast.error("Failed to resend email"))
                           }
                         >
                           Resend
@@ -666,10 +630,7 @@ const StudentList = ({ initialStudents }: any) =>
           <span>{filteredStudents.length} row(s) total.</span>
           <div className="flex items-center space-x-2">
             <span>Rows per page</span>
-            <Select
-              value={rowsPerPage.toString()}
-              onValueChange={handleRowsPerPageChange}
-            >
+            <Select value={rowsPerPage.toString()} onValueChange={handleRowsPerPageChange}>
               <SelectTrigger className="w-[70px]">
                 <SelectValue placeholder={rowsPerPage.toString()} />
               </SelectTrigger>

@@ -29,10 +29,7 @@ export async function POST(request: NextRequest) {
     const result = await sendChatMessageNotificationEmailTest(parsed);
 
     if (!result.ok) {
-      return NextResponse.json(
-        { error: result.error },
-        { status: 500 },
-      );
+      return NextResponse.json({ error: result.error }, { status: 500 });
     }
 
     return NextResponse.json({ ok: true });

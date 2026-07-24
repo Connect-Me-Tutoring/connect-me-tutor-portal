@@ -15,22 +15,19 @@ import {
 } from "@/components/ui/table";
 import { Session, Event, Enrollment } from "@/types";
 import { addDays, subDays } from "date-fns";
-import {
-  getAllEventDetailsForTutor,
-  getSessionHoursByStudent,
-} from "@/lib/actions/hours.actions";
+import { getAllEventDetailsForTutor, getSessionHoursByStudent } from "@/lib/actions/hours.actions";
 import toast from "react-hot-toast";
 import { Button } from "@/components/ui/button";
 import { Card, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 
-interface EnrollmentDetails {
+export interface EnrollmentDetails {
   studentId: string;
   firstName: string;
   lastName: string;
   hours: number;
 }
 
-interface EventDetails {
+export interface EventDetails {
   eventId: string;
   date: any;
   hours: number;
@@ -45,9 +42,7 @@ const Stats = ({
   eventDetails: { [key: string]: EventDetails[] };
 }) => {
   const [activeTab, setActiveTab] = useState("cards");
-  const [expandedSections, setExpandedSections] = useState(
-    new Set(["TUTORING"]),
-  );
+  const [expandedSections, setExpandedSections] = useState(new Set(["TUTORING"]));
 
   const toggleSection = (section: any) => {
     const newExpanded = new Set(expandedSections);
@@ -110,9 +105,7 @@ const Stats = ({
                 <TableRow key={student.studentId}>
                   <TableCell>Sessions</TableCell>
                   <TableCell>Tutoring</TableCell>
-                  <TableCell>
-                    {student.firstName + " " + student.lastName}
-                  </TableCell>
+                  <TableCell>{student.firstName + " " + student.lastName}</TableCell>
                   <TableCell>-</TableCell>
                   <TableCell>{student.hours}</TableCell>
                 </TableRow>
@@ -147,21 +140,15 @@ const Stats = ({
             </CardHeader>
             <div className="grid grid-cols-3 gap-4 text-center">
               <div>
-                <div className="text-2xl font-bold text-[#1e40af]">
-                  {totalSessionHours}
-                </div>
+                <div className="text-2xl font-bold text-[#1e40af]">{totalSessionHours}</div>
                 <div className="text-sm text-gray-600">Session Hours</div>
               </div>
               <div>
-                <div className="text-2xl font-bold text-[#1e40af]">
-                  {totalEventHours}
-                </div>
+                <div className="text-2xl font-bold text-[#1e40af]">{totalEventHours}</div>
                 <div className="text-sm text-gray-600">Event Hours</div>
               </div>
               <div>
-                <div className="text-2xl font-bold text-[#1e40af]">
-                  {totalAllHours}
-                </div>
+                <div className="text-2xl font-bold text-[#1e40af]">{totalAllHours}</div>
                 <div className="text-sm text-gray-600">Total Hours</div>
               </div>
             </div>

@@ -1,12 +1,4 @@
-import {
-  Html,
-  Head,
-  Body,
-  Container,
-  Text,
-  Link,
-  Section,
-} from "@react-email/components";
+import { Html, Head, Body, Container, Text, Link, Section } from "@react-email/components";
 import { TutorMonthlyCheckInEmailProps } from "@/types/email";
 
 export default function TutorMonthlyCheckInEmail({
@@ -50,7 +42,9 @@ export default function TutorMonthlyCheckInEmail({
             margin: "0 0 16px 0",
           }}
         >
-          It&apos;s been {monthsSinceStart} month{monthsSinceStart !== 1 ? 's' : ''} since you started tutoring {student.firstName} {student.lastName}. We hope the sessions have been going well!
+          It&apos;s been {monthsSinceStart} month{monthsSinceStart !== 1 ? "s" : ""} since you
+          started tutoring {student.firstName} {student.lastName}. We hope the sessions have been
+          going well!
         </Text>
 
         <Section
@@ -134,7 +128,8 @@ export default function TutorMonthlyCheckInEmail({
             margin: "0 0 24px 0",
           }}
         >
-          Thank you for your dedication to mentoring and making a difference in {student.firstName}&apos;s education!
+          Thank you for your dedication to mentoring and making a difference in {student.firstName}
+          &apos;s education!
         </Text>
 
         <Text
@@ -145,8 +140,10 @@ export default function TutorMonthlyCheckInEmail({
             margin: "0",
           }}
         >
-          Best regards,<br />
-          The Connect Me Team<br />
+          Best regards,
+          <br />
+          The Connect Me Team
+          <br />
           <Link
             href="mailto:support@connectme.org"
             style={{

@@ -1,13 +1,6 @@
 "use client";
 import React, { useState, useEffect, useMemo, use } from "react";
-import {
-  AlarmClockMinus,
-  Copy,
-  MessageCircleIcon,
-  Search,
-  Timer,
-  TimerOff,
-} from "lucide-react";
+import { AlarmClockMinus, Copy, MessageCircleIcon, Search, Timer, TimerOff } from "lucide-react";
 import {
   cn,
   formatDateAdmin,
@@ -41,11 +34,7 @@ import {
   CommandItem,
   CommandList,
 } from "@/components/ui/command";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
   Table,
   TableBody,
@@ -90,15 +79,7 @@ import { checkAvailableMeetingForEnrollments } from "@/lib/actions/meeting.actio
 // import EnrollmentForm from "./components/EnrollmentForm";
 // import Availability from "@/components/student/AvailabilityFormat";
 
-const DAYS_OF_WEEK = [
-  "Monday",
-  "Tuesday",
-  "Wednesday",
-  "Thursday",
-  "Friday",
-  "Saturday",
-  "Sunday",
-];
+const DAYS_OF_WEEK = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
 
 const timeToMinutes = (time?: string | null) => {
   if (!time) return null;
@@ -163,13 +144,10 @@ const EnrollmentList = ({
     [enrollmentsPromise, meetingsPromise, studentsPromise],
   );
 
-  const [initialEnrollments, initialMeetings, initialStudents] =
-    use(combinedPromise);
+  const [initialEnrollments, initialMeetings, initialStudents] = use(combinedPromise);
 
-  const [enrollments, setEnrollments] =
-    useState<Enrollment[]>(initialEnrollments);
-  const [filteredEnrollments, setFilteredEnrollments] =
-    useState<Enrollment[]>(initialEnrollments);
+  const [enrollments, setEnrollments] = useState<Enrollment[]>(initialEnrollments);
+  const [filteredEnrollments, setFilteredEnrollments] = useState<Enrollment[]>(initialEnrollments);
   const [meetings, setMeetings] = useState<Meeting[]>(initialMeetings || []);
   const [students, setStudents] = useState<Profile[]>(initialStudents || []);
   const [tutors, setTutors] = useState<Profile[]>([profile]);
@@ -193,13 +171,9 @@ const EnrollmentList = ({
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-  const [isCheckingMeetingAvailability, setIsCheckingMeetingAvailability] =
-    useState(false);
-  const [selectedEnrollment, setSelectedEnrollment] =
-    useState<Enrollment | null>(null);
-  const [newEnrollment, setNewEnrollment] = useState<
-    Omit<Enrollment, "id" | "createdAt">
-  >({
+  const [isCheckingMeetingAvailability, setIsCheckingMeetingAvailability] = useState(false);
+  const [selectedEnrollment, setSelectedEnrollment] = useState<Enrollment | null>(null);
+  const [newEnrollment, setNewEnrollment] = useState<Omit<Enrollment, "id" | "createdAt">>({
     student: {} as Profile, // Initialize as an empty Profile
     tutor: profile,
     summary: "",
@@ -215,11 +189,8 @@ const EnrollmentList = ({
   const [meetingAvailability, setMeetingAvailability] = useState<{
     [key: string]: boolean;
   }>({});
-  const [overlappingAvailabilties, setOverlappingAvailabilites] = useState<
-    Availability[]
-  >([]);
-  const [showOverlappingAvailabilites, setShowOverlappingAvailabilties] =
-    useState(true);
+  const [overlappingAvailabilties, setOverlappingAvailabilites] = useState<Availability[]>([]);
+  const [showOverlappingAvailabilites, setShowOverlappingAvailabilties] = useState(true);
 
   const router = useRouter();
 
@@ -227,8 +198,7 @@ const EnrollmentList = ({
     const filtered = enrollments.filter((enrollment) => {
       const searchTerm = filterValue.toLowerCase().trim();
 
-      const studentFirstName =
-        enrollment.student?.firstName?.toLowerCase() || "";
+      const studentFirstName = enrollment.student?.firstName?.toLowerCase() || "";
       const studentLastName = enrollment.student?.lastName?.toLowerCase() || "";
       const studentEmail = enrollment.student?.email?.toLowerCase() || "";
 
@@ -249,12 +219,7 @@ const EnrollmentList = ({
 
       return (
         matchesSearch &&
-        enrollmentMatchesTimeFilter(
-          enrollment,
-          timeFilterDay,
-          timeFilterStart,
-          timeFilterEnd,
-        )
+        enrollmentMatchesTimeFilter(enrollment, timeFilterDay, timeFilterStart, timeFilterEnd)
       );
     });
     setFilteredEnrollments(filtered);
@@ -289,13 +254,7 @@ const EnrollmentList = ({
   const formatAvailabilityAsDate = (date: Availability): Date[] => {
     try {
       type DayName =
-        | "Sunday"
-        | "Monday"
-        | "Tuesday"
-        | "Wednesday"
-        | "Thursday"
-        | "Friday"
-        | "Saturday";
+        "Sunday" | "Monday" | "Tuesday" | "Wednesday" | "Thursday" | "Friday" | "Saturday";
       const dayMap: { [key in DayName]: number } = {
         Sunday: 0,
         Monday: 1,
@@ -310,10 +269,7 @@ const EnrollmentList = ({
       if (dayIndex === undefined) {
         throw new Error("Invalid Day of the Week");
       }
-      return [
-        toDateTime(date.startTime, dayIndex),
-        toDateTime(date.endTime, dayIndex),
-      ];
+      return [toDateTime(date.startTime, dayIndex), toDateTime(date.endTime, dayIndex)];
     } catch (error) {
       console.error("Failed to Format Date", error);
 
@@ -322,16 +278,13 @@ const EnrollmentList = ({
     }
   };
 
-  const areMeetingsAvailable = (
-    enroll: Omit<Enrollment, "id" | "createdAt">,
-  ) => {
+  const areMeetingsAvailable = (enroll: Omit<Enrollment, "id" | "createdAt">) => {
     setIsCheckingMeetingAvailability(true);
     const updatedMeetingAvailability: { [key: string]: boolean } = {};
     meetings.forEach((meeting) => {
       updatedMeetingAvailability[meeting.id] = true;
     });
-    const [newEnrollmentStartTime, newEnrollmentEndTime] = enroll
-      .availability[0]
+    const [newEnrollmentStartTime, newEnrollmentEndTime] = enroll.availability[0]
       ? formatAvailabilityAsDate(enroll.availability[0])
       : [new Date(NaN), new Date(NaN)];
     for (const enrollment of enrollments) {
@@ -345,8 +298,7 @@ const EnrollmentList = ({
             newEnrollmentEndTime.getTime() === existingEndTime.getTime()) ||
           (newEnrollmentStartTime < existingEndTime &&
             newEnrollmentStartTime > existingStartTime) ||
-          (newEnrollmentEndTime < existingEndTime &&
-            newEnrollmentEndTime > existingStartTime);
+          (newEnrollmentEndTime < existingEndTime && newEnrollmentEndTime > existingStartTime);
         //-----Only change to false if true before-----
         if (updatedMeetingAvailability[enrollment.meetingId]) {
           updatedMeetingAvailability[enrollment.meetingId] = !isOverlap;
@@ -358,36 +310,28 @@ const EnrollmentList = ({
     }
     setIsCheckingMeetingAvailability(false);
     setMeetingAvailability(updatedMeetingAvailability);
-    Object.entries(updatedMeetingAvailability).forEach(
-      ([meetingId, isAvailable]) => {
-        const meetingName = meetings.find((m) => m.id === meetingId)?.name;
-      },
-    );
+    Object.entries(updatedMeetingAvailability).forEach(([meetingId, isAvailable]) => {
+      const meetingName = meetings.find((m) => m.id === meetingId)?.name;
+    });
   };
 
-  const checkAvailableMeetings = async (
-    enrollment: Omit<Enrollment, "id" | "createdAt">,
-  ) => {
+  const checkAvailableMeetings = async (enrollment: Omit<Enrollment, "id" | "createdAt">) => {
     setIsCheckingMeetingAvailability(true);
     const otherEnrollments: Enrollment[] | null =
       allEnrollments.length > 0 ? allEnrollments : await getAllEnrollments();
     if (otherEnrollments) {
-      const updatedMeetingAvailability =
-        await checkAvailableMeetingForEnrollments(
-          enrollment,
-          otherEnrollments,
-          meetings,
-        );
+      const updatedMeetingAvailability = await checkAvailableMeetingForEnrollments(
+        enrollment,
+        otherEnrollments,
+        meetings,
+      );
       setMeetingAvailability(updatedMeetingAvailability);
       setAllEnrollments(otherEnrollments);
       setIsCheckingMeetingAvailability(false);
     }
   };
 
-  const isMeetingAvailable = (
-    meetingId: string,
-    enroll: Omit<Enrollment, "id" | "createdAt">,
-  ) => {
+  const isMeetingAvailable = (meetingId: string, enroll: Omit<Enrollment, "id" | "createdAt">) => {
     try {
       const now = new Date();
       const new_enrollment_date = new Date(
@@ -402,10 +346,7 @@ const EnrollmentList = ({
             `${enrollment.availability[0].day}, ${enrollment.availability[0].endTime}`,
           );
           sessionEndTime.setHours(sessionEndTime.getHours() + 1.5);
-          return (
-            sessionEndTime < new_enrollment_date &&
-            enrollment.meetingId === meetingId
-          );
+          return sessionEndTime < new_enrollment_date && enrollment.meetingId === meetingId;
         } catch (error) {
           console.error("Error processing session date:", error);
           return false;
@@ -440,17 +381,14 @@ const EnrollmentList = ({
       if (!enrollmentsData) throw new Error("No enrollments found");
 
       const sortedEnrollments = enrollmentsData.sort(
-        (a, b) =>
-          new Date(b.startDate).getTime() - new Date(a.startDate).getTime(),
+        (a, b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime(),
       );
 
       setEnrollments(sortedEnrollments);
       setFilteredEnrollments(sortedEnrollments);
     } catch (error) {
       console.error("Error fetching enrollment data:", error);
-      setError(
-        error instanceof Error ? error.message : "An unknown error occurred",
-      );
+      setError(error instanceof Error ? error.message : "An unknown error occurred");
       setIsCheckingMeetingAvailability(true); // Ensures that new enrollments are not accidentally added when unable to check for available meeting links
     } finally {
       setLoading(false);
@@ -473,9 +411,7 @@ const EnrollmentList = ({
     currentPage * rowsPerPage,
   );
 
-  const handleInputChange = (e: {
-    target: { name: string; value: string };
-  }) => {
+  const handleInputChange = (e: { target: { name: string; value: string } }) => {
     const { name, value } = e.target;
 
     // Helper function to handle nested updates
@@ -498,13 +434,9 @@ const EnrollmentList = ({
     };
 
     if (selectedEnrollment) {
-      setSelectedEnrollment((prevState) =>
-        handleNestedChange({ ...prevState }, name, value),
-      );
+      setSelectedEnrollment((prevState) => handleNestedChange({ ...prevState }, name, value));
     } else {
-      setNewEnrollment((prevState) =>
-        handleNestedChange({ ...prevState }, name, value),
-      );
+      setNewEnrollment((prevState) => handleNestedChange({ ...prevState }, name, value));
     }
   };
 
@@ -525,10 +457,7 @@ const EnrollmentList = ({
     try {
       const addedEnrollment = await addEnrollment(newEnrollment);
       if (addedEnrollment) {
-        setEnrollments([
-          { ...addedEnrollment, paused: false, duration: 1 },
-          ...enrollments,
-        ]);
+        setEnrollments([{ ...addedEnrollment, paused: false, duration: 1 }, ...enrollments]);
         setIsAddModalOpen(false);
         resetNewEnrollment();
         setSelectedTutorId(profile.id);
@@ -568,9 +497,7 @@ const EnrollmentList = ({
     if (selectedEnrollment) {
       try {
         await removeEnrollment(selectedEnrollment.id);
-        setEnrollments(
-          enrollments.filter((e) => e.id !== selectedEnrollment.id),
-        );
+        setEnrollments(enrollments.filter((e) => e.id !== selectedEnrollment.id));
         setIsDeleteModalOpen(false);
         setSelectedEnrollment(null);
         toast.success("Enrollment deleted successfully");
@@ -596,15 +523,11 @@ const EnrollmentList = ({
     });
   };
 
-  const handlePausePairingOverSummer = async (
-    updatedEnrollment: Enrollment,
-  ) => {
+  const handlePausePairingOverSummer = async (updatedEnrollment: Enrollment) => {
     try {
       setEnrollments((prev) =>
         prev.map((enrollment) =>
-          enrollment.id === updatedEnrollment.id
-            ? updatedEnrollment
-            : enrollment,
+          enrollment.id === updatedEnrollment.id ? updatedEnrollment : enrollment,
         ),
       );
 
@@ -736,10 +659,7 @@ const EnrollmentList = ({
                 value={timeFilterEnd}
                 onChange={(e) => setTimeFilterEnd(e.target.value)}
               />
-              {(filterValue ||
-                timeFilterDay !== "all" ||
-                timeFilterStart ||
-                timeFilterEnd) && (
+              {(filterValue || timeFilterDay !== "all" || timeFilterStart || timeFilterEnd) && (
                 <Button
                   variant="outline"
                   onClick={() => {
@@ -770,10 +690,7 @@ const EnrollmentList = ({
                         <Label htmlFor="tutor" className="text-right">
                           Student
                         </Label>
-                        <Popover
-                          open={openStudentOptions}
-                          onOpenChange={setOpenStudentOptions}
-                        >
+                        <Popover open={openStudentOptions} onOpenChange={setOpenStudentOptions}>
                           <PopoverTrigger asChild>
                             <Button
                               variant="outline"
@@ -781,8 +698,7 @@ const EnrollmentList = ({
                               aria-expanded={openStudentOptions}
                               className="col-span-3"
                             >
-                              {selectedStudentId &&
-                              studentsMap[selectedStudentId]
+                              {selectedStudentId && studentsMap[selectedStudentId]
                                 ? `${studentsMap[selectedStudentId].firstName} ${studentsMap[selectedStudentId].lastName}`
                                 : "Select a student"}
                               <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
@@ -819,8 +735,7 @@ const EnrollmentList = ({
                                             : "opacity-0",
                                         )}
                                       />
-                                      {student.firstName} {student.lastName} -{" "}
-                                      {student.email}
+                                      {student.firstName} {student.lastName} - {student.email}
                                     </CommandItem>
                                   ))}
                                 </CommandGroup>
@@ -834,10 +749,7 @@ const EnrollmentList = ({
                         <Label htmlFor="tutor" className="text-right">
                           Tutor
                         </Label>
-                        <Popover
-                          open={openTutorOptions}
-                          onOpenChange={setOpentTutorOptions}
-                        >
+                        <Popover open={openTutorOptions} onOpenChange={setOpentTutorOptions}>
                           <PopoverTrigger asChild>
                             <Button
                               variant="outline"
@@ -847,16 +759,8 @@ const EnrollmentList = ({
                             >
                               {selectedTutorId ? (
                                 <>
-                                  {
-                                    tutors.find(
-                                      (tutor) => tutor.id === selectedTutorId,
-                                    )?.firstName
-                                  }{" "}
-                                  {
-                                    tutors.find(
-                                      (tutor) => tutor.id === selectedTutorId,
-                                    )?.lastName
-                                  }
+                                  {tutors.find((tutor) => tutor.id === selectedTutorId)?.firstName}{" "}
+                                  {tutors.find((tutor) => tutor.id === selectedTutorId)?.lastName}
                                 </>
                               ) : (
                                 "Select a tutor"
@@ -878,11 +782,7 @@ const EnrollmentList = ({
                                     <CommandItem
                                       key={tutor.id}
                                       value={tutor.id}
-                                      keywords={[
-                                        tutor.firstName,
-                                        tutor.lastName,
-                                        tutor.email,
-                                      ]}
+                                      keywords={[tutor.firstName, tutor.lastName, tutor.email]}
                                       onSelect={() => {
                                         setSelectedTutorId(tutor.id);
                                         handleInputChange({
@@ -902,8 +802,7 @@ const EnrollmentList = ({
                                             : "opacity-0",
                                         )}
                                       />
-                                      {tutor.firstName} {tutor.lastName} -{" "}
-                                      {tutor.email}
+                                      {tutor.firstName} {tutor.lastName} - {tutor.email}
                                     </CommandItem>
                                   ))}
                                 </CommandGroup>
@@ -989,10 +888,8 @@ const EnrollmentList = ({
                                   <Loader2 className="mx-2 h-4 w-4 animate-spin" />
                                 </>
                               ) : newEnrollment.meetingId ? (
-                                meetings.find(
-                                  (meeting) =>
-                                    meeting.id === newEnrollment.meetingId,
-                                )?.name
+                                meetings.find((meeting) => meeting.id === newEnrollment.meetingId)
+                                  ?.name
                               ) : (
                                 "Select a meeting"
                               )}
@@ -1062,25 +959,18 @@ const EnrollmentList = ({
                   {paginatedEnrollments.map((enrollment) => (
                     <TableRow key={enrollment.id}>
                       <TableCell className="whitespace-nowrap">
-                        {enrollment.student?.firstName}{" "}
-                        {enrollment.student?.lastName}
+                        {enrollment.student?.firstName} {enrollment.student?.lastName}
                       </TableCell>
 
                       <TableCell className="whitespace-nowrap">
-                        {enrollment.tutor?.firstName}{" "}
-                        {enrollment.tutor?.lastName}
+                        {enrollment.tutor?.firstName} {enrollment.tutor?.lastName}
                       </TableCell>
 
                       <TableCell className="min-w-[180px]">
-                        <AvailabilityFormat
-                          availability={enrollment.availability}
-                          card={false}
-                        />
+                        <AvailabilityFormat availability={enrollment.availability} card={false} />
                       </TableCell>
 
-                      <TableCell className="min-w-[200px]">
-                        {enrollment.summary}
-                      </TableCell>
+                      <TableCell className="min-w-[200px]">{enrollment.summary}</TableCell>
 
                       <TableCell className="whitespace-nowrap">
                         {formatDateUTC(enrollment.startDate, {
@@ -1092,9 +982,7 @@ const EnrollmentList = ({
                       <TableCell className="whitespace-nowrap">
                         <button
                           type="button"
-                          onClick={() =>
-                            handleCopyMeetingLink(enrollment.meetingId)
-                          }
+                          onClick={() => handleCopyMeetingLink(enrollment.meetingId)}
                           className="relative inline-flex items-center group cursor-pointer"
                         >
                           <span className="underline text-black transition-opacity duration-150 group-hover:opacity-0">
@@ -1149,11 +1037,7 @@ const EnrollmentList = ({
                       <TableCell className="whitespace-nowrap">
                         <Button
                           variant="outline"
-                          onClick={() =>
-                            router.push(
-                              `/dashboard/enrollment/${enrollment.id}/chat`,
-                            )
-                          }
+                          onClick={() => router.push(`/dashboard/enrollment/${enrollment.id}/chat`)}
                         >
                           Chat
                         </Button>
@@ -1168,23 +1052,16 @@ const EnrollmentList = ({
           {/* mobile cards for those screens that are smaller than md wide*/}
           <div className="md:hidden space-y-4">
             {paginatedEnrollments.map((enrollment) => (
-              <div
-                key={enrollment.id}
-                className="bg-white rounded-xl shadow p-4 space-y-3 border"
-              >
+              <div key={enrollment.id} className="bg-white rounded-xl shadow p-4 space-y-3 border">
                 <div className="font-semibold text-lg">
                   {enrollment.student?.firstName} {enrollment.student?.lastName}
                 </div>
 
                 <div className="text-sm text-gray-500">
-                  Tutor: {enrollment.tutor?.firstName}{" "}
-                  {enrollment.tutor?.lastName}
+                  Tutor: {enrollment.tutor?.firstName} {enrollment.tutor?.lastName}
                 </div>
 
-                <AvailabilityFormat
-                  availability={enrollment.availability}
-                  card
-                />
+                <AvailabilityFormat availability={enrollment.availability} card />
 
                 <div className="text-sm">Summary: {enrollment.summary}</div>
 
@@ -1196,9 +1073,7 @@ const EnrollmentList = ({
                   })}
                 </div>
 
-                <div className="text-sm">
-                  Status: {enrollment.paused ? "Paused" : "Ongoing"}
-                </div>
+                <div className="text-sm">Status: {enrollment.paused ? "Paused" : "Ongoing"}</div>
 
                 <div className="flex gap-2 flex-wrap">
                   <button
@@ -1248,9 +1123,7 @@ const EnrollmentList = ({
 
                   <Button
                     size="sm"
-                    onClick={() =>
-                      router.push(`/dashboard/enrollment/${enrollment.id}/chat`)
-                    }
+                    onClick={() => router.push(`/dashboard/enrollment/${enrollment.id}/chat`)}
                   >
                     Chat
                   </Button>
@@ -1266,10 +1139,7 @@ const EnrollmentList = ({
             <div className="flex items-center space-x-2">
               <span>Rows per page</span>
 
-              <Select
-                value={rowsPerPage.toString()}
-                onValueChange={handleRowsPerPageChange}
-              >
+              <Select value={rowsPerPage.toString()} onValueChange={handleRowsPerPageChange}>
                 <SelectTrigger className="w-[70px]">
                   <SelectValue />
                 </SelectTrigger>
@@ -1341,10 +1211,7 @@ const EnrollmentList = ({
                     Student
                   </Label>
 
-                  <Popover
-                    open={openStudentOptions}
-                    onOpenChange={setOpenStudentOptions}
-                  >
+                  <Popover open={openStudentOptions} onOpenChange={setOpenStudentOptions}>
                     <PopoverTrigger asChild>
                       <Button
                         variant="outline"
@@ -1356,14 +1223,12 @@ const EnrollmentList = ({
                           <>
                             {
                               students.find(
-                                (student) =>
-                                  student.id === selectedEnrollment.student?.id,
+                                (student) => student.id === selectedEnrollment.student?.id,
                               )?.firstName
                             }{" "}
                             {
                               students.find(
-                                (student) =>
-                                  student.id === selectedEnrollment.student?.id,
+                                (student) => student.id === selectedEnrollment.student?.id,
                               )?.lastName
                             }
                           </>
@@ -1387,11 +1252,7 @@ const EnrollmentList = ({
                               <CommandItem
                                 key={student.id}
                                 value={student.id}
-                                keywords={[
-                                  student.firstName,
-                                  student.lastName,
-                                  student.email,
-                                ]}
+                                keywords={[student.firstName, student.lastName, student.email]}
                                 onSelect={() => {
                                   setSelectedStudentId(student.id);
                                   handleInputChange({
@@ -1406,9 +1267,7 @@ const EnrollmentList = ({
                                 <Check
                                   className={cn(
                                     "mr-2 h-4 w-4",
-                                    selectedStudentId === student.id
-                                      ? "opacity-100"
-                                      : "opacity-0",
+                                    selectedStudentId === student.id ? "opacity-100" : "opacity-0",
                                   )}
                                 />
                                 {student.firstName} {student.lastName}
@@ -1425,10 +1284,7 @@ const EnrollmentList = ({
                     Tutor
                   </Label>
 
-                  <Popover
-                    open={openTutorOptions}
-                    onOpenChange={setOpentTutorOptions}
-                  >
+                  <Popover open={openTutorOptions} onOpenChange={setOpentTutorOptions}>
                     <PopoverTrigger asChild>
                       <Button
                         variant="outline"
@@ -1439,16 +1295,12 @@ const EnrollmentList = ({
                         {selectedEnrollment.tutor?.id ? (
                           <>
                             {
-                              tutors.find(
-                                (tutor) =>
-                                  tutor.id === selectedEnrollment.tutor?.id,
-                              )?.firstName
+                              tutors.find((tutor) => tutor.id === selectedEnrollment.tutor?.id)
+                                ?.firstName
                             }{" "}
                             {
-                              tutors.find(
-                                (tutor) =>
-                                  tutor.id === selectedEnrollment.tutor?.id,
-                              )?.lastName
+                              tutors.find((tutor) => tutor.id === selectedEnrollment.tutor?.id)
+                                ?.lastName
                             }
                           </>
                         ) : (
@@ -1471,11 +1323,7 @@ const EnrollmentList = ({
                               <CommandItem
                                 key={tutor.id}
                                 value={tutor.id}
-                                keywords={[
-                                  tutor.firstName,
-                                  tutor.lastName,
-                                  tutor.email,
-                                ]}
+                                keywords={[tutor.firstName, tutor.lastName, tutor.email]}
                                 onSelect={() => {
                                   setSelectedTutorId(tutor.id);
                                   handleInputChange({
@@ -1490,9 +1338,7 @@ const EnrollmentList = ({
                                 <Check
                                   className={cn(
                                     "mr-2 h-4 w-4",
-                                    selectedTutorId === tutor.id
-                                      ? "opacity-100"
-                                      : "opacity-0",
+                                    selectedTutorId === tutor.id ? "opacity-100" : "opacity-0",
                                   )}
                                 />
                                 {tutor.firstName} {tutor.lastName}
@@ -1558,10 +1404,8 @@ const EnrollmentList = ({
                     <SelectTrigger>
                       <SelectValue placeholder="Select a meeting link">
                         {selectedEnrollment.meetingId
-                          ? meetings.find(
-                              (meeting) =>
-                                meeting.id === selectedEnrollment.meetingId,
-                            )?.name
+                          ? meetings.find((meeting) => meeting.id === selectedEnrollment.meetingId)
+                              ?.name
                           : "Select a meeting"}
                       </SelectValue>
                     </SelectTrigger>
@@ -1578,9 +1422,7 @@ const EnrollmentList = ({
                           </span>
                           <Circle
                             className={`w-2 h-2 ml-2 ${
-                              meetingAvailability[meeting.id]
-                                ? "text-green-500"
-                                : "text-red-500"
+                              meetingAvailability[meeting.id] ? "text-green-500" : "text-red-500"
                             } fill-current`}
                           />
                         </SelectItem>
@@ -1603,16 +1445,10 @@ const EnrollmentList = ({
             <DialogTitle>Delete Enrollment</DialogTitle>
           </DialogHeader>
           <div className="py-4">
-            <p>
-              Are you sure you want to delete this enrollment? This action
-              cannot be undone.
-            </p>
+            <p>Are you sure you want to delete this enrollment? This action cannot be undone.</p>
           </div>
           <div className="flex justify-end space-x-2">
-            <Button
-              variant="outline"
-              onClick={() => setIsDeleteModalOpen(false)}
-            >
+            <Button variant="outline" onClick={() => setIsDeleteModalOpen(false)}>
               Cancel
             </Button>
             <Button variant="destructive" onClick={handleDeleteEnrollment}>

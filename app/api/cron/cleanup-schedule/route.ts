@@ -4,12 +4,12 @@ import {
   deleteInactiveEnrollments,
   warnInactiveEnrollments,
 } from "@/lib/actions/enrollment.server.actions";
+import { isCronRequestAuthorized } from "@/lib/security/cron";
 
 export const dynamic = "force-dynamic";
 
 export async function GET(req: NextRequest) {
-  const authHeader = req.headers.get("authorization");
-  if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+  if (!isCronRequestAuthorized(req)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   const results = {
@@ -45,14 +45,11 @@ export async function GET(req: NextRequest) {
   results.deleteInactiveEnrollments = deleteResult;
 
   const hasErrors =
-    !results.cancelUnsubmittedSEF.success ||
-    !results.deleteInactiveEnrollments.success;
+    !results.cancelUnsubmittedSEF.success || !results.deleteInactiveEnrollments.success;
 
   return NextResponse.json(
     {
-      message: hasErrors
-        ? "Cleanup completed with errors"
-        : "Cleanup completed successfully",
+      message: hasErrors ? "Cleanup completed with errors" : "Cleanup completed successfully",
       results,
     },
     { status: hasErrors ? 207 : 200 },

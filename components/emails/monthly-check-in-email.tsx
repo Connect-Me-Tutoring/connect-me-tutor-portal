@@ -1,13 +1,4 @@
-import {
-  Body,
-  Container,
-  Head,
-  Html,
-  Link,
-  Preview,
-  Section,
-  Text,
-} from "@react-email/components";
+import { Body, Container, Head, Html, Link, Preview, Section, Text } from "@react-email/components";
 import React from "react";
 
 export interface MonthlyCheckInEmailProps {
@@ -73,9 +64,9 @@ export default function MonthlyCheckInEmail({
               margin: "0",
             }}
           >
-            Another month has flown by! We just wanted to check in to see how your 
-            tutoring sessions are going. Whether everything is running smoothly or 
-            you have some questions, we are here to support you.
+            Another month has flown by! We just wanted to check in to see how your tutoring sessions
+            are going. Whether everything is running smoothly or you have some questions, we are
+            here to support you.
           </Text>
         </Section>
 
@@ -87,8 +78,8 @@ export default function MonthlyCheckInEmail({
             margin: "0 0 16px 0",
           }}
         >
-          As a reminder, you can always manage your schedule, update your availability, 
-          and review helpful resources over at the{" "}
+          As a reminder, you can always manage your schedule, update your availability, and review
+          helpful resources over at the{" "}
           <Link
             href={portalUrl}
             style={{
@@ -98,7 +89,8 @@ export default function MonthlyCheckInEmail({
             }}
           >
             Connect Me Tutor Portal
-          </Link>.
+          </Link>
+          .
         </Text>
 
         <Text
@@ -109,15 +101,23 @@ export default function MonthlyCheckInEmail({
             margin: "0 0 24px 0",
           }}
         >
-          If you have any immediate questions, feel free to reply directly to this email
-          or reach out to our team on Discord.
+          If you have any immediate questions, feel free to reply directly to this email or reach
+          out to our team on Discord.
         </Text>
 
         <Section style={{ paddingTop: "16px" }}>
           <Text style={{ color: "#30302F", fontSize: "16px", lineHeight: "1.6", margin: "0" }}>
             Best,
           </Text>
-          <Text style={{ color: "#040405", fontSize: "16px", lineHeight: "1.6", fontWeight: "bold", margin: "0" }}>
+          <Text
+            style={{
+              color: "#040405",
+              fontSize: "16px",
+              lineHeight: "1.6",
+              fontWeight: "bold",
+              margin: "0",
+            }}
+          >
             Connect Me Free Tutoring & Mentoring
           </Text>
         </Section>

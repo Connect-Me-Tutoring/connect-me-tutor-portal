@@ -53,9 +53,6 @@ export const addUser = async (
 
   return withRetry(() => createUserServer(newProfileData), {
     onRetry: (error, attempt) =>
-      console.error(
-        `addUser attempt ${attempt + 1} failed:`,
-        (error as Error).message,
-      ),
+      console.error(`addUser attempt ${attempt + 1} failed:`, (error as Error).message),
   });
 };

@@ -1,6 +1,6 @@
 "use client";
 
-import { supabase } from "@/lib/supabase/client"
+import { supabase } from "@/lib/supabase/client";
 import toast, { Toaster, ValueFunction } from "react-hot-toast";
 import Logo from "@/components/ui/logo";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -10,7 +10,6 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 // import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
-
 import { Button } from "@/components/ui/button";
 import {
   Form,
@@ -40,10 +39,9 @@ export default function AuthError() {
     try {
       const email = form.getValues("email");
 
-      const { data: resetData, error } =
-        await supabase.auth.resetPasswordForEmail(email, {
-          redirectTo: `${window.location.origin}`,
-        });
+      const { data: resetData, error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}`,
+      });
       if (error) {
         throw error;
       }
@@ -76,9 +74,7 @@ export default function AuthError() {
           <div className="container h-full mx-auto max-w-lg p-10 flex flex-col items-center justify-center align-center">
             <div className="p-8 flex flex-col items-center justify-center gap-4 border border-gray-300 rounded-xl">
               <div className="flex flex-col gap-3">
-                <h1 className="text-2xl text-center font-bold">
-                  Your link may have expired
-                </h1>
+                <h1 className="text-2xl text-center font-bold">Your link may have expired</h1>
                 <p className="text-sm text-gray-600"></p>
               </div>
               <Form {...form}>
@@ -95,14 +91,11 @@ export default function AuthError() {
                       <FormItem>
                         <FormLabel>Enter your email</FormLabel>
                         <FormControl>
-                          <Input
-                            placeholder="youremail@example.com"
-                            {...field}
-                          />
+                          <Input placeholder="youremail@example.com" {...field} />
                         </FormControl>
                         <FormDescription>
-                          Enter the email associated with your account to
-                          receive an email to set your login information
+                          Enter the email associated with your account to receive an email to set
+                          your login information
                         </FormDescription>
                         <FormMessage />
                       </FormItem>

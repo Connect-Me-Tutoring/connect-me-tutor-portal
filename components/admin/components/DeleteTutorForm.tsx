@@ -36,12 +36,9 @@ const DeleteTutorForm = ({
   const [isDeactivateModalOpen, setIsDeactivateModalOpen] = useState(false);
 
   return (
-    <Dialog
-      open={isDeactivateModalOpen}
-      onOpenChange={setIsDeactivateModalOpen}
-    >
+    <Dialog open={isDeactivateModalOpen} onOpenChange={setIsDeactivateModalOpen}>
       <DialogTrigger asChild>
-        <Button className = "bg-connect-me-blue-3" >Delete Tutor</Button>
+        <Button className="bg-connect-me-blue-3">Delete Tutor</Button>
       </DialogTrigger>
       <DialogContent className="max-w-md">
         <DialogHeader>

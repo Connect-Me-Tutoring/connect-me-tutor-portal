@@ -1,16 +1,7 @@
 import { formatDateWithOptions, to12HourWithMinutes } from "@/lib/utils";
 import { Availability, Meeting, Profile } from "@/types";
 import { PairingConfirmationEmailProps } from "@/types/email";
-import {
-  Html,
-  Head,
-  Body,
-  Container,
-  Text,
-  Link,
-  Section,
-} from "@react-email/components";
-
+import { Html, Head, Body, Container, Text, Link, Section } from "@react-email/components";
 
 export default function StudentPairingConfirmationEmail({
   student,
@@ -82,8 +73,13 @@ export default function StudentPairingConfirmationEmail({
               margin: "0",
             }}
           >
-            We are excited to let you know that {student.firstName} {student.lastName} has been matched
-            with a tutor! Your sessions will occur on <strong>{availability.day}</strong> from <strong>{to12HourWithMinutes(availability.startTime)} EST</strong> to <strong>{to12HourWithMinutes(availability.endTime)} EST</strong> on <strong>{formatDateWithOptions(startDate, {month: true, day: true})}</strong>. If unable to attend these sessions, please reach out to {tutor.email} to arrange a different time
+            We are excited to let you know that {student.firstName} {student.lastName} has been
+            matched with a tutor! Your sessions will occur on <strong>{availability.day}</strong>{" "}
+            from <strong>{to12HourWithMinutes(availability.startTime)} EST</strong> to{" "}
+            <strong>{to12HourWithMinutes(availability.endTime)} EST</strong> on{" "}
+            <strong>{formatDateWithOptions(startDate, { month: true, day: true })}</strong>. If
+            unable to attend these sessions, please reach out to {tutor.email} to arrange a
+            different time
           </Text>
         </Section>
 
@@ -199,7 +195,10 @@ export default function StudentPairingConfirmationEmail({
               wordBreak: "break-all",
             }}
           >
-            Or copy this link: <Link href={meeting.link} style={{ color: "#ffffff", textDecoration: "underline" }}>{meeting.link}</Link>
+            Or copy this link:{" "}
+            <Link href={meeting.link} style={{ color: "#ffffff", textDecoration: "underline" }}>
+              {meeting.link}
+            </Link>
           </Text>
         </Section>
 
@@ -231,9 +230,9 @@ export default function StudentPairingConfirmationEmail({
               margin: "0 0 12px 0",
             }}
           >
-            In the meantime, we recommend that you create an account on the
-            Connect Me Tutor Portal so you can easily access the zoom link and
-            communicate with the tutor through the website.
+            In the meantime, we recommend that you create an account on the Connect Me Tutor Portal
+            so you can easily access the zoom link and communicate with the tutor through the
+            website.
           </Text>
           <Text
             style={{
@@ -243,8 +242,8 @@ export default function StudentPairingConfirmationEmail({
               margin: "0",
             }}
           >
-            Please check your inbox and spam for an email from Connect Me to
-            sign up for our tutor portal.
+            Please check your inbox and spam for an email from Connect Me to sign up for our tutor
+            portal.
           </Text>
         </Section>
 
@@ -331,9 +330,7 @@ export default function StudentPairingConfirmationEmail({
 
   if (isPreview) {
     return (
-      <div
-        style={{ fontFamily: "Arial, sans-serif", backgroundColor: "#ffffff" }}
-      >
+      <div style={{ fontFamily: "Arial, sans-serif", backgroundColor: "#ffffff" }}>
         <EmailContent />
       </div>
     );
@@ -342,9 +339,7 @@ export default function StudentPairingConfirmationEmail({
   return (
     <Html>
       <Head />
-      <Body
-        style={{ fontFamily: "Arial, sans-serif", backgroundColor: "#ffffff" }}
-      >
+      <Body style={{ fontFamily: "Arial, sans-serif", backgroundColor: "#ffffff" }}>
         <EmailContent />
       </Body>
     </Html>

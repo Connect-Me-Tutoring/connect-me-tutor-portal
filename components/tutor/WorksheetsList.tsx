@@ -10,14 +10,7 @@ import { Download, ExternalLink, FileText, FolderOpen, Search } from "lucide-rea
 const allCategories = "All categories";
 const allCollections = "All grades";
 
-const gradeOrder = [
-  "4th Grade",
-  "5th Grade",
-  "6th Grade",
-  "7th Grade",
-  "8th Grade",
-  "Algebra 1",
-];
+const gradeOrder = ["4th Grade", "5th Grade", "6th Grade", "7th Grade", "8th Grade", "Algebra 1"];
 
 const cleanTitle = (name: string) =>
   name
@@ -51,9 +44,7 @@ const WorksheetsList = ({ worksheets }: { worksheets: WorksheetResource[] }) => 
   const categoryWorksheets = useMemo(
     () =>
       worksheets.filter(
-        (worksheet) =>
-          activeCategory === allCategories ||
-          worksheet.category === activeCategory,
+        (worksheet) => activeCategory === allCategories || worksheet.category === activeCategory,
       ),
     [activeCategory, worksheets],
   );
@@ -62,17 +53,13 @@ const WorksheetsList = ({ worksheets }: { worksheets: WorksheetResource[] }) => 
     const counts = new Map<string, number>();
 
     categoryWorksheets.forEach((worksheet) => {
-      counts.set(
-        worksheet.collection,
-        (counts.get(worksheet.collection) ?? 0) + 1,
-      );
+      counts.set(worksheet.collection, (counts.get(worksheet.collection) ?? 0) + 1);
     });
 
     return Array.from(counts.entries())
       .map(([name, count]) => ({ name, count }))
       .sort((a, b) => {
-        const gradeSort =
-          getCollectionSortIndex(a.name) - getCollectionSortIndex(b.name);
+        const gradeSort = getCollectionSortIndex(a.name) - getCollectionSortIndex(b.name);
         return gradeSort || a.name.localeCompare(b.name);
       });
   }, [categoryWorksheets]);
@@ -83,11 +70,9 @@ const WorksheetsList = ({ worksheets }: { worksheets: WorksheetResource[] }) => 
     return worksheets
       .filter((worksheet) => {
         const matchesCategory =
-          activeCategory === allCategories ||
-          worksheet.category === activeCategory;
+          activeCategory === allCategories || worksheet.category === activeCategory;
         const matchesCollection =
-          activeCollection === allCollections ||
-          worksheet.collection === activeCollection;
+          activeCollection === allCollections || worksheet.collection === activeCollection;
         const matchesSearch =
           !query ||
           worksheet.name.toLowerCase().includes(query) ||
@@ -98,11 +83,8 @@ const WorksheetsList = ({ worksheets }: { worksheets: WorksheetResource[] }) => 
       })
       .sort((a, b) => {
         const collectionSort =
-          getCollectionSortIndex(a.collection) -
-          getCollectionSortIndex(b.collection);
-        return (
-          collectionSort || cleanTitle(a.name).localeCompare(cleanTitle(b.name))
-        );
+          getCollectionSortIndex(a.collection) - getCollectionSortIndex(b.collection);
+        return collectionSort || cleanTitle(a.name).localeCompare(cleanTitle(b.name));
       });
   }, [activeCategory, activeCollection, searchQuery, worksheets]);
 
@@ -112,9 +94,7 @@ const WorksheetsList = ({ worksheets }: { worksheets: WorksheetResource[] }) => 
   };
 
   const downloadWorksheet = async (worksheet: WorksheetResource) => {
-    const { data, error } = await supabase.storage
-      .from("worksheets")
-      .download(worksheet.path);
+    const { data, error } = await supabase.storage.from("worksheets").download(worksheet.path);
 
     if (error || !data) {
       console.error("Failed to download worksheet:", error);
@@ -132,9 +112,7 @@ const WorksheetsList = ({ worksheets }: { worksheets: WorksheetResource[] }) => 
   return (
     <section className="mx-auto flex w-full max-w-6xl flex-col gap-6">
       <div className="flex flex-col gap-5 md:flex-row md:items-start md:justify-between">
-        <h1 className="text-4xl font-semibold tracking-tight text-gray-900">
-          Worksheets
-        </h1>
+        <h1 className="text-4xl font-semibold tracking-tight text-gray-900">Worksheets</h1>
         <div className="relative w-full md:max-w-md">
           <Search className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400" />
           <Input
@@ -192,9 +170,7 @@ const WorksheetsList = ({ worksheets }: { worksheets: WorksheetResource[] }) => 
             }`}
           >
             <span>{allCollections}</span>
-            <span className="text-xs opacity-75">
-              {categoryWorksheets.length}
-            </span>
+            <span className="text-xs opacity-75">{categoryWorksheets.length}</span>
           </button>
 
           <div className="mt-2 space-y-1">
@@ -222,24 +198,16 @@ const WorksheetsList = ({ worksheets }: { worksheets: WorksheetResource[] }) => 
         <div className="min-w-0 rounded-lg border bg-white">
           <div className="flex items-center justify-between border-b px-5 py-4">
             <div className="text-base font-medium text-gray-900">
-              {activeCollection === allCollections
-                ? "All worksheets"
-                : activeCollection}
+              {activeCollection === allCollections ? "All worksheets" : activeCollection}
             </div>
-            <div className="text-base text-gray-500">
-              {filteredWorksheets.length} shown
-            </div>
+            <div className="text-base text-gray-500">{filteredWorksheets.length} shown</div>
           </div>
 
           {filteredWorksheets.length === 0 ? (
             <div className="px-4 py-14 text-center">
               <FileText className="mx-auto mb-3 h-9 w-9 text-gray-400" />
-              <h2 className="text-lg font-medium text-gray-900">
-                No worksheets found
-              </h2>
-              <p className="mt-1 text-base text-gray-500">
-                Try another folder or search term.
-              </p>
+              <h2 className="text-lg font-medium text-gray-900">No worksheets found</h2>
+              <p className="mt-1 text-base text-gray-500">Try another folder or search term.</p>
             </div>
           ) : (
             <div className="divide-y">

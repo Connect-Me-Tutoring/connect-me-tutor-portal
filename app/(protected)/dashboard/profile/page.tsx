@@ -4,13 +4,7 @@ import type React from "react";
 
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
@@ -54,15 +48,7 @@ interface ProfileUpdateFormProps {
   };
 }
 
-const DAYS_OF_WEEK = [
-  "Monday",
-  "Tuesday",
-  "Wednesday",
-  "Thursday",
-  "Friday",
-  "Saturday",
-  "Sunday",
-];
+const DAYS_OF_WEEK = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
 
 export default function ProfileUpdateForm() {
   const { profile: initialData } = useFetchProfile();
@@ -70,10 +56,10 @@ export default function ProfileUpdateForm() {
     { day: string; startTime: string; endTime: string }[]
   >(initialData?.availability || []);
   const [subjectsOfInterest, setSubjectsOfInterest] = useState<string[]>(
-    initialData?.subjects_of_interest || []
+    initialData?.subjects_of_interest || [],
   );
   const [languagesSpoken, setLanguagesSpoken] = useState<string[]>(
-    initialData?.languages_spoken || []
+    initialData?.languages_spoken || [],
   );
   const [newSubject, setNewSubject] = useState("");
   const [newLanguage, setNewLanguage] = useState("");
@@ -94,16 +80,13 @@ export default function ProfileUpdateForm() {
   const supabase = createClient();
 
   const addAvailabilitySlot = () => {
-    setAvailability([
-      ...availability,
-      { day: "Monday", startTime: "09:00", endTime: "17:00" },
-    ]);
+    setAvailability([...availability, { day: "Monday", startTime: "09:00", endTime: "17:00" }]);
   };
 
   const updateAvailabilitySlot = (
     index: number,
     field: keyof (typeof availability)[0],
-    value: string
+    value: string,
   ) => {
     const updated = [...availability];
     updated[index] = { ...updated[index], [field]: value };
@@ -147,8 +130,7 @@ export default function ProfileUpdateForm() {
     const profileData: UpdateProfileInput = {
       userId: user.data.user?.id || "",
       availability: availability.length > 0 ? availability : undefined,
-      subjectsOfInterest:
-        subjectsOfInterest.length > 0 ? subjectsOfInterest : undefined,
+      subjectsOfInterest: subjectsOfInterest.length > 0 ? subjectsOfInterest : undefined,
       languagesSpoken: languagesSpoken.length > 0 ? languagesSpoken : undefined,
     };
 
@@ -168,10 +150,7 @@ export default function ProfileUpdateForm() {
     } catch (error) {
       setMessage({
         type: "error",
-        text:
-          error instanceof Error
-            ? error.message
-            : "An unexpected error occurred",
+        text: error instanceof Error ? error.message : "An unexpected error occurred",
       });
     } finally {
       setIsLoading(false);
@@ -185,13 +164,11 @@ export default function ProfileUpdateForm() {
         <div className="mb-8 text-center">
           <div className="flex items-center justify-center gap-2 mb-4">
             <User className="h-8 w-8 text-blue-600" />
-            <h1 className="text-4xl font-bold text-gray-900">
-              Update Your Profile
-            </h1>
+            <h1 className="text-4xl font-bold text-gray-900">Update Your Profile</h1>
           </div>
           <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-            Keep your profile information up to date to help others connect with
-            you more effectively
+            Keep your profile information up to date to help others connect with you more
+            effectively
           </p>
         </div>
 
@@ -218,9 +195,7 @@ export default function ProfileUpdateForm() {
                       <Label className="text-xs text-gray-500">Day</Label>
                       <Select
                         value={slot.day}
-                        onValueChange={(value) =>
-                          updateAvailabilitySlot(index, "day", value)
-                        }
+                        onValueChange={(value) => updateAvailabilitySlot(index, "day", value)}
                       >
                         <SelectTrigger>
                           <SelectValue />
@@ -235,19 +210,11 @@ export default function ProfileUpdateForm() {
                       </Select>
                     </div>
                     <div className="flex-1">
-                      <Label className="text-xs text-gray-500">
-                        Start Time
-                      </Label>
+                      <Label className="text-xs text-gray-500">Start Time</Label>
                       <Input
                         type="time"
                         value={slot.startTime}
-                        onChange={(e) =>
-                          updateAvailabilitySlot(
-                            index,
-                            "startTime",
-                            e.target.value
-                          )
-                        }
+                        onChange={(e) => updateAvailabilitySlot(index, "startTime", e.target.value)}
                       />
                     </div>
                     <div className="flex-1">
@@ -255,13 +222,7 @@ export default function ProfileUpdateForm() {
                       <Input
                         type="time"
                         value={slot.endTime}
-                        onChange={(e) =>
-                          updateAvailabilitySlot(
-                            index,
-                            "endTime",
-                            e.target.value
-                          )
-                        }
+                        onChange={(e) => updateAvailabilitySlot(index, "endTime", e.target.value)}
                       />
                     </div>
                     <div className="flex items-end">
@@ -310,9 +271,7 @@ export default function ProfileUpdateForm() {
                       placeholder="e.g., Mathematics, Physics, Literature"
                       value={newSubject}
                       onChange={(e) => setNewSubject(e.target.value)}
-                      onKeyPress={(e) =>
-                        e.key === "Enter" && (e.preventDefault(), addSubject())
-                      }
+                      onKeyPress={(e) => e.key === "Enter" && (e.preventDefault(), addSubject())}
                     />
                     <Button type="button" onClick={addSubject} size="sm">
                       <Plus className="h-4 w-4" />
@@ -348,9 +307,7 @@ export default function ProfileUpdateForm() {
                     <Languages className="h-5 w-5 text-purple-600" />
                     Languages Spoken
                   </CardTitle>
-                  <CardDescription>
-                    List the languages you can communicate in
-                  </CardDescription>
+                  <CardDescription>List the languages you can communicate in</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="flex gap-2">
@@ -359,9 +316,7 @@ export default function ProfileUpdateForm() {
                       placeholder="e.g., English, Spanish, French"
                       value={newLanguage}
                       onChange={(e) => setNewLanguage(e.target.value)}
-                      onKeyPress={(e) =>
-                        e.key === "Enter" && (e.preventDefault(), addLanguage())
-                      }
+                      onKeyPress={(e) => e.key === "Enter" && (e.preventDefault(), addLanguage())}
                     />
                     <Button type="button" onClick={addLanguage} size="sm">
                       <Plus className="h-4 w-4" />
@@ -389,7 +344,6 @@ export default function ProfileUpdateForm() {
                   )}
                 </CardContent>
               </Card>
-
             </div>
           </div>
 
@@ -410,12 +364,7 @@ export default function ProfileUpdateForm() {
 
           {/* Submit Button */}
           <div className="flex justify-center pt-8">
-            <Button
-              type="submit"
-              size="lg"
-              className="px-12 py-3 text-lg"
-              disabled={isLoading}
-            >
+            <Button type="submit" size="lg" className="px-12 py-3 text-lg" disabled={isLoading}>
               {isLoading ? (
                 <>
                   <Clock className="h-5 w-5 mr-2 animate-spin" />

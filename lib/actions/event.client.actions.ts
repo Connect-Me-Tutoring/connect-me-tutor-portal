@@ -1,4 +1,4 @@
-"use client"
+"use client";
 
 import { supabase } from "@/lib/supabase/client";
 import { Event } from "@/types";
@@ -6,49 +6,47 @@ import { Event } from "@/types";
 /* EVENTS */
 export async function getEvents(
   tutorId: string,
-  orderBy?: { field: string; ascending: boolean }
+  orderBy?: { field: string; ascending: boolean },
 ): Promise<Event[]> {
-
-    let query = supabase
-      .from("Events")
-      .select(
-        `
+  let query = supabase
+    .from("Events")
+    .select(
+      `
         id,
         created_at,
         date,
         summary,
         tutor_id,
         hours
-      `
-      )
-      .eq("tutor_id", tutorId);
+      `,
+    )
+    .eq("tutor_id", tutorId);
 
-    if (orderBy)
-      query = query.order(orderBy.field, { ascending: orderBy.ascending });
+  if (orderBy) query = query.order(orderBy.field, { ascending: orderBy.ascending });
 
-    const { data, error } = await query;
+  const { data, error } = await query;
 
-    if (error) {
-      // Check for errors and log them
-      console.error("Error fetching event details:", error.message);
-      throw error // Returning null here is valid since the function returns Promise<Notification[] | null>
-    }
+  if (error) {
+    // Check for errors and log them
+    console.error("Error fetching event details:", error.message);
+    throw error; // Returning null here is valid since the function returns Promise<Notification[] | null>
+  }
 
-    // Check if data exists
-    if (!data) {
-      return []; // Valid return
-    }
+  // Check if data exists
+  if (!data) {
+    return []; // Valid return
+  }
 
-    // Mapping the fetched data to the Notification object
-    const events: Event[] = data.map((event: any) => ({
-      createdAt: event.created_at,
-      id: event.id,
-      summary: event.summary,
-      tutorId: event.tutor_id,
-      date: event.date,
-      hours: event.hours,
-      type: event.type,
-    }));
+  // Mapping the fetched data to the Notification object
+  const events: Event[] = data.map((event: any) => ({
+    createdAt: event.created_at,
+    id: event.id,
+    summary: event.summary,
+    tutorId: event.tutor_id,
+    date: event.date,
+    hours: event.hours,
+    type: event.type,
+  }));
 
-    return events; // Return the array of notifications
+  return events; // Return the array of notifications
 }

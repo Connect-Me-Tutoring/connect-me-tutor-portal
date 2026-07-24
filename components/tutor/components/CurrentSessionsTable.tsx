@@ -1,10 +1,6 @@
 import React from "react";
 import { useState } from "react";
-import {
-  formatSessionDate,
-  formatDateAdmin,
-  formatSessionDuration,
-} from "@/lib/utils";
+import { formatSessionDate, formatDateAdmin, formatSessionDuration } from "@/lib/utils";
 import { Session, Meeting } from "@/types";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -26,11 +22,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  HoverCard,
-  HoverCardContent,
-  HoverCardTrigger,
-} from "@/components/ui/hover-card";
+import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
 import {
   AlertDialog,
   AlertDialogHeader,
@@ -163,8 +155,7 @@ const CurrentSessionsTable = ({
               </TableCell>
               <TableCell>{formatSessionDate(session.date)}</TableCell>
               <TableCell className="font-medium">
-                Tutoring Session with {session.student?.firstName}{" "}
-                {session.student?.lastName}
+                Tutoring Session with {session.student?.firstName} {session.student?.lastName}
               </TableCell>
               <TableCell>
                 {session.student?.firstName} {session.student?.lastName}
@@ -173,9 +164,7 @@ const CurrentSessionsTable = ({
               <TableCell>
                 {session?.meeting?.meetingId ? (
                   <button
-                    onClick={() =>
-                      (window.location.href = `/meeting/${session?.meeting?.id}`)
-                    }
+                    onClick={() => (window.location.href = `/meeting/${session?.meeting?.id}`)}
                     className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-connect-me-blue-2 transition-colors"
                   >
                     <Video className="h-4 w-4" />
@@ -213,10 +202,7 @@ const CurrentSessionsTable = ({
                     <Button
                       variant="ghost"
                       size="icon"
-                      onClick={() =>
-                        (window.location.href =
-                          "https://forms.gle/AC4an7K6NSNumDwKA")
-                      }
+                      onClick={() => (window.location.href = "https://forms.gle/AC4an7K6NSNumDwKA")}
                     >
                       <UserRoundPlus className="h-4 w-4" />
                     </Button>

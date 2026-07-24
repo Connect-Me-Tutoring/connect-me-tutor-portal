@@ -37,23 +37,13 @@ interface EditTutorFormProps {
   handleEditTutor: () => void;
   handleGetSelectedTutor: (value: string | null) => void;
   handleInputChangeForEdit: (
-    e: React.ChangeEvent<
-      HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
-    >
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>,
   ) => void;
   handleComplexFieldsForEdit: (name: string, value: any) => void;
   handleTimeZoneForEdit: (value: string) => void;
 }
 
-const DAYS_OF_WEEK = [
-  "Monday",
-  "Tuesday",
-  "Wednesday",
-  "Thursday",
-  "Friday",
-  "Saturday",
-  "Sunday",
-];
+const DAYS_OF_WEEK = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
 
 const EditTutorForm = ({
   isReactivateModalOpen,
@@ -91,7 +81,7 @@ const EditTutorForm = ({
   const updateAvailabilitySlot = (
     index: number,
     field: "day" | "startTime" | "endTime",
-    value: string
+    value: string,
   ) => {
     if (!selectedTutor) return;
 
@@ -112,10 +102,7 @@ const EditTutorForm = ({
   const addSubject = () => {
     if (!selectedTutor || !subjectInput.trim()) return;
 
-    const updated = [
-      ...(selectedTutor.subjects_of_interest ?? []),
-      subjectInput.trim(),
-    ];
+    const updated = [...(selectedTutor.subjects_of_interest ?? []), subjectInput.trim()];
 
     handleComplexFieldsForEdit("subjects_of_interest", updated);
 
@@ -125,9 +112,7 @@ const EditTutorForm = ({
   const removeSubject = (subject: string) => {
     if (!selectedTutor || !selectedTutor.subjects_of_interest) return;
 
-    const updated = selectedTutor.subjects_of_interest.filter(
-      (s) => s !== subject
-    );
+    const updated = selectedTutor.subjects_of_interest.filter((s) => s !== subject);
 
     handleComplexFieldsForEdit("subjects_of_interest", updated);
   };
@@ -135,10 +120,7 @@ const EditTutorForm = ({
   const addLanguage = () => {
     if (!selectedTutor || !languageInput.trim()) return;
 
-    const updated = [
-      ...(selectedTutor.languages_spoken ?? []),
-      languageInput.trim(),
-    ];
+    const updated = [...(selectedTutor.languages_spoken ?? []), languageInput.trim()];
 
     handleComplexFieldsForEdit("languages_spoken", updated);
 
@@ -148,20 +130,15 @@ const EditTutorForm = ({
   const removeLanguage = (language: string) => {
     if (!selectedTutor || !selectedTutor.languages_spoken) return;
 
-    const updated = selectedTutor.languages_spoken.filter(
-      (l) => l !== language
-    );
+    const updated = selectedTutor.languages_spoken.filter((l) => l !== language);
 
     handleComplexFieldsForEdit("languages_spoken", updated);
   };
 
   return (
-    <Dialog
-      open={isReactivateModalOpen}
-      onOpenChange={setIsReactivateModalOpen}
-    >
+    <Dialog open={isReactivateModalOpen} onOpenChange={setIsReactivateModalOpen}>
       <DialogTrigger asChild>
-        <Button className = "bg-connect-me-blue-4">Edit Tutor</Button>
+        <Button className="bg-connect-me-blue-4">Edit Tutor</Button>
       </DialogTrigger>
       <DialogContent className="max-w-md">
         <DialogHeader>
@@ -312,10 +289,7 @@ const EditTutorForm = ({
                     <Select
                       value={selectedTutor?.status ?? "Active"}
                       onValueChange={(value) =>
-                        handleComplexFieldsForEdit(
-                          "status",
-                          value as Profile["status"]
-                        )
+                        handleComplexFieldsForEdit("status", value as Profile["status"])
                       }
                     >
                       <SelectTrigger className="w-full">
@@ -334,16 +308,11 @@ const EditTutorForm = ({
                     {selectedTutor &&
                       selectedTutor.availability &&
                       selectedTutor.availability.map((slot, index) => (
-                        <div
-                          key={index}
-                          className="flex gap-2 p-3 border rounded-lg bg-gray-50"
-                        >
+                        <div key={index} className="flex gap-2 p-3 border rounded-lg bg-gray-50">
                           <div className="flex-1">
                             <Select
                               value={slot.day}
-                              onValueChange={(value) =>
-                                updateAvailabilitySlot(index, "day", value)
-                              }
+                              onValueChange={(value) => updateAvailabilitySlot(index, "day", value)}
                             >
                               <SelectTrigger>
                                 <SelectValue />
@@ -362,11 +331,7 @@ const EditTutorForm = ({
                               type="time"
                               value={slot.startTime}
                               onChange={(e) =>
-                                updateAvailabilitySlot(
-                                  index,
-                                  "startTime",
-                                  e.target.value
-                                )
+                                updateAvailabilitySlot(index, "startTime", e.target.value)
                               }
                             />
                           </div>
@@ -375,11 +340,7 @@ const EditTutorForm = ({
                               type="time"
                               value={slot.endTime}
                               onChange={(e) =>
-                                updateAvailabilitySlot(
-                                  index,
-                                  "endTime",
-                                  e.target.value
-                                )
+                                updateAvailabilitySlot(index, "endTime", e.target.value)
                               }
                             />
                           </div>
@@ -406,19 +367,14 @@ const EditTutorForm = ({
 
                   {/* Subjects Section */}
                   <div className="space-y-4">
-                    <h3 className="text-lg font-semibold">
-                      Subjects of Interest
-                    </h3>
+                    <h3 className="text-lg font-semibold">Subjects of Interest</h3>
                     <div className="flex gap-2">
                       <Input
                         type="text"
                         placeholder="e.g., Mathematics, Physics"
                         value={subjectInput}
                         onChange={(e) => setSubjectInput(e.target.value)}
-                        onKeyPress={(e) =>
-                          e.key === "Enter" &&
-                          (e.preventDefault(), addSubject())
-                        }
+                        onKeyPress={(e) => e.key === "Enter" && (e.preventDefault(), addSubject())}
                       />
                       <Button type="button" onClick={addSubject} size="sm">
                         <Plus className="h-4 w-4" />
@@ -457,10 +413,7 @@ const EditTutorForm = ({
                         placeholder="e.g., English, Spanish"
                         value={languageInput}
                         onChange={(e) => setLanguageInput(e.target.value)}
-                        onKeyPress={(e) =>
-                          e.key === "Enter" &&
-                          (e.preventDefault(), addLanguage())
-                        }
+                        onKeyPress={(e) => e.key === "Enter" && (e.preventDefault(), addLanguage())}
                       />
                       <Button type="button" onClick={addLanguage} size="sm">
                         <Plus className="h-4 w-4" />

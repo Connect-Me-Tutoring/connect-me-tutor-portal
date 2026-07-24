@@ -1,10 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import crypto from "crypto";
 import { config } from "@/config";
-import {
-  logZoomMetadata,
-  updateParticipantLeaveTime,
-} from "@/lib/actions/zoom.server.actions";
+import { logZoomMetadata, updateParticipantLeaveTime } from "@/lib/actions/zoom.server.actions";
 import {
   resolveAppSessionFromZoomWebhookObject,
   zoomSessionResolutionStatus,
@@ -64,8 +61,7 @@ export async function POST(req: NextRequest) {
   const payload = body?.payload;
   const event = body?.event;
 
-  const meetingNumberRaw =
-    payload?.object?.id || payload?.object?.meeting_number;
+  const meetingNumberRaw = payload?.object?.id || payload?.object?.meeting_number;
   const accountId = payload?.account_id;
   const accountEmail = payload?.account_email;
   const hostId = payload?.object?.host_id;
@@ -167,7 +163,7 @@ export async function POST(req: NextRequest) {
       {
         error: "Webhook secret not configured",
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 
@@ -192,10 +188,7 @@ export async function POST(req: NextRequest) {
         request_id: requestId,
         step: "url_validation",
       });
-      return NextResponse.json(
-        { error: "Missing plainToken" },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "Missing plainToken" }, { status: 400 });
     }
 
     const hashForValidate = crypto
@@ -238,10 +231,7 @@ export async function POST(req: NextRequest) {
     // Remove "Bearer " prefix if present and compare
     const authToken = authHeader.replace(/^Bearer\s+/i, "").trim();
     // Check if it matches the secret (with or without Bearer prefix)
-    if (
-      authToken === validationSecret ||
-      authHeader === `Bearer ${validationSecret}`
-    ) {
+    if (authToken === validationSecret || authHeader === `Bearer ${validationSecret}`) {
       isAuthorized = true;
       authMethod = "authorization_header";
     }
@@ -285,9 +275,7 @@ export async function POST(req: NextRequest) {
             .trim()
             .substring(0, 20)}...`
         : "none",
-      receivedSignature: signature
-        ? `${signature.substring(0, 20)}...`
-        : "none",
+      receivedSignature: signature ? `${signature.substring(0, 20)}...` : "none",
       hasTimestamp: !!timestamp,
       zoomMeetingId,
       accountId,
@@ -350,11 +338,10 @@ export async function POST(req: NextRequest) {
     case "meeting.participant_joined":
       {
         const participant = payload?.object?.participant;
-        const participantId =
-          participant?.user_id || participant?.participant_user_id || "";
+        const participantId = participant?.user_id || participant?.participant_user_id || "";
         const participantName = participant?.user_name;
         const participantEmail = participant?.email;
-          const joinTime = participant?.join_time || new Date().toISOString();
+        const joinTime = participant?.join_time || new Date().toISOString();
 
         console.warn("JOINED:", {
           meetingId: zoomMeetingId,
@@ -447,8 +434,7 @@ export async function POST(req: NextRequest) {
         const participant = payload?.object?.participant;
         const leaveTime = participant?.leave_time || new Date().toISOString();
         const leaveReason = participant?.leave_reason || undefined;
-        const participantUuid =
-          participant?.user_id || participant?.participant_user_id;
+        const participantUuid = participant?.user_id || participant?.participant_user_id;
         const participantName = participant?.user_name;
         const participantEmail = participant?.email;
 
@@ -519,7 +505,7 @@ export async function POST(req: NextRequest) {
             participantName || "Unknown",
             participantEmail || null,
             leaveTime,
-            zoomRelationshipLog
+            zoomRelationshipLog,
           );
 
           await logEvent("zoom_participant_left_db_success", {
