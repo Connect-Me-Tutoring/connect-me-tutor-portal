@@ -1,4 +1,3 @@
-
 // import AvailabilityForm from "@/components/ui/availability-form";
 // import { Button } from "@/components/ui/button";
 // import {
@@ -35,7 +34,6 @@
 // import { Availability, Enrollment, Meeting, Profile } from "@/types";
 // import { Check, ChevronDown, Circle, Loader2, Plus } from "lucide-react";
 // import { useState } from "react";
-
 
 // interface StudentProps {
 //     openStudentOptions: boolean;
@@ -84,9 +82,6 @@
 //   handleInputChange: (e: { target: { name: string; value: string } }) => void;
 // }
 
-
-
-
 // const EnrollmentForm = ({
 //   StudentOptions,
 //   TutorOptions,
@@ -100,7 +95,7 @@
 
 //     return (
 //         <>
-        
+
 //       <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
 //                 <DialogTrigger asChild>
 //                   <Button>

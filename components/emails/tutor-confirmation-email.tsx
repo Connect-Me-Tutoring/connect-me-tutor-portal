@@ -1,11 +1,9 @@
-import { formatDate, formatDateWithOptions, to12HourWithMinutes } from '@/lib/utils';
-import { Profile } from '@/types';
-import { PairingConfirmationEmailProps } from '@/types/email';
-import React from 'react';
+import { formatDate, formatDateWithOptions, to12HourWithMinutes } from "@/lib/utils";
+import { Profile } from "@/types";
+import { PairingConfirmationEmailProps } from "@/types/email";
+import React from "react";
 
 // Mock utility function since we don't have access to the actual one
-
-
 
 export default function TutorPairingConfirmationEmail({
   tutor,
@@ -15,13 +13,19 @@ export default function TutorPairingConfirmationEmail({
   meeting,
   isPreview = false,
 }: PairingConfirmationEmailProps) {
-  
   // Extract data from student object with fallbacks
-  const subjects = student.subjects_of_interest || ['TBD'];
-  const languages = student.languages_spoken || [''];
-  
+  const subjects = student.subjects_of_interest || ["TBD"];
+  const languages = student.languages_spoken || [""];
+
   const EmailContent = () => (
-    <div style={{ maxWidth: "600px", margin: "0 auto", padding: "20px", fontFamily: "Arial, sans-serif" }}>
+    <div
+      style={{
+        maxWidth: "600px",
+        margin: "0 auto",
+        padding: "20px",
+        fontFamily: "Arial, sans-serif",
+      }}
+    >
       {/* Header */}
       <div
         style={{
@@ -68,9 +72,16 @@ export default function TutorPairingConfirmationEmail({
               margin: "0",
             }}
           >
-            Congratulations! You have been matched with a new student: <strong>{student.firstName} {student.lastName}</strong>. 
-            Your sessions will occur on <strong>{availability.day}</strong> from <strong>{to12HourWithMinutes(availability.startTime)} EST</strong> to <strong>{to12HourWithMinutes(availability.endTime)} EST</strong> starting on <strong>{formatDateWithOptions(startDate, {month: true, day: true})}</strong>.
-            Please reach out to the student or their parent to introduce yourself and coordinate your tutoring schedule.
+            Congratulations! You have been matched with a new student:{" "}
+            <strong>
+              {student.firstName} {student.lastName}
+            </strong>
+            . Your sessions will occur on <strong>{availability.day}</strong> from{" "}
+            <strong>{to12HourWithMinutes(availability.startTime)} EST</strong> to{" "}
+            <strong>{to12HourWithMinutes(availability.endTime)} EST</strong> starting on{" "}
+            <strong>{formatDateWithOptions(startDate, { month: true, day: true })}</strong>. Please
+            reach out to the student or their parent to introduce yourself and coordinate your
+            tutoring schedule.
           </div>
         </div>
 
@@ -158,7 +169,7 @@ export default function TutorPairingConfirmationEmail({
           )}
         </div>
 
-        {/* Meeting Link */} 
+        {/* Meeting Link */}
         <div
           style={{
             backgroundColor: "#0E5B94",
@@ -222,7 +233,10 @@ export default function TutorPairingConfirmationEmail({
               wordBreak: "break-all",
             }}
           >
-            Or copy this link: <a href={meeting.link} style={{ color: "#ffffff", textDecoration: "underline" }}>{meeting.link}</a>
+            Or copy this link:{" "}
+            <a href={meeting.link} style={{ color: "#ffffff", textDecoration: "underline" }}>
+              {meeting.link}
+            </a>
           </div>
         </div>
 
@@ -296,7 +310,9 @@ export default function TutorPairingConfirmationEmail({
               margin: "0 0 12px 0",
             }}
           >
-            <strong>1.</strong> Contact {student.parentName ? student.parentName : `${student.firstName}'s parent`} to introduce yourself and coordinate your tutoring schedule
+            <strong>1.</strong> Contact{" "}
+            {student.parentName ? student.parentName : `${student.firstName}'s parent`} to introduce
+            yourself and coordinate your tutoring schedule
           </div>
           <div
             style={{
@@ -316,7 +332,8 @@ export default function TutorPairingConfirmationEmail({
               margin: "0",
             }}
           >
-            <strong>3.</strong> Fill out the session exit form after each tutoring session through the tutor portal
+            <strong>3.</strong> Fill out the session exit form after each tutoring session through
+            the tutor portal
           </div>
         </div>
 
@@ -402,7 +419,8 @@ export default function TutorPairingConfirmationEmail({
               margin: "0 0 12px 0",
             }}
           >
-            Please reply to this email to confirm that you have received this pairing notification and understand your responsibilities as outlined above.
+            Please reply to this email to confirm that you have received this pairing notification
+            and understand your responsibilities as outlined above.
           </div>
           <div
             style={{
@@ -412,7 +430,8 @@ export default function TutorPairingConfirmationEmail({
               margin: "0",
             }}
           >
-            If you have any concerns about tutoring this student or need assistance, please contact <strong>Yulianna, Addison, or Claudia</strong>.
+            If you have any concerns about tutoring this student or need assistance, please contact{" "}
+            <strong>Yulianna, Addison, or Claudia</strong>.
           </div>
         </div>
 
@@ -460,9 +479,7 @@ export default function TutorPairingConfirmationEmail({
 
   if (isPreview) {
     return (
-      <div
-        style={{ fontFamily: "Arial, sans-serif", backgroundColor: "#ffffff" }}
-      >
+      <div style={{ fontFamily: "Arial, sans-serif", backgroundColor: "#ffffff" }}>
         <EmailContent />
       </div>
     );

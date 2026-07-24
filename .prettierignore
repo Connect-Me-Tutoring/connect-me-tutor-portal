@@ -1,0 +1,11 @@
+node_modules
+.next
+out
+build
+coverage
+public
+supabase/.temp
+migrations
+rpc
+pnpm-lock.yaml
+package-lock.json

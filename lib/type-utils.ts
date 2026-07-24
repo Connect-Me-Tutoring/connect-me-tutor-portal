@@ -1,9 +1,6 @@
 import { Enrollment, Meeting, Profile, Session } from "@/types";
 import { WeeklyMeetingSchedule } from "@/types/meeting";
-import {
-  getEnrollmentAvailability,
-  getEnrollmentSchedule,
-} from "./enrollment-schedule";
+import { getEnrollmentAvailability, getEnrollmentSchedule } from "./enrollment-schedule";
 
 export const tableToInterfaceProfiles = (data: any) => {
   try {
@@ -150,8 +147,7 @@ export const tableToInterfaceSessions = (data: any): Session => {
   return sessions;
 };
 
-const toHHMM = (t: string | null | undefined): string =>
-  (t ?? "").slice(0, 5);
+const toHHMM = (t: string | null | undefined): string => (t ?? "").slice(0, 5);
 
 export const tableToInterfaceWeeklyMeetingSchedule = (data: any): WeeklyMeetingSchedule => {
   if (!data) throw new Error("Data is null");

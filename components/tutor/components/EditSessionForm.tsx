@@ -71,7 +71,7 @@ export default function EditSessionForm({
                     end: existing.date
                       ? addHours(parseISO(existing.date), existing.duration)
                       : new Date(),
-                  }
+                  },
                 )
               );
             })
@@ -146,7 +146,10 @@ export default function EditSessionForm({
                 type="datetime-local"
                 value={format(parseISO(editedSession.date), "yyyy-MM-dd'T'HH:mm")}
                 onChange={(e) => {
-                  const updated = { ...editedSession, date: new Date(e.target.value).toISOString() };
+                  const updated = {
+                    ...editedSession,
+                    date: new Date(e.target.value).toISOString(),
+                  };
                   setEditedSession(updated);
                   areMeetingsAvailable(updated);
                 }}

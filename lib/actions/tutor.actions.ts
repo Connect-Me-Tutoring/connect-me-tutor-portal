@@ -6,10 +6,10 @@ import { getProfileWithProfileId } from "./user.actions";
 import { getMeeting } from "./admin.actions";
 import { Stats } from "fs";
 import { Table } from "../supabase/tables";
-import {
-  tableToInterfaceMeetings,
-  tableToInterfaceProfiles,
-} from "../type-utils";
+import { tableToInterfaceSessions } from "../type-utils";
+import type { Database } from "@/types/database.types";
+
+type SessionStatus = Database["public"]["Enums"]["session_status"];
 
 /** 
 @params 
@@ -23,7 +23,7 @@ export async function getTutorSessions(
   profileId: string,
   startDate?: string,
   endDate?: string,
-  status?: string | string[],
+  status?: SessionStatus | SessionStatus[],
   orderby?: string,
   ascending?: boolean,
 ): Promise<Session[]> {
@@ -66,23 +66,7 @@ export async function getTutorSessions(
   }
 
   // Map the result to the Session interface
-  const sessions: Session[] = data.map((session: any) => {
-    return {
-      id: session.id,
-      enrollmentId: session.enrollment_id,
-      createdAt: session.created_at,
-      date: session.date,
-      summary: session.summary,
-      meeting: session.meeting ? tableToInterfaceMeetings(session.meeting) : null,
-      student: session.student ? tableToInterfaceProfiles(session.student) : null,
-      tutor: session.tutor ? tableToInterfaceProfiles(session.tutor) : null,
-      status: session.status,
-      session_exit_form: session.session_exit_form,
-      isQuestionOrConcern: Boolean(session.isQuestionOrConcernO),
-      isFirstSession: Boolean(session.isFirstSession),
-      duration: session.duration,
-    };
-  });
+  const sessions: Session[] = data.map(tableToInterfaceSessions);
 
   return sessions;
 }
@@ -146,71 +130,12 @@ export async function getTutorStudents(tutorId: string) {
 // changed to allow tutors to restore cancelled sessions back to their original status
 export async function undoCancelSession(
   sessionId: string,
-  originalStatus: string = "Active",
+  originalStatus: SessionStatus = "Active",
 ) {
   const { data, error } = await supabase
     .from(Table.Sessions)
     .update({
       status: originalStatus,
-    })
-    .eq("id", sessionId)
-    .single();
-
-  if (error) throw error;
-  return data;
-}
-
-export async function addSessionNotes(sessionId: string, notes: string) {
-  const { data, error } = await supabase
-    .from(Table.Sessions)
-    .update({
-      notes: notes,
-    })
-    .eq("id", sessionId)
-    .single();
-
-  if (error) throw error;
-  return data;
-}
-
-export async function getTutorAvailability(tutorId: string) {
-  const { data, error } = await supabase
-    .from("tutor_availability")
-    .select("*")
-    .eq("tutor_id", tutorId);
-
-  if (error) throw error;
-  return data;
-}
-//
-export async function updateTutorAvailability(
-  tutorId: string,
-  availabilityData: any,
-) {
-  const { data, error } = await supabase
-    .from("tutor_availability")
-    .upsert({ tutor_id: tutorId, ...availabilityData })
-    .eq("tutor_id", tutorId);
-
-  if (error) throw error;
-  return data;
-}
-
-export async function getTutorResources() {
-  const { data, error } = await supabase.from("tutor_resources").select("*");
-
-  if (error) throw error;
-  return data;
-}
-
-export async function logSessionAttendance(
-  sessionId: string,
-  attended: boolean,
-) {
-  const { data, error } = await supabase
-    .from(Table.Sessions)
-    .update({
-      attended: attended,
     })
     .eq("id", sessionId)
     .single();
@@ -241,12 +166,17 @@ export async function undoSessionExitForm(sessionId: string) {
         is_first_session: false,
       })
       .eq("id", sessionId)
-      .select()
+      .select(
+        `*,
+        tutor:Profiles!tutor_id(*),
+        student:Profiles!student_id(*),
+        meeting:Meetings!meeting_id(*)`,
+      )
       .single();
 
     if (error) throw error;
 
-    return data;
+    return tableToInterfaceSessions(data);
   } catch (error) {
     console.error("Error undoing session exit form:", error);
     throw error;

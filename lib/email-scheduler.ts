@@ -33,7 +33,7 @@ export const formatTime = (date: Date) => {
 export const schedulePreSessionEmail = async (
   session: Session,
   user: Profile,
-  hoursBeforeSession: number
+  hoursBeforeSession: number,
 ) => {
   const notificationTime = new Date(parseISO(session.date));
   notificationTime.setHours(notificationTime.getHours() - hoursBeforeSession);

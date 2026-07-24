@@ -18,10 +18,7 @@ import {
 } from "@/components/ui/card";
 import { PairingRequestCard } from "./que/request-card";
 import { useFetchProfile } from "@/hooks/auth";
-import {
-  getIncomingPairingMatches,
-  IncomingPairingMatch,
-} from "@/lib/actions/pairing.actions";
+import { getIncomingPairingMatches, IncomingPairingMatch } from "@/lib/actions/pairing.actions";
 import { updatePairingMatchStatus } from "@/lib/actions/pairing.actions";
 
 import toast from "react-hot-toast";
@@ -31,15 +28,12 @@ export function PairingInterface() {
 
   const { profile, loading: isProfileLoading, error: profileError } = useFetchProfile();
 
-  const [matchedPairings, setMatchedPairings] = useState<
-    IncomingPairingMatch[]
-  >([]);
+  const [matchedPairings, setMatchedPairings] = useState<IncomingPairingMatch[]>([]);
 
   useEffect(() => {
     if (!profile) return;
     getIncomingPairingMatches(profile.id).then((result) => {
       if (result) setMatchedPairings(result);
-
     });
   }, [profile]);
 
@@ -56,10 +50,7 @@ export function PairingInterface() {
   }, [matchedPairings, profile, searchQuery]);
 
   //handle mutating match state
-  const handleAcceptPairingMatch = (
-    matchId: string,
-    status: "accepted" | "rejected"
-  ) => {
+  const handleAcceptPairingMatch = (matchId: string, status: "accepted" | "rejected") => {
     if (!profile) return;
 
     const promise = updatePairingMatchStatus(profile.id, matchId, status);
@@ -67,11 +58,12 @@ export function PairingInterface() {
     toast.promise(promise, {
       loading: `${status === "accepted" ? "Accepting" : "Rejecting"} pairing...`,
       success: `Successfully ${status} pairing`,
-      error: (err) =>
-        `Failed to ${status.slice(0, -2)} pairing: ${err.message}`,
+      error: (err) => `Failed to ${status.slice(0, -2)} pairing: ${err.message}`,
     });
 
-    promise.then(() => {setMatchedPairings((prev) => prev.filter((prev) => prev.pairing_match_id !== matchId))})
+    promise.then(() => {
+      setMatchedPairings((prev) => prev.filter((prev) => prev.pairing_match_id !== matchId));
+    });
   };
 
   return (
@@ -146,8 +138,7 @@ export function PairingInterface() {
           <div className="grid gap-4 sm:grid-cols-2">
             {visibleMatches.length > 0 ? (
               visibleMatches.map((match) => {
-                const roleFilter =
-                  profile.role === "Student" ? "tutor" : "student";
+                const roleFilter = profile.role === "Student" ? "tutor" : "student";
                 const matchedProfile = match[roleFilter];
                 return (
                   <Card key={match.pairing_match_id} className="border-0 shadow-none">
@@ -165,42 +156,29 @@ export function PairingInterface() {
                     <CardContent className="pb-2">
                       <div className="space-y-2">
                         <div>
-                          <p className="text-xs text-muted-foreground">
-                            Subjects
-                          </p>
+                          <p className="text-xs text-muted-foreground">Subjects</p>
                           <div className="flex flex-wrap gap-1 mt-1">
-                            {matchedProfile.subjectsOfInterest?.map(
-                              (subject, i) => (
-                                <Badge key={i} variant="secondary">
-                                  {subject}
-                                </Badge>
-                              ),
-                            )}
+                            {matchedProfile.subjectsOfInterest?.map((subject, i) => (
+                              <Badge key={i} variant="secondary">
+                                {subject}
+                              </Badge>
+                            ))}
                           </div>
                         </div>
                         <div>
-                          <p className="text-xs text-muted-foreground">
-                            Languages
-                          </p>
+                          <p className="text-xs text-muted-foreground">Languages</p>
                           <div className="flex flex-wrap gap-1 mt-1">
-                            {matchedProfile.languagesSpoken?.map(
-                              (language, i) => (
-                                <Badge key={i} variant="outline">
-                                  {language}
-                                </Badge>
-                              ),
-                            )}
+                            {matchedProfile.languagesSpoken?.map((language, i) => (
+                              <Badge key={i} variant="outline">
+                                {language}
+                              </Badge>
+                            ))}
                           </div>
                         </div>
                         <div>
-                          <p className="text-xs text-muted-foreground">
-                            Student Availabilites
-                          </p>
+                          <p className="text-xs text-muted-foreground">Student Availabilites</p>
                           <div className="flex flex-wrap gap-1 mt-1">
-                            <UserAvailabilityList
-                              profile={matchedProfile}
-                              isBadge={true}
-                            />
+                            <UserAvailabilityList profile={matchedProfile} isBadge={true} />
                           </div>
                         </div>
                       </div>
@@ -211,10 +189,7 @@ export function PairingInterface() {
                           <Button
                             className="w-full bg-green-500"
                             onClick={() =>
-                              handleAcceptPairingMatch(
-                                match.pairing_match_id,
-                                "accepted",
-                              )
+                              handleAcceptPairingMatch(match.pairing_match_id, "accepted")
                             }
                           >
                             Accept
@@ -222,10 +197,7 @@ export function PairingInterface() {
                           <Button
                             className="w-full bg-red-500"
                             onClick={() =>
-                              handleAcceptPairingMatch(
-                                match.pairing_match_id,
-                                "rejected",
-                              )
+                              handleAcceptPairingMatch(match.pairing_match_id, "rejected")
                             }
                           >
                             Decline

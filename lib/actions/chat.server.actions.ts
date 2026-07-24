@@ -3,29 +3,21 @@
 import crypto from "crypto";
 import type { Profile } from "@/types";
 import type { Json } from "@/types/database.types";
-import {
-  StudentAnnouncementsRoomId,
-  TutorAnnouncementRoomId,
-} from "@/constants/chat";
+import { StudentAnnouncementsRoomId, TutorAnnouncementRoomId } from "@/constants/chat";
 import { dispatchChatMessageEmails } from "@/lib/chat/dispatch-chat-message-emails";
 import type { ChatRoomType } from "@/lib/chat/resolve-chat-recipients";
 import { createClient } from "../supabase/server";
 import { AdminConversation } from "@/types/chat";
 import { getProfileFromUserSettings } from "./profile.server.actions";
 import { getUserFromAction } from "./user.server.actions";
-import {
-  requireAuthenticatedUser,
-  requireSelfOrAdmin,
-} from "./authz.server";
+import { requireAuthenticatedUser, requireSelfOrAdmin } from "./authz.server";
+import { logError } from "@/lib/posthog";
 
 export const createAdminConversation = async (user_id: string) => {
   await requireSelfOrAdmin(user_id);
   const supabase = await createClient();
 
-  const createdConversationID = await fetchUserAdminConversation(
-    user_id,
-    false,
-  );
+  const createdConversationID = await fetchUserAdminConversation(user_id, false);
 
   const profileData = await getProfileFromUserSettings(user_id);
   if (!profileData) return null;
@@ -41,24 +33,27 @@ export const createAdminConversation = async (user_id: string) => {
     },
   ]);
 
-  if (result.error) return console.error(result.error);
+  if (result.error) {
+    console.error(result.error);
+    await logError(
+      result.error,
+      { action: "createAdminConversation", userId: user_id },
+      "chat_error",
+    );
+    return;
+  }
 
-  const createdParticipantResult = await supabase
-    .from("conversation_participant")
-    .insert([
-      {
-        conversation_id: conversationID,
-        profile_id,
-      },
-    ]);
+  const createdParticipantResult = await supabase.from("conversation_participant").insert([
+    {
+      conversation_id: conversationID,
+      profile_id,
+    },
+  ]);
 
   return conversationID;
 };
 
-export async function fetchUserAdminConversation(
-  userId: string,
-  createIfNull: boolean = true,
-) {
+export async function fetchUserAdminConversation(userId: string, createIfNull: boolean = true) {
   await requireSelfOrAdmin(userId);
   const supabase = await createClient();
   try {
@@ -80,6 +75,7 @@ export async function fetchUserAdminConversation(
     return null;
   } catch (error) {
     console.error("Unable to fetch user admin conversations", error);
+    await logError(error, { action: "fetchUserAdminConversation", userId }, "chat_error");
     throw error;
   }
 }
@@ -87,14 +83,12 @@ export async function fetchAdmins() {
   await requireAuthenticatedUser();
   const supabase = await createClient();
   try {
-    const { data, error } = await supabase
-      .from("Profiles")
-      .select("*")
-      .eq("role", "Admin");
+    const { data, error } = await supabase.from("Profiles").select("*").eq("role", "Admin");
     if (error) throw error;
     return data;
   } catch (error) {
     console.error("unable to fetch admin information");
+    await logError(error, { action: "fetchAdmins" }, "chat_error");
   }
 }
 
@@ -108,10 +102,7 @@ async function assertCanSendChatMessage(
     if (profile.role !== "Admin") {
       return { ok: false, message: "Only admins can post to announcements" };
     }
-    if (
-      roomId !== StudentAnnouncementsRoomId &&
-      roomId !== TutorAnnouncementRoomId
-    ) {
+    if (roomId !== StudentAnnouncementsRoomId && roomId !== TutorAnnouncementRoomId) {
       return { ok: false, message: "Invalid announcements room" };
     }
     return { ok: true };
@@ -171,12 +162,7 @@ export async function sendChatMessage(params: {
   if (!profile) return { ok: false, error: "No profile" };
 
   const supabase = await createClient();
-  const auth = await assertCanSendChatMessage(
-    supabase,
-    profile,
-    params.roomId,
-    params.roomType,
-  );
+  const auth = await assertCanSendChatMessage(supabase, profile, params.roomId, params.roomType);
   if (!auth.ok) return { ok: false, error: auth.message };
 
   const newMessage: {
@@ -197,11 +183,15 @@ export async function sendChatMessage(params: {
   const { error } = await supabase.from("messages").insert([newMessage]);
   if (error) {
     console.error("sendChatMessage insert", error);
+    await logError(
+      error,
+      { action: "sendChatMessage", roomId: params.roomId, roomType: params.roomType },
+      "chat_error",
+    );
     return { ok: false, error: error.message };
   }
 
-  const preview =
-    params.content || (params.file ? `Shared a file: ${params.file.name}` : "");
+  const preview = params.content || (params.file ? `Shared a file: ${params.file.name}` : "");
 
   await dispatchChatMessageEmails({
     roomId: params.roomId,
@@ -215,9 +205,7 @@ export async function sendChatMessage(params: {
   return { ok: true };
 }
 
-export async function getChatRoomEmailMutedState(
-  roomId: string,
-): Promise<{ muted: boolean }> {
+export async function getChatRoomEmailMutedState(roomId: string): Promise<{ muted: boolean }> {
   const user = await getUserFromAction();
   if (!user) return { muted: false };
 
@@ -247,19 +235,18 @@ export async function setChatRoomEmailMuted(
 
   const supabase = await createClient();
 
-  const { error } = await supabase
-    .from("chat_room_notification_preferences")
-    .upsert(
-      {
-        profile_id: profile.id,
-        room_id: roomId,
-        email_muted: muted,
-      },
-      { onConflict: "profile_id,room_id" },
-    );
+  const { error } = await supabase.from("chat_room_notification_preferences").upsert(
+    {
+      profile_id: profile.id,
+      room_id: roomId,
+      email_muted: muted,
+    },
+    { onConflict: "profile_id,room_id" },
+  );
 
   if (error) {
     console.error("setChatRoomEmailMuted", error);
+    await logError(error, { action: "setChatRoomEmailMuted", roomId, muted }, "chat_error");
     return { ok: false, error: error.message };
   }
 

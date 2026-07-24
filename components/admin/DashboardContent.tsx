@@ -53,9 +53,7 @@ const AdminDashboard = () => {
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [filterValue, setFilterValue] = useState("");
   const [selectedSession, setSelectedSession] = useState<Session | null>(null);
-  const [selectedSessionDate, setSelectedSessionDate] = useState<string | null>(
-    null,
-  );
+  const [selectedSessionDate, setSelectedSessionDate] = useState<string | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
   useEffect(() => {
@@ -170,9 +168,8 @@ const AdminDashboard = () => {
                     })}
                   </TableCell>
                   <TableCell className="font-medium">
-                    Tutoring Session with Tutor {session.tutor?.firstName}{" "}
-                    {session.tutor?.lastName} and Student{" "}
-                    {session.student?.firstName} {session.student?.lastName}
+                    Tutoring Session with Tutor {session.tutor?.firstName} {session.tutor?.lastName}{" "}
+                    and Student {session.student?.firstName} {session.student?.lastName}
                   </TableCell>
                   <TableCell>
                     {session.tutor?.firstName} {session.tutor?.lastName}
@@ -183,9 +180,7 @@ const AdminDashboard = () => {
                   <TableCell>
                     {session?.meeting?.meetingId ? (
                       <button
-                        onClick={() =>
-                          (window.location.href = `/meeting/${session?.meeting?.id}`)
-                        }
+                        onClick={() => (window.location.href = `/meeting/${session?.meeting?.id}`)}
                         className="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600"
                       >
                         View Link
@@ -213,8 +208,7 @@ const AdminDashboard = () => {
                         <DialogHeader>
                           <DialogTitle>
                             Reschedule Session with {session.tutor?.firstName}{" "}
-                            {session.tutor?.lastName} on{" "}
-                            {formatSessionDate(session.date)}
+                            {session.tutor?.lastName} on {formatSessionDate(session.date)}
                           </DialogTitle>
                         </DialogHeader>
                         <div className="py-4 space-y-6">
@@ -232,10 +226,7 @@ const AdminDashboard = () => {
                             onClick={() =>
                               selectedSession &&
                               selectedSessionDate &&
-                              handleReschedule(
-                                selectedSession?.id,
-                                selectedSessionDate,
-                              )
+                              handleReschedule(selectedSession?.id, selectedSessionDate)
                             }
                           >
                             Reschedule
@@ -253,10 +244,7 @@ const AdminDashboard = () => {
             <span>{filteredSessions.length} row(s) total.</span>
             <div className="flex items-center space-x-2">
               <span>Rows per page</span>
-              <Select
-                value={rowsPerPage.toString()}
-                onValueChange={handleRowsPerPageChange}
-              >
+              <Select value={rowsPerPage.toString()} onValueChange={handleRowsPerPageChange}>
                 <SelectTrigger className="w-[70px]">
                   <SelectValue placeholder={rowsPerPage.toString()} />
                 </SelectTrigger>

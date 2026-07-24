@@ -1,4 +1,4 @@
-import Stats from "@/components/tutor/my-stats";
+import Stats, { EnrollmentDetails, EventDetails } from "@/components/tutor/my-stats";
 import { getAllEventDetailsForTutor } from "@/lib/actions/hours.server.actions";
 import { getSessionHoursByStudent } from "@/lib/actions/hours.server.actions";
 import { cachedGetProfile } from "@/lib/actions/cache";
@@ -20,8 +20,8 @@ async function MyStatsData() {
   return (
     <Stats
       key={profile.id}
-      enrollmentDetails={enrollmentDetails}
-      eventDetails={eventDetails}
+      enrollmentDetails={enrollmentDetails as unknown as EnrollmentDetails[]}
+      eventDetails={eventDetails as unknown as { [key: string]: EventDetails[] }}
     />
   );
 }

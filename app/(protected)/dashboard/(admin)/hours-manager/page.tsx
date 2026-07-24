@@ -1,10 +1,9 @@
-import HoursManagement from '@/components/admin/HoursManagement'
+import HoursManagement from "@/components/admin/HoursManagement";
 
 export default async function MyStudentsPage() {
-
-    return (
-        <main>
-            <HoursManagement/>
-        </main>
-    )
+  return (
+    <main>
+      <HoursManagement />
+    </main>
+  );
 }

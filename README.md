@@ -8,13 +8,13 @@ Connect Me is the United States' largest student-run free online 1-on-1 tutoring
 
 ### By the Numbers
 
-| Metric | Figure |
-| --- | --- |
-| Free tutoring sessions hosted | 60,000+ |
+| Metric                          | Figure        |
+| ------------------------------- | ------------- |
+| Free tutoring sessions hosted   | 60,000+       |
 | Value of free tutoring provided | $5.7 million+ |
-| Active tutors and volunteers | 600+ |
-| U.S. states reached | 43 |
-| Countries reached | 12 |
+| Active tutors and volunteers    | 600+          |
+| U.S. states reached             | 43            |
+| Countries reached               | 12            |
 
 ### Awards and Media
 
@@ -58,4 +58,3 @@ Users can maintain multiple profiles under a single email address. This supports
 - **Website:** [connectmego.org](https://connectmego.org)
 - **Instagram:** [@connectmetutoring](https://www.instagram.com/connectmetutoring/)
 - **LinkedIn:** [Connect Me Tutoring and Mentoring](https://www.linkedin.com/company/connect-me-tutoring-mentoring/)
-

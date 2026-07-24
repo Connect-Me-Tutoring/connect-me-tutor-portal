@@ -97,8 +97,7 @@ function parseUuidList(s) {
   return parts.length ? parts : null;
 }
 
-const UUID_RE =
-  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 /** Single-quoted SQL string literal (safe for validated inputs only). */
 function sqlStringLiteral(s) {
@@ -302,9 +301,7 @@ async function enrichMatchWithSubjects(client, match) {
   `;
   const { rows } = await client.query(sql);
 
-  const byId = Object.fromEntries(
-    rows.map((r) => [String(r.id), r.subjects_of_interest ?? []]),
-  );
+  const byId = Object.fromEntries(rows.map((r) => [String(r.id), r.subjects_of_interest ?? []]));
 
   return {
     ...match,
@@ -350,10 +347,7 @@ async function main() {
   const client = new Client({ connectionString: databaseUrl });
   await client.connect();
 
-  if (
-    /pooler\.supabase\.com/i.test(databaseUrl) &&
-    !getPostgrestConfig()
-  ) {
+  if (/pooler\.supabase\.com/i.test(databaseUrl) && !getPostgrestConfig()) {
     console.error(
       "Warning: DATABASE_URL uses Supabase transaction pooler; get_best_match via SQL often fails.\n" +
         "Add SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY (or ANON key) to use PostgREST for matching.",
@@ -379,12 +373,7 @@ async function main() {
         process.exit(1);
       }
       try {
-        const match = await resolveOne(
-          client,
-          opts.type,
-          opts.requestId,
-          opts.excludeTutorIds,
-        );
+        const match = await resolveOne(client, opts.type, opts.requestId, opts.excludeTutorIds);
         payload.resolutions.push({
           mode: "single",
           request_type: opts.type,
@@ -425,12 +414,7 @@ async function main() {
 
       for (const row of students) {
         try {
-          const match = await resolveOne(
-            client,
-            "student",
-            row.request_id,
-            opts.excludeTutorIds,
-          );
+          const match = await resolveOne(client, "student", row.request_id, opts.excludeTutorIds);
           payload.resolutions.push({
             mode: "queue",
             request_type: "student",

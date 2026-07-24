@@ -3,6 +3,8 @@ import { type ClassValue, clsx } from "clsx";
 import { yearsToDays } from "date-fns";
 import { twMerge } from "tailwind-merge";
 
+export * from "./timezone";
+
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
@@ -29,191 +31,6 @@ export const postData = async (endpoint: any, body: any) => {
   return data;
 };
 
-export function formatSessionDate(dateString: string): string {
-  // Create a new Date object
-  const date: Date = new Date(dateString);
-  // Define options for formatting
-  const options: Intl.DateTimeFormatOptions = {
-    year: "numeric",
-    month: "long", // Can be 'short' or 'numeric' for different formats
-    day: "numeric",
-    hour: "numeric",
-    minute: "numeric",
-    // second: "numeric",
-    timeZoneName: "short", // To include time zone information
-  };
-
-  // Format the date using toLocaleDateString
-  return date.toLocaleDateString("en-US", options);
-}
-
-export function formatDate(dateString: string): string {
-  // Create a new Date object
-  const date: Date = new Date(dateString);
-
-  // Define options for formatting
-  const options: Intl.DateTimeFormatOptions = {
-    year: "numeric",
-    month: "long", // Can be 'short' or 'numeric' for different formats
-    day: "numeric",
-    hour: "numeric",
-    minute: "numeric",
-    second: "numeric",
-    timeZoneName: "short", // To include time zone information
-  };
-
-  // Format the date using toLocaleDateString
-  return date.toLocaleDateString("en-US", options);
-}
-
-/**
- * Formats a date string with customizable options for display.
- *
- * @param dateString - The date string to format (should be parseable by the Date constructor)
- * @param options - Configuration options for formatting the date
- * @param options.includeYear - Whether to include the year in the output
- * @param options.includeMonth - Whether to include the month in the output
- * @param options.includeDay - Whether to include the day in the output
- * @param options.includeHour - Whether to include the hour in the output
- * @param options.includeMinute - Whether to include the minute in the output
- * @param options.includeSecond - Whether to include the second in the output
- * @param options.timeZone - The IANA timezone identifier (defaults to "America/New_York")
- * @param options.timeZoneName - The format for displaying the timezone name (defaults to "short")
- *
- * @returns The formatted date string
- *
- * @example
- * ```typescript
- * formatDateWithOptions("2024-01-15T10:30:00Z", {
- *   includeYear: true,
- *   includeMonth: true,
- *   includeDay: true,
- *   includeHour: true,
- *   includeMinute: true
- * });
- * ```
- */
-export function formatDateWithOptions(
-  dateString: string,
-  options: {
-    year?: boolean;
-    month?: boolean;
-    day?: boolean;
-    hour?: boolean;
-    minute?: boolean;
-    second?: boolean;
-    timeZone?: string;
-    timeZoneName?:
-      | "short"
-      | "long"
-      | "shortOffset"
-      | "longOffset"
-      | "shortGeneric"
-      | "longGeneric";
-  },
-): string {
-  const date: Date = new Date(dateString);
-
-  const dateOptions: Intl.DateTimeFormatOptions = {
-    year: options.year ? "numeric" : undefined,
-    month: options.month ? "long" : undefined,
-    day: options.day ? "numeric" : undefined,
-    hour: options.hour ? "numeric" : undefined,
-    minute: options.minute ? "numeric" : undefined,
-    second: options.second ? "numeric" : undefined,
-    timeZone: options.timeZone ? options.timeZone : "America/New_York",
-    timeZoneName: options.timeZoneName ? options.timeZoneName : undefined,
-  };
-
-  return date.toLocaleDateString("en-US", dateOptions);
-}
-
-export function formatDateAdmin(
-  dateString: string,
-  params?: {
-    includeTime?: boolean;
-    includeDate?: boolean;
-  },
-): string {
-  const { includeTime = true, includeDate = true } = params
-    ? params
-    : { includeTime: true, includeDate: true };
-
-  // Create a new Date object
-  const date: Date = new Date(dateString);
-
-  // Define options for formattings
-
-  const options: Intl.DateTimeFormatOptions = {
-    year: includeDate ? "numeric" : undefined,
-    month: includeDate ? "long" : undefined, // Can be 'short' or 'numeric' for different formats
-    day: includeDate ? "numeric" : undefined,
-    hour: includeTime ? "numeric" : undefined,
-    minute: includeTime ? "numeric" : undefined,
-    second: includeTime ? "numeric" : undefined,
-    timeZone: "America/New_York",
-    timeZoneName: "short", // To include time zone information
-  };
-
-  // Format the date using toLocaleDateString
-  return date.toLocaleDateString("en-US", options);
-}
-
-export function formatDateUTC(
-  dateString: string,
-  params: {
-    includeTime?: boolean;
-    includeDate?: boolean;
-  },
-) {
-  const date: Date = new Date(dateString);
-
-  const { includeTime = true, includeDate = true } = params;
-
-  const options: Intl.DateTimeFormatOptions = {
-    year: includeDate ? "numeric" : undefined,
-    month: includeDate ? "long" : undefined, // Can be 'short' or 'numeric' for different formats
-    day: includeDate ? "numeric" : undefined,
-    hour: includeTime ? "numeric" : undefined,
-    minute: includeTime ? "numeric" : undefined,
-    second: includeTime ? "numeric" : undefined,
-    timeZone: "UTC",
-    // timeZoneName: "short", // To include time zone information
-  };
-
-  return date.toLocaleDateString("en-US", options);
-}
-
-export function getSessionTimespan(timeStr: string, duration: number): string {
-  const options: Intl.DateTimeFormatOptions = {
-    hour: "numeric",
-    minute: "2-digit",
-    hour12: true,
-    timeZone: "America/New_York",
-    // timeZoneName: "short", // To include time zone information
-  };
-
-  // Parse the input string into a Date object
-  const originalTime = new Date(timeStr);
-
-  // Check if the date is valid
-  if (isNaN(originalTime.getTime())) {
-    throw new Error("Invalid date format: " + timeStr);
-  }
-
-  // // Add 1.5 hours (1 hour and 30 minutes)
-  // Add 1 hour * duration
-  const endTime = new Date(originalTime.getTime() + 60 * 60 * 1000 * duration); // Had originally multiplied by 1.5 for endtime
-
-  // Format start and end times
-  // const startTimeStr = formatTime(originalTime);
-  // const endTimeStr = formatTime(endTime);
-  const startTimeStr = originalTime.toLocaleTimeString("en-US", options);
-  const endTimeStr = endTime.toLocaleTimeString("en-US", options);
-
-  return `${startTimeStr} - ${endTimeStr}`;
-}
-
 function formatTime(date: Date): string {
   let hours = date.getHours();
   const minutes = date.getMinutes();
@@ -223,8 +40,7 @@ function formatTime(date: Date): string {
   hours = hours % 12 || 12; // convert 0 to 12
 
   // Format minutes to be 0 or 30 if applicable
-  const formattedMinutes =
-    minutes === 0 ? "" : `:${minutes < 10 ? "0" : ""}${minutes}`;
+  const formattedMinutes = minutes === 0 ? "" : `:${minutes < 10 ? "0" : ""}${minutes}`;
 
   // Construct the final formatted string
   return `${hours}${formattedMinutes} ${isPM ? "PM" : "AM"}`;
@@ -245,9 +61,7 @@ export function formatStandardToMilitaryTime(standardTime: string): string {
   } else if (hours === 12) {
     hours = 0;
   }
-  return `${hours.toString().padStart(2, "0")}:${minutes
-    .toString()
-    .padStart(2, "0")}`;
+  return `${hours.toString().padStart(2, "0")}:${minutes.toString().padStart(2, "0")}`;
 }
 
 export function getToday(): string {
@@ -279,9 +93,7 @@ export function addOneHourToMilitaryTime(time: string) {
     newHours = 0;
   }
 
-  return `${newHours.toString().padStart(2, "0")}:${newMinutes
-    .toString()
-    .padStart(2, "0")}`;
+  return `${newHours.toString().padStart(2, "0")}:${newMinutes.toString().padStart(2, "0")}`;
 }
 
 export function formatMilitaryToStandardTime(militaryTime: string) {
@@ -352,10 +164,7 @@ export function capitalizeFirstLetter(word: string | undefined) {
   return word.charAt(0).toUpperCase() + word.slice(1);
 }
 
-export const handleCalculateDuration = async (
-  startTime: string,
-  endTime: string,
-) => {
+export const handleCalculateDuration = async (startTime: string, endTime: string) => {
   try {
     const startTimeNumber: number = timeStrToHours(startTime);
     const endTimeNumber: number = timeStrToHours(endTime);
@@ -435,13 +244,7 @@ export const toDateTime = (time: string, day: Number) => {
 export const formatAvailabilityAsDate = (date: Availability): Date[] => {
   try {
     type DayName =
-      | "Sunday"
-      | "Monday"
-      | "Tuesday"
-      | "Wednesday"
-      | "Thursday"
-      | "Friday"
-      | "Saturday";
+      "Sunday" | "Monday" | "Tuesday" | "Wednesday" | "Thursday" | "Friday" | "Saturday";
     const dayMap: { [key in DayName]: number } = {
       Sunday: 0,
       Monday: 1,
@@ -456,10 +259,7 @@ export const formatAvailabilityAsDate = (date: Availability): Date[] => {
     if (dayIndex === undefined) {
       throw new Error("Invalid Day of the Week");
     }
-    return [
-      toDateTime(date.startTime, dayIndex),
-      toDateTime(date.endTime, dayIndex),
-    ];
+    return [toDateTime(date.startTime, dayIndex), toDateTime(date.endTime, dayIndex)];
   } catch (error) {
     console.error("Failed to Format Date", error);
 
@@ -469,8 +269,7 @@ export const formatAvailabilityAsDate = (date: Availability): Date[] => {
 };
 
 export const isValidUUID = (uuid: string): boolean => {
-  const uuidRegex =
-    /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
   return uuidRegex.test(uuid);
 };
 
@@ -478,12 +277,10 @@ export const isValidUUID = (uuid: string): boolean => {
  * True if `value` is a non-empty UUID-shaped string.
  * Rejects literal "null"/"undefined" (e.g. from bad URLs like /pairings/null/chat).
  */
-export function isUuidString(value: string | null | undefined): boolean {
+export function isUuidString(value: string | null | undefined): value is string {
   if (value == null || value === "") return false;
   if (value === "null" || value === "undefined") return false;
-  return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
-    value,
-  );
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value);
 }
 
 export interface RetryOptions {
@@ -494,10 +291,7 @@ export interface RetryOptions {
   onRetry?: (error: unknown, attempt: number) => void;
 }
 
-export async function withRetry<T>(
-  fn: () => Promise<T>,
-  opts: RetryOptions = {},
-): Promise<T> {
+export async function withRetry<T>(fn: () => Promise<T>, opts: RetryOptions = {}): Promise<T> {
   const {
     retries = 4,
     baseDelayMs = 200,

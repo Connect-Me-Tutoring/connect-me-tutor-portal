@@ -1,14 +1,13 @@
 import { google } from "googleapis";
-import { json } from "stream/consumers";
+import { sanitizeForSheetCell } from "@/lib/security/spreadsheet";
 import { SessionExitFormPayload } from "@/types/sessionExitForm";
+import { logError } from "@/lib/posthog";
 
 // Columns: tutorName, studentName, tutorEmail, studentEmail, formContent, category
 const SHEET_RANGE_COLUMNS = "B:G";
 
 async function authenticate() {
-  const credentials = JSON.parse(
-    process.env.GOOGLE_APPLICATION_CREDENTIALS || "{}"
-  );
+  const credentials = JSON.parse(process.env.GOOGLE_APPLICATION_CREDENTIALS || "{}");
 
   const auth = new google.auth.GoogleAuth({
     credentials,
@@ -41,6 +40,10 @@ export async function readSpreadsheet() {
   }
 }
 
+function joinName(firstName?: string, lastName?: string): string {
+  return [firstName, lastName].filter(Boolean).join(" ");
+}
+
 export async function getSheetSize(sheetName: string = "Questions & Concerns") {
   const authClient = (await authenticate()) as any;
   const sheets = google.sheets({ version: "v4", auth: authClient });
@@ -62,6 +65,7 @@ export async function getSheetSize(sheetName: string = "Questions & Concerns") {
     return { numRows, numCols };
   } catch (error) {
     console.error("Error getting sheet size:", error);
+    await logError(error, { sheetName }, "google_sheet_error");
     throw error;
   }
 }
@@ -83,12 +87,12 @@ export async function writeSpreadSheet(formData: SessionExitFormPayload) {
 
   const values = [
     [
-      formData.tutorFirstName + " " + formData.tutorLastName,
-      formData.studentFirstName + " " + formData.studentLastName,
-      formData.tutorEmail,
-      formData.studentEmail,
-      formData.formContent,
-      formData.category,
+      sanitizeForSheetCell(joinName(formData.tutorFirstName, formData.tutorLastName)),
+      sanitizeForSheetCell(joinName(formData.studentFirstName, formData.studentLastName)),
+      sanitizeForSheetCell(formData.tutorEmail),
+      sanitizeForSheetCell(formData.studentEmail),
+      sanitizeForSheetCell(formData.formContent),
+      sanitizeForSheetCell(formData.category),
     ],
   ];
 
@@ -109,10 +113,7 @@ export async function writeSpreadSheet(formData: SessionExitFormPayload) {
   }
 }
 
-async function sendDiscordNotification(
-  rowIdx: number,
-  formData: SessionExitFormPayload,
-) {
+async function sendDiscordNotification(rowIdx: number, formData: SessionExitFormPayload) {
   try {
     await fetch(
       "https://script.google.com/macros/s/AKfycbz642YwN0t9gUAKycvrKq5WEJueL_PfDQwug7LK36EYsF6gf9ZVpbBkCc1p88Nf83qD/exec",
@@ -131,9 +132,8 @@ async function sendDiscordNotification(
           questionOrConcern: formData.formContent || "",
           category: formData.category,
         }),
-      }
-    )
-      .then((res) => res.text())
+      },
+    ).then((res) => res.text());
   } catch (error) {
     throw error;
   }

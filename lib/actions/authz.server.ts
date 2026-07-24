@@ -116,10 +116,7 @@ export async function requireStudentProfileAccess(
   authzError();
 }
 
-export async function assertProfileBelongsToUser(
-  userId: string,
-  profileId: string,
-): Promise<void> {
+export async function assertProfileBelongsToUser(userId: string, profileId: string): Promise<void> {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("Profiles")
@@ -153,10 +150,7 @@ export async function requireEnrollmentAccess(enrollmentId: string): Promise<{
     authzError("Enrollment not found");
   }
 
-  if (
-    ctx.profile.id === data.student_id ||
-    ctx.profile.id === data.tutor_id
-  ) {
+  if (ctx.profile.id === data.student_id || ctx.profile.id === data.tutor_id) {
     return ctx;
   }
 

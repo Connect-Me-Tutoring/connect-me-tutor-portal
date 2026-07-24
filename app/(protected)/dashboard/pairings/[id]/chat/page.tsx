@@ -8,7 +8,9 @@ interface Props {
   params: Promise<{ id: string }>;
 }
 
-export default async function PairingChatRoomPage({ params }: Props) {
+export default async function PairingChatRoomPage(props: Props) {
+  const params = await props.params;
+
   if (!isUuidString(params.id)) {
     notFound();
   }

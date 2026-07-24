@@ -1,11 +1,5 @@
-import type {
-  PairingOverlapSlot,
-  PairingRequest,
-} from "@/types/pairing";
-import {
-  computeOverlappingAvailabilitySlots,
-  intersectSubjects,
-} from "./overlap";
+import type { PairingOverlapSlot, PairingRequest } from "@/types/pairing";
+import { computeOverlappingAvailabilitySlots, intersectSubjects } from "./overlap";
 
 export type QueueCandidateOverlap = {
   request_id: string;
@@ -75,8 +69,7 @@ export function buildQueuePriorityOverlapInsights(
       request_id: request.request_id,
       profileName: profileDisplayName(request.profile),
       role: request.type,
-      previousPriority:
-        savedPriorities[request.request_id] ?? request.priority,
+      previousPriority: savedPriorities[request.request_id] ?? request.priority,
       newPriority: request.priority,
       topCandidates: ranked,
     };

@@ -1,19 +1,21 @@
-import React, { useState } from 'react';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { Session } from '@/types'
+import React, { useState } from "react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
+import { Session } from "@/types";
 
 interface StudentCalendarProps {
   sessions: Session[];
 }
 
 export default function StudentCalendar({ sessions }: StudentCalendarProps) {
-  const daysOfWeek = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
+  const daysOfWeek = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"];
   const currentDate = new Date();
 
   const [currentMonth, setCurrentMonth] = useState(currentDate.getMonth());
   const [currentYear, setCurrentYear] = useState(currentDate.getFullYear());
 
-  const monthName = new Date(currentYear, currentMonth).toLocaleString('default', { month: 'long' });
+  const monthName = new Date(currentYear, currentMonth).toLocaleString("default", {
+    month: "long",
+  });
 
   const generateCalendarDays = () => {
     const firstDay = new Date(currentYear, currentMonth, 1).getDay();
@@ -26,28 +28,38 @@ export default function StudentCalendar({ sessions }: StudentCalendarProps) {
 
     for (let i = 1; i <= lastDate; i++) {
       const currentDate = new Date(currentYear, currentMonth, i);
-      const isToday = i === new Date().getDate() && currentMonth === new Date().getMonth() && currentYear === new Date().getFullYear();
-      const sessionsOnThisDay = sessions.filter(session => new Date(session.date).toDateString() === currentDate.toDateString());
+      const isToday =
+        i === new Date().getDate() &&
+        currentMonth === new Date().getMonth() &&
+        currentYear === new Date().getFullYear();
+      const sessionsOnThisDay = sessions.filter(
+        (session) => new Date(session.date).toDateString() === currentDate.toDateString(),
+      );
       const hasSession = sessionsOnThisDay.length > 0;
 
       days.push(
         <div
           key={i}
-          className={`text-center p-2 relative ${isToday ? 'bg-orange-500 text-white rounded-full' : ''}`}
+          className={`text-center p-2 relative ${isToday ? "bg-orange-500 text-white rounded-full" : ""}`}
         >
           {i}
           {hasSession && (
-            <div 
+            <div
               className="absolute top-1 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bottom-1 w-2 h-2 bg-orange-500 rounded-full"
-              title={sessionsOnThisDay.map(session => `Meeting with ${session.tutor?.firstName} ${session.tutor?.lastName}`).join(', ')} // Display sessionname(s) as tooltip
+              title={sessionsOnThisDay
+                .map(
+                  (session) =>
+                    `Meeting with ${session.tutor?.firstName} ${session.tutor?.lastName}`,
+                )
+                .join(", ")} // Display sessionname(s) as tooltip
             ></div>
           )}
           {hasSession && (
             <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2 bg-gray-700 text-white text-xs rounded-lg p-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none">
-              {sessionsOnThisDay.map(session => session.tutor?.firstName).join(', ')}
+              {sessionsOnThisDay.map((session) => session.tutor?.firstName).join(", ")}
             </div>
           )}
-        </div>
+        </div>,
       );
     }
 

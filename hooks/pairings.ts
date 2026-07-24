@@ -23,7 +23,7 @@ export const usePairing = (pairingId: string) => {
         return;
       }
       if (data) {
-        setPairing(data as SharedPairing);
+        setPairing(data as unknown as SharedPairing);
       }
     })();
   }, [pairingId]);

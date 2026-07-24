@@ -125,7 +125,7 @@ export function ChatRoom({
               {} as Record<string, User>,
             ) || {};
 
-          const chatRoomUsers = {
+          const chatRoomUsers: Record<string, User> = {
             [pairing.tutor.id]: {
               role: "tutor",
               id: pairing.tutor.id,
@@ -164,7 +164,7 @@ export function ChatRoom({
               [profile.id]: {
                 id: profile.id,
                 name: `${profile.firstName} ${profile.lastName}`,
-                role: profile.role.toLowerCase(),
+                role: profile.role.toLowerCase() as User["role"],
               },
             });
           }
@@ -285,11 +285,7 @@ export function ChatRoom({
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (
-      (type === "announcements" && profile?.role !== "Admin") ||
-      !messageInput.trim() ||
-      !profile
-    )
+    if ((type === "announcements" && profile?.role !== "Admin") || !messageInput.trim() || !profile)
       return;
 
     try {
@@ -405,8 +401,8 @@ export function ChatRoom({
     return (
       <div className="flex min-h-[80dvh] border rounded-lg p-8 items-center justify-center bg-white">
         <p className="text-sm text-gray-600 text-center max-w-md">
-          This chat link is invalid or the pairing id is missing. Open Messages and
-          select an active pairing to start chatting.
+          This chat link is invalid or the pairing id is missing. Open Messages and select an active
+          pairing to start chatting.
         </p>
       </div>
     );
@@ -479,9 +475,7 @@ export function ChatRoom({
             <div className="flex items-center gap-2">
               {type === "announcements" && <Megaphone className="h-5 w-5 " />}
               <h2 className="font-semibold text-lg">
-                {type === "announcements"
-                  ? roomName
-                  : (roomName ?? `Chat Room`)}
+                {type === "announcements" ? roomName : (roomName ?? `Chat Room`)}
               </h2>
             </div>
             <p className="text-sm text-gray-500">
@@ -576,46 +570,31 @@ export function ChatRoom({
                       className={`flex items-start gap-3 ${isCurrentUser ? "flex-row-reverse" : ""}`}
                     >
                       <Avatar>
-                        <AvatarImage
-                          src={user.avatar_url || "/placeholder.svg"}
-                        />
-                        <AvatarFallback>
-                          {getInitials(user.name)}
-                        </AvatarFallback>
+                        <AvatarImage src={user.avatar_url || "/placeholder.svg"} />
+                        <AvatarFallback>{getInitials(user.name)}</AvatarFallback>
                       </Avatar>
 
-                      <div
-                        className={`max-w-[70%] ${isCurrentUser ? "text-right" : "text-left"}`}
-                      >
+                      <div className={`max-w-[70%] ${isCurrentUser ? "text-right" : "text-left"}`}>
                         <div className="flex items-center gap-2 mb-1">
-                          <p
-                            className={`text-sm font-medium ${isCurrentUser ? "ml-auto" : ""}`}
-                          >
+                          <p className={`text-sm font-medium ${isCurrentUser ? "ml-auto" : ""}`}>
                             {user.name}
                           </p>
                           <Badge
-                            variant={
-                              user.role === "tutor" ? "default" : "secondary"
-                            }
+                            variant={user.role === "tutor" ? "default" : "secondary"}
                             className="text-xs"
                           >
                             {user.role}
                           </Badge>
                           <span className="text-xs text-gray-500">
-                            {new Date(message.created_at).toLocaleTimeString(
-                              [],
-                              {
-                                hour: "2-digit",
-                                minute: "2-digit",
-                              },
-                            )}
+                            {new Date(message.created_at).toLocaleTimeString([], {
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            })}
                           </span>
                         </div>
 
                         <div className="rounded-lg p-3 inline-block max-w-[75%] min-w-[50px]">
-                          <p className="whitespace-pre-wrap break-words">
-                            {message.content}
-                          </p>
+                          <p className="whitespace-pre-wrap break-words">{message.content}</p>
 
                           {message.file && (
                             <div className="mt-2 p-3 bg-background rounded border">
@@ -650,15 +629,9 @@ export function ChatRoom({
 
               {/* File upload progress indicators */}
               {Object.entries(uploadingFiles).map(([fileId, progress]) => (
-                <div
-                  key={fileId}
-                  className="flex items-center justify-end gap-2"
-                >
+                <div key={fileId} className="flex items-center justify-end gap-2">
                   <div className="w-64 h-2 bg-gray-200 rounded-full overflow-hidden">
-                    <div
-                      className="h-full bg-primary"
-                      style={{ width: `${progress}%` }}
-                    ></div>
+                    <div className="h-full bg-primary" style={{ width: `${progress}%` }}></div>
                   </div>
                   <span className="text-xs">{progress}%</span>
                 </div>
@@ -674,9 +647,7 @@ export function ChatRoom({
           <div className="p-4 border-t ">
             <div className="flex items-center justify-center gap-2 ">
               <Megaphone className="h-4 w-4" />
-              <span className="text-sm font-medium">
-                This is a read-only announcements channel
-              </span>
+              <span className="text-sm font-medium">This is a read-only announcements channel</span>
             </div>
           </div>
         ) : (
@@ -705,10 +676,7 @@ export function ChatRoom({
                 className="flex-1 border rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary"
                 disabled={isLoading}
               />
-              <Button
-                type="submit"
-                disabled={isLoading || !messageInput.trim()}
-              >
+              <Button type="submit" disabled={isLoading || !messageInput.trim()}>
                 <Send className="h-4 w-4 mr-2" />
                 Send
               </Button>

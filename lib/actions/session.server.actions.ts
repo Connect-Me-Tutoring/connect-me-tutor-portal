@@ -1,6 +1,9 @@
 "use server";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { Enrollment, Meeting, Session } from "@/types";
+import type { Database } from "@/types/database.types";
+
+type SessionStatus = Database["public"]["Enums"]["session_status"];
 import { toast } from "react-hot-toast";
 import { Client } from "@upstash/qstash";
 import { createAdminClient, createClient } from "@/lib/supabase/server";
@@ -14,7 +17,6 @@ import {
   requireTutorProfileAccess,
 } from "./authz.server";
 import { Profile } from "@/types";
-import { getProfileWithProfileId } from "./user.actions";
 import { getMeeting } from "./meeting.server.actions";
 import { createServerClient } from "../supabase/server";
 import { Table } from "../supabase/tables";
@@ -23,10 +25,7 @@ import {
   getParticipantEventCountsBySessionIds,
 } from "./zoom.server.actions";
 import { normalizeZoomParticipationEvents } from "@/lib/zoom/participation-normalize";
-import {
-  tableToInterfaceEnrollments,
-  tableToInterfaceSessions,
-} from "../type-utils";
+import { tableToInterfaceEnrollments, tableToInterfaceSessions } from "../type-utils";
 import {
   deleteScheduledEmailBeforeSessions,
   sendScheduledEmailsBeforeSessions,
@@ -34,15 +33,9 @@ import {
   sendTutorSessionCancellationEmail,
   updateScheduledEmailBeforeSessions,
 } from "./email.server.actions";
+import { logError } from "@/lib/posthog";
 
-import {
-  startOfWeek,
-  endOfWeek,
-  subDays,
-  parseISO,
-  format,
-  addDays,
-} from "date-fns"; // Only use date-fns
+import { startOfWeek, endOfWeek, subDays, parseISO, format, addDays } from "date-fns"; // Only use date-fns
 
 import * as DateFNS from "date-fns-tz";
 const { fromZonedTime } = DateFNS;
@@ -69,34 +62,30 @@ async function isSessioninPastWeek(enrollmentId: string, midWeek: Date) {
 
 /**
  * Add sessions for enrollments within the specified week range
- * @param weekStartString - ISO string of week start in Eastern Time
- * @param weekEndString - ISO string of week end in Eastern Time
+ * @param weekStartString - ISO string (UTC instant) of the Eastern-time week start,
+ *   e.g. from `getEasternWeekBounds()` — must already be a correct absolute instant.
+ * @param weekEndString - ISO string (UTC instant) of the Eastern-time week end
  * @param enrollments - List of enrollments to create sessions for
  * @param sessions - Existing sessions to avoid duplicates
  * @returns Newly created sessions
  */
-export async function addSessionsServer(
+export async function addSessionsForCron(
   weekStartString: string,
   weekEndString: string,
   enrollments: Enrollment[],
   sessions: Session[],
 ) {
   try {
-    const supabase = await createClient();
-    const parsedWeekStart = parseISO(weekStartString);
-    const parsedWeekEnd = parseISO(weekEndString);
+    // Cron context has no user session; callers must gate with isCronRequestAuthorized.
+    const supabase = await createAdminClient();
+    const weekStart = parseISO(weekStartString);
+    const weekEnd = parseISO(weekEndString);
 
-    if (
-      Number.isNaN(parsedWeekStart.getTime()) ||
-      Number.isNaN(parsedWeekEnd.getTime())
-    ) {
+    if (Number.isNaN(weekStart.getTime()) || Number.isNaN(weekEnd.getTime())) {
       throw new Error(
         `Invalid week range: weekStartString=${weekStartString}, weekEndString=${weekEndString}`,
       );
     }
-
-    const weekStart: Date = fromZonedTime(parsedWeekStart, "America/New_York");
-    const weekEnd: Date = fromZonedTime(parsedWeekEnd, "America/New_York");
 
     const scheduledSessions: Set<string> = new Set();
     sessions.forEach((session) => {
@@ -111,24 +100,14 @@ export async function addSessionsServer(
     });
 
     const enrollmentsWithSessions: Set<string> = new Set(
-      sessions
-        .filter((s) => s.enrollmentId)
-        .map((s) => s.enrollmentId as string),
+      sessions.filter((s) => s.enrollmentId).map((s) => s.enrollmentId as string),
     );
 
     const sessionsToCreate: any[] = [];
 
     for (const enrollment of enrollments) {
-      const {
-        id,
-        student,
-        tutor,
-        availability,
-        meetingId,
-        summary,
-        startDate,
-        duration,
-      } = enrollment;
+      const { id, student, tutor, availability, meetingId, summary, startDate, duration } =
+        enrollment;
 
       if (enrollment.paused) {
         continue;
@@ -146,6 +125,14 @@ export async function addSessionsServer(
 
       if (!startTime || !endTime) {
         console.error(`Invalid time format in availability:`, availability[0]);
+        await logError(
+          new Error("Invalid time format in availability"),
+          {
+            availability: availability[0],
+            enrollment_id: id,
+          },
+          "session_error",
+        );
         continue;
       }
 
@@ -173,22 +160,12 @@ export async function addSessionsServer(
           const [startHour, startMinute] = startTime.split(":").map(Number);
           const [endHour, endMinute] = endTime.split(":").map(Number);
 
-          if (
-            isNaN(startHour) ||
-            isNaN(startMinute) ||
-            isNaN(endHour) ||
-            isNaN(endMinute)
-          ) {
-            throw new Error(
-              `Invalid time format: start=${startTime}, end=${endTime}`,
-            );
+          if (isNaN(startHour) || isNaN(startMinute) || isNaN(endHour) || isNaN(endMinute)) {
+            throw new Error(`Invalid time format: start=${startTime}, end=${endTime}`);
           }
 
           const dateString = `${format(currentDate, "yyyy-MM-dd")}T${startTime}:00`;
-          const sessionStartTime = fromZonedTime(
-            dateString,
-            "America/New_York",
-          );
+          const sessionStartTime = fromZonedTime(dateString, "America/New_York");
 
           if (sessionStartTime < startDate_asDate) {
             throw new Error("Session occurs before start date");
@@ -214,13 +191,8 @@ export async function addSessionsServer(
             scheduledSessions.add(sessionKey);
           }
         } catch (err) {
-          console.error(
-            "Error processing time for %s %s-%s:",
-            day,
-            startTime,
-            endTime,
-            err,
-          );
+          console.error("Error processing time for %s %s-%s:", day, startTime, endTime, err);
+          await logError(err, { enrollment_id: id, day, startTime, endTime }, "session_error");
         }
 
         currentDate = addDays(currentDate, 1);
@@ -228,9 +200,7 @@ export async function addSessionsServer(
     }
 
     if (sessionsToCreate.length > 0) {
-      const { data, error } = await supabase
-        .from(Table.Sessions)
-        .insert(sessionsToCreate).select(`
+      const { data, error } = await supabase.from(Table.Sessions).insert(sessionsToCreate).select(`
           *,
           student:Profiles!student_id(*),
           tutor:Profiles!tutor_id(*),
@@ -250,6 +220,7 @@ export async function addSessionsServer(
     return [];
   } catch (error) {
     console.error("Error creating sessions:", error);
+    await logError(error, { weekStartString, weekEndString }, "session_error");
     throw error;
   }
 }
@@ -295,6 +266,7 @@ async function findMeetingRecordByNormalizedZoomNumber(
 
   if (error) {
     console.error("Error fetching meeting for Zoom webhook:", error);
+    await logError(error, { normalized_search: normalizedSearch }, "session_error");
     return null;
   }
 
@@ -314,12 +286,11 @@ export async function findMeetingByNormalizedId(
     const normalizedSearch = normalizeMeetingId(zoomMeetingNumber);
 
     // Fetch all meetings and filter by normalized meeting_id
-    const { data: meetings, error } = await supabase
-      .from(Table.Meetings)
-      .select("id, meeting_id");
+    const { data: meetings, error } = await supabase.from(Table.Meetings).select("id, meeting_id");
 
     if (error) {
       console.error("Error fetching meetings:", error);
+      await logError(error, { zoom_meeting_number: zoomMeetingNumber }, "session_error");
       return null;
     }
 
@@ -336,6 +307,7 @@ export async function findMeetingByNormalizedId(
     return matchingMeeting || null;
   } catch (error) {
     console.error("Error finding meeting by normalized ID:", error);
+    await logError(error, { zoom_meeting_number: zoomMeetingNumber }, "session_error");
     return null;
   }
 }
@@ -361,30 +333,31 @@ export async function getActiveSessionFromMeetingID(meetingID: string) {
 
   if (error) {
     console.error("Error fetching session:", error);
+    await logError(error, { meeting_id: meetingID }, "session_error");
     return [];
   }
 
   return data || [];
 }
 
-export async function cancelSession(
-  session: Session,
-  actor: "tutor" | "student",
-) {
+export async function cancelSession(session: Session, actor: "tutor" | "student") {
   const authSupabase = await createClient();
   const adminSupabase = await createAdminClient();
 
-  const { data: existingSession, error: existingSessionError } =
-    await authSupabase
-      .from(Table.Sessions)
-      .select("id, tutor_id, student_id")
-      .eq("id", session.id)
-      .single();
+  const { data: existingSession, error: existingSessionError } = await authSupabase
+    .from(Table.Sessions)
+    .select("id, tutor_id, student_id")
+    .eq("id", session.id)
+    .single();
 
   if (existingSessionError || !existingSession) {
-    console.error(
-      "Error loading session before cancellation:",
-      existingSessionError,
+    console.error("Error loading session before cancellation:", existingSessionError);
+    await logError(
+      existingSessionError ?? new Error("Session not found before cancellation"),
+      {
+        session_id: session.id,
+      },
+      "session_error",
     );
     throw existingSessionError ?? new Error("Session not found");
   }
@@ -401,22 +374,17 @@ export async function cancelSession(
 
   if (error) {
     console.error("Error cancelling session:", error);
+    await logError(error, { session_id: session.id, actor }, "session_error");
     throw error;
   }
 
   try {
-    const sessionDate = session.date
-      ? format(new Date(session.date), "MMMM d, yyyy")
-      : "";
-    const sessionTime = session.date
-      ? format(new Date(session.date), "h:mm a")
-      : "";
+    const sessionDate = session.date ? format(new Date(session.date), "MMMM d, yyyy") : "";
+    const sessionTime = session.date ? format(new Date(session.date), "h:mm a") : "";
     const studentName =
-      `${session.student?.firstName ?? ""} ${session.student?.lastName ?? ""}`.trim() ||
-      "Student";
+      `${session.student?.firstName ?? ""} ${session.student?.lastName ?? ""}`.trim() || "Student";
     const tutorName =
-      `${session.tutor?.firstName ?? ""} ${session.tutor?.lastName ?? ""}`.trim() ||
-      "Your Tutor";
+      `${session.tutor?.firstName ?? ""} ${session.tutor?.lastName ?? ""}`.trim() || "Your Tutor";
     const reason = session.session_exit_form || undefined;
 
     if (actor === "tutor" && session.student?.email) {
@@ -433,15 +401,13 @@ export async function cancelSession(
     }
   } catch (emailError) {
     console.error("Failed to send cancellation email:", emailError);
+    await logError(emailError, { session_id: session.id, actor }, "session_error");
   }
 
   return { ...session, status: "Cancelled" as const };
 }
 
-export async function removeSessionServer(
-  sessionId: string,
-  updateEmail: boolean = true,
-) {
+export async function removeSessionServer(sessionId: string, updateEmail: boolean = true) {
   await requireAdmin();
   const supabase = await createAdminClient();
 
@@ -459,10 +425,7 @@ export async function removeSessionServer(
 
   if (participantEventError) throw participantEventError;
 
-  const { error: sessionError } = await supabase
-    .from(Table.Sessions)
-    .delete()
-    .eq("id", sessionId);
+  const { error: sessionError } = await supabase.from(Table.Sessions).delete().eq("id", sessionId);
 
   if (sessionError) throw sessionError;
 
@@ -507,11 +470,9 @@ export async function resolveAppSessionFromZoomWebhookObject(
   payloadObject: Record<string, unknown> | null | undefined,
 ): Promise<ZoomSessionResolution> {
   const raw = payloadObject?.id ?? payloadObject?.meeting_number;
-  const meetingNumber =
-    raw !== undefined && raw !== null ? String(raw) : undefined;
+  const meetingNumber = raw !== undefined && raw !== null ? String(raw) : undefined;
   const uuidRaw = payloadObject?.uuid;
-  const zoomMeetingUuid =
-    uuidRaw !== undefined && uuidRaw !== null ? String(uuidRaw) : undefined;
+  const zoomMeetingUuid = uuidRaw !== undefined && uuidRaw !== null ? String(uuidRaw) : undefined;
 
   if (!meetingNumber) {
     return {
@@ -523,8 +484,7 @@ export async function resolveAppSessionFromZoomWebhookObject(
     };
   }
 
-  const resolved =
-    await resolvePortalSessionForZoomMeetingNumber(meetingNumber);
+  const resolved = await resolvePortalSessionForZoomMeetingNumber(meetingNumber);
   if (!resolved) {
     return {
       zoomMeetingNumber: meetingNumber,
@@ -568,10 +528,7 @@ export async function resolvePortalSessionForZoomMeetingNumber(
   const supabase = await createAdminClient();
   const normalizedSearch = normalizeMeetingId(zoomMeetingNumber);
 
-  const meetingRecord = await findMeetingRecordByNormalizedZoomNumber(
-    supabase,
-    normalizedSearch,
-  );
+  const meetingRecord = await findMeetingRecordByNormalizedZoomNumber(supabase, normalizedSearch);
 
   if (!meetingRecord) {
     return null;
@@ -603,6 +560,14 @@ export async function resolvePortalSessionForZoomMeetingNumber(
 
   if (sessionError) {
     console.error("Error fetching sessions for Zoom webhook:", sessionError);
+    await logError(
+      sessionError,
+      {
+        zoom_meeting_number: zoomMeetingNumber,
+        meetings_row_id: meetingRecord.id,
+      },
+      "session_error",
+    );
     return { meetingRecord, sessionId: null };
   }
 
@@ -625,10 +590,7 @@ export async function resolvePortalSessionForZoomMeetingNumber(
   return { meetingRecord, sessionId: null };
 }
 
-export async function getSessions(
-  start: string,
-  end: string,
-): Promise<Session[]> {
+export async function getSessions(start: string, end: string): Promise<Session[]> {
   try {
     await requireAdmin();
     const supabase = await createAdminClient();
@@ -654,6 +616,7 @@ export async function getSessions(
     return sessions;
   } catch (error) {
     console.error("Error fetching sessions: ", error);
+    await logError(error, { start, end }, "session_error");
     throw error;
   }
 }
@@ -689,6 +652,7 @@ export async function getAllSessionsServer(
 
     if (error) {
       console.error("Error fetching student sessions:", error.message);
+      await logError(error, { startDate, endDate, orderBy, ascending }, "session_error");
       throw error;
     }
 
@@ -701,7 +665,53 @@ export async function getAllSessionsServer(
     return sessions;
   } catch (error) {
     console.error("Error fetching sessions", error);
+    await logError(error, { startDate, endDate, orderBy, ascending }, "session_error");
     return [];
+  }
+}
+
+export async function getAllSessionsForCron(
+  startDate?: string,
+  endDate?: string,
+  orderBy?: string,
+  ascending?: boolean,
+) {
+  // Cron context has no user session; callers must gate with isCronRequestAuthorized.
+  const supabase = await createAdminClient();
+  try {
+    let query = supabase.from(Table.Sessions).select(`
+      *,
+      meeting:Meetings!meeting_id(*),
+      student:Profiles!student_id(*),
+      tutor:Profiles!tutor_id(*)
+    `);
+
+    if (startDate) {
+      query = query.gte("date", startDate);
+    }
+    if (endDate) {
+      query = query.lte("date", endDate);
+    }
+
+    if (orderBy && ascending !== undefined) {
+      query = query.order(orderBy, { ascending });
+    }
+
+    const { data, error } = await query;
+
+    if (error) {
+      console.error("Error fetching sessions for cron:", error.message);
+      throw error;
+    }
+
+    const sessions: Session[] = data
+      .filter((session: any) => session.student && session.tutor)
+      .map((session: any): Session => tableToInterfaceSessions(session));
+
+    return sessions;
+  } catch (error) {
+    console.error("Error fetching sessions for cron", error);
+    throw error;
   }
 }
 
@@ -745,6 +755,7 @@ export async function getAllSessions(
 
     if (error) {
       console.error("Error fetching student sessions:", error.message);
+      await logError(error, { startDate, endDate, profile_id: profile.id }, "session_error");
       throw error;
     }
 
@@ -755,6 +766,7 @@ export async function getAllSessions(
     return sessions;
   } catch (error) {
     console.error("Error fetching sessions", error);
+    await logError(error, { startDate, endDate }, "session_error");
     return [];
   }
 }
@@ -818,12 +830,22 @@ export async function getEnrollmentSessionsActivityData(
 
     if (enErr || !enRow) {
       console.error("getEnrollmentSessionsActivityData enrollment:", enErr);
+      await logError(
+        enErr ?? new Error("Enrollment not found"),
+        { enrollment_id: enrollmentId },
+        "session_error",
+      );
       return null;
     }
 
     if (!enRow.student || !enRow.tutor) {
-      console.error(
-        "getEnrollmentSessionsActivityData: enrollment missing student or tutor",
+      console.error("getEnrollmentSessionsActivityData: enrollment missing student or tutor");
+      await logError(
+        new Error("Enrollment missing student or tutor"),
+        {
+          enrollment_id: enrollmentId,
+        },
+        "session_error",
       );
       return null;
     }
@@ -846,25 +868,24 @@ export async function getEnrollmentSessionsActivityData(
 
     if (sErr) {
       console.error("getEnrollmentSessionsActivityData sessions:", sErr);
+      await logError(sErr, { enrollment_id: enrollmentId }, "session_error");
       throw sErr;
     }
 
     const sessionIds = (sessRows || []).map((r: { id: string }) => r.id);
     const counts = await getParticipantEventCountsBySessionIds(sessionIds);
 
-    const sessions: EnrollmentActivitySessionRow[] = (sessRows || []).map(
-      (r: any) => {
-        const m = Array.isArray(r.meeting) ? r.meeting[0] : r.meeting;
-        return {
-          id: r.id,
-          date: r.date ?? "",
-          status: r.status,
-          meetingTitle: m?.name || "Meeting",
-          meetingId: m?.meeting_id || "",
-          zoomEventCount: counts[r.id] ?? 0,
-        };
-      },
-    );
+    const sessions: EnrollmentActivitySessionRow[] = (sessRows || []).map((r: any) => {
+      const m = Array.isArray(r.meeting) ? r.meeting[0] : r.meeting;
+      return {
+        id: r.id,
+        date: r.date ?? "",
+        status: r.status,
+        meetingTitle: m?.name || "Meeting",
+        meetingId: m?.meeting_id || "",
+        zoomEventCount: counts[r.id] ?? 0,
+      };
+    });
 
     return {
       enrollment: {
@@ -879,6 +900,7 @@ export async function getEnrollmentSessionsActivityData(
     };
   } catch (error) {
     console.error("getEnrollmentSessionsActivityData:", error);
+    await logError(error, { enrollment_id: enrollmentId }, "session_error");
     return null;
   }
 }
@@ -990,9 +1012,7 @@ export async function getParticipationData(
       return { ...base, enrollmentQueryMismatch: true };
     }
 
-    const activity = await getEnrollmentSessionsActivityData(
-      session.enrollmentId,
-    );
+    const activity = await getEnrollmentSessionsActivityData(session.enrollmentId);
     if (!activity) {
       return { ...base, enrollmentQueryMismatch: true };
     }
@@ -1012,6 +1032,14 @@ export async function getParticipationData(
     };
   } catch (error) {
     console.error("Error fetching participation data:", error);
+    await logError(
+      error,
+      {
+        session_id: sessionId,
+        enrollment_id_from_search: enrollmentIdFromSearch,
+      },
+      "session_error",
+    );
     return null;
   }
 }
@@ -1038,13 +1066,13 @@ export async function getSessionById(
 
     if (sessionError || !sessionData) {
       console.error("Error fetching session:", sessionError);
+      await logError(
+        sessionError ?? new Error("Session not found"),
+        { session_id: sessionId },
+        "session_error",
+      );
       return null;
     }
-
-    const [student, tutor] = await Promise.all([
-      getProfileWithProfileId(sessionData.student_id),
-      getProfileWithProfileId(sessionData.tutor_id),
-    ]);
 
     const session: Session = tableToInterfaceSessions(sessionData);
 
@@ -1055,6 +1083,7 @@ export async function getSessionById(
     return session;
   } catch (error) {
     console.error("Error fetching session by ID:", error);
+    await logError(error, { session_id: sessionId }, "session_error");
     return null;
   }
 }
@@ -1064,16 +1093,14 @@ export async function getTutorSessions(
   params: {
     startDate?: string;
     endDate?: string;
-    status?: string | string[];
+    status?: SessionStatus | SessionStatus[];
     orderBy?: string;
     ascending?: boolean;
   },
 ): Promise<Session[]> {
   await requireTutorProfileAccess(profileId);
   const supabase = await createClient();
-  const { startDate, endDate, status, orderBy, ascending } = params
-    ? params
-    : {};
+  const { startDate, endDate, status, orderBy, ascending } = params ? params : {};
 
   let query = supabase
     .from(Table.Sessions)
@@ -1110,6 +1137,7 @@ export async function getTutorSessions(
 
   if (error) {
     console.error("Error fetching student sessions:", error.message);
+    await logError(error, { profile_id: profileId, startDate, endDate, status }, "session_error");
     throw error;
   }
 
@@ -1125,16 +1153,14 @@ export async function getStudentSessions(
   params?: {
     startDate?: string;
     endDate?: string;
-    status?: string | string[];
+    status?: SessionStatus | SessionStatus[];
     orderBy?: string;
     ascending?: boolean;
   },
 ): Promise<Session[]> {
   await requireStudentProfileAccess(profileId);
   const supabase = await createClient();
-  const { startDate, endDate, status, orderBy, ascending } = params
-    ? params
-    : {};
+  const { startDate, endDate, status, orderBy, ascending } = params ? params : {};
 
   let query = supabase
     .from(Table.Sessions)
@@ -1171,13 +1197,12 @@ export async function getStudentSessions(
 
   if (error) {
     console.error("Error fetching student sessions:", error.message);
+    await logError(error, { profile_id: profileId, startDate, endDate, status }, "session_error");
     throw error;
   }
 
   const sessions: Session[] = data
-    .filter(
-      (session) => session.meeting && session.tutor_id && session.student_id,
-    )
+    .filter((session) => session.meeting && session.tutor_id && session.student_id)
     .map((session: any) => tableToInterfaceSessions(session));
 
   return sessions;
@@ -1202,29 +1227,33 @@ export async function rescheduleSession(
         meeting_id: meetingId,
       })
       .eq("id", sessionId)
-      .select("*")
+      .select(
+        `*,
+        tutor:Profiles!tutor_id(*),
+        student:Profiles!student_id(*),
+        meeting:Meetings!meeting_id(*)`,
+      )
       .single();
 
     if (error) throw error;
 
-    const { error: notificationError } = await supabase
-      .from("Notifications")
-      .insert({
-        session_id: sessionId,
-        previous_date: sessionData.date,
-        suggested_date: newDate,
-        tutor_id: sessionData.tutor_id,
-        student_id: sessionData.student_id,
-        type: "RESCHEDULE_REQUEST",
-        status: "Active",
-      });
+    const { error: notificationError } = await supabase.from("Notifications").insert({
+      session_id: sessionId,
+      previous_date: sessionData.date,
+      suggested_date: newDate,
+      tutor_id: sessionData.tutor_id,
+      student_id: sessionData.student_id,
+      type: "RESCHEDULE_REQUEST",
+      status: "Active",
+    });
 
     if (notificationError) throw notificationError;
     if (sessionData) {
-      return sessionData;
+      return tableToInterfaceSessions(sessionData);
     }
   } catch (error) {
     console.error("Unable to reschedule", error);
+    await logError(error, { session_id: sessionId, newDate, meetingId, tutorid }, "session_error");
     throw error;
   }
 }
@@ -1280,6 +1309,11 @@ export async function addStandaloneSession(
     }
   } catch (error) {
     console.error("Unable to add one session", error);
+    await logError(
+      error,
+      { session_id: session.id, student_id: session.student?.id, tutor_id: session.tutor?.id },
+      "session_error",
+    );
     throw error;
   }
 }
@@ -1288,9 +1322,7 @@ export async function cancelUnsubmittedSEF(profile: Profile) {
   try {
     const supabase = await createClient();
     const now = new Date();
-    const fortyEightHoursAgo = new Date(
-      now.getTime() - 48 * 60 * 60 * 1000,
-    ).toISOString();
+    const fortyEightHoursAgo = new Date(now.getTime() - 48 * 60 * 60 * 1000).toISOString();
 
     await supabase
       .from("Sessions")
@@ -1299,15 +1331,14 @@ export async function cancelUnsubmittedSEF(profile: Profile) {
       .lt("date", fortyEightHoursAgo);
   } catch (error) {
     console.error("Unable to cancel unsubmitted SEF");
+    await logError(error, { tutor_id: profile.id }, "session_error");
   }
 }
 
 export async function cancelUnsubmittedSEFCron() {
   const supabase = await createAdminClient();
   const now = new Date();
-  const fortyEightHoursAgo = new Date(
-    now.getTime() - 48 * 60 * 60 * 1000,
-  ).toISOString();
+  const fortyEightHoursAgo = new Date(now.getTime() - 48 * 60 * 60 * 1000).toISOString();
 
   // First, fetch sessions that need to be cancelled
   const { data: sessions, error: fetchError } = await supabase
@@ -1339,28 +1370,20 @@ export async function cancelUnsubmittedSEFCron() {
   return { success: true, error: undefined, cancelled: sessions.length };
 }
 
-export async function updateSessionsStatus(
-  sessionIds: string[],
-  status: string,
-) {
+export async function updateSessionsStatus(sessionIds: string[], status: SessionStatus) {
   try {
     const supabase = await createClient();
-    const { error } = await supabase
-      .from(Table.Sessions)
-      .update({ status })
-      .in("id", sessionIds);
+    const { error } = await supabase.from(Table.Sessions).update({ status }).in("id", sessionIds);
 
     if (error) throw error;
   } catch (error) {
     console.error("Error updating sessions status:", error);
+    await logError(error, { session_ids: sessionIds, status }, "session_error");
     throw error;
   }
 }
 
-export async function updateSession(
-  updatedSession: Session,
-  updateEmail: boolean = true,
-) {
+export async function updateSession(updatedSession: Session, updateEmail: boolean = true) {
   try {
     const {
       id,
@@ -1401,20 +1424,30 @@ export async function updateSession(
 
     if (error) {
       console.error("Error updating session:", error);
+      await logError(error, { session_id: id }, "session_error");
       return null;
     }
 
-    if (data) {
-      return data[0];
-    } else {
+    if (!data) {
       console.error("NO DATA");
+      await logError(
+        new Error("No data returned when updating session"),
+        { session_id: id },
+        "session_error",
+      );
+      return null;
     }
-    if (updateEmail && data) {
-      const newSession: Session = tableToInterfaceSessions(data);
+
+    const newSession: Session = tableToInterfaceSessions(data);
+
+    if (updateEmail) {
       await updateScheduledEmailBeforeSessions(newSession);
     }
+
+    return newSession;
   } catch (error) {
     console.error("Unable to update session");
+    await logError(error, { session_id: updatedSession.id }, "session_error");
     throw error;
   }
 }

@@ -38,8 +38,7 @@ export const SessionCancellationNotificationEmail = ({
             <Heading style={h1}>Tutor Session Cancelled</Heading>
             <Text style={text}>Hi {studentName},</Text>
             <Text style={text}>
-              This is a notification that your upcoming session with {tutorName}{" "}
-              has been cancelled.
+              This is a notification that your upcoming session with {tutorName} has been cancelled.
             </Text>
             <Text style={text}>
               <strong>Date:</strong> {sessionDate}

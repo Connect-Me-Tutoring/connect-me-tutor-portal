@@ -5,10 +5,7 @@ import { useRouter } from "next/navigation";
 import { Button } from "../ui/button";
 import axios from "axios";
 import toast from "react-hot-toast";
-import {
-  deleteAllPairingRequests,
-  resetPairingQueues,
-} from "@/lib/actions/pairing.server.actions";
+import { deleteAllPairingRequests, resetPairingQueues } from "@/lib/actions/pairing.server.actions";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -34,8 +31,7 @@ const PREVIEW_RUN_STORAGE_PREFIX = "pairing-preview-run:";
 
 export function TestingPairingControls() {
   const router = useRouter();
-  const [previewResult, setPreviewResult] =
-    useState<PairingWorkflowPreviewPayload | null>(null);
+  const [previewResult, setPreviewResult] = useState<PairingWorkflowPreviewPayload | null>(null);
   const [latestRunId, setLatestRunId] = useState<string | null>(null);
 
   const createRunId = () => {
@@ -47,10 +43,7 @@ export function TestingPairingControls() {
 
   const savePreviewRun = (run: StoredPairingRun) => {
     if (typeof window === "undefined") return;
-    window.sessionStorage.setItem(
-      `${PREVIEW_RUN_STORAGE_PREFIX}${run.runId}`,
-      JSON.stringify(run),
-    );
+    window.sessionStorage.setItem(`${PREVIEW_RUN_STORAGE_PREFIX}${run.runId}`, JSON.stringify(run));
   };
 
   const handleOpenLatestRunLogs = () => {
@@ -139,9 +132,7 @@ export function TestingPairingControls() {
 
   return (
     <div className="p-4 border border-dashed border-gray-300 rounded-lg bg-gray-50">
-      <h3 className="text-sm font-medium text-gray-700 mb-3">
-        Testing Controls
-      </h3>
+      <h3 className="text-sm font-medium text-gray-700 mb-3">Testing Controls</h3>
       <div className="flex flex-wrap gap-2">
         <Button onClick={handlePreviewQueues} variant="outline" size="sm">
           Preview Queue Output
@@ -204,8 +195,8 @@ export function TestingPairingControls() {
       {previewResult && (
         <div className="mt-4 rounded-md border bg-white p-3">
           <div className="mb-2 text-sm text-gray-700">
-            Preview generated with {previewResult.summary.matchesToInsert} proposed
-            match{previewResult.summary.matchesToInsert === 1 ? "" : "es"} and{" "}
+            Preview generated with {previewResult.summary.matchesToInsert} proposed match
+            {previewResult.summary.matchesToInsert === 1 ? "" : "es"} and{" "}
             {previewResult.summary.logsToInsert} log
             {previewResult.summary.logsToInsert === 1 ? "" : "s"}.
           </div>

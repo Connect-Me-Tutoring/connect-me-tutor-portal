@@ -38,10 +38,7 @@ export function redactForLogging(value: unknown): unknown {
  * JSON snapshot safe for PostHog: handles Error, circular refs, truncation.
  * Use for `*_json` properties so nested activity is visible in the event stream.
  */
-export function serializeForPosthog(
-  value: unknown,
-  options?: { redact?: boolean },
-): string {
+export function serializeForPosthog(value: unknown, options?: { redact?: boolean }): string {
   const redact = options?.redact !== false;
   const input = redact ? redactForLogging(value) : value;
   const seen = new WeakSet<object>();
@@ -103,7 +100,7 @@ function serializeForPostHog(value: unknown): string | number | boolean | null {
 }
 
 export function normalizePropertiesForPostHog(
-  properties?: Record<string, unknown>
+  properties?: Record<string, unknown>,
 ): Record<string, string | number | boolean | null> {
   if (!properties) return {};
   const out: Record<string, string | number | boolean | null> = {};
@@ -120,10 +117,7 @@ export function normalizePropertiesForPostHog(
  */
 function getPostHogClient(): PostHog | null {
   // Return null if PostHog is not configured (graceful degradation)
-  if (
-    !process.env.NEXT_PUBLIC_POSTHOG_KEY ||
-    !process.env.NEXT_PUBLIC_POSTHOG_HOST
-  ) {
+  if (!process.env.NEXT_PUBLIC_POSTHOG_KEY || !process.env.NEXT_PUBLIC_POSTHOG_HOST) {
     return null;
   }
 
@@ -145,7 +139,7 @@ function getPostHogClient(): PostHog | null {
 export async function logEvent(
   eventName: string,
   properties?: Record<string, any>,
-  distinctId?: string
+  distinctId?: string,
 ) {
   const client = getPostHogClient();
   if (!client) {
@@ -206,11 +200,17 @@ function nameFromUnknown(error: unknown): string {
 
 /**
  * Log an error event to PostHog (full `context` + `error` snapshots as JSON strings)
+ *
+ * `eventName` defaults to "zoom_webhook_error" for backward compatibility with the
+ * original Zoom-webhook-only callers. Every other caller should pass an explicit,
+ * domain-specific event name (e.g. "enrollment_error") so errors aren't all bucketed
+ * under the Zoom webhook event in PostHog.
  */
 export async function logError(
   error: Error | unknown,
   context?: Record<string, any>,
-  distinctId?: string
+  eventName: string = "zoom_webhook_error",
+  distinctId?: string,
 ) {
   const errorMessage = messageFromUnknown(error);
   const errorStack = error instanceof Error ? error.stack : undefined;
@@ -222,7 +222,7 @@ export async function logError(
       : { thrown: error };
 
   await logEvent(
-    "zoom_webhook_error",
+    eventName,
     {
       ...context,
       error_name: errorName,
@@ -231,7 +231,7 @@ export async function logError(
       error_json: serializeForPosthog(errorPayload, { redact: false }),
       context_json: context ? serializeForPosthog(context) : undefined,
     },
-    distinctId
+    distinctId,
   );
 }
 

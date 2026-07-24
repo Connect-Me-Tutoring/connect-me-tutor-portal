@@ -8,6 +8,7 @@ import { fetchDaySessionsFromSchedule } from "./session.actions";
 import { addHours, areIntervalsOverlapping, isValid, parseISO } from "date-fns";
 import { formatAvailabilityAsDate } from "../utils";
 import { getEnrollmentAvailability } from "../enrollment-schedule";
+import { tableToInterfaceMeetings } from "../type-utils";
 
 export const MEETING_CONFIG = {
   meetings: [
@@ -63,14 +64,7 @@ export async function getMeeting(meetingId: string): Promise<Meeting | null> {
     }
 
     // Map the fetched data to the Meeting object
-    const meeting: Meeting = {
-      id: data.id,
-      createdAt: data.created_at,
-      password: data.password,
-      meetingId: data.meeting_id,
-      link: data.link,
-      name: data.name,
-    };
+    const meeting: Meeting = tableToInterfaceMeetings(data);
 
     return meeting;
   } catch (error) {
@@ -97,10 +91,7 @@ export const checkAvailableMeeting = async (
     //
     // const requestedSessionStartTime = parseISO(session.date);\
     const requestedSessionStartTime = requestedDate;
-    const requestedSessionEndTime = addHours(
-      requestedSessionStartTime,
-      session.duration,
-    );
+    const requestedSessionEndTime = addHours(requestedSessionStartTime, session.duration);
 
     meetings.forEach((meeting) => {
       const hasConflict = sessionsToSearch
@@ -114,14 +105,9 @@ export const checkAvailableMeeting = async (
                   end: requestedSessionEndTime,
                 },
                 {
-                  start: existingSession.date
-                    ? parseISO(existingSession.date)
-                    : new Date(),
+                  start: existingSession.date ? parseISO(existingSession.date) : new Date(),
                   end: existingSession.date
-                    ? addHours(
-                        parseISO(existingSession.date),
-                        existingSession.duration,
-                      )
+                    ? addHours(parseISO(existingSession.date), existingSession.duration)
                     : new Date(),
                 },
               )
@@ -147,10 +133,9 @@ export const checkAvailableMeetingForEnrollments = async (
     updatedMeetingAvailability[meeting.id] = true;
   });
   const newEnrollmentAvailability = getEnrollmentAvailability(enroll);
-  const [newEnrollmentStartTime, newEnrollmentEndTime] =
-    newEnrollmentAvailability[0]
-      ? formatAvailabilityAsDate(newEnrollmentAvailability[0])
-      : [new Date(NaN), new Date(NaN)];
+  const [newEnrollmentStartTime, newEnrollmentEndTime] = newEnrollmentAvailability[0]
+    ? formatAvailabilityAsDate(newEnrollmentAvailability[0])
+    : [new Date(NaN), new Date(NaN)];
   const newRange = {
     start: newEnrollmentStartTime.getTime(),
     end: newEnrollmentEndTime.getTime(),

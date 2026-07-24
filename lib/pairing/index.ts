@@ -4,15 +4,10 @@ import { Person } from "@/types/enrollment";
 import { PairingLogSchemaType } from "./types";
 import { PairingRequestNotificationEmailProps } from "@/types/email";
 import { getProfileWithProfileId } from "../actions/user.actions";
-import {
-  sendPairingRequestEmail,
-} from "../actions/email.server.actions";
+import { sendPairingRequestEmail } from "../actions/email.server.actions";
 import { getRejectedTutorIdsForStudent } from "../actions/pairing.server.actions";
 import { Profile } from "@/types";
-import {
-  computeOverlappingAvailabilitySlots,
-  intersectSubjects,
-} from "./overlap";
+import { computeOverlappingAvailabilitySlots, intersectSubjects } from "./overlap";
 
 type QueueItem = {
   pairing_request_id: string;
@@ -57,11 +52,7 @@ export type PairingWorkflowPersistResult = {
   insertedLogs: number;
 };
 
-const logDebug = (
-  enabled: boolean,
-  message: string,
-  payload?: Record<string, unknown>
-) => {
+const logDebug = (enabled: boolean, message: string, payload?: Record<string, unknown>) => {
   if (!enabled) return;
   if (payload) {
     console.log(`[pairing-queue][debug] ${message}`, payload);
@@ -101,15 +92,10 @@ const getRequestorDisplayName = async (
   return resolvedName;
 };
 
-
-const sendPairingRequestNotification = async (
-  tutorId: string,
-  studentId: string
-) => {
+const sendPairingRequestNotification = async (tutorId: string, studentId: string) => {
   const tutorData: Profile | null = await getProfileWithProfileId(tutorId);
 
   const studentData: Profile | null = await getProfileWithProfileId(studentId);
-
 
   if (tutorData && studentData) {
     const emailData: PairingRequestNotificationEmailProps = {
@@ -130,24 +116,14 @@ const getPairingSupabaseClient = async () => {
   return supabase;
 };
 
-const profileName = (p: {
-  first_name?: string | null;
-  last_name?: string | null;
-}) =>
+const profileName = (p: { first_name?: string | null; last_name?: string | null }) =>
   `${p.first_name ?? ""} ${p.last_name ?? ""}`.trim() || "Unknown";
 
-const buildMatchesFromContexts = (
-  contexts: MatchWithContext[],
-): PairingMatchInsert[] => {
+const buildMatchesFromContexts = (contexts: MatchWithContext[]): PairingMatchInsert[] => {
   return contexts.map(({ result: match }) => {
-    const requestorIsStudent =
-      match.requestor_profile.role?.toLowerCase() === "student";
-    const student_id = requestorIsStudent
-      ? match.requestor_profile.id
-      : match.match_profile.id;
-    const tutor_id = requestorIsStudent
-      ? match.match_profile.id
-      : match.requestor_profile.id;
+    const requestorIsStudent = match.requestor_profile.role?.toLowerCase() === "student";
+    const student_id = requestorIsStudent ? match.requestor_profile.id : match.match_profile.id;
+    const tutor_id = requestorIsStudent ? match.match_profile.id : match.requestor_profile.id;
     return {
       student_id,
       tutor_id,
@@ -176,26 +152,17 @@ async function buildMatchPreviews(
   if (error) {
     console.error("buildMatchPreviews: failed to load profiles", error);
     return contexts.map(({ requestor_pairing_request_id, result: m }) => {
-      const requestorIsStudent =
-        m.requestor_profile.role?.toLowerCase() === "student";
-      const student_id = requestorIsStudent
-        ? m.requestor_profile.id
-        : m.match_profile.id;
-      const tutor_id = requestorIsStudent
-        ? m.match_profile.id
-        : m.requestor_profile.id;
+      const requestorIsStudent = m.requestor_profile.role?.toLowerCase() === "student";
+      const student_id = requestorIsStudent ? m.requestor_profile.id : m.match_profile.id;
+      const tutor_id = requestorIsStudent ? m.match_profile.id : m.requestor_profile.id;
       return {
         pairing_request_id: requestor_pairing_request_id,
         match_profile_id: m.match_profile.id,
         student_id,
         tutor_id,
         similarity: m.similarity,
-        student_name: profileName(
-          requestorIsStudent ? m.requestor_profile : m.match_profile,
-        ),
-        tutor_name: profileName(
-          requestorIsStudent ? m.match_profile : m.requestor_profile,
-        ),
+        student_name: profileName(requestorIsStudent ? m.requestor_profile : m.match_profile),
+        tutor_name: profileName(requestorIsStudent ? m.match_profile : m.requestor_profile),
         overlapping_subjects: [],
         overlapping_slots: [],
       };
@@ -218,36 +185,23 @@ async function buildMatchPreviews(
   const previews: PairingMatchPreview[] = [];
 
   for (const { requestor_pairing_request_id, result: m } of contexts) {
-    const requestorIsStudent =
-      m.requestor_profile.role?.toLowerCase() === "student";
-    const student_id = requestorIsStudent
-      ? m.requestor_profile.id
-      : m.match_profile.id;
-    const tutor_id = requestorIsStudent
-      ? m.match_profile.id
-      : m.requestor_profile.id;
+    const requestorIsStudent = m.requestor_profile.role?.toLowerCase() === "student";
+    const student_id = requestorIsStudent ? m.requestor_profile.id : m.match_profile.id;
+    const tutor_id = requestorIsStudent ? m.match_profile.id : m.requestor_profile.id;
 
     const ps = byId.get(student_id);
     const pt = byId.get(tutor_id);
     const student_name = ps
       ? profileName(ps)
-      : profileName(
-          requestorIsStudent ? m.requestor_profile : m.match_profile,
-        );
+      : profileName(requestorIsStudent ? m.requestor_profile : m.match_profile);
     const tutor_name = pt
       ? profileName(pt)
-      : profileName(
-          requestorIsStudent ? m.match_profile : m.requestor_profile,
-        );
+      : profileName(requestorIsStudent ? m.match_profile : m.requestor_profile);
 
     const overlapping_subjects =
-      ps && pt
-        ? intersectSubjects(ps.subjects_of_interest, pt.subjects_of_interest)
-        : [];
+      ps && pt ? intersectSubjects(ps.subjects_of_interest, pt.subjects_of_interest) : [];
     const overlapping_slots =
-      ps && pt
-        ? computeOverlappingAvailabilitySlots(ps.availability, pt.availability)
-        : [];
+      ps && pt ? computeOverlappingAvailabilitySlots(ps.availability, pt.availability) : [];
 
     previews.push({
       pairing_request_id: requestor_pairing_request_id,
@@ -316,9 +270,7 @@ const persistPairingWorkflowResult = async (
   }
 
   if (logs.length > 0) {
-    const { error: logError } = await supabase
-      .from("pairing_logs")
-      .insert(logs);
+    const { error: logError } = await supabase.from("pairing_logs").insert(logs);
 
     if (logError) {
       console.error("Failed to insert pairing logs:", logError);
@@ -401,10 +353,15 @@ export const runPairingWorkflow = async (
         .single();
 
       const excludeRejected = requestRow?.exclude_rejected_tutors ?? true;
-      const excludedTutorIds: string[] =
-        excludeRejected ? await getRejectedTutorIdsForStudent(studentReq.profile_id) : [];
+      const excludedTutorIds: string[] = excludeRejected
+        ? await getRejectedTutorIdsForStudent(studentReq.profile_id)
+        : [];
 
-      const rpcParams: { request_type: string; request_id: string; p_exclude_tutor_ids?: string[] } = {
+      const rpcParams: {
+        request_type: string;
+        request_id: string;
+        p_exclude_tutor_ids?: string[];
+      } = {
         request_type: "student",
         request_id: studentReq.pairing_request_id,
       };
@@ -417,9 +374,7 @@ export const runPairingWorkflow = async (
         excluded_tutor_ids_count: excludedTutorIds.length,
       });
 
-      const { data, error } = await supabase
-        .rpc("get_best_match", rpcParams)
-        .single();
+      const { data, error } = await supabase.rpc("get_best_match", rpcParams).single();
 
       const result = data as QueueItemMatch | null;
       // PGRST116 means no rows found, which is expected when there are no matches
@@ -429,9 +384,7 @@ export const runPairingWorkflow = async (
 
       // Fallback: if RPC doesn't support p_exclude_tutor_ids, skip matches with rejected tutors
       const isExcluded =
-        result &&
-        excludedTutorIds.length > 0 &&
-        excludedTutorIds.includes(result.match_profile.id);
+        result && excludedTutorIds.length > 0 && excludedTutorIds.includes(result.match_profile.id);
 
       if (result && !isExcluded) {
         const { requestor_profile, match_profile } = result;
@@ -511,7 +464,7 @@ export const runPairingWorkflow = async (
 
       const result = data as QueueItemMatch | null;
       // PGRST116 means no rows found, which is expected when there are no matches
-      if (error && error.code !== 'PGRST116') {
+      if (error && error.code !== "PGRST116") {
         console.error("Tutor best_match error:", error);
       }
 
