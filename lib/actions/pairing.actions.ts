@@ -458,7 +458,9 @@ export const getPairingLogs = async (
   if (error) throw error;
   if (!logs) return [];
 
-  return logs.map((log) => mapRpcPairingLog(log as unknown as Parameters<typeof mapRpcPairingLog>[0]));
+  return logs.map((log) =>
+    mapRpcPairingLog(log as unknown as Parameters<typeof mapRpcPairingLog>[0]),
+  );
 };
 
 export type IncomingPairingMatch = {

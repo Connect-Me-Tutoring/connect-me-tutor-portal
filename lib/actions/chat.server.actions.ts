@@ -35,7 +35,11 @@ export const createAdminConversation = async (user_id: string) => {
 
   if (result.error) {
     console.error(result.error);
-    await logError(result.error, { action: "createAdminConversation", userId: user_id }, "chat_error");
+    await logError(
+      result.error,
+      { action: "createAdminConversation", userId: user_id },
+      "chat_error",
+    );
     return;
   }
 
@@ -179,7 +183,11 @@ export async function sendChatMessage(params: {
   const { error } = await supabase.from("messages").insert([newMessage]);
   if (error) {
     console.error("sendChatMessage insert", error);
-    await logError(error, { action: "sendChatMessage", roomId: params.roomId, roomType: params.roomType }, "chat_error");
+    await logError(
+      error,
+      { action: "sendChatMessage", roomId: params.roomId, roomType: params.roomType },
+      "chat_error",
+    );
     return { ok: false, error: error.message };
   }
 

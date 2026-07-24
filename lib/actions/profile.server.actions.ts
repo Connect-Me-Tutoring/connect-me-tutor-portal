@@ -121,7 +121,11 @@ export async function getAllProfiles(
 
     if (error) {
       console.error("Error fetching profiles:", error.message);
-      await logError(error, { action: "getAllProfiles", role, orderBy, ascending, status }, "profile_error");
+      await logError(
+        error,
+        { action: "getAllProfiles", role, orderBy, ascending, status },
+        "profile_error",
+      );
       return null;
     }
 
@@ -135,7 +139,11 @@ export async function getAllProfiles(
     return userProfiles;
   } catch (error) {
     console.error("Unexpected error in getProfile:", error);
-    await logError(error, { action: "getAllProfiles", role, orderBy, ascending, status }, "profile_error");
+    await logError(
+      error,
+      { action: "getAllProfiles", role, orderBy, ascending, status },
+      "profile_error",
+    );
     return null;
   }
 }
@@ -196,9 +204,13 @@ export const getProfileFromUserSettings = async (userId: string): Promise<Profil
 export async function getProfile(userId: string) {
   if (!userId) {
     console.error("User ID is required to fetch profile data");
-    await logError(new Error("User ID is required to fetch profile data"), {
-      action: "getProfile",
-    }, "profile_error");
+    await logError(
+      new Error("User ID is required to fetch profile data"),
+      {
+        action: "getProfile",
+      },
+      "profile_error",
+    );
     return null;
   }
   try {

@@ -117,7 +117,11 @@ export async function getAllActiveEnrollmentsServer(endOfWeek: string): Promise<
     // Check for errors and log them
     if (error) {
       console.error("Error fetching event details:", error.message);
-      await logError(error, { function: "getAllActiveEnrollmentsServer", end_of_week: endOfWeek }, "enrollment_error");
+      await logError(
+        error,
+        { function: "getAllActiveEnrollmentsServer", end_of_week: endOfWeek },
+        "enrollment_error",
+      );
       throw error;
     }
 
@@ -134,7 +138,11 @@ export async function getAllActiveEnrollmentsServer(endOfWeek: string): Promise<
     return enrollments; // Return the array of enrollments
   } catch (error) {
     console.error("Error getting needed enrollment information:", error);
-    await logError(error, { function: "getAllActiveEnrollmentsServer", end_of_week: endOfWeek }, "enrollment_error");
+    await logError(
+      error,
+      { function: "getAllActiveEnrollmentsServer", end_of_week: endOfWeek },
+      "enrollment_error",
+    );
     throw error;
   }
 }
@@ -226,7 +234,11 @@ export async function getAllActiveEnrollments(endOfWeek?: string): Promise<Enrol
     // Check for errors and log them
     if (error) {
       console.error("Error fetching event details:", error.message);
-      await logError(error, { function: "getAllActiveEnrollments", end_of_week: endOfWeek }, "enrollment_error");
+      await logError(
+        error,
+        { function: "getAllActiveEnrollments", end_of_week: endOfWeek },
+        "enrollment_error",
+      );
       throw error;
     }
 
@@ -243,7 +255,11 @@ export async function getAllActiveEnrollments(endOfWeek?: string): Promise<Enrol
     return enrollments; // Return the array of enrollments
   } catch (error) {
     console.error("Error getting needed enrollment information:", error);
-    await logError(error, { function: "getAllActiveEnrollments", end_of_week: endOfWeek }, "enrollment_error");
+    await logError(
+      error,
+      { function: "getAllActiveEnrollments", end_of_week: endOfWeek },
+      "enrollment_error",
+    );
     throw error;
   }
 }
@@ -359,7 +375,11 @@ export const removeFutureSessions = async (enrollmentId: string, supabase: any) 
       .throwOnError();
   } catch (error) {
     console.error("Unable to remove future sessions", error);
-    await logError(error, { function: "removeFutureSessions", enrollment_id: enrollmentId }, "enrollment_error");
+    await logError(
+      error,
+      { function: "removeFutureSessions", enrollment_id: enrollmentId },
+      "enrollment_error",
+    );
     throw error;
   }
 };
@@ -379,7 +399,11 @@ export const removeEnrollment = async (enrollmentId: string) => {
 
   if (deleteEnrollmentError) {
     console.error("Error removing enrollment:", deleteEnrollmentError);
-    await logError(deleteEnrollmentError, { function: "removeEnrollment", enrollment_id: enrollmentId }, "enrollment_error");
+    await logError(
+      deleteEnrollmentError,
+      { function: "removeEnrollment", enrollment_id: enrollmentId },
+      "enrollment_error",
+    );
     throw deleteEnrollmentError;
   }
 };
@@ -418,7 +442,11 @@ export const updateEnrollment = async (enrollment: Enrollment) => {
 
     if (updateEnrollmentError) {
       console.error("Error updating enrollment: ", updateEnrollmentError);
-      await logError(updateEnrollmentError, { function: "updateEnrollment", enrollment_id: enrollment.id }, "enrollment_error");
+      await logError(
+        updateEnrollmentError,
+        { function: "updateEnrollment", enrollment_id: enrollment.id },
+        "enrollment_error",
+      );
       throw updateEnrollmentError;
     }
 
@@ -426,7 +454,11 @@ export const updateEnrollment = async (enrollment: Enrollment) => {
     return updateEnrollmentData;
   } catch (error) {
     console.error("Unable to update Enrollment", error);
-    await logError(error, { function: "updateEnrollment", enrollment_id: enrollment.id }, "enrollment_error");
+    await logError(
+      error,
+      { function: "updateEnrollment", enrollment_id: enrollment.id },
+      "enrollment_error",
+    );
     throw error;
   }
 };
@@ -475,7 +507,11 @@ export const getEnrollmentsWithMissingSEF = async (timeProvided: Date, weeksMiss
     return enrollmentsWithTwoMissingSessions;
   } catch (error) {
     console.error("Unable to filter ", error);
-    await logError(error, { function: "getEnrollmentsWithMissingSEF", weeks_missing_sef: weeksMissingSEF }, "enrollment_error");
+    await logError(
+      error,
+      { function: "getEnrollmentsWithMissingSEF", weeks_missing_sef: weeksMissingSEF },
+      "enrollment_error",
+    );
     throw error;
   }
 };
@@ -537,11 +573,15 @@ export const addEnrollment = async (
 
     if (error) {
       console.error("Error adding enrollment:", error);
-      await logError(error, {
-        function: "addEnrollment",
-        tutor_id: enrollmentTutorId,
-        student_id: enrollment.student?.id,
-      }, "enrollment_error");
+      await logError(
+        error,
+        {
+          function: "addEnrollment",
+          tutor_id: enrollmentTutorId,
+          student_id: enrollment.student?.id,
+        },
+        "enrollment_error",
+      );
       throw error;
     }
 
@@ -612,7 +652,11 @@ export const sessionTimeFromEnrollment = async (
     return fromZonedTime(dateString, "America/New_York").toISOString();
   } catch (error) {
     console.error("Unable to calculate session from enrollment");
-    await logError(error, { function: "sessionTimeFromEnrollment", day: availability.day, start }, "enrollment_error");
+    await logError(
+      error,
+      { function: "sessionTimeFromEnrollment", day: availability.day, start },
+      "enrollment_error",
+    );
     throw error;
   }
 };

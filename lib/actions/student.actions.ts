@@ -134,4 +134,3 @@ export async function cancelEnrollment(sessionId: string) {
     throw error;
   }
 }
-

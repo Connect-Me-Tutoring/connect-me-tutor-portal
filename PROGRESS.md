@@ -49,6 +49,7 @@ sibling `enrollment/[id]/chat/page.tsx`).
 
 Not just type annotations — typing the client surfaced several real, previously-silent bugs
 that `any` had been masking:
+
 - **`rescheduleSession`** (`session.server.actions.ts`) and **`undoSessionExitForm`**
   (`tutor.actions.ts`) were selecting bare `"*"` instead of the joined `student`/`tutor`/
   `meeting` relations, so `updatedSession.student`, `.tutor`, `.meeting` were always
@@ -79,7 +80,7 @@ that `any` had been masking:
   whose results were never used — the session's `student`/`tutor` already come from the
   embedded relation select. Removed the redundant round-trip.
 - **`getMeetings`** (`meeting.server.actions.ts`) was calling `.neq("name", omittedLinks)`
-  with an *array* where PostgREST's `.neq()` expects a single value — a filter that
+  with an _array_ where PostgREST's `.neq()` expects a single value — a filter that
   couldn't have worked as intended. Replaced with `.not("name", "in", ...)`.
 - Several manual, duplicated object-mapping blocks (`Profile`, `Meeting`, `Session`,
   `Enrollment` shapes rebuilt field-by-field inline) were replaced with the existing shared
@@ -110,6 +111,7 @@ exists locally and on `origin`, untouched, at the same commit. All the changes d
 this file are currently uncommitted working-tree changes sitting on top of `type-errors`.
 
 ## Files changed
+
 ```
 .github/workflows/ci.yml
 database.types.ts                          | deleted (was 0 bytes)
@@ -138,6 +140,7 @@ package.json, package-lock.json            | +1 script, @supabase/ssr bump
 ```
 
 ## Not done (explicitly out of scope, flagged for the user)
+
 - The 21 pre-existing baseline `tsc` errors (unrelated to this plan)
 - The pre-existing `npm run build` failure (same root cause as one of the 21 — a 1-line fix
   if wanted, see "Final state" above)

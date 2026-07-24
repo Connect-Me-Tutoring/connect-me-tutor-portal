@@ -209,7 +209,11 @@ export const createUser = async (newProfileData: CreatedProfileData) => {
      */
     if (!prevProfile && profileError) {
       console.error("Unable to create profile", profileError);
-      await logError(profileError, { action: "createUser", email: newProfileData.email }, "auth_error");
+      await logError(
+        profileError,
+        { action: "createUser", email: newProfileData.email },
+        "auth_error",
+      );
       await supabase.auth.admin.deleteUser(userId);
       throw profileError;
     }
@@ -251,7 +255,11 @@ const replaceLastActiveProfile = async (
       .throwOnError();
   } catch (error) {
     console.error("Unable to replace last active profile", error);
-    await logError(error, { action: "replaceLastActiveProfile", userId, lastActiveProfileId }, "auth_error");
+    await logError(
+      error,
+      { action: "replaceLastActiveProfile", userId, lastActiveProfileId },
+      "auth_error",
+    );
     throw error;
   }
 };
@@ -329,6 +337,10 @@ export const createUserWithTempPassword = async (tutor: Partial<Profile>) => {
     return tutor as Profile;
   } catch (error) {
     console.error("Unable to create user", error);
-    await logError(error, { action: "createUserWithTempPassword", email: tutor.email }, "auth_error");
+    await logError(
+      error,
+      { action: "createUserWithTempPassword", email: tutor.email },
+      "auth_error",
+    );
   }
 };

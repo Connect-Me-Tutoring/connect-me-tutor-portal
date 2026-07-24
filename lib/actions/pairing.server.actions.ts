@@ -30,7 +30,11 @@ export const getPairingFromEnrollmentId = async (enrollmentId: string) => {
     return data.pairing_id;
   } catch (error) {
     console.error("Unable to get pairing from enrollment", error);
-    await logError(error, { function: "getPairingFromEnrollmentId", enrollment_id: enrollmentId }, "pairing_error");
+    await logError(
+      error,
+      { function: "getPairingFromEnrollmentId", enrollment_id: enrollmentId },
+      "pairing_error",
+    );
     throw error;
   }
 };
@@ -129,7 +133,11 @@ export const getRejectedTutorIdsForStudent = async (
 
   if (error) {
     console.error("getRejectedTutorIdsForStudent error", error);
-    await logError(error, { function: "getRejectedTutorIdsForStudent", student_profile_id: studentProfileId }, "pairing_error");
+    await logError(
+      error,
+      { function: "getRejectedTutorIdsForStudent", student_profile_id: studentProfileId },
+      "pairing_error",
+    );
     return [];
   }
   if (!data?.length) return [];
@@ -255,7 +263,11 @@ export const deletePairingServer = async (tutorId: string, studentId: string) =>
     return { success: true };
   } catch (error) {
     console.error("Failed to delete pairing:", error);
-    await logError(error, { function: "deletePairingServer", tutor_id: tutorId, student_id: studentId }, "pairing_error");
+    await logError(
+      error,
+      { function: "deletePairingServer", tutor_id: tutorId, student_id: studentId },
+      "pairing_error",
+    );
     throw error;
   }
 };
