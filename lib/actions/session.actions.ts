@@ -472,6 +472,9 @@ export async function addOneSession(session: Session): Promise<Session | null> {
 
 export async function sendStudentSEFFeedbackEmail(session: Session): Promise<void> {
   try {
+    if (!session.tutor) {
+      throw new Error("Session has no tutor assigned");
+    }
     const { studentName, studentEmail } = getStudentFromSession(session);
     const response = await fetch("/api/admin/email/student-SEF-feedback", {
       method: "POST",
