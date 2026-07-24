@@ -200,10 +200,16 @@ function nameFromUnknown(error: unknown): string {
 
 /**
  * Log an error event to PostHog (full `context` + `error` snapshots as JSON strings)
+ *
+ * `eventName` defaults to "zoom_webhook_error" for backward compatibility with the
+ * original Zoom-webhook-only callers. Every other caller should pass an explicit,
+ * domain-specific event name (e.g. "enrollment_error") so errors aren't all bucketed
+ * under the Zoom webhook event in PostHog.
  */
 export async function logError(
   error: Error | unknown,
   context?: Record<string, any>,
+  eventName: string = "zoom_webhook_error",
   distinctId?: string,
 ) {
   const errorMessage = messageFromUnknown(error);
@@ -216,7 +222,7 @@ export async function logError(
       : { thrown: error };
 
   await logEvent(
-    "zoom_webhook_error",
+    eventName,
     {
       ...context,
       error_name: errorName,

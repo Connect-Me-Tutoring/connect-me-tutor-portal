@@ -11,6 +11,7 @@ import { tableToInterfaceProfiles } from "../type-utils";
 import { createPassword } from "../utils";
 import { cachedGetUser, getProfileRole } from "./user.server.actions";
 import { isCronRequestAuthorized } from "@/lib/security/cron";
+import { logError } from "@/lib/posthog";
 
 interface UserMetadata {
   email: string;
@@ -206,6 +207,7 @@ export const createUser = async (newProfileData: CreatedProfileData) => {
      */
     if (!prevProfile && profileError) {
       console.error("Unable to create profile", profileError);
+      await logError(profileError, { action: "createUser", email: newProfileData.email }, "auth_error");
       await supabase.auth.admin.deleteUser(userId);
       throw profileError;
     }
@@ -222,6 +224,7 @@ export const createUser = async (newProfileData: CreatedProfileData) => {
     return createdProfileData;
   } catch (error) {
     console.error("Error creating user:", error);
+    await logError(error, { action: "createUser", email: newProfileData.email }, "auth_error");
     throw error;
   }
 };
@@ -246,6 +249,7 @@ const replaceLastActiveProfile = async (
       .throwOnError();
   } catch (error) {
     console.error("Unable to replace last active profile", error);
+    await logError(error, { action: "replaceLastActiveProfile", userId, lastActiveProfileId }, "auth_error");
     throw error;
   }
 };
@@ -302,6 +306,7 @@ export const deleteUser = async (profileId: string) => {
     await adminSupabase.from(Table.Profiles).delete().eq("id", profileId).throwOnError();
   } catch (error: any) {
     console.error("Failed to delete user", error);
+    await logError(error, { action: "deleteUser", profileId }, "auth_error");
     throw error;
   }
 };
@@ -319,5 +324,6 @@ export const createUserWithTempPassword = async (tutor: Partial<Profile>) => {
     return tutor as Profile;
   } catch (error) {
     console.error("Unable to create user", error);
+    await logError(error, { action: "createUserWithTempPassword", email: tutor.email }, "auth_error");
   }
 };

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { mastra } from "@/lib/mastra";
+import { logError } from "@/lib/posthog";
 
 export async function POST(req: Request) {
   try {
@@ -39,6 +40,7 @@ export async function POST(req: Request) {
     });
   } catch (error: any) {
     console.error("Chat API Error:", error);
+    await logError(error, {}, "ai_chatbot_error");
     return NextResponse.json({ error: error.message || "Internal server error" }, { status: 500 });
   }
 }

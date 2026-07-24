@@ -31,6 +31,7 @@ import {
   sendTutorSessionCancellationEmail,
   updateScheduledEmailBeforeSessions,
 } from "./email.server.actions";
+import { logError } from "@/lib/posthog";
 
 import { startOfWeek, endOfWeek, subDays, parseISO, format, addDays } from "date-fns"; // Only use date-fns
 
@@ -121,6 +122,10 @@ export async function addSessionsServer(
 
       if (!startTime || !endTime) {
         console.error(`Invalid time format in availability:`, availability[0]);
+        await logError(new Error("Invalid time format in availability"), {
+          availability: availability[0],
+          enrollment_id: id,
+        }, "session_error");
         continue;
       }
 
@@ -180,6 +185,7 @@ export async function addSessionsServer(
           }
         } catch (err) {
           console.error("Error processing time for %s %s-%s:", day, startTime, endTime, err);
+          await logError(err, { enrollment_id: id, day, startTime, endTime }, "session_error");
         }
 
         currentDate = addDays(currentDate, 1);
@@ -207,6 +213,7 @@ export async function addSessionsServer(
     return [];
   } catch (error) {
     console.error("Error creating sessions:", error);
+    await logError(error, { weekStartString, weekEndString }, "session_error");
     throw error;
   }
 }
@@ -252,6 +259,7 @@ async function findMeetingRecordByNormalizedZoomNumber(
 
   if (error) {
     console.error("Error fetching meeting for Zoom webhook:", error);
+    await logError(error, { normalized_search: normalizedSearch }, "session_error");
     return null;
   }
 
@@ -275,6 +283,7 @@ export async function findMeetingByNormalizedId(
 
     if (error) {
       console.error("Error fetching meetings:", error);
+      await logError(error, { zoom_meeting_number: zoomMeetingNumber }, "session_error");
       return null;
     }
 
@@ -291,6 +300,7 @@ export async function findMeetingByNormalizedId(
     return matchingMeeting || null;
   } catch (error) {
     console.error("Error finding meeting by normalized ID:", error);
+    await logError(error, { zoom_meeting_number: zoomMeetingNumber }, "session_error");
     return null;
   }
 }
@@ -316,6 +326,7 @@ export async function getActiveSessionFromMeetingID(meetingID: string) {
 
   if (error) {
     console.error("Error fetching session:", error);
+    await logError(error, { meeting_id: meetingID }, "session_error");
     return [];
   }
 
@@ -334,6 +345,9 @@ export async function cancelSession(session: Session, actor: "tutor" | "student"
 
   if (existingSessionError || !existingSession) {
     console.error("Error loading session before cancellation:", existingSessionError);
+    await logError(existingSessionError ?? new Error("Session not found before cancellation"), {
+      session_id: session.id,
+    }, "session_error");
     throw existingSessionError ?? new Error("Session not found");
   }
 
@@ -349,6 +363,7 @@ export async function cancelSession(session: Session, actor: "tutor" | "student"
 
   if (error) {
     console.error("Error cancelling session:", error);
+    await logError(error, { session_id: session.id, actor }, "session_error");
     throw error;
   }
 
@@ -375,6 +390,7 @@ export async function cancelSession(session: Session, actor: "tutor" | "student"
     }
   } catch (emailError) {
     console.error("Failed to send cancellation email:", emailError);
+    await logError(emailError, { session_id: session.id, actor }, "session_error");
   }
 
   return { ...session, status: "Cancelled" as const };
@@ -533,6 +549,10 @@ export async function resolvePortalSessionForZoomMeetingNumber(
 
   if (sessionError) {
     console.error("Error fetching sessions for Zoom webhook:", sessionError);
+    await logError(sessionError, {
+      zoom_meeting_number: zoomMeetingNumber,
+      meetings_row_id: meetingRecord.id,
+    }, "session_error");
     return { meetingRecord, sessionId: null };
   }
 
@@ -581,6 +601,7 @@ export async function getSessions(start: string, end: string): Promise<Session[]
     return sessions;
   } catch (error) {
     console.error("Error fetching sessions: ", error);
+    await logError(error, { start, end }, "session_error");
     throw error;
   }
 }
@@ -616,6 +637,7 @@ export async function getAllSessionsServer(
 
     if (error) {
       console.error("Error fetching student sessions:", error.message);
+      await logError(error, { startDate, endDate, orderBy, ascending }, "session_error");
       throw error;
     }
 
@@ -628,6 +650,7 @@ export async function getAllSessionsServer(
     return sessions;
   } catch (error) {
     console.error("Error fetching sessions", error);
+    await logError(error, { startDate, endDate, orderBy, ascending }, "session_error");
     return [];
   }
 }
@@ -672,6 +695,7 @@ export async function getAllSessions(
 
     if (error) {
       console.error("Error fetching student sessions:", error.message);
+      await logError(error, { startDate, endDate, profile_id: profile.id }, "session_error");
       throw error;
     }
 
@@ -682,6 +706,7 @@ export async function getAllSessions(
     return sessions;
   } catch (error) {
     console.error("Error fetching sessions", error);
+    await logError(error, { startDate, endDate }, "session_error");
     return [];
   }
 }
@@ -745,11 +770,15 @@ export async function getEnrollmentSessionsActivityData(
 
     if (enErr || !enRow) {
       console.error("getEnrollmentSessionsActivityData enrollment:", enErr);
+      await logError(enErr ?? new Error("Enrollment not found"), { enrollment_id: enrollmentId }, "session_error");
       return null;
     }
 
     if (!enRow.student || !enRow.tutor) {
       console.error("getEnrollmentSessionsActivityData: enrollment missing student or tutor");
+      await logError(new Error("Enrollment missing student or tutor"), {
+        enrollment_id: enrollmentId,
+      }, "session_error");
       return null;
     }
 
@@ -771,6 +800,7 @@ export async function getEnrollmentSessionsActivityData(
 
     if (sErr) {
       console.error("getEnrollmentSessionsActivityData sessions:", sErr);
+      await logError(sErr, { enrollment_id: enrollmentId }, "session_error");
       throw sErr;
     }
 
@@ -802,6 +832,7 @@ export async function getEnrollmentSessionsActivityData(
     };
   } catch (error) {
     console.error("getEnrollmentSessionsActivityData:", error);
+    await logError(error, { enrollment_id: enrollmentId }, "session_error");
     return null;
   }
 }
@@ -933,6 +964,10 @@ export async function getParticipationData(
     };
   } catch (error) {
     console.error("Error fetching participation data:", error);
+    await logError(error, {
+      session_id: sessionId,
+      enrollment_id_from_search: enrollmentIdFromSearch,
+    }, "session_error");
     return null;
   }
 }
@@ -959,6 +994,7 @@ export async function getSessionById(
 
     if (sessionError || !sessionData) {
       console.error("Error fetching session:", sessionError);
+      await logError(sessionError ?? new Error("Session not found"), { session_id: sessionId }, "session_error");
       return null;
     }
 
@@ -976,6 +1012,7 @@ export async function getSessionById(
     return session;
   } catch (error) {
     console.error("Error fetching session by ID:", error);
+    await logError(error, { session_id: sessionId }, "session_error");
     return null;
   }
 }
@@ -1029,6 +1066,7 @@ export async function getTutorSessions(
 
   if (error) {
     console.error("Error fetching student sessions:", error.message);
+    await logError(error, { profile_id: profileId, startDate, endDate, status }, "session_error");
     throw error;
   }
 
@@ -1088,6 +1126,7 @@ export async function getStudentSessions(
 
   if (error) {
     console.error("Error fetching student sessions:", error.message);
+    await logError(error, { profile_id: profileId, startDate, endDate, status }, "session_error");
     throw error;
   }
 
@@ -1138,6 +1177,7 @@ export async function rescheduleSession(
     }
   } catch (error) {
     console.error("Unable to reschedule", error);
+    await logError(error, { session_id: sessionId, newDate, meetingId, tutorid }, "session_error");
     throw error;
   }
 }
@@ -1193,6 +1233,7 @@ export async function addStandaloneSession(
     }
   } catch (error) {
     console.error("Unable to add one session", error);
+    await logError(error, { session_id: session.id, student_id: session.student?.id, tutor_id: session.tutor?.id }, "session_error");
     throw error;
   }
 }
@@ -1210,6 +1251,7 @@ export async function cancelUnsubmittedSEF(profile: Profile) {
       .lt("date", fortyEightHoursAgo);
   } catch (error) {
     console.error("Unable to cancel unsubmitted SEF");
+    await logError(error, { tutor_id: profile.id }, "session_error");
   }
 }
 
@@ -1256,6 +1298,7 @@ export async function updateSessionsStatus(sessionIds: string[], status: string)
     if (error) throw error;
   } catch (error) {
     console.error("Error updating sessions status:", error);
+    await logError(error, { session_ids: sessionIds, status }, "session_error");
     throw error;
   }
 }
@@ -1301,6 +1344,7 @@ export async function updateSession(updatedSession: Session, updateEmail: boolea
 
     if (error) {
       console.error("Error updating session:", error);
+      await logError(error, { session_id: id }, "session_error");
       return null;
     }
 
@@ -1308,6 +1352,7 @@ export async function updateSession(updatedSession: Session, updateEmail: boolea
       return data[0];
     } else {
       console.error("NO DATA");
+      await logError(new Error("No data returned when updating session"), { session_id: id }, "session_error");
     }
     if (updateEmail && data) {
       const newSession: Session = tableToInterfaceSessions(data);
@@ -1315,6 +1360,7 @@ export async function updateSession(updatedSession: Session, updateEmail: boolea
     }
   } catch (error) {
     console.error("Unable to update session");
+    await logError(error, { session_id: updatedSession.id }, "session_error");
     throw error;
   }
 }

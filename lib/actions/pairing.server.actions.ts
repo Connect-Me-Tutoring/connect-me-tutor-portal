@@ -15,6 +15,7 @@ import { getOverlappingAvailabilites } from "./enrollment.actions";
 import { formatDateAdmin, to12Hour } from "../utils";
 import { requireAdmin, requireEnrollmentAccess, requireSelfOrAdmin } from "./authz.server";
 import { getPairingRejectionCooldown } from "../pairing/rejection-config";
+import { logError } from "@/lib/posthog";
 
 export const getPairingFromEnrollmentId = async (enrollmentId: string) => {
   try {
@@ -29,6 +30,7 @@ export const getPairingFromEnrollmentId = async (enrollmentId: string) => {
     return data.pairing_id;
   } catch (error) {
     console.error("Unable to get pairing from enrollment", error);
+    await logError(error, { function: "getPairingFromEnrollmentId", enrollment_id: enrollmentId }, "pairing_error");
     throw error;
   }
 };
@@ -43,12 +45,14 @@ export async function getAccountPairings(userId: string) {
 
     if (error) {
       console.error("Error fetching enrollments:", error);
+      await logError(error, { function: "getAccountPairings", user_id: userId }, "pairing_error");
       return null;
     }
 
     return data as SharedPairing[];
   } catch (error) {
     console.error("Unable to get account pairings", error);
+    await logError(error, { function: "getAccountPairings", user_id: userId }, "pairing_error");
     throw error;
   }
 }
@@ -103,6 +107,7 @@ export const deleteAllPairingRequests = async () => {
     // }
   } catch (err: any) {
     console.error(err.message);
+    await logError(err, { function: "deleteAllPairingRequests" }, "pairing_error");
   }
 };
 
@@ -124,6 +129,7 @@ export const getRejectedTutorIdsForStudent = async (
 
   if (error) {
     console.error("getRejectedTutorIdsForStudent error", error);
+    await logError(error, { function: "getRejectedTutorIdsForStudent", student_profile_id: studentProfileId }, "pairing_error");
     return [];
   }
   if (!data?.length) return [];
@@ -159,6 +165,7 @@ export const resetPairingQueues = async () => {
 
   if (error) {
     console.error("Error deleting rows:", error);
+    await logError(error, { function: "resetPairingQueues" }, "pairing_error");
   } else {
   }
 };
@@ -248,6 +255,7 @@ export const deletePairingServer = async (tutorId: string, studentId: string) =>
     return { success: true };
   } catch (error) {
     console.error("Failed to delete pairing:", error);
+    await logError(error, { function: "deletePairingServer", tutor_id: tutorId, student_id: studentId }, "pairing_error");
     throw error;
   }
 };

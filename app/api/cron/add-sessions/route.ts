@@ -4,6 +4,7 @@ import { addSessionsServer, getAllSessionsServer } from "@/lib/actions/session.s
 import { getAllActiveEnrollmentsServer } from "@/lib/actions/enrollment.server.actions";
 import { isCronRequestAuthorized } from "@/lib/security/cron";
 import { getEasternWeekBounds } from "@/lib/utils";
+import { logError } from "@/lib/posthog";
 
 export async function GET(request: Request) {
   if (!isCronRequestAuthorized(request)) {
@@ -32,6 +33,7 @@ export async function GET(request: Request) {
     });
   } catch (error) {
     console.error("Cron job add-sessions failed:", error);
+    await logError(error, {}, "cron_add_sessions_error");
     return NextResponse.json({ success: false, error: "Internal Server Error" }, { status: 500 });
   }
 }

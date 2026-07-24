@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { getEnrollmentsWithMissingSEF } from "@/lib/actions/enrollment.server.actions";
 import { isCronRequestAuthorized } from "@/lib/security/cron";
+import { logError } from "@/lib/posthog";
 
 export const dynamic = "force-dynamic";
 
@@ -33,6 +34,7 @@ export async function GET(request: NextRequest) {
 
     if (deleteError) {
       console.error("Error deleting enrollments:", deleteError);
+      await logError(deleteError, { enrollmentIds }, "cron_delete_inactive_enrollments_error");
       return NextResponse.json({ error: "Failed to delete enrollments" }, { status: 500 });
     }
 
@@ -42,6 +44,7 @@ export async function GET(request: NextRequest) {
     });
   } catch (error) {
     console.error("Unable to delete inactive enrollments:", error);
+    await logError(error, {}, "cron_delete_inactive_enrollments_error");
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }

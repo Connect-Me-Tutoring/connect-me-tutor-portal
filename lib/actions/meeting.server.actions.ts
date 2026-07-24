@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase/server";
 import { fetchDaySessionsFromSchedule } from "./session.actions";
 import { addHours, areIntervalsOverlapping, isValid, parseISO } from "date-fns";
 import { Table } from "../supabase/tables";
+import { logError } from "@/lib/posthog";
 
 export async function getMeeting(id: string): Promise<Meeting | null> {
   try {
@@ -29,6 +30,7 @@ export async function getMeeting(id: string): Promise<Meeting | null> {
     // Check for errors and log them
     if (error) {
       console.error("Error fetching event details:", error.message);
+      await logError(error, { action: "getMeeting", meetingId: id }, "meeting_error");
       return null; // Returning null here is valid since the function returns Promise<Notification[] | null>
     }
     // Check if data exists
@@ -47,6 +49,7 @@ export async function getMeeting(id: string): Promise<Meeting | null> {
     return meeting; // Return the array of notifications
   } catch (error) {
     console.error("Unexpected error in getMeeting:", error);
+    await logError(error, { action: "getMeeting", meetingId: id }, "meeting_error");
     return null; // Valid return
   }
 }
@@ -74,6 +77,7 @@ export async function getMeetings(options?: { omit?: string[] }): Promise<Meetin
     // Check for errors and log them
     if (error) {
       console.error("Error fetching event details:", error.message);
+      await logError(error, { action: "getMeetings", omit: omittedLinks }, "meeting_error");
       return null; // Returning null here is valid since the function returns Promise<Notification[] | null>
     }
 
@@ -98,6 +102,7 @@ export async function getMeetings(options?: { omit?: string[] }): Promise<Meetin
     return meetings; // Return the array of notifications
   } catch (error) {
     console.error("Unexpected error in getMeeting:", error);
+    await logError(error, { action: "getMeetings" }, "meeting_error");
     return null; // Valid return
   }
 }

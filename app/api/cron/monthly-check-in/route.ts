@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/server";
 import { sendMonthlyCheckInEmail } from "@/lib/actions/email.server.actions";
 import { isCronRequestAuthorized } from "@/lib/security/cron";
+import { logError } from "@/lib/posthog";
 
 export async function GET(request: Request) {
   if (!isCronRequestAuthorized(request)) {
@@ -21,6 +22,7 @@ export async function GET(request: Request) {
 
     if (error) {
       console.error("Error fetching users for monthly check-in:", error);
+      await logError(error, {}, "cron_monthly_check_in_error");
       throw error;
     }
 
@@ -43,6 +45,7 @@ export async function GET(request: Request) {
     });
   } catch (error: any) {
     console.error("Monthly check-in cron failed:", error);
+    await logError(error, {}, "cron_monthly_check_in_error");
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }

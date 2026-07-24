@@ -6,6 +6,7 @@ import {
   resolveChatRecipientProfiles,
   type ChatRoomType,
 } from "@/lib/chat/resolve-chat-recipients";
+import { logError } from "@/lib/posthog";
 
 type DispatchArgs = {
   roomId: string;
@@ -51,5 +52,6 @@ export async function dispatchChatMessageEmails({
     }
   } catch (e) {
     console.error("dispatchChatMessageEmails", e);
+    await logError(e, { roomId, roomType }, "chat_dispatch_email_error");
   }
 }
