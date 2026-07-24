@@ -13,7 +13,7 @@ on:
 
 jobs:
   style-lint-build:
-    name: Style, Lint, and Build
+    name: Style and Lint
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -41,4 +41,3 @@ jobs:
 
       - name: Run TypeScript check
         run: npm run typecheck
-        continue-on-error: true
