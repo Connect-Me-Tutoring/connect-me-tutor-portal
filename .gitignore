@@ -43,6 +43,7 @@ keys.json
 
 #supabase
 supabase/.temp/*
+types/database.types.ts.new
 
 # unlighthouse
 .unlighthouse

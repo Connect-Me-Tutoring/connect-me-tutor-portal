@@ -5,7 +5,8 @@ set -euo pipefail
 # in the gitignored supabase/.temp/ dir, so --linked needs no further config.
 # CI (and anyone who hasn't linked yet): falls back to the explicit project
 # ref via SUPABASE_PROJECT_REF (set as a repo secret in .github/workflows/ci.yml).
-tmp_file=$(mktemp)
+target="types/database.types.ts"
+tmp_file="${target}.new"
 trap 'rm -f "$tmp_file"' EXIT
 
 if [ -f supabase/.temp/project-ref ]; then
@@ -18,8 +19,13 @@ else
 fi
 
 if [ ! -s "$tmp_file" ]; then
-  echo "supabase gen types produced empty output; leaving types/database.types.ts untouched" >&2
+  echo "supabase gen types produced empty output; leaving $target untouched" >&2
   exit 1
 fi
 
-mv "$tmp_file" types/database.types.ts
+mv "$tmp_file" "$target"
+
+# Raw CLI output isn't Prettier-formatted, but the committed file is (format:check
+# enforces this repo-wide) - format the real path in place so the CI drift-check
+# diffs like-for-like instead of flagging cosmetic differences as schema drift.
+npx prettier --write "$target" >/dev/null
