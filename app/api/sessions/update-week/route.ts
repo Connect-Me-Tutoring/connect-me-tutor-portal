@@ -1,6 +1,6 @@
-import { getAllActiveEnrollmentsServer } from "@/lib/actions/enrollment.server.actions";
+import { getAllActiveEnrollmentsForCron } from "@/lib/actions/enrollment.server.actions";
 import { NextRequest, NextResponse } from "next/server";
-import { addSessionsServer, getAllSessionsServer } from "@/lib/actions/session.server.actions";
+import { addSessionsForCron, getAllSessionsForCron } from "@/lib/actions/session.server.actions";
 import { Session } from "@/types";
 import { getEasternWeekBounds } from "@/lib/utils";
 import { isCronRequestAuthorized } from "@/lib/security/cron";
@@ -31,10 +31,10 @@ const handleUpdateWeek = async (): Promise<Session[]> => {
     const weekStart = weekBounds.weekStart.toISOString();
     const weekEnd = weekBounds.weekEnd.toISOString();
 
-    const enrollments = await getAllActiveEnrollmentsServer(weekEnd);
-    const sessions: Session[] = await getAllSessionsServer(weekStart, weekEnd, "date", true);
+    const enrollments = await getAllActiveEnrollmentsForCron(weekEnd);
+    const sessions: Session[] = await getAllSessionsForCron(weekStart, weekEnd, "date", true);
 
-    const newSessions = await addSessionsServer(weekStart, weekEnd, enrollments, sessions);
+    const newSessions = await addSessionsForCron(weekStart, weekEnd, enrollments, sessions);
     if (!newSessions) {
       throw new Error("No sessions were created");
     }

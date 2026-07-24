@@ -48,3 +48,4 @@ types/database.types.ts.new
 # unlighthouse
 .unlighthouse
 unlighthouse.config.mjs
+.env*

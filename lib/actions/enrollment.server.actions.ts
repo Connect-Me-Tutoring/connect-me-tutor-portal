@@ -264,10 +264,12 @@ export async function getAllActiveEnrollments(endOfWeek?: string): Promise<Enrol
   }
 }
 
-export async function getAllActiveEnrollmentsForCron(): Promise<Enrollment[]> {
+export async function getAllActiveEnrollmentsForCron(
+  startDateOnOrBefore?: string,
+): Promise<Enrollment[]> {
   try {
     const supabase = await createAdminClient();
-    const { data, error } = await supabase
+    let query = supabase
       .from(Table.Enrollments)
       .select(
         `
@@ -288,6 +290,12 @@ export async function getAllActiveEnrollmentsForCron(): Promise<Enrollment[]> {
       `,
       )
       .eq("paused", false);
+
+    if (startDateOnOrBefore) {
+      query = query.lte("start_date", startDateOnOrBefore);
+    }
+
+    const { data, error } = await query;
 
     if (error) {
       console.error("Error fetching active enrollments for cron:", error.message);

@@ -69,14 +69,15 @@ async function isSessioninPastWeek(enrollmentId: string, midWeek: Date) {
  * @param sessions - Existing sessions to avoid duplicates
  * @returns Newly created sessions
  */
-export async function addSessionsServer(
+export async function addSessionsForCron(
   weekStartString: string,
   weekEndString: string,
   enrollments: Enrollment[],
   sessions: Session[],
 ) {
   try {
-    const supabase = await createClient();
+    // Cron context has no user session; callers must gate with isCronRequestAuthorized.
+    const supabase = await createAdminClient();
     const weekStart = parseISO(weekStartString);
     const weekEnd = parseISO(weekEndString);
 
@@ -666,6 +667,51 @@ export async function getAllSessionsServer(
     console.error("Error fetching sessions", error);
     await logError(error, { startDate, endDate, orderBy, ascending }, "session_error");
     return [];
+  }
+}
+
+export async function getAllSessionsForCron(
+  startDate?: string,
+  endDate?: string,
+  orderBy?: string,
+  ascending?: boolean,
+) {
+  // Cron context has no user session; callers must gate with isCronRequestAuthorized.
+  const supabase = await createAdminClient();
+  try {
+    let query = supabase.from(Table.Sessions).select(`
+      *,
+      meeting:Meetings!meeting_id(*),
+      student:Profiles!student_id(*),
+      tutor:Profiles!tutor_id(*)
+    `);
+
+    if (startDate) {
+      query = query.gte("date", startDate);
+    }
+    if (endDate) {
+      query = query.lte("date", endDate);
+    }
+
+    if (orderBy && ascending !== undefined) {
+      query = query.order(orderBy, { ascending });
+    }
+
+    const { data, error } = await query;
+
+    if (error) {
+      console.error("Error fetching sessions for cron:", error.message);
+      throw error;
+    }
+
+    const sessions: Session[] = data
+      .filter((session: any) => session.student && session.tutor)
+      .map((session: any): Session => tableToInterfaceSessions(session));
+
+    return sessions;
+  } catch (error) {
+    console.error("Error fetching sessions for cron", error);
+    throw error;
   }
 }
 
