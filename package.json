@@ -23,7 +23,7 @@
     "lookup-static:json": "node scripts/lookup-proposed-matches-perf/run-static-from-json.mjs",
     "dump:rpc": "node scripts/dump-rpc-definitions.mjs --clean --out rpc",
     "dump:best-match-resolution": "node scripts/dump-get-best-match-resolution.mjs",
-    "gen:types": "supabase gen types typescript --project-id \"$SUPABASE_PROJECT_REF\" --schema public > types/database.types.ts"
+    "gen:types": "bash scripts/gen-types.sh"
   },
   "dependencies": {
     "@ai-sdk/google": "^3.0.83",

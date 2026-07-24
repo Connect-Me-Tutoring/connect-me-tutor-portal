@@ -41,7 +41,8 @@ keys.json
 # vscode
 .vscode
 
-.env.locala
+#supabase
+supabase/.temp/*
 
 # unlighthouse
 .unlighthouse
