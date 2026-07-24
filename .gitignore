@@ -46,3 +46,4 @@ keys.json
 # unlighthouse
 .unlighthouse
 unlighthouse.config.mjs
+.env*
