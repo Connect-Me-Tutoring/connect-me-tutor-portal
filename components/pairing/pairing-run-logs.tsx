@@ -45,9 +45,7 @@ export function PairingRunLogsPage() {
   const [isApplying, setIsApplying] = useState(false);
   const [selectedKeys, setSelectedKeys] = useState<Set<string>>(new Set());
   const [showNoOverlapOnly, setShowNoOverlapOnly] = useState(false);
-  const [graphScope, setGraphScope] = useState<
-    "closed" | "selected" | "complete"
-  >("closed");
+  const [graphScope, setGraphScope] = useState<"closed" | "selected" | "complete">("closed");
 
   useEffect(() => {
     if (!runId || typeof window === "undefined") {
@@ -56,9 +54,7 @@ export function PairingRunLogsPage() {
       return;
     }
 
-    const raw = window.sessionStorage.getItem(
-      `${PREVIEW_RUN_STORAGE_PREFIX}${runId}`,
-    );
+    const raw = window.sessionStorage.getItem(`${PREVIEW_RUN_STORAGE_PREFIX}${runId}`);
     if (!raw) {
       setRun(null);
       setSelectedKeys(new Set());
@@ -70,9 +66,7 @@ export function PairingRunLogsPage() {
       const preview = normalizePairingWorkflowPreviewPayload(parsed.preview);
       setRun({ ...parsed, preview });
       if (preview.matchPreviews.length > 0) {
-        setSelectedKeys(
-          new Set(preview.matchPreviews.map((p) => previewKey(p))),
-        );
+        setSelectedKeys(new Set(preview.matchPreviews.map((p) => previewKey(p))));
       } else {
         setSelectedKeys(new Set());
       }
@@ -108,27 +102,21 @@ export function PairingRunLogsPage() {
   }, [run]);
 
   const canShowGraph = Boolean(
-    run &&
-      (run.preview.matchPreviews.length > 0 ||
-        run.preview.matchesToInsert.length > 0),
+    run && (run.preview.matchPreviews.length > 0 || run.preview.matchesToInsert.length > 0),
   );
 
   const graphPreviewsSelected = useMemo(() => {
     if (!run?.preview.matchPreviews?.length) return [];
-    return run.preview.matchPreviews.filter((p) =>
-      selectedKeys.has(previewKey(p)),
-    );
+    return run.preview.matchPreviews.filter((p) => selectedKeys.has(previewKey(p)));
   }, [run, selectedKeys]);
 
-  const canShowSelectedGraph =
-    hasOverlapData && graphPreviewsSelected.length > 0;
+  const canShowSelectedGraph = hasOverlapData && graphPreviewsSelected.length > 0;
 
   const visiblePreviews = useMemo(() => {
     const list = run?.preview.matchPreviews ?? [];
     if (!showNoOverlapOnly) return list;
     return list.filter(
-      (p) =>
-        p.overlapping_subjects.length === 0 && p.overlapping_slots.length === 0,
+      (p) => p.overlapping_subjects.length === 0 && p.overlapping_slots.length === 0,
     );
   }, [run?.preview.matchPreviews, showNoOverlapOnly]);
 
@@ -169,9 +157,7 @@ export function PairingRunLogsPage() {
     let logs = run.preview.logs;
 
     if (!isLegacyPreview) {
-      const previews = run.preview.matchPreviews.filter((p) =>
-        selectedKeys.has(previewKey(p)),
-      );
+      const previews = run.preview.matchPreviews.filter((p) => selectedKeys.has(previewKey(p)));
       matchesToInsert = previews.map((p) => ({
         student_id: p.student_id,
         tutor_id: p.tutor_id,
@@ -220,13 +206,8 @@ export function PairingRunLogsPage() {
           <CardTitle>Pairing Run Logs</CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
-          <p className="text-sm text-muted-foreground">
-            No saved preview run found for this page.
-          </p>
-          <Button
-            variant="outline"
-            onClick={() => router.push("/dashboard/pairing-que")}
-          >
+          <p className="text-sm text-muted-foreground">No saved preview run found for this page.</p>
+          <Button variant="outline" onClick={() => router.push("/dashboard/pairing-que")}>
             Back to Pairing Queue
           </Button>
         </CardContent>
@@ -310,10 +291,7 @@ export function PairingRunLogsPage() {
                 View graph
               </Button>
             )}
-            <Button
-              variant="outline"
-              onClick={() => router.push("/dashboard/pairing-que/logs")}
-            >
+            <Button variant="outline" onClick={() => router.push("/dashboard/pairing-que/logs")}>
               View Global Logs
             </Button>
             <Button
@@ -336,32 +314,23 @@ export function PairingRunLogsPage() {
           <div className="text-sm text-muted-foreground">
             Run ID: <span className="font-mono">{run.runId}</span>
           </div>
-          <div className="text-sm text-muted-foreground">
-            Created: {createdAtText}
-          </div>
+          <div className="text-sm text-muted-foreground">Created: {createdAtText}</div>
           {run.appliedAt && (
             <div className="text-sm text-green-700">
               Applied at {new Date(run.appliedAt).toLocaleString()}
             </div>
           )}
           <div className="flex flex-wrap gap-2">
-            <Badge variant="outline">
-              Proposed matches: {run.preview.summary.matchesToInsert}
-            </Badge>
-            <Badge variant="outline">
-              Run logs: {run.preview.summary.logsToInsert}
-            </Badge>
+            <Badge variant="outline">Proposed matches: {run.preview.summary.matchesToInsert}</Badge>
+            <Badge variant="outline">Run logs: {run.preview.summary.logsToInsert}</Badge>
             {hasOverlapData && (
-              <Badge variant="secondary">
-                Selected to apply: {selectedKeys.size}
-              </Badge>
+              <Badge variant="secondary">Selected to apply: {selectedKeys.size}</Badge>
             )}
           </div>
           {isLegacyPreview && (
             <p className="text-sm text-amber-800 bg-amber-50 border border-amber-200 rounded-md p-2">
-              This preview was saved before overlap metadata existed. Apply will
-              insert all proposed matches. Run a new preview for overlap review
-              and selective apply.
+              This preview was saved before overlap metadata existed. Apply will insert all proposed
+              matches. Run a new preview for overlap review and selective apply.
             </p>
           )}
         </CardContent>
@@ -380,9 +349,7 @@ export function PairingRunLogsPage() {
                 onClick={() => setGraphScope("selected")}
                 disabled={!canShowSelectedGraph}
                 title={
-                  !canShowSelectedGraph
-                    ? "Select at least one row in the table below"
-                    : undefined
+                  !canShowSelectedGraph ? "Select at least one row in the table below" : undefined
                 }
               >
                 <Waypoints className="h-4 w-4 shrink-0" />
@@ -431,10 +398,7 @@ export function PairingRunLogsPage() {
                 <TableBody>
                   {visiblePreviews.length === 0 ? (
                     <TableRow>
-                      <TableCell
-                        colSpan={6}
-                        className="text-center py-8 text-muted-foreground"
-                      >
+                      <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
                         No proposed matches in this filter.
                       </TableCell>
                     </TableRow>
@@ -447,29 +411,19 @@ export function PairingRunLogsPage() {
                           <TableCell>
                             <Checkbox
                               checked={checked}
-                              onCheckedChange={(v) =>
-                                toggleKey(key, v === true)
-                              }
+                              onCheckedChange={(v) => toggleKey(key, v === true)}
                               aria-label={`Select match ${p.student_name} / ${p.tutor_name}`}
                             />
                           </TableCell>
-                          <TableCell className="font-medium">
-                            {p.student_name}
-                          </TableCell>
-                          <TableCell className="font-medium">
-                            {p.tutor_name}
-                          </TableCell>
+                          <TableCell className="font-medium">{p.student_name}</TableCell>
+                          <TableCell className="font-medium">{p.tutor_name}</TableCell>
                           <TableCell className="tabular-nums">
-                            {typeof p.similarity === "number"
-                              ? p.similarity.toFixed(2)
-                              : "—"}
+                            {typeof p.similarity === "number" ? p.similarity.toFixed(2) : "—"}
                           </TableCell>
                           <TableCell>
                             <div className="flex flex-wrap gap-1 max-w-xs">
                               {p.overlapping_subjects.length === 0 ? (
-                                <span className="text-xs text-muted-foreground">
-                                  None
-                                </span>
+                                <span className="text-xs text-muted-foreground">None</span>
                               ) : (
                                 p.overlapping_subjects.map((s) => (
                                   <Badge key={s} variant="secondary" className="text-xs">
@@ -482,9 +436,7 @@ export function PairingRunLogsPage() {
                           <TableCell>
                             <div className="flex flex-col gap-1 max-w-sm">
                               {p.overlapping_slots.length === 0 ? (
-                                <span className="text-xs text-muted-foreground">
-                                  None
-                                </span>
+                                <span className="text-xs text-muted-foreground">None</span>
                               ) : (
                                 p.overlapping_slots.map((slot, i) => (
                                   <Badge
@@ -512,9 +464,7 @@ export function PairingRunLogsPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>
-            Logs for this run only ({run.preview.logs.length})
-          </CardTitle>
+          <CardTitle>Logs for this run only ({run.preview.logs.length})</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="rounded-md border">
@@ -530,19 +480,14 @@ export function PairingRunLogsPage() {
               <TableBody>
                 {run.preview.logs.length === 0 ? (
                   <TableRow>
-                    <TableCell
-                      colSpan={4}
-                      className="text-center py-8 text-muted-foreground"
-                    >
+                    <TableCell colSpan={4} className="text-center py-8 text-muted-foreground">
                       No logs captured in this run.
                     </TableCell>
                   </TableRow>
                 ) : (
                   run.preview.logs.map((log, index) => (
                     <TableRow key={`${log.type}-${index}`}>
-                      <TableCell className="font-mono text-xs">
-                        {index + 1}
-                      </TableCell>
+                      <TableCell className="font-mono text-xs">{index + 1}</TableCell>
                       <TableCell>{log.type}</TableCell>
                       <TableCell>
                         <Badge variant={log.error ? "destructive" : "outline"}>

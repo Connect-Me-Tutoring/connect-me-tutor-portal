@@ -38,8 +38,8 @@ export const TutorSessionCancellationNotificationEmail = ({
             <Heading style={h1}>Tutor Session Cancelled</Heading>
             <Text style={text}>Hi {tutorName},</Text>
             <Text style={text}>
-              This is a notification that your upcoming session with{" "}
-              {studentName} has been cancelled.
+              This is a notification that your upcoming session with {studentName} has been
+              cancelled.
             </Text>
             <Text style={text}>
               <strong>Date:</strong> {sessionDate}
@@ -52,8 +52,7 @@ export const TutorSessionCancellationNotificationEmail = ({
               </Text>
             )}
             <Text style={text}>
-              If you would like to reschedule, please coordinate with your
-              student
+              If you would like to reschedule, please coordinate with your student
               {portalUrl ? (
                 <>
                   {" "}

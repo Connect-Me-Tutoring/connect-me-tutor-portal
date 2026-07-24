@@ -5,10 +5,7 @@ import { usePathname, useSearchParams } from "next/navigation";
 
 const PROGRESS_EVENT = "connectme:navigation-progress";
 
-function runProgressAnimation(
-  setVisible: (v: boolean) => void,
-  setWidth: (w: number) => void,
-) {
+function runProgressAnimation(setVisible: (v: boolean) => void, setWidth: (w: number) => void) {
   setVisible(true);
   setWidth(12);
 

@@ -12,9 +12,7 @@ function ChatInterface() {
   const [messages, setMessages] = useState<
     { role: "user" | "assistant"; content: string; id: string }[]
   >([]);
-  const [documents, setDocuments] = useState<
-    { name: string; content: string }[]
-  >([]);
+  const [documents, setDocuments] = useState<{ name: string; content: string }[]>([]);
   const [docError, setDocError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const endRef = useRef<HTMLDivElement | null>(null);
@@ -59,9 +57,7 @@ function ChatInterface() {
 
     const answer = await sendToBackend(trimmed);
 
-    setMessages((m) =>
-      m.map((msg) => (msg.id === aiId ? { ...msg, content: answer } : msg)),
-    );
+    setMessages((m) => m.map((msg) => (msg.id === aiId ? { ...msg, content: answer } : msg)));
     setIsLoading(false);
   };
 
@@ -70,9 +66,7 @@ function ChatInterface() {
       <div className="border-b border-gray-200 px-6 py-4">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h2 className="text-lg font-semibold text-gray-900">
-              Connect Me Chatbot
-            </h2>
+            <h2 className="text-lg font-semibold text-gray-900">Connect Me Chatbot</h2>
             <p className="text-sm text-gray-500">
               Upload up to 2 documents and ask the chatbot to refer to them.
             </p>
@@ -115,22 +109,16 @@ function ChatInterface() {
                   const name = file.name;
                   const lower = name.toLowerCase();
                   if (!lower.endsWith(".txt") && !lower.endsWith(".md")) {
-                    setDocError(
-                      "Only .txt and .md documents are supported for now.",
-                    );
+                    setDocError("Only .txt and .md documents are supported for now.");
                     continue;
                   }
 
-                  const content = await new Promise<string>(
-                    (resolve, reject) => {
-                      const reader = new FileReader();
-                      reader.onload = () =>
-                        resolve(String(reader.result ?? ""));
-                      reader.onerror = () =>
-                        reject(new Error("Unable to read file"));
-                      reader.readAsText(file);
-                    },
-                  );
+                  const content = await new Promise<string>((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.onload = () => resolve(String(reader.result ?? ""));
+                    reader.onerror = () => reject(new Error("Unable to read file"));
+                    reader.readAsText(file);
+                  });
 
                   newDocs.push({ name, content });
                 }
@@ -142,13 +130,9 @@ function ChatInterface() {
             />
           </label>
           <div className="space-y-2">
-            <div className="text-sm font-medium text-slate-700">
-              Loaded documents
-            </div>
+            <div className="text-sm font-medium text-slate-700">Loaded documents</div>
             {documents.length === 0 ? (
-              <div className="text-sm text-slate-500">
-                No documents loaded yet.
-              </div>
+              <div className="text-sm text-slate-500">No documents loaded yet.</div>
             ) : (
               <ul className="list-disc pl-5 text-sm text-slate-700">
                 {documents.map((doc) => (
@@ -156,9 +140,7 @@ function ChatInterface() {
                 ))}
               </ul>
             )}
-            {docError ? (
-              <p className="text-xs text-red-600">{docError}</p>
-            ) : null}
+            {docError ? <p className="text-xs text-red-600">{docError}</p> : null}
           </div>
         </div>
       </div>
@@ -167,9 +149,7 @@ function ChatInterface() {
         {messages.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full text-center">
             <div className="space-y-2">
-              <h3 className="text-lg font-medium text-gray-700">
-                How can I help you?
-              </h3>
+              <h3 className="text-lg font-medium text-gray-700">How can I help you?</h3>
               <p className="text-sm text-gray-500">
                 Ask me anything about your tutoring or learning materials.
               </p>
@@ -185,11 +165,7 @@ function ChatInterface() {
                 <div
                   className={`h-8 w-8 rounded-full flex items-center justify-center text-white ${m.role === "user" ? "bg-blue-600" : "bg-slate-700"}`}
                 >
-                  {m.role === "user" ? (
-                    <User className="h-4 w-4" />
-                  ) : (
-                    <Bot className="h-4 w-4" />
-                  )}
+                  {m.role === "user" ? <User className="h-4 w-4" /> : <Bot className="h-4 w-4" />}
                 </div>
                 <div
                   className={`${m.role === "user" ? "text-white bg-blue-600" : "bg-slate-50 text-slate-900"} rounded-lg px-4 py-2 max-w-[75%]`}
@@ -197,17 +173,13 @@ function ChatInterface() {
                   {m.role === "assistant" ? (
                     m.content ? (
                       <div className="text-sm prose prose-sm prose-slate max-w-none prose-p:my-1.5 prose-ul:my-1.5 prose-ol:my-1.5 prose-pre:my-2 prose-headings:my-2 prose-headings:font-semibold prose-pre:bg-slate-900 prose-pre:text-slate-100 prose-code:before:content-none prose-code:after:content-none">
-                        <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                          {m.content}
-                        </ReactMarkdown>
+                        <ReactMarkdown remarkPlugins={[remarkGfm]}>{m.content}</ReactMarkdown>
                       </div>
                     ) : (
                       isLoading && <div className="text-sm">...</div>
                     )
                   ) : (
-                    <div className="whitespace-pre-wrap text-sm">
-                      {m.content}
-                    </div>
+                    <div className="whitespace-pre-wrap text-sm">{m.content}</div>
                   )}
                 </div>
               </div>
@@ -236,9 +208,7 @@ function ChatInterface() {
               <Send className="h-4 w-4" />
             </Button>
           </div>
-          <p className="text-xs text-gray-400">
-            AI Chatbot may produce inaccurate information
-          </p>
+          <p className="text-xs text-gray-400">AI Chatbot may produce inaccurate information</p>
         </form>
       </div>
     </div>

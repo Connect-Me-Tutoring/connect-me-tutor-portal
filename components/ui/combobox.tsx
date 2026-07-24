@@ -59,14 +59,10 @@ export function Combobox({
   const [open, setOpen] = React.useState(false);
   const [value, setValue] = React.useState<string>(defaultValue);
   const [selectedLabel, setSelectedLabel] = React.useState(
-    defaultValue
-      ? list.find((item) => item.value === defaultValue)?.label || ""
-      : ""
+    defaultValue ? list.find((item) => item.value === defaultValue)?.label || "" : "",
   );
 
-  const handleSelect = (
-    selectedItem: { value: string; label: string } | null
-  ) => {
+  const handleSelect = (selectedItem: { value: string; label: string } | null) => {
     if (selectedItem) {
       setValue(selectedItem.value);
       setSelectedLabel(selectedItem.label);
@@ -89,9 +85,7 @@ export function Combobox({
   const [searchTerm, setSearchTerm] = React.useState("");
 
   const filteredList = React.useMemo(() => {
-    return list.filter((item) =>
-      item.label.toLowerCase().includes(searchTerm.toLowerCase())
-    );
+    return list.filter((item) => item.label.toLowerCase().includes(searchTerm.toLowerCase()));
   }, [list, searchTerm]);
 
   const handleValueChange = (newValue: string) => {
@@ -122,17 +116,13 @@ export function Combobox({
                   key={item.value}
                   value={item.label}
                   onSelect={() => handleSelect(item)}
-                  className={cn(
-                    selectedLabel === item.label
-                      ? "bg-blue-400/10 text-blue-500"
-                      : ""
-                  )}
+                  className={cn(selectedLabel === item.label ? "bg-blue-400/10 text-blue-500" : "")}
                 >
                   {item.label}
                   <Check
                     className={cn(
                       "ml-auto",
-                      selectedLabel === item.label ? "opacity-100" : "opacity-0"
+                      selectedLabel === item.label ? "opacity-100" : "opacity-0",
                     )}
                   />
                 </CommandItem>

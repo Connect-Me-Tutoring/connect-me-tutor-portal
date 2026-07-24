@@ -40,8 +40,7 @@ function formatTime(date: Date): string {
   hours = hours % 12 || 12; // convert 0 to 12
 
   // Format minutes to be 0 or 30 if applicable
-  const formattedMinutes =
-    minutes === 0 ? "" : `:${minutes < 10 ? "0" : ""}${minutes}`;
+  const formattedMinutes = minutes === 0 ? "" : `:${minutes < 10 ? "0" : ""}${minutes}`;
 
   // Construct the final formatted string
   return `${hours}${formattedMinutes} ${isPM ? "PM" : "AM"}`;
@@ -62,9 +61,7 @@ export function formatStandardToMilitaryTime(standardTime: string): string {
   } else if (hours === 12) {
     hours = 0;
   }
-  return `${hours.toString().padStart(2, "0")}:${minutes
-    .toString()
-    .padStart(2, "0")}`;
+  return `${hours.toString().padStart(2, "0")}:${minutes.toString().padStart(2, "0")}`;
 }
 
 export function getToday(): string {
@@ -96,9 +93,7 @@ export function addOneHourToMilitaryTime(time: string) {
     newHours = 0;
   }
 
-  return `${newHours.toString().padStart(2, "0")}:${newMinutes
-    .toString()
-    .padStart(2, "0")}`;
+  return `${newHours.toString().padStart(2, "0")}:${newMinutes.toString().padStart(2, "0")}`;
 }
 
 export function formatMilitaryToStandardTime(militaryTime: string) {
@@ -169,10 +164,7 @@ export function capitalizeFirstLetter(word: string | undefined) {
   return word.charAt(0).toUpperCase() + word.slice(1);
 }
 
-export const handleCalculateDuration = async (
-  startTime: string,
-  endTime: string,
-) => {
+export const handleCalculateDuration = async (startTime: string, endTime: string) => {
   try {
     const startTimeNumber: number = timeStrToHours(startTime);
     const endTimeNumber: number = timeStrToHours(endTime);
@@ -252,13 +244,7 @@ export const toDateTime = (time: string, day: Number) => {
 export const formatAvailabilityAsDate = (date: Availability): Date[] => {
   try {
     type DayName =
-      | "Sunday"
-      | "Monday"
-      | "Tuesday"
-      | "Wednesday"
-      | "Thursday"
-      | "Friday"
-      | "Saturday";
+      "Sunday" | "Monday" | "Tuesday" | "Wednesday" | "Thursday" | "Friday" | "Saturday";
     const dayMap: { [key in DayName]: number } = {
       Sunday: 0,
       Monday: 1,
@@ -273,10 +259,7 @@ export const formatAvailabilityAsDate = (date: Availability): Date[] => {
     if (dayIndex === undefined) {
       throw new Error("Invalid Day of the Week");
     }
-    return [
-      toDateTime(date.startTime, dayIndex),
-      toDateTime(date.endTime, dayIndex),
-    ];
+    return [toDateTime(date.startTime, dayIndex), toDateTime(date.endTime, dayIndex)];
   } catch (error) {
     console.error("Failed to Format Date", error);
 
@@ -286,8 +269,7 @@ export const formatAvailabilityAsDate = (date: Availability): Date[] => {
 };
 
 export const isValidUUID = (uuid: string): boolean => {
-  const uuidRegex =
-    /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
   return uuidRegex.test(uuid);
 };
 
@@ -295,12 +277,10 @@ export const isValidUUID = (uuid: string): boolean => {
  * True if `value` is a non-empty UUID-shaped string.
  * Rejects literal "null"/"undefined" (e.g. from bad URLs like /pairings/null/chat).
  */
-export function isUuidString(value: string | null | undefined): boolean {
+export function isUuidString(value: string | null | undefined): value is string {
   if (value == null || value === "") return false;
   if (value === "null" || value === "undefined") return false;
-  return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
-    value,
-  );
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value);
 }
 
 export interface RetryOptions {
@@ -311,10 +291,7 @@ export interface RetryOptions {
   onRetry?: (error: unknown, attempt: number) => void;
 }
 
-export async function withRetry<T>(
-  fn: () => Promise<T>,
-  opts: RetryOptions = {},
-): Promise<T> {
+export async function withRetry<T>(fn: () => Promise<T>, opts: RetryOptions = {}): Promise<T> {
   const {
     retries = 4,
     baseDelayMs = 200,

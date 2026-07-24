@@ -44,7 +44,7 @@ const ResourceList = () => {
     const filtered = tutorResources.filter(
       (resource) =>
         resource.title.toLowerCase().includes(filterValue.toLowerCase()) ||
-        resource.description.toLowerCase().includes(filterValue.toLowerCase())
+        resource.description.toLowerCase().includes(filterValue.toLowerCase()),
     );
     setFilteredResources(filtered);
     setCurrentPage(1);
@@ -63,7 +63,7 @@ const ResourceList = () => {
 
   const paginatedResources = filteredResources.slice(
     (currentPage - 1) * rowsPerPage,
-    currentPage * rowsPerPage
+    currentPage * rowsPerPage,
   );
 
   return (
@@ -101,10 +101,7 @@ const ResourceList = () => {
                   <TableCell>{resource.title}</TableCell>
                   <TableCell>{resource.description}</TableCell>
                   <TableCell>
-                    <Button
-                      variant="outline"
-                      onClick={() => window.open(resource.link, "_blank")}
-                    >
+                    <Button variant="outline" onClick={() => window.open(resource.link, "_blank")}>
                       Open Resource
                     </Button>
                   </TableCell>
@@ -119,10 +116,7 @@ const ResourceList = () => {
             <span>{filteredResources.length} resource(s) total.</span>
             <div className="flex items-center space-x-2">
               <span>Rows per page</span>
-              <Select
-                value={rowsPerPage.toString()}
-                onValueChange={handleRowsPerPageChange}
-              >
+              <Select value={rowsPerPage.toString()} onValueChange={handleRowsPerPageChange}>
                 <SelectTrigger className="w-[70px]">
                   <SelectValue placeholder={rowsPerPage.toString()} />
                 </SelectTrigger>
@@ -173,20 +167,18 @@ const ResourceList = () => {
           </div>
         </div>
 
-        <div className = "space-y-8">
+        <div className="space-y-8">
           {" "}
           <Card className="w-[300px] aspect-square flex flex-col justify-between">
             <CardHeader>
               <CardTitle>Tutor Handbook</CardTitle>
-              <CardDescription>
-                Read before your first tutoring session!
-              </CardDescription>
+              <CardDescription>Read before your first tutoring session!</CardDescription>
             </CardHeader>
 
             <CardContent>
               <p className="mb-4">
-                This handbook covers the expectations, policy, attendance, and
-                other necessary information for the tutors
+                This handbook covers the expectations, policy, attendance, and other necessary
+                information for the tutors
               </p>
             </CardContent>
 
@@ -196,7 +188,7 @@ const ResourceList = () => {
                 onClick={() =>
                   window.open(
                     "https://drive.google.com/file/d/13567c0r06Yp881dGcx5E5LT_miFay9Ep/view?ths=true",
-                    "_blank"
+                    "_blank",
                   )
                 }
               >
@@ -211,9 +203,7 @@ const ResourceList = () => {
             </CardHeader>
 
             <CardContent>
-              <p className="mb-4">
-                This manual contains helpful information for tutors.
-              </p>
+              <p className="mb-4">This manual contains helpful information for tutors.</p>
             </CardContent>
 
             <CardFooter>
@@ -222,7 +212,7 @@ const ResourceList = () => {
                 onClick={() =>
                   window.open(
                     "https://docs.google.com/document/d/1Tzc0JA90Ghy76UdBPCRFrUcT27jOxTvqh4yxq1_xVXY/edit?tab=t.0",
-                    "_blank"
+                    "_blank",
                   )
                 }
               >
@@ -237,9 +227,7 @@ const ResourceList = () => {
             </CardHeader>
 
             <CardContent>
-              <p className="mb-4">
-                Find answers to common questions asked by tutors.
-              </p>
+              <p className="mb-4">Find answers to common questions asked by tutors.</p>
             </CardContent>
 
             <CardFooter>
@@ -248,7 +236,7 @@ const ResourceList = () => {
                 onClick={() =>
                   window.open(
                     "https://docs.google.com/document/d/1bCP9wAU75cHdgvlERH7m6kaomt3DkFRg1YqWvOHmHbo/edit?tab=t.0",
-                    "_blank"
+                    "_blank",
                   )
                 }
               >

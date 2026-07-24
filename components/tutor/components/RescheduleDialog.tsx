@@ -5,11 +5,6 @@ import { Session, Meeting } from "@/types";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
-import {
-  updateSession,
-  getMeetings,
-  getAllSessions,
-} from "@/lib/actions/admin.actions";
 import { fetchDaySessionsFromSchedule } from "@/lib/actions/session.actions";
 import { toast } from "react-hot-toast";
 
@@ -28,14 +23,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Circle, Loader2, CalendarDays } from "lucide-react";
-import {
-  format,
-  parseISO,
-  isAfter,
-  addHours,
-  addWeeks,
-  areIntervalsOverlapping,
-} from "date-fns";
+import { format, parseISO, isAfter, addHours, addWeeks, areIntervalsOverlapping } from "date-fns";
 
 /**
  * Props interface for the RescheduleForm component
@@ -46,11 +34,7 @@ interface RescheduleProps {
   meetings: Meeting[];
   setSelectedSessionDate: (date: string) => void;
   handleInputChange: (e: { target: { name: string; value: string } }) => void;
-  handleReschedule: (
-    sessionId: string,
-    newDate: string,
-    meetingId: string
-  ) => void;
+  handleReschedule: (sessionId: string, newDate: string, meetingId: string) => void;
 }
 
 /**
@@ -72,11 +56,8 @@ const RescheduleForm: React.FC<RescheduleProps> = ({
   handleInputChange,
   handleReschedule,
 }) => {
-
-
   /** State to track if meeting availability is being checked */
-  const [isCheckingMeetingAvailability, setisCheckingMeetingAvailability] =
-    useState(false);
+  const [isCheckingMeetingAvailability, setisCheckingMeetingAvailability] = useState(false);
   /** State to store meeting availability status for each meeting link */
   const [meetingAvailability, setMeetingAvailability] = useState<{
     [key: string]: boolean;
@@ -97,15 +78,11 @@ const RescheduleForm: React.FC<RescheduleProps> = ({
    * @param session - The session being rescheduled
    * @param requestedDate - The new requested date/time for the session
    */
-  const areMeetingsAvailable = async (
-    session: Session,
-    requestedDate: Date
-  ) => {
+  const areMeetingsAvailable = async (session: Session, requestedDate: Date) => {
     try {
       setisCheckingMeetingAvailability(true);
 
-      const sessionsToSearch =
-        await fetchDaySessionsFromSchedule(requestedDate);
+      const sessionsToSearch = await fetchDaySessionsFromSchedule(requestedDate);
 
       const updatedMeetingAvailability: { [key: string]: boolean } = {};
 
@@ -114,10 +91,7 @@ const RescheduleForm: React.FC<RescheduleProps> = ({
       });
 
       const requestedSessionStartTime = requestedDate;
-      const requestedSessionEndTime = addHours(
-        requestedSessionStartTime,
-        session.duration
-      ); 
+      const requestedSessionEndTime = addHours(requestedSessionStartTime, session.duration);
 
       meetings.forEach((meeting) => {
         const hasConflict = sessionsToSearch
@@ -131,16 +105,11 @@ const RescheduleForm: React.FC<RescheduleProps> = ({
                     end: requestedSessionEndTime,
                   },
                   {
-                    start: existingSession.date
-                      ? parseISO(existingSession.date)
-                      : new Date(),
+                    start: existingSession.date ? parseISO(existingSession.date) : new Date(),
                     end: existingSession.date
-                      ? addHours(
-                          parseISO(existingSession.date),
-                          existingSession.duration
-                        )
+                      ? addHours(parseISO(existingSession.date), existingSession.duration)
                       : new Date(),
-                  }
+                  },
                 )
               );
             })
@@ -207,10 +176,8 @@ const RescheduleForm: React.FC<RescheduleProps> = ({
                 <SelectValue placeholder="Select a meeting link">
                   {selectedSession?.meeting?.id
                     ? meetingAvailability[selectedSession.meeting.id]
-                      ? meetings.find(
-                          (meeting) =>
-                            meeting.id === selectedSession?.meeting?.id
-                        )?.name
+                      ? meetings.find((meeting) => meeting.id === selectedSession?.meeting?.id)
+                          ?.name
                       : "Please select an available link"
                     : "Select a meeting"}
                 </SelectValue>
@@ -228,9 +195,7 @@ const RescheduleForm: React.FC<RescheduleProps> = ({
                     </span>
                     <Circle
                       className={`w-2 h-2 ml-2 ${
-                        meetingAvailability[meeting.id]
-                          ? "text-green-500"
-                          : "text-red-500"
+                        meetingAvailability[meeting.id] ? "text-green-500" : "text-red-500"
                       } fill-current`}
                     />
                   </SelectItem>
@@ -252,7 +217,7 @@ const RescheduleForm: React.FC<RescheduleProps> = ({
               handleReschedule(
                 selectedSession?.id,
                 selectedSessionDate,
-                selectedSession.meeting?.id
+                selectedSession.meeting?.id,
               )
             }
           >

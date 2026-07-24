@@ -48,7 +48,6 @@ export default function ResetPassword() {
   // const [isVerifying, setIsVerifying ] = useState(true)
   // const [verificationError, setVerificationError ] = useState<string | null>(null);
 
-
   const [data, setData] = useState<{
     password: string;
     confirmPassword: string;
@@ -79,9 +78,7 @@ export default function ResetPassword() {
       }
     } catch (error) {
       console.error("Password update error:", error);
-      toast.error(
-        error instanceof Error ? error.message : "Failed to update password"
-      );
+      toast.error(error instanceof Error ? error.message : "Failed to update password");
     }
   };
 
@@ -106,16 +103,12 @@ export default function ResetPassword() {
           <div className="container h-full mx-auto max-w-lg p-10 flex flex-col items-center justify-center align-center">
             <div className="p-8 flex flex-col items-center justify-center gap-4 border border-gray-300 rounded-xl">
               <div className="flex flex-col gap-3">
-                <h1 className="text-2xl text-center font-bold">
-                  Set your Password
-                </h1>
+                <h1 className="text-2xl text-center font-bold">Set your Password</h1>
                 <p className="text-sm text-gray-600"></p>
               </div>
               <div className="container mx-auto w-[400px] grid gap-4">
                 <div className="grid gap-4">
-                  <label className="text-sm font-medium">
-                    Enter your new password
-                  </label>
+                  <label className="text-sm font-medium">Enter your new password</label>
                   <input
                     type={showPassword ? "text" : "password"}
                     name="password"
@@ -125,9 +118,7 @@ export default function ResetPassword() {
                   />
                 </div>
                 <div className="grid gap-4">
-                  <label className="text-sm font-medium">
-                    Confirm your new password
-                  </label>
+                  <label className="text-sm font-medium">Confirm your new password</label>
                   <input
                     type={showPassword ? "text" : "password"}
                     name="confirmPassword"
@@ -142,11 +133,7 @@ export default function ResetPassword() {
                 >
                   Show passwords
                 </div>
-                <Button
-                  type="submit"
-                  className="w-full bg-blue-400"
-                  onClick={confirmPasswords}
-                >
+                <Button type="submit" className="w-full bg-blue-400" onClick={confirmPasswords}>
                   Set Password
                 </Button>
               </div>

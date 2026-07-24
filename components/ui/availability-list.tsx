@@ -39,7 +39,7 @@ export const UserAvailabilityList: React.FC<UserAvailabilityListProps> = ({
               <div key={i} className="text-sm text-muted-foreground">
                 {slot.day}: {slot.startTime} - {slot.endTime} EST
               </div>
-            )
+            ),
           )}
         </div>
       ) : (

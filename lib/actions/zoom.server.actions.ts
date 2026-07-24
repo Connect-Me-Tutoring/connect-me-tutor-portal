@@ -8,15 +8,13 @@ import { Table } from "@/lib/supabase/tables";
 // Init Supabase client
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY! // Service role key required for inserting rows
+  process.env.SUPABASE_SERVICE_ROLE_KEY!, // Service role key required for inserting rows
 );
 
 /** App `Sessions.id` only — never Zoom's base64 meeting uuid */
 function isAppSessionUuid(value: string | null | undefined): value is string {
   if (!value) return false;
-  return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
-    value.trim()
-  );
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value.trim());
 }
 
 /**
@@ -26,7 +24,7 @@ function isAppSessionUuid(value: string | null | undefined): value is string {
  */
 async function resolveAppSessionIdForZoomEvent(
   candidate: string | null | undefined,
-  zoomMeetingUuid: string | null | undefined
+  zoomMeetingUuid: string | null | undefined,
 ): Promise<string | null> {
   if (!isAppSessionUuid(candidate)) return null;
   const sid = candidate.trim();
@@ -41,6 +39,11 @@ async function resolveAppSessionIdForZoomEvent(
 
   if (error) {
     console.error("resolveAppSessionIdForZoomEvent:", error);
+    await logError(
+      error,
+      { action: "resolveAppSessionIdForZoomEvent", candidate: sid, zoomMeetingUuid: zoom },
+      "zoom_action_error",
+    );
     return null;
   }
   return data?.id ?? null;
@@ -89,7 +92,7 @@ export async function logZoomMetadata(participant: ZoomParticipantData) {
   const logId = crypto.randomUUID();
   const sessionIdForDb = await resolveAppSessionIdForZoomEvent(
     participant.session_id,
-    participant.zoom_meeting_uuid
+    participant.zoom_meeting_uuid,
   );
 
   await logEvent("zoom_metadata_insert_start", {
@@ -107,19 +110,17 @@ export async function logZoomMetadata(participant: ZoomParticipantData) {
     relationship: participant.relationship ?? null,
   });
 
-  const { data, error } = await supabase
-    .from("zoom_participant_events")
-    .insert([
-      {
-        session_id: sessionIdForDb,
-        zoom_meeting_uuid: participant.zoom_meeting_uuid,
-        participant_id: participant.participant_id,
-        name: participant.name,
-        email: participant.email || null,
-        action: participant.action,
-        timestamp: participant.timestamp,
-      },
-    ]);
+  const { data, error } = await supabase.from("zoom_participant_events").insert([
+    {
+      session_id: sessionIdForDb,
+      zoom_meeting_uuid: participant.zoom_meeting_uuid,
+      participant_id: participant.participant_id,
+      name: participant.name,
+      email: participant.email || null,
+      action: participant.action,
+      timestamp: participant.timestamp,
+    },
+  ]);
 
   if (error) {
     console.error("Error logging Zoom metadata:", error);
@@ -167,10 +168,7 @@ export async function updateParticipantLeaveTime(
   relationship?: ZoomWebhookRelationshipLog,
 ) {
   const logId = crypto.randomUUID();
-  const sessionIdForDb = await resolveAppSessionIdForZoomEvent(
-    appSessionId,
-    zoomMeetingUuid,
-  );
+  const sessionIdForDb = await resolveAppSessionIdForZoomEvent(appSessionId, zoomMeetingUuid);
 
   await logEvent("zoom_participant_leave_insert_start", {
     log_id: logId,
@@ -239,7 +237,7 @@ export async function updateParticipantLeaveTime(
  * @returns Array of participation records
  */
 export async function getParticipationByZoomMeetingId(
-  zoomMeetingId: string
+  zoomMeetingId: string,
 ): Promise<ParticipationRecord[]> {
   const { data, error } = await supabase
     .from("zoom_participant_events")
@@ -249,6 +247,11 @@ export async function getParticipationByZoomMeetingId(
 
   if (error) {
     console.error("Error fetching participation data:", error);
+    await logError(
+      error,
+      { action: "getParticipationByZoomMeetingId", zoomMeetingId },
+      "zoom_action_error",
+    );
     throw error;
   }
 
@@ -262,7 +265,7 @@ export async function getParticipationByZoomMeetingId(
  * @returns Array of participation records or empty array if none found
  */
 export async function getParticipationBySessionId(
-  sessionId: string
+  sessionId: string,
 ): Promise<ParticipationRecord[]> {
   const { data, error } = await supabase
     .from("zoom_participant_events")
@@ -272,6 +275,11 @@ export async function getParticipationBySessionId(
 
   if (error) {
     console.error("Error fetching participation data:", error);
+    await logError(
+      error,
+      { action: "getParticipationBySessionId", sessionId },
+      "zoom_action_error",
+    );
     throw error;
   }
 
@@ -294,6 +302,11 @@ export async function getParticipantEventCountsBySessionIds(
 
   if (error) {
     console.error("Error counting zoom participant events:", error);
+    await logError(
+      error,
+      { action: "getParticipantEventCountsBySessionIds", sessionIds },
+      "zoom_action_error",
+    );
     throw error;
   }
 

@@ -3,6 +3,7 @@ import { Profile, Session } from "@/types";
 import { createClient } from "@supabase/supabase-js";
 import { supabase } from "../supabase/client";
 import { Table } from "../supabase/tables";
+import type { Database } from "@/types/database.types";
 
 // export async function getProfileWithProfileId(
 //   profileId: string
@@ -102,13 +103,12 @@ export async function updateProfileDetails({
 }: UpdateProfileInput): Promise<{ success: boolean; error?: string }> {
   const updates: Record<string, any> = {};
   if (availability !== undefined) updates.availability = availability;
-  if (subjectsOfInterest !== undefined)
-    updates.subjects_of_interest = subjectsOfInterest;
+  if (subjectsOfInterest !== undefined) updates.subjects_of_interest = subjectsOfInterest;
   if (languagesSpoken !== undefined) updates.languages_spoken = languagesSpoken;
 
   const { error } = await supabase
     .from(Table.Profiles)
-    .update(updates)
+    .update(updates as Database["public"]["Tables"]["Profiles"]["Update"])
     .eq("user_id", userId);
 
   if (error) {

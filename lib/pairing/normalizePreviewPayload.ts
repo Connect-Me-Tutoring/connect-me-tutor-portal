@@ -1,8 +1,6 @@
 import type { PairingWorkflowPreviewPayload } from "@/types/pairing";
 
-function getLogTimestampMs(log: {
-  metadata?: Record<string, unknown>;
-}): number {
+function getLogTimestampMs(log: { metadata?: Record<string, unknown> }): number {
   const ts = log.metadata?.timestamp;
   if (typeof ts !== "string") return 0;
   const parsed = Date.parse(ts);
@@ -16,9 +14,7 @@ export function normalizePairingWorkflowPreviewPayload(
   const raw = data as Partial<PairingWorkflowPreviewPayload> & {
     dryRun?: boolean;
   };
-  const logs = [...(raw.logs ?? [])].sort(
-    (a, b) => getLogTimestampMs(b) - getLogTimestampMs(a),
-  );
+  const logs = [...(raw.logs ?? [])].sort((a, b) => getLogTimestampMs(b) - getLogTimestampMs(a));
   const matchesToInsert = raw.matchesToInsert ?? [];
   return {
     logs,
@@ -27,8 +23,7 @@ export function normalizePairingWorkflowPreviewPayload(
     summary: {
       matchedStudents: raw.summary?.matchedStudents ?? 0,
       matchedTutors: raw.summary?.matchedTutors ?? 0,
-      matchesToInsert:
-        raw.summary?.matchesToInsert ?? matchesToInsert.length,
+      matchesToInsert: raw.summary?.matchesToInsert ?? matchesToInsert.length,
       logsToInsert: raw.summary?.logsToInsert ?? logs.length,
     },
   };

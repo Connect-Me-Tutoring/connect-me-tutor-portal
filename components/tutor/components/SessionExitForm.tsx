@@ -9,11 +9,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Session } from "@/types";
-import {
-  HoverCard,
-  HoverCardContent,
-  HoverCardTrigger,
-} from "@/components/ui/hover-card";
+import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
 import {
   AlertDialog,
   AlertDialogHeader,
@@ -21,14 +17,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Trash } from "lucide-react";
-import {
-  addDays,
-  isAfter,
-  parseISO,
-  differenceInDays,
-  isToday,
-  isTomorrow,
-} from "date-fns";
+import { addDays, isAfter, parseISO, differenceInDays, isToday, isTomorrow } from "date-fns";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -83,16 +72,13 @@ const sessionExitFormDeadline = (currSession: Session) => {
     urgencyClass = "bg-red-500 text-white hover:bg-red-600 border-red-500";
     deadlineText = "SEF Due TODAY by 11:59pm EST";
   } else if (isTomorrow(deadlineDate) || daysUntilDeadline === 1) {
-    urgencyClass =
-      "bg-orange-500 text-white hover:bg-orange-600 border-orange-500";
+    urgencyClass = "bg-orange-500 text-white hover:bg-orange-600 border-orange-500";
     deadlineText = `SEF Due Tomorrow`;
   } else if (daysUntilDeadline <= 2) {
-    urgencyClass =
-      "bg-yellow-500 text-white hover:bg-yellow-600 border-yellow-500";
+    urgencyClass = "bg-yellow-500 text-white hover:bg-yellow-600 border-yellow-500";
     deadlineText = `SEF Due in ${daysUntilDeadline} days`;
   } else {
-    urgencyClass =
-      "bg-gray-100 text-gray-700 hover:bg-gray-200 border-gray-200";
+    urgencyClass = "bg-gray-100 text-gray-700 hover:bg-gray-200 border-gray-200";
     deadlineText = `SEF Due ${calculateDeadline(date)}`;
   }
 
@@ -142,8 +128,7 @@ const SessionExitForm = ({
             <Button
               variant="outline"
               disabled={
-                isAfter(parseISO(currSession.date), Date.now()) ||
-                currSession.status !== "Active"
+                isAfter(parseISO(currSession.date), Date.now()) || currSession.status !== "Active"
               }
               onClick={() => {
                 TC.setSelectedSession(currSession);
@@ -238,13 +223,10 @@ const SessionExitForm = ({
             <Checkbox
               id="next-class"
               checked={TC.nextClassConfirmed}
-              onCheckedChange={(checked) =>
-                TC.setNextClassConfirmed(checked === true)
-              }
+              onCheckedChange={(checked) => TC.setNextClassConfirmed(checked === true)}
             />
             <label htmlFor="next-class" className="text-sm font-medium flex">
-              <div className="text-red-500">*</div> My student knows about our
-              next class
+              <div className="text-red-500">*</div> My student knows about our next class
             </label>
           </div>
         </div>

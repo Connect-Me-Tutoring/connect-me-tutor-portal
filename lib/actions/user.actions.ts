@@ -15,9 +15,7 @@ export const getUser = async () => {
   return user;
 };
 
-export const getProfileFromUserSettings = async (
-  userId: string
-): Promise<Profile | null> => {
+export const getProfileFromUserSettings = async (userId: string): Promise<Profile | null> => {
   try {
     const { data, error } = await supabase
       .from("user_settings")
@@ -101,18 +99,14 @@ export const getProfileByEmail = async (email: string) => {
       .eq("email", email)
       .single();
     if (error) throw new Error(`Profile fetch failed: ${error.message}`);
-    const userProfile: Profile | null = await tableToInterfaceProfiles(
-      data.profile,
-    );
+    const userProfile: Profile | null = await tableToInterfaceProfiles(data.profile);
     return userProfile;
   } catch (error) {
     throw error;
   }
 };
 
-export const getProfileRole = async (
-  userId: string,
-): Promise<string | null> => {
+export const getProfileRole = async (userId: string): Promise<string | null> => {
   if (!userId) {
     console.error("User ID is required to fetch profile role");
     return null;
@@ -130,28 +124,20 @@ export const getProfileRole = async (
       .maybeSingle();
 
     if (error) {
-      console.error(
-        `Database error fetching user_settings for ${userId}:`,
-        error.message,
-      );
+      console.error(`Database error fetching user_settings for ${userId}:`, error.message);
       return null;
     }
 
     const profile = data?.profile as { role: string } | null | undefined;
     const role = profile?.role;
     if (!role) {
-      console.warn(
-        `No role for user ${userId} (missing user_settings, profile, or role).`,
-      );
+      console.warn(`No role for user ${userId} (missing user_settings, profile, or role).`);
       return null;
     }
 
     return role;
   } catch (error) {
-    console.error(
-      `Unexpected error in getProfileRole for user ${userId}:`,
-      error,
-    );
+    console.error(`Unexpected error in getProfileRole for user ${userId}:`, error);
     return null;
   }
 };
@@ -168,9 +154,7 @@ export const getSessionUserProfile = async (): Promise<Profile | null> => {
   }
 };
 
-export async function getProfileWithProfileId(
-  profileId: string,
-): Promise<Profile | null> {
+export async function getProfileWithProfileId(profileId: string): Promise<Profile | null> {
   try {
     const { data, error } = await supabase
       .from(Table.Profiles)
@@ -206,10 +190,7 @@ export async function getProfileWithProfileId(
       .single();
 
     if (error) {
-      console.error(
-        "Error fetching profile in getProfileWithProfileId:",
-        error.message,
-      );
+      console.error("Error fetching profile in getProfileWithProfileId:", error.message);
       console.error("Error details:", error);
       return null;
     }

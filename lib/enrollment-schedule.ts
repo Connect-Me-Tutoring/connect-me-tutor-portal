@@ -17,29 +17,21 @@ const normalizeTime = (time?: string | null) => {
   return time.slice(0, 5);
 };
 
-const normalizeAvailability = (
-  availability?: AvailabilityLike | null,
-): Availability => ({
+const normalizeAvailability = (availability?: AvailabilityLike | null): Availability => ({
   day: availability?.day || "",
-  startTime: normalizeTime(
-    availability?.startTime || availability?.start_time,
-  ),
+  startTime: normalizeTime(availability?.startTime || availability?.start_time),
   endTime: normalizeTime(availability?.endTime || availability?.end_time),
 });
 
 const hasCompleteSchedule = (schedule: Availability) =>
   Boolean(schedule.day && schedule.startTime && schedule.endTime);
 
-const normalizeAvailabilityList = (
-  availability?: EnrollmentScheduleSource["availability"],
-) =>
+const normalizeAvailabilityList = (availability?: EnrollmentScheduleSource["availability"]) =>
   (availability || [])
     .map((slot) => normalizeAvailability(slot as AvailabilityLike))
     .filter(hasCompleteSchedule);
 
-export function getEnrollmentSchedule(
-  enrollment: EnrollmentScheduleSource,
-): Availability {
+export function getEnrollmentSchedule(enrollment: EnrollmentScheduleSource): Availability {
   const fallback = normalizeAvailability(
     enrollment.availability?.[0] as AvailabilityLike | undefined,
   );
@@ -51,9 +43,7 @@ export function getEnrollmentSchedule(
   };
 }
 
-export function getEnrollmentAvailability(
-  enrollment: EnrollmentScheduleSource,
-): Availability[] {
+export function getEnrollmentAvailability(enrollment: EnrollmentScheduleSource): Availability[] {
   const schedule = getEnrollmentSchedule(enrollment);
 
   if (
@@ -68,9 +58,7 @@ export function getEnrollmentAvailability(
   return normalizeAvailabilityList(enrollment.availability);
 }
 
-export function getEnrollmentScheduleFields(
-  enrollment: EnrollmentScheduleSource,
-) {
+export function getEnrollmentScheduleFields(enrollment: EnrollmentScheduleSource) {
   const schedule = getEnrollmentSchedule(enrollment);
 
   return {
@@ -80,12 +68,8 @@ export function getEnrollmentScheduleFields(
   };
 }
 
-export function getEnrollmentScheduleForSave(
-  enrollment: EnrollmentScheduleSource,
-) {
-  const submittedAvailability = normalizeAvailabilityList(
-    enrollment.availability,
-  );
+export function getEnrollmentScheduleForSave(enrollment: EnrollmentScheduleSource) {
+  const submittedAvailability = normalizeAvailabilityList(enrollment.availability);
 
   if (submittedAvailability.length > 0) {
     return {

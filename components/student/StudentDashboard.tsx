@@ -46,9 +46,7 @@ const StudentDashboard = () => {
       if (!SC.profile) return;
     } catch (error) {
       console.error("Error fetching user data:", error);
-      SC.setError(
-        error instanceof Error ? error.message : "An unknown error occurred",
-      );
+      SC.setError(error instanceof Error ? error.message : "An unknown error occurred");
     } finally {
       SC.setLoading(false);
     }
@@ -68,15 +66,9 @@ const StudentDashboard = () => {
   const fetchDaySessionsFromSchedule = (session: Session) => {
     if (SC.selectedSessionDate) {
       try {
-        const startDateSearch = addHours(
-          parseISO(SC.selectedSessionDate),
-          -12,
-        ).toISOString();
+        const startDateSearch = addHours(parseISO(SC.selectedSessionDate), -12).toISOString();
 
-        const endDateSearch = addHours(
-          parseISO(SC.selectedSessionDate),
-          12,
-        ).toISOString();
+        const endDateSearch = addHours(parseISO(SC.selectedSessionDate), 12).toISOString();
         getAllSessions(startDateSearch, endDateSearch)
           .then((data) => {
             SC.setAllSessions(data);
@@ -111,9 +103,7 @@ const StudentDashboard = () => {
         session.student?.firstName
           .toLowerCase()
           .includes(SC.filterValuePastSessions.toLowerCase()) ||
-        session.student?.lastName
-          .toLowerCase()
-          .includes(SC.filterValuePastSessions.toLowerCase()),
+        session.student?.lastName.toLowerCase().includes(SC.filterValuePastSessions.toLowerCase()),
     );
     SC.setFilteredPastSessions(filtered);
     SC.setCurrentPagePastSessions(1);
@@ -144,33 +134,21 @@ const StudentDashboard = () => {
     SC.setCurrentPagePastSessions(1);
   };
 
-  const handleReschedule = async (
-    sessionId: string,
-    newDate: string,
-    meetingId: string,
-  ) => {
+  const handleReschedule = async (sessionId: string, newDate: string, meetingId: string) => {
     try {
       if (!SC.profile || !SC.profile.id) {
         console.error("No profile found cannot reschedule");
         return;
       }
 
-      const updatedSession = await rescheduleSession(
-        sessionId,
-        newDate,
-        meetingId,
-      );
+      const updatedSession = await rescheduleSession(sessionId, newDate, meetingId);
 
       if (updatedSession) {
         SC.setCurrentSessions(
-          SC.currentSessions.map((e: Session) =>
-            e.id === updatedSession.id ? updatedSession : e,
-          ),
+          SC.currentSessions.map((e: Session) => (e.id === updatedSession.id ? updatedSession : e)),
         );
         SC.setSessions(
-          SC.sessions.map((e: Session) =>
-            e.id === updatedSession.id ? updatedSession : e,
-          ),
+          SC.sessions.map((e: Session) => (e.id === updatedSession.id ? updatedSession : e)),
         );
       }
       getUserData();
@@ -193,14 +171,10 @@ const StudentDashboard = () => {
         await updateSession(updatedSession);
       }
       SC.setCurrentSessions(
-        SC.currentSessions.map((e: Session) =>
-          e.id === updatedSession.id ? updatedSession : e,
-        ),
+        SC.currentSessions.map((e: Session) => (e.id === updatedSession.id ? updatedSession : e)),
       );
       SC.setSessions(
-        SC.sessions.map((e: Session) =>
-          e.id === updatedSession.id ? updatedSession : e,
-        ),
+        SC.sessions.map((e: Session) => (e.id === updatedSession.id ? updatedSession : e)),
       );
 
       toast.success("Session updated successfully");
@@ -223,14 +197,10 @@ const StudentDashboard = () => {
       updatedSession.isFirstSession = isFirstSession;
       await updateSession(updatedSession);
       SC.setCurrentSessions(
-        SC.currentSessions.map((e: Session) =>
-          e.id === updatedSession.id ? updatedSession : e,
-        ),
+        SC.currentSessions.map((e: Session) => (e.id === updatedSession.id ? updatedSession : e)),
       );
       SC.setSessions(
-        SC.sessions.map((e: Session) =>
-          e.id === updatedSession.id ? updatedSession : e,
-        ),
+        SC.sessions.map((e: Session) => (e.id === updatedSession.id ? updatedSession : e)),
       );
       toast.success("Session Marked Complete");
       SC.setIsSessionExitFormOpen(false);
@@ -240,24 +210,21 @@ const StudentDashboard = () => {
       //API Call to update operation logs
 
       if (isQuestionOrConcern) {
-        const response = await fetch(
-          "/api/session-exit-form/questions-concerns",
-          {
-            headers: {
-              "Content-Type": "application/json",
-            },
-            method: "POST",
-            body: JSON.stringify({
-              tutorFirstName: updatedSession.tutor?.firstName,
-              tutorLastName: updatedSession.tutor?.lastName,
-              studentFirstName: updatedSession.student?.firstName,
-              studentLastName: updatedSession.student?.lastName,
-              formContent: notes,
-              tutorEmail: updatedSession.tutor?.email,
-              studentEmail: updatedSession.student?.email,
-            }),
+        const response = await fetch("/api/session-exit-form/questions-concerns", {
+          headers: {
+            "Content-Type": "application/json",
           },
-        );
+          method: "POST",
+          body: JSON.stringify({
+            tutorFirstName: updatedSession.tutor?.firstName,
+            tutorLastName: updatedSession.tutor?.lastName,
+            studentFirstName: updatedSession.student?.firstName,
+            studentLastName: updatedSession.student?.lastName,
+            formContent: notes,
+            tutorEmail: updatedSession.tutor?.email,
+            studentEmail: updatedSession.student?.email,
+          }),
+        });
         const data = await response.json();
 
         if (!data.success) {
@@ -281,9 +248,7 @@ const StudentDashboard = () => {
     SC.currentPagePastSessions * SC.rowsPerPagePastSessions,
   );
 
-  const handleInputChange = (e: {
-    target: { name: string; value: string };
-  }) => {
+  const handleInputChange = (e: { target: { name: string; value: string } }) => {
     const { name, value } = e.target;
 
     // Helper function to handle nested updates
@@ -304,9 +269,7 @@ const StudentDashboard = () => {
     };
 
     if (SC.selectedSession) {
-      SC.setSelectedSession((prevState) =>
-        handleNestedChange({ ...prevState }, name, value),
-      );
+      SC.setSelectedSession((prevState) => handleNestedChange({ ...prevState }, name, value));
     }
   };
 
@@ -334,9 +297,7 @@ const StudentDashboard = () => {
                   placeholder="Filter sessions..."
                   className="w-64"
                   value={SC.filterValueActiveSessions}
-                  onChange={(e) =>
-                    SC.setFilterValueActiveSessions(e.target.value)
-                  }
+                  onChange={(e) => SC.setFilterValueActiveSessions(e.target.value)}
                 />
               </div>
             </div>
@@ -368,9 +329,7 @@ const StudentDashboard = () => {
                   placeholder="Filter sessions..."
                   className="w-64"
                   value={SC.filterValuePastSessions}
-                  onChange={(e) =>
-                    SC.setFilterValuePastSessions(e.target.value)
-                  }
+                  onChange={(e) => SC.setFilterValuePastSessions(e.target.value)}
                 />
               </div>
             </div>

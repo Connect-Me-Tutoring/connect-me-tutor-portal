@@ -62,16 +62,9 @@ export default function LoginForm() {
       const adminEmails = process.env.NEXT_PUBLIC_ADMIN_EMAILS;
       const adminEmailsList = adminEmails ? adminEmails.split(",") : [];
 
-      if (
-        userRole == "Admin" &&
-        data.user.email &&
-        !adminEmailsList.includes(data.user.email)
-      ) {
+      if (userRole == "Admin" && data.user.email && !adminEmailsList.includes(data.user.email)) {
         await supabase.auth.signOut();
-        router.push(
-          "/auth/otp-login?autoSend=true&email=" +
-            encodeURIComponent(values.email)
-        );
+        router.push("/auth/otp-login?autoSend=true&email=" + encodeURIComponent(values.email));
       } else if (data.user) {
         toast.success("Logged in successfully");
         startNavigationProgress();
@@ -135,7 +128,7 @@ export default function LoginForm() {
           </div>
         </div>
       ),
-      { duration: 1000000, position: "bottom-right" }
+      { duration: 1000000, position: "bottom-right" },
     );
   }
 
@@ -145,10 +138,7 @@ export default function LoginForm() {
       <Suspense>
         {" "}
         <Form {...form} key="login-form">
-          <form
-            onSubmit={form.handleSubmit(onSubmit)}
-            className="w-full space-y-4 p-0 rounded-md"
-          >
+          <form onSubmit={form.handleSubmit(onSubmit)} className="w-full space-y-4 p-0 rounded-md">
             <FormField
               control={form.control}
               name="email"
@@ -178,22 +168,14 @@ export default function LoginForm() {
                   </div>
 
                   <FormControl>
-                    <Input
-                      type="password"
-                      placeholder="Enter your password"
-                      {...field}
-                    />
+                    <Input type="password" placeholder="Enter your password" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
 
-            <Button
-              disabled={isLoading}
-              type="submit"
-              className="w-full bg-blue-400"
-            >
+            <Button disabled={isLoading} type="submit" className="w-full bg-blue-400">
               {isLoading ? "Logging in..." : "Login"}
             </Button>
             <div className="after:border-border relative text-center text-sm after:absolute after:inset-0 after:top-1/2 after:z-0 after:flex after:items-center after:border-t">

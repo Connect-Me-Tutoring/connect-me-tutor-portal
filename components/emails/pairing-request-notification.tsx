@@ -1,21 +1,25 @@
-import { Profile } from '@/types';
-import { PairingRequestNotificationEmailProps } from '@/types/email';
-import React from 'react';
-
-
+import { Profile } from "@/types";
+import { PairingRequestNotificationEmailProps } from "@/types/email";
+import React from "react";
 
 export default function PairingRequestNotificationEmail({
   tutor,
   student,
   isPreview = false,
 }: PairingRequestNotificationEmailProps) {
-  
   // Extract data from student object with fallbacks
-  const subjects = student.subjects_of_interest || ['TBD'];
-  const languages = student.languages_spoken || ['English'];
-  
+  const subjects = student.subjects_of_interest || ["TBD"];
+  const languages = student.languages_spoken || ["English"];
+
   const EmailContent = () => (
-    <div style={{ maxWidth: "600px", margin: "0 auto", padding: "20px", fontFamily: "Arial, sans-serif" }}>
+    <div
+      style={{
+        maxWidth: "600px",
+        margin: "0 auto",
+        padding: "20px",
+        fontFamily: "Arial, sans-serif",
+      }}
+    >
       {/* Header */}
       <div
         style={{
@@ -62,9 +66,10 @@ export default function PairingRequestNotificationEmail({
               margin: "0",
             }}
           >
-            We have found a potential tutoring match for you! Below is information about a student 
-            who may be a good fit based on your expertise and availability. Please review the student&apos;s 
-            information and let us know if you&apos;re interested in this pairing opportunity.
+            We have found a potential tutoring match for you! Below is information about a student
+            who may be a good fit based on your expertise and availability. Please review the
+            student&apos;s information and let us know if you&apos;re interested in this pairing
+            opportunity.
           </div>
         </div>
 
@@ -106,7 +111,7 @@ export default function PairingRequestNotificationEmail({
               margin: "0 0 8px 0",
             }}
           >
-            <strong>Grade Level:</strong> {student.grade || 'Not specified'}
+            <strong>Grade Level:</strong> {student.grade || "Not specified"}
           </div>
           {student.parentName && (
             <div
@@ -128,7 +133,7 @@ export default function PairingRequestNotificationEmail({
               margin: "0",
             }}
           >
-            <strong>Preferred Contact:</strong> {student.parentName ? 'Parent/Guardian' : 'Student'}
+            <strong>Preferred Contact:</strong> {student.parentName ? "Parent/Guardian" : "Student"}
           </div>
         </div>
 
@@ -172,7 +177,6 @@ export default function PairingRequestNotificationEmail({
           >
             <strong>Languages Spoken:</strong> {languages.join(", ")}
           </div>
-          
         </div>
 
         {/* Interest and Response */}
@@ -214,7 +218,8 @@ export default function PairingRequestNotificationEmail({
               paddingLeft: "16px",
             }}
           >
-            • Please navigate to the tutor portal <a href = 'https://www.connectmego.app/'>https://www.connectmego.app/</a>
+            • Please navigate to the tutor portal{" "}
+            <a href="https://www.connectmego.app/">https://www.connectmego.app/</a>
           </div>
           <div
             style={{
@@ -268,7 +273,8 @@ export default function PairingRequestNotificationEmail({
               margin: "0 0 12px 0",
             }}
           >
-            <strong>1.</strong> Visit your Pairing Dashboard and accept the pairing request if interested
+            <strong>1.</strong> Visit your Pairing Dashboard and accept the pairing request if
+            interested
           </div>
           <div
             style={{
@@ -278,7 +284,8 @@ export default function PairingRequestNotificationEmail({
               margin: "0 0 12px 0",
             }}
           >
-            <strong>2.</strong> We`&apos;`ll confirm the pairing and provide student contact information
+            <strong>2.</strong> We`&apos;`ll confirm the pairing and provide student contact
+            information
           </div>
           <div
             style={{
@@ -288,7 +295,8 @@ export default function PairingRequestNotificationEmail({
               margin: "0",
             }}
           >
-            <strong>3.</strong> You`&apos;`ll receive the Tutor Starter Pack and coordination instructions
+            <strong>3.</strong> You`&apos;`ll receive the Tutor Starter Pack and coordination
+            instructions
           </div>
         </div>
 
@@ -320,9 +328,9 @@ export default function PairingRequestNotificationEmail({
               margin: "0",
             }}
           >
-            This is a potential match only. No commitment has been made yet. Please respond 
-            within <strong>48 hours</strong> so we can proceed with pairing arrangements or 
-            find alternative matches for both you and the student.
+            This is a potential match only. No commitment has been made yet. Please respond within{" "}
+            <strong>48 hours</strong> so we can proceed with pairing arrangements or find
+            alternative matches for both you and the student.
           </div>
         </div>
 
@@ -354,8 +362,8 @@ export default function PairingRequestNotificationEmail({
               margin: "0",
             }}
           >
-            If you have any questions about this potential match or need assistance, 
-            please contact <strong>Yulianna, Addison, or Claudia</strong>.
+            If you have any questions about this potential match or need assistance, please contact{" "}
+            <strong>Yulianna, Addison, or Claudia</strong>.
           </div>
         </div>
 
@@ -413,9 +421,7 @@ export default function PairingRequestNotificationEmail({
 
   if (isPreview) {
     return (
-      <div
-        style={{ fontFamily: "Arial, sans-serif", backgroundColor: "#ffffff" }}
-      >
+      <div style={{ fontFamily: "Arial, sans-serif", backgroundColor: "#ffffff" }}>
         <EmailContent />
       </div>
     );

@@ -6,6 +6,7 @@ import {
   resolveChatRecipientProfiles,
   type ChatRoomType,
 } from "@/lib/chat/resolve-chat-recipients";
+import { logError } from "@/lib/posthog";
 
 type DispatchArgs = {
   roomId: string;
@@ -26,21 +27,13 @@ export async function dispatchChatMessageEmails({
 }: DispatchArgs): Promise<void> {
   try {
     const admin = await createAdminClient();
-    const recipients = await resolveChatRecipientProfiles(
-      admin,
-      roomId,
-      roomType,
-    );
+    const recipients = await resolveChatRecipientProfiles(admin, roomId, roomType);
 
-    const senderName =
-      `${senderFirstName} ${senderLastName}`.trim() || "Someone";
-    const siteUrl =
-      process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.connectmego.app";
+    const senderName = `${senderFirstName} ${senderLastName}`.trim() || "Someone";
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.connectmego.app";
     const chatRoomUrl = buildChatRoomUrl(siteUrl, roomType, roomId);
     const preview =
-      messagePreview.length > 500
-        ? `${messagePreview.slice(0, 497)}...`
-        : messagePreview;
+      messagePreview.length > 500 ? `${messagePreview.slice(0, 497)}...` : messagePreview;
 
     for (const r of recipients) {
       if (r.id === senderProfileId) continue;
@@ -59,5 +52,6 @@ export async function dispatchChatMessageEmails({
     }
   } catch (e) {
     console.error("dispatchChatMessageEmails", e);
+    await logError(e, { roomId, roomType }, "chat_dispatch_email_error");
   }
 }
