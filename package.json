@@ -86,7 +86,7 @@
     "recharts": "^2.15.1",
     "remark-gfm": "^4.0.1",
     "resend": "^4.5.1",
-    "shell-quote": "^1.8.4",
+    "shell-quote": "^1.9.0",
     "ssr": "^6.2.78",
     "tailwind-merge": "^2.5.2",
     "tailwindcss-animate": "^1.0.7",
