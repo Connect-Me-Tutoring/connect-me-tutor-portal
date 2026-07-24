@@ -2,6 +2,7 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { Event } from "@/types";
+import { logEvent, logError } from "@/lib/posthog";
 
 /* EVENTS */
 export async function getEvents(
@@ -11,7 +12,7 @@ export async function getEvents(
   try {
     const supabase = await createClient();
 
-    console.log(orderBy);
+    await logEvent("event_get_events_start", { tutorId, orderBy: orderBy ?? null });
 
     let query = supabase
       .from("Events")
@@ -34,6 +35,11 @@ export async function getEvents(
     if (error) {
       // Check for errors and log them
       console.error("Error fetching event details:", error.message);
+      await logError(
+        error,
+        { action: "getEvents", tutorId, orderBy: orderBy ?? null },
+        "event_error",
+      );
       throw error; // Returning null here is valid since the function returns Promise<Notification[] | null>
     }
 
@@ -56,6 +62,11 @@ export async function getEvents(
     return events; // Return the array of notifications
   } catch (error) {
     console.error("Unexpected error in getMeeting:", error);
+    await logError(
+      error,
+      { action: "getEvents", tutorId, orderBy: orderBy ?? null },
+      "event_error",
+    );
     throw error;
   }
 }

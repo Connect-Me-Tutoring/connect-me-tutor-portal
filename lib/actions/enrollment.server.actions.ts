@@ -1,6 +1,7 @@
 "use server";
 import { Availability, Enrollment, Profile, Session } from "@/types";
 import { createAdminClient, createClient } from "../supabase/server";
+import { logError } from "@/lib/posthog";
 import { Table } from "../supabase/tables";
 import {
   tableToInterfaceEnrollments,
@@ -27,6 +28,7 @@ import {
   requireEnrollmentAccess,
   requireTutorProfileAccess,
 } from "./authz.server";
+import type { Database, Json } from "@/types/database.types";
 
 type EnrollmentTableRow = {
   availability?: Availability[] | null;
@@ -35,7 +37,7 @@ type EnrollmentTableRow = {
   duration?: number | null;
   end_date?: string | null;
   end_time?: string | null;
-  frequency?: string | null;
+  frequency?: Database["public"]["Enums"]["session_frequency"] | null;
   id?: string | null;
   meetingId?: string | null;
   paused?: boolean | null;
@@ -115,6 +117,11 @@ export async function getAllActiveEnrollmentsServer(endOfWeek: string): Promise<
     // Check for errors and log them
     if (error) {
       console.error("Error fetching event details:", error.message);
+      await logError(
+        error,
+        { function: "getAllActiveEnrollmentsServer", end_of_week: endOfWeek },
+        "enrollment_error",
+      );
       throw error;
     }
 
@@ -131,6 +138,11 @@ export async function getAllActiveEnrollmentsServer(endOfWeek: string): Promise<
     return enrollments; // Return the array of enrollments
   } catch (error) {
     console.error("Error getting needed enrollment information:", error);
+    await logError(
+      error,
+      { function: "getAllActiveEnrollmentsServer", end_of_week: endOfWeek },
+      "enrollment_error",
+    );
     throw error;
   }
 }
@@ -163,6 +175,7 @@ export async function getAllEnrollments(): Promise<Enrollment[] | null> {
     // Check for errors and log them
     if (error) {
       console.error("Error fetching event details:", error.message);
+      await logError(error, { function: "getAllEnrollments" }, "enrollment_error");
       return null; // Returning null here is valid since the function returns Promise<Notification[] | null>
     }
 
@@ -179,6 +192,7 @@ export async function getAllEnrollments(): Promise<Enrollment[] | null> {
     return enrollments; // Return the array of enrollments
   } catch (error) {
     console.error("Unexpected error in getMeeting:", error);
+    await logError(error, { function: "getAllEnrollments" }, "enrollment_error");
     return null;
   }
 }
@@ -220,6 +234,11 @@ export async function getAllActiveEnrollments(endOfWeek?: string): Promise<Enrol
     // Check for errors and log them
     if (error) {
       console.error("Error fetching event details:", error.message);
+      await logError(
+        error,
+        { function: "getAllActiveEnrollments", end_of_week: endOfWeek },
+        "enrollment_error",
+      );
       throw error;
     }
 
@@ -236,6 +255,11 @@ export async function getAllActiveEnrollments(endOfWeek?: string): Promise<Enrol
     return enrollments; // Return the array of enrollments
   } catch (error) {
     console.error("Error getting needed enrollment information:", error);
+    await logError(
+      error,
+      { function: "getAllActiveEnrollments", end_of_week: endOfWeek },
+      "enrollment_error",
+    );
     throw error;
   }
 }
@@ -267,6 +291,7 @@ export async function getAllActiveEnrollmentsForCron(): Promise<Enrollment[]> {
 
     if (error) {
       console.error("Error fetching active enrollments for cron:", error.message);
+      await logError(error, { function: "getAllActiveEnrollmentsForCron" }, "enrollment_error");
       throw error;
     }
 
@@ -279,6 +304,7 @@ export async function getAllActiveEnrollmentsForCron(): Promise<Enrollment[]> {
       .map((enrollment: any) => tableToInterfaceEnrollments(enrollment));
   } catch (error) {
     console.error("Error getting active enrollments for cron:", error);
+    await logError(error, { function: "getAllActiveEnrollmentsForCron" }, "enrollment_error");
     throw error;
   }
 }
@@ -315,6 +341,7 @@ export async function getEnrollments(tutorId: string): Promise<Enrollment[] | nu
     // Check for errors and log them
     if (error) {
       console.error("Error fetching event details:", error.message);
+      await logError(error, { function: "getEnrollments", tutor_id: tutorId }, "enrollment_error");
       return null; // Returning null here is valid since the function returns Promise<Notification[] | null>
     }
 
@@ -328,6 +355,7 @@ export async function getEnrollments(tutorId: string): Promise<Enrollment[] | nu
     return enrollments; // Return the array of enrollments
   } catch (error) {
     console.error("Unexpected error in getMeeting:", error);
+    await logError(error, { function: "getEnrollments", tutor_id: tutorId }, "enrollment_error");
     return null;
   }
 }
@@ -347,6 +375,11 @@ export const removeFutureSessions = async (enrollmentId: string, supabase: any) 
       .throwOnError();
   } catch (error) {
     console.error("Unable to remove future sessions", error);
+    await logError(
+      error,
+      { function: "removeFutureSessions", enrollment_id: enrollmentId },
+      "enrollment_error",
+    );
     throw error;
   }
 };
@@ -366,6 +399,11 @@ export const removeEnrollment = async (enrollmentId: string) => {
 
   if (deleteEnrollmentError) {
     console.error("Error removing enrollment:", deleteEnrollmentError);
+    await logError(
+      deleteEnrollmentError,
+      { function: "removeEnrollment", enrollment_id: enrollmentId },
+      "enrollment_error",
+    );
     throw deleteEnrollmentError;
   }
 };
@@ -390,7 +428,7 @@ export const updateEnrollment = async (enrollment: Enrollment) => {
         summary: enrollment.summary,
         start_date: enrollment.startDate,
         end_date: enrollment.endDate,
-        availability,
+        availability: availability as unknown as Json,
         day: schedule.day,
         start_time: schedule.startTime,
         end_time: schedule.endTime,
@@ -404,6 +442,11 @@ export const updateEnrollment = async (enrollment: Enrollment) => {
 
     if (updateEnrollmentError) {
       console.error("Error updating enrollment: ", updateEnrollmentError);
+      await logError(
+        updateEnrollmentError,
+        { function: "updateEnrollment", enrollment_id: enrollment.id },
+        "enrollment_error",
+      );
       throw updateEnrollmentError;
     }
 
@@ -411,6 +454,11 @@ export const updateEnrollment = async (enrollment: Enrollment) => {
     return updateEnrollmentData;
   } catch (error) {
     console.error("Unable to update Enrollment", error);
+    await logError(
+      error,
+      { function: "updateEnrollment", enrollment_id: enrollment.id },
+      "enrollment_error",
+    );
     throw error;
   }
 };
@@ -459,6 +507,11 @@ export const getEnrollmentsWithMissingSEF = async (timeProvided: Date, weeksMiss
     return enrollmentsWithTwoMissingSessions;
   } catch (error) {
     console.error("Unable to filter ", error);
+    await logError(
+      error,
+      { function: "getEnrollmentsWithMissingSEF", weeks_missing_sef: weeksMissingSEF },
+      "enrollment_error",
+    );
     throw error;
   }
 };
@@ -501,7 +554,7 @@ export const addEnrollment = async (
         summary: enrollment.summary,
         start_date: enrollment.startDate,
         end_date: enrollment.endDate,
-        availability,
+        availability: availability as unknown as Json,
         day: schedule.day,
         start_time: schedule.startTime,
         end_time: schedule.endTime,
@@ -520,6 +573,15 @@ export const addEnrollment = async (
 
     if (error) {
       console.error("Error adding enrollment:", error);
+      await logError(
+        error,
+        {
+          function: "addEnrollment",
+          tutor_id: enrollmentTutorId,
+          student_id: enrollment.student?.id,
+        },
+        "enrollment_error",
+      );
       throw error;
     }
 
@@ -527,14 +589,17 @@ export const addEnrollment = async (
       const tutor = tableToInterfaceProfiles(data.tutor);
       const student = tableToInterfaceProfiles(data.student);
       const meeting = tableToInterfaceMeetings(data.meeting);
-      const date = await sessionTimeFromEnrollment(schedule, data.start_date);
+      const date = await sessionTimeFromEnrollment(
+        schedule,
+        data.start_date ?? enrollment.startDate,
+      );
 
       const firstSession: Session = {
         id: "",
         enrollmentId: data.id,
         createdAt: new Date().toISOString(),
         date: date,
-        summary: data.summary,
+        summary: data.summary ?? enrollment.summary,
         student: student,
         tutor: tutor,
         meeting: meeting,
@@ -553,22 +618,7 @@ export const addEnrollment = async (
       });
     }
 
-    return {
-      createdAt: data.created_at,
-      id: data.id,
-      summary: data.summary,
-      student: tableToInterfaceProfiles(data.student),
-      tutor: tableToInterfaceProfiles(data.tutor),
-      startDate: data.start_date,
-      endDate: data.end_date,
-      availability,
-      day: data.day,
-      startTime: data.start_time?.slice(0, 5) || null,
-      endTime: data.end_time?.slice(0, 5) || null,
-      meetingId: data.meetingId,
-      duration: data.duration,
-      frequency: data.frequency,
-    };
+    return tableToInterfaceEnrollments(data);
   } catch (error) {
     throw error;
   }
@@ -602,6 +652,11 @@ export const sessionTimeFromEnrollment = async (
     return fromZonedTime(dateString, "America/New_York").toISOString();
   } catch (error) {
     console.error("Unable to calculate session from enrollment");
+    await logError(
+      error,
+      { function: "sessionTimeFromEnrollment", day: availability.day, start },
+      "enrollment_error",
+    );
     throw error;
   }
 };

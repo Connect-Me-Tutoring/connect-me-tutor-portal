@@ -70,7 +70,7 @@ export default function ManageTutorSessions({ tutors }: { tutors: Profile[] }) {
     );
   };
 
-  const handleUpdate = async (status: string) => {
+  const handleUpdate = async (status: "Cancelled" | "Complete") => {
     if (selectedIds.length === 0 || !selectedTutorId) return;
     setLoading(true);
     try {

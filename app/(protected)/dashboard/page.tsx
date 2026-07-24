@@ -14,6 +14,7 @@ import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { DashboardContextProvider } from "@/lib/contexts/dashboardContext";
 import { getProfile } from "@/lib/actions/profile.server.actions";
+import { logEvent } from "@/lib/posthog";
 
 async function TutorDashboardPage({
   profile,
@@ -118,7 +119,7 @@ async function StudentDashboardPage({
 export default async function DashboardPage() {
   const user = await cachedGetUser();
   if (!user) {
-    console.log("Redirecting back to root");
+    await logEvent("dashboard_redirect_unauthenticated", {});
     redirect("/");
   }
   const profile = await cachedGetProfile(user.id);

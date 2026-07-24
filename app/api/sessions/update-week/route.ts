@@ -4,6 +4,7 @@ import { addSessionsServer, getAllSessionsServer } from "@/lib/actions/session.s
 import { Session } from "@/types";
 import { getEasternWeekBounds } from "@/lib/utils";
 import { isCronRequestAuthorized } from "@/lib/security/cron";
+import { logError } from "@/lib/posthog";
 
 export const dynamic = "force-dynamic";
 
@@ -40,6 +41,7 @@ const handleUpdateWeek = async (): Promise<Session[]> => {
     return newSessions;
   } catch (error: any) {
     console.error("Failed to add sessions:", error);
+    await logError(error, {}, "cron_update_week_error");
     throw error;
   }
 };

@@ -505,10 +505,11 @@ const EnrollmentList = ({
   };
 
   const handleInputSelectionChange = (value: string, type: "add" | "edit") => {
+    const frequency = value as Enrollment["frequency"];
     {
       type === "add"
-        ? setNewEnrollment((prev) => ({ ...prev, frequency: value }))
-        : setSelectedEnrollment((prev) => (prev ? { ...prev, frequency: value } : null));
+        ? setNewEnrollment((prev) => ({ ...prev, frequency }))
+        : setSelectedEnrollment((prev) => (prev ? { ...prev, frequency } : null));
     }
   };
 

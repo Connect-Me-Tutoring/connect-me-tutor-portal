@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { formatInTimeZone } from "date-fns-tz";
 import { sendEarlySessionCheckInEmails } from "@/lib/actions/email.server.actions";
 import { isCronRequestAuthorized } from "@/lib/security/cron";
+import { logError } from "@/lib/posthog";
 
 export const dynamic = "force-dynamic";
 
@@ -31,6 +32,7 @@ export async function GET(request: NextRequest) {
     });
   } catch (error) {
     console.error("Unable to process early session check-ins:", error);
+    await logError(error, {}, "cron_early_session_checkins_error");
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { isCronRequestAuthorized } from "@/lib/security/cron";
+import { logError } from "@/lib/posthog";
 
 export const dynamic = "force-dynamic";
 
@@ -22,6 +23,7 @@ export async function GET(request: NextRequest) {
 
     if (fetchError) {
       console.error("Error fetching sessions to cancel:", fetchError);
+      await logError(fetchError, {}, "cron_cancel_unsubmitted_sef_error");
       return NextResponse.json({ error: "Failed to fetch sessions" }, { status: 500 });
     }
 
@@ -40,6 +42,7 @@ export async function GET(request: NextRequest) {
 
     if (updateError) {
       console.error("Error cancelling sessions:", updateError);
+      await logError(updateError, {}, "cron_cancel_unsubmitted_sef_error");
       return NextResponse.json({ error: "Failed to cancel sessions" }, { status: 500 });
     }
 
@@ -49,6 +52,7 @@ export async function GET(request: NextRequest) {
     });
   } catch (error) {
     console.error("Unable to cancel unsubmitted SEF:", error);
+    await logError(error, {}, "cron_cancel_unsubmitted_sef_error");
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }

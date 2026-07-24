@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { CATEGORY_LABELS } from "@/constants/sessionExitForm";
 import { SessionExitFormCategory, SessionExitFormPayload } from "@/types/sessionExitForm";
+import { logEvent, logError } from "@/lib/posthog";
 
 export const dynamic = "force-dynamic";
 
@@ -40,6 +41,7 @@ export async function GET() {
     return NextResponse.json({ success: true }, { status: 200 });
   } catch (error) {
     console.error("API route error:", error);
+    await logError(error, {}, "sef_error");
     return NextResponse.json({ success: false }, { status: 500 });
   }
 }
@@ -65,7 +67,7 @@ export async function POST(request: NextRequest) {
     const label = CATEGORY_LABELS[formData.category as SessionExitFormCategory];
 
     if (!label) {
-      console.warn(`[session-exit-form] Missing or unrecognized category "${formData.category}"`);
+      await logEvent("sef_invalid_category", { category: formData.category });
       return NextResponse.json(
         { success: false, error: "A valid category is required." },
         { status: 400 },
@@ -80,6 +82,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ success: true }, { status: 200 });
   } catch (error) {
     console.error("API route error:", error);
+    await logError(error, { category: formData.category }, "sef_error");
     return NextResponse.json(
       {
         success: false,

@@ -20,14 +20,14 @@ import toast from "react-hot-toast";
 import { Button } from "@/components/ui/button";
 import { Card, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 
-interface EnrollmentDetails {
+export interface EnrollmentDetails {
   studentId: string;
   firstName: string;
   lastName: string;
   hours: number;
 }
 
-interface EventDetails {
+export interface EventDetails {
   eventId: string;
   date: any;
   hours: number;

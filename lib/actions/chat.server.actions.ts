@@ -11,6 +11,7 @@ import { AdminConversation } from "@/types/chat";
 import { getProfileFromUserSettings } from "./profile.server.actions";
 import { getUserFromAction } from "./user.server.actions";
 import { requireAuthenticatedUser, requireSelfOrAdmin } from "./authz.server";
+import { logError } from "@/lib/posthog";
 
 export const createAdminConversation = async (user_id: string) => {
   await requireSelfOrAdmin(user_id);
@@ -32,7 +33,15 @@ export const createAdminConversation = async (user_id: string) => {
     },
   ]);
 
-  if (result.error) return console.error(result.error);
+  if (result.error) {
+    console.error(result.error);
+    await logError(
+      result.error,
+      { action: "createAdminConversation", userId: user_id },
+      "chat_error",
+    );
+    return;
+  }
 
   const createdParticipantResult = await supabase.from("conversation_participant").insert([
     {
@@ -66,6 +75,7 @@ export async function fetchUserAdminConversation(userId: string, createIfNull: b
     return null;
   } catch (error) {
     console.error("Unable to fetch user admin conversations", error);
+    await logError(error, { action: "fetchUserAdminConversation", userId }, "chat_error");
     throw error;
   }
 }
@@ -78,6 +88,7 @@ export async function fetchAdmins() {
     return data;
   } catch (error) {
     console.error("unable to fetch admin information");
+    await logError(error, { action: "fetchAdmins" }, "chat_error");
   }
 }
 
@@ -172,6 +183,11 @@ export async function sendChatMessage(params: {
   const { error } = await supabase.from("messages").insert([newMessage]);
   if (error) {
     console.error("sendChatMessage insert", error);
+    await logError(
+      error,
+      { action: "sendChatMessage", roomId: params.roomId, roomType: params.roomType },
+      "chat_error",
+    );
     return { ok: false, error: error.message };
   }
 
@@ -230,6 +246,7 @@ export async function setChatRoomEmailMuted(
 
   if (error) {
     console.error("setChatRoomEmailMuted", error);
+    await logError(error, { action: "setChatRoomEmailMuted", roomId, muted }, "chat_error");
     return { ok: false, error: error.message };
   }
 

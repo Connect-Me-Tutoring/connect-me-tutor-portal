@@ -13,7 +13,7 @@ export const useEnrollment = (enrollmentId: string) => {
         .single();
 
       if (data) {
-        setEnrollment(data as SharedEnrollment);
+        setEnrollment(data as unknown as SharedEnrollment);
       }
     })();
   }, [enrollmentId]);

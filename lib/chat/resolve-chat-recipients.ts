@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/types/database.types";
 import { StudentAnnouncementsRoomId, TutorAnnouncementRoomId } from "@/constants/chat";
+import { logError } from "@/lib/posthog";
 
 export type ChatRoomType = "pairing" | "announcements" | "admin";
 
@@ -41,6 +42,7 @@ async function fetchProfilesByIds(
 
   if (error) {
     console.error("fetchProfilesByIds", error);
+    await logError(error, { ids }, "chat_resolve_recipients_error");
     return [];
   }
 
@@ -64,6 +66,7 @@ async function fetchProfilesByIds(
 
   if (settingsError) {
     console.error("fetchProfilesByIds user_settings fallback", settingsError);
+    await logError(settingsError, { userIds }, "chat_resolve_recipients_error");
   }
 
   const userIdToEmail = new Map(
@@ -87,6 +90,7 @@ async function fetchAdminProfileIds(admin: SupabaseClient<Database>): Promise<st
 
   if (error) {
     console.error("fetchAdminProfileIds", error);
+    await logError(error, {}, "chat_resolve_recipients_error");
     return [];
   }
 
@@ -106,7 +110,10 @@ export async function resolveChatRecipientProfiles(
       .maybeSingle();
 
     if (error || !pairing) {
-      if (error) console.error("resolveChatRecipientProfiles pairing", error);
+      if (error) {
+        console.error("resolveChatRecipientProfiles pairing", error);
+        await logError(error, { roomId, roomType }, "chat_resolve_recipients_error");
+      }
       return [];
     }
 
@@ -123,6 +130,7 @@ export async function resolveChatRecipientProfiles(
 
     if (error) {
       console.error("resolveChatRecipientProfiles admin participants", error);
+      await logError(error, { roomId, roomType }, "chat_resolve_recipients_error");
       return [];
     }
 
@@ -143,6 +151,7 @@ export async function resolveChatRecipientProfiles(
 
     if (error) {
       console.error("resolveChatRecipientProfiles announcements", error);
+      await logError(error, { roomId, roomType }, "chat_resolve_recipients_error");
       return [];
     }
 
