@@ -7,7 +7,7 @@ import {
   tableToInterfaceProfiles,
   tableToInterfaceMeetings,
   tableToInterfaceEnrollments,
-} from "../type-utils";
+} from "../utils/type-utils";
 import { SharedEnrollment } from "@/types/enrollment";
 import { addOneSession } from "./session.actions";
 import { handleCalculateDuration, isValidUUID } from "../utils";

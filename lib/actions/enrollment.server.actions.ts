@@ -7,7 +7,7 @@ import {
   tableToInterfaceEnrollments,
   tableToInterfaceMeetings,
   tableToInterfaceProfiles,
-} from "../type-utils";
+} from "../utils/type-utils";
 import { cache } from "react";
 import { handleCalculateDuration, isValidUUID } from "../utils";
 import { addDays, format, subWeeks } from "date-fns";
@@ -24,51 +24,6 @@ import {
   requireEnrollmentAccess,
   requireTutorProfileAccess,
 } from "./authz.server";
-import type { Database } from "@/types/database.types";
-
-type EnrollmentTableRow = {
-  created_at?: string | null;
-  day?: string | null;
-  duration?: number | null;
-  end_date?: string | null;
-  end_time?: string | null;
-  frequency?: Database["public"]["Enums"]["session_frequency"] | null;
-  id?: string | null;
-  meetingId?: string | null;
-  paused?: boolean | null;
-  start_date?: string | null;
-  start_time?: string | null;
-  student?: unknown;
-  summary?: string | null;
-  tutor?: unknown;
-};
-
-const profileOrNull = (profile: unknown) => (profile ? tableToInterfaceProfiles(profile) : null);
-
-const tableEnrollmentToInterface = (enrollment: EnrollmentTableRow): Enrollment => {
-  const schedule = getEnrollmentSchedule({
-    day: enrollment.day,
-    startTime: enrollment.start_time,
-    endTime: enrollment.end_time,
-  });
-
-  return {
-    createdAt: enrollment.created_at || "",
-    id: enrollment.id || "",
-    summary: enrollment.summary || "",
-    student: profileOrNull(enrollment.student),
-    tutor: profileOrNull(enrollment.tutor),
-    startDate: enrollment.start_date || "",
-    endDate: enrollment.end_date || null,
-    day: schedule.day || null,
-    startTime: schedule.startTime || null,
-    endTime: schedule.endTime || null,
-    meetingId: enrollment.meetingId || "",
-    paused: Boolean(enrollment.paused),
-    duration: enrollment.duration || 0,
-    frequency: enrollment.frequency || "weekly",
-  };
-};
 
 /* ENROLLMENTS */
 export async function getAllActiveEnrollmentsServer(endOfWeek: string): Promise<Enrollment[]> {
@@ -119,7 +74,7 @@ export async function getAllActiveEnrollmentsServer(endOfWeek: string): Promise<
 
     // Mapping the fetched data to the Notification object
     const enrollments: Enrollment[] = data.map((enrollment) =>
-      tableEnrollmentToInterface(enrollment as EnrollmentTableRow),
+      tableToInterfaceEnrollments(enrollment),
     );
 
     return enrollments; // Return the array of enrollments
@@ -173,7 +128,7 @@ export async function getAllEnrollments(): Promise<Enrollment[] | null> {
     // Mapping the fetched data to the Notification object
     const enrollments: Enrollment[] = data
       .filter((enrollment) => enrollment.student && enrollment.tutor)
-      .map((enrollment) => tableEnrollmentToInterface(enrollment as EnrollmentTableRow));
+      .map((enrollment) => tableToInterfaceEnrollments(enrollment));
 
     return enrollments; // Return the array of enrollments
   } catch (error) {
@@ -234,7 +189,7 @@ export async function getAllActiveEnrollments(endOfWeek?: string): Promise<Enrol
 
     // Mapping the fetched data to the Notification object
     const enrollments: Enrollment[] = data.map((enrollment) =>
-      tableEnrollmentToInterface(enrollment as EnrollmentTableRow),
+      tableToInterfaceEnrollments(enrollment),
     );
 
     return enrollments; // Return the array of enrollments
@@ -343,7 +298,7 @@ export async function getEnrollments(tutorId: string): Promise<Enrollment[] | nu
 
     // Mapping the fetched data to the Notification object
     const enrollments: Enrollment[] = data.map((enrollment) =>
-      tableEnrollmentToInterface(enrollment as EnrollmentTableRow),
+      tableToInterfaceEnrollments(enrollment),
     );
 
     return enrollments; // Return the array of enrollments

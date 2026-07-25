@@ -8,7 +8,7 @@ import { fetchDaySessionsFromSchedule } from "./session.actions";
 import { addHours, areIntervalsOverlapping, isValid, parseISO } from "date-fns";
 import { formatAvailabilityAsDate } from "../utils";
 import { getEnrollmentSchedule } from "../enrollment-schedule";
-import { tableToInterfaceMeetings } from "../type-utils";
+import { tableToInterfaceMeetings } from "../utils/type-utils";
 
 export const MEETING_CONFIG = {
   meetings: [

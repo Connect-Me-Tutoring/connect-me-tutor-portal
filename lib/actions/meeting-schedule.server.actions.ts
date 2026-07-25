@@ -4,7 +4,7 @@ import { WeeklyMeetingSchedule } from "@/types/meeting";
 import {
   interfaceToTableWeeklyMeetingSchedule,
   tableToInterfaceWeeklyMeetingSchedule,
-} from "@/lib/type-utils";
+} from "@/lib/utils/type-utils";
 
 export const getWeeklyMeetingSchedules = async (): Promise<WeeklyMeetingSchedule[]> => {
   const supabase = await createClient();

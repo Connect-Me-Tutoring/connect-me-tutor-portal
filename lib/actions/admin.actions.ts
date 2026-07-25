@@ -39,7 +39,7 @@ import {
   tableToInterfaceProfiles,
   tableToInterfaceSessions,
   tableToInterfaceMeetings,
-} from "../type-utils";
+} from "../utils/type-utils";
 import { createPairingRequest } from "./pairing.actions";
 import { scheduleMultipleSessionReminders } from "../twilio";
 import { removeFutureSessions } from "./enrollment.server.actions";

@@ -25,7 +25,7 @@ import {
   getParticipantEventCountsBySessionIds,
 } from "./zoom.server.actions";
 import { normalizeZoomParticipationEvents } from "@/lib/zoom/participation-normalize";
-import { tableToInterfaceEnrollments, tableToInterfaceSessions } from "../type-utils";
+import { tableToInterfaceEnrollments, tableToInterfaceSessions } from "../utils/type-utils";
 import {
   deleteScheduledEmailBeforeSessions,
   sendScheduledEmailsBeforeSessions,

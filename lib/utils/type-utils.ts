@@ -90,24 +90,24 @@ export const tableToInterfaceEnrollments = (data: any) => {
       throw new Error("Data is null");
     }
     const enrollment: Enrollment = {
-      id: data.id,
-      createdAt: data.created_at,
-      summary: data.summary,
-      student: tableToInterfaceProfiles(data.student),
-      tutor: tableToInterfaceProfiles(data.tutor),
-      startDate: data.start_date,
-      endDate: data.end_date,
+      id: data.id || "",
+      createdAt: data.created_at || "",
+      summary: data.summary || "",
+      student: data.student ? tableToInterfaceProfiles(data.student) : null,
+      tutor: data.tutor ? tableToInterfaceProfiles(data.tutor) : null,
+      startDate: data.start_date || "",
+      endDate: data.end_date || null,
       day: data.day || null,
       startTime: data.start_time?.slice(0, 5) || null,
       endTime: data.end_time?.slice(0, 5) || null,
-      meetingId: data.meetingId,
-      paused: data.paused,
-      duration: data.duration,
-      frequency: data.frequency,
+      meetingId: data.meetingId || "",
+      paused: Boolean(data.paused),
+      duration: data.duration || 0,
+      frequency: data.frequency || "weekly",
     };
     return enrollment;
   } catch (error) {
-    console.error("Unable to convert to interface for Profiles", error);
+    console.error("Unable to convert to interface for Enrollments", error);
     throw error;
   }
 };

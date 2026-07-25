@@ -33,7 +33,7 @@ import {
   tableToInterfaceMeetings,
   tableToInterfaceProfiles,
   tableToInterfaceSessions,
-} from "../type-utils";
+} from "../utils/type-utils";
 import { supabase } from "@/lib/supabase/client";
 // import { getMeeting } from "./meeting.actions";
 

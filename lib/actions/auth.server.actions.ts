@@ -7,7 +7,7 @@ import { User } from "@supabase/supabase-js";
 import { Table } from "../supabase/tables";
 import { admin } from "googleapis/build/src/apis/admin";
 import { profile } from "console";
-import { tableToInterfaceProfiles } from "../type-utils";
+import { tableToInterfaceProfiles } from "../utils/type-utils";
 import { createPassword } from "../utils";
 import { cachedGetUser, getProfileRole } from "./user.server.actions";
 import { isCronRequestAuthorized } from "@/lib/security/cron";

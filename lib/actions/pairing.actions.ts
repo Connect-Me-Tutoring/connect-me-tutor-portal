@@ -550,7 +550,7 @@ export const findAvailableSessionTimes = async () => {
 };
 
 // Function to convert time string to minutes since midnight
-function timeToMinutes(timeString: string): number {
+export function timeToMinutes(timeString: string): number {
   const [hours, minutes, seconds = 0] = timeString.split(":").map(Number);
   return hours * 60 + minutes + seconds / 60;
 }
@@ -595,7 +595,7 @@ function getAverageTimeWithDuration(
   };
 }
 
-const isOverlap = (start1: number, end1: number, start2: number, end2: number) => {
+export const isOverlap = (start1: number, end1: number, start2: number, end2: number) => {
   try {
     return start1 < end2 && start2 < end1;
   } catch (error) {
