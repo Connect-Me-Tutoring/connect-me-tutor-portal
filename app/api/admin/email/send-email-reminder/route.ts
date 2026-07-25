@@ -1,10 +1,10 @@
-import { getProfileByEmail } from "@/lib/actions/user.actions";
+import { getProfileByEmail } from "@/lib/actions/user/actions";
 import { Profile } from "@/types";
 import { createClient } from "@/lib/supabase/server";
 import { NextRequest, NextResponse } from "next/server";
 import { Resend } from "resend";
 import { Table } from "@/lib/supabase/tables";
-import { isAuthorized } from "@/lib/actions/auth.server.actions";
+import { isAuthorized } from "@/lib/actions/auth/server.actions";
 import { logError } from "@/lib/posthog";
 import { z } from "zod";
 

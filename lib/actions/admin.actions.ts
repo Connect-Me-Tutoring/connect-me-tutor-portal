@@ -8,8 +8,8 @@ import {
   deleteScheduledEmailBeforeSessions,
   sendScheduledEmailsBeforeSessions,
   updateScheduledEmailBeforeSessions,
-} from "./email.server.actions";
-import { getProfileWithProfileId, getProfileByEmail } from "./user.actions";
+} from "./email/server.actions";
+import { getProfileWithProfileId, getProfileByEmail } from "./user/actions";
 import {
   addDays,
   format,
@@ -28,7 +28,7 @@ import {
 } from "date-fns"; // Only use date-fns
 import * as DateFNS from "date-fns-tz";
 import ResetPassword from "@/app/(auth)/set-password/page";
-import { getStudentSessions } from "./student.actions";
+import { getStudentSessions } from "./student/actions";
 import { date } from "zod";
 import toast from "react-hot-toast";
 import { DatabaseIcon } from "lucide-react";
@@ -40,9 +40,9 @@ import {
   tableToInterfaceSessions,
   tableToInterfaceMeetings,
 } from "../utils/type-utils";
-import { createPairingRequest } from "./pairing.actions";
+import { createPairingRequest } from "./pairing/client.actions";
 import { scheduleMultipleSessionReminders } from "../twilio";
-import { removeFutureSessions } from "./enrollment.server.actions";
+import { removeFutureSessions } from "./enrollment/server.actions";
 import type { Database } from "@/types/database.types";
 // import { getMeeting } from "./meeting.actions";
 

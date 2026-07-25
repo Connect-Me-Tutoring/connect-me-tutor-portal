@@ -46,8 +46,8 @@ import {
   createEventsBatch,
   removeEvent,
 } from "@/lib/actions/admin.actions";
-import { getEvents } from "@/lib/actions/event.client.actions";
-import { getTutorSessions } from "@/lib/actions/tutor.actions";
+import { getEvents } from "@/lib/actions/event/client.actions";
+import { getTutorSessions } from "@/lib/actions/tutor/actions";
 import { Profile, Session, Event } from "@/types";
 import { toast, Toaster } from "react-hot-toast";
 import { Combobox } from "../ui/combobox";
@@ -67,7 +67,7 @@ import {
   getTotalHours,
   getTotalHoursRange,
   getTotalSessionHoursRange,
-} from "@/lib/actions/hours.actions";
+} from "@/lib/actions/hours/actions";
 import { resourceLimits } from "worker_threads";
 import { number } from "zod";
 import { Loader2, ChevronDown } from "lucide-react";

@@ -17,14 +17,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { getProfile, getProfileWithProfileId } from "@/lib/actions/user.actions";
+import { getProfile, getProfileWithProfileId } from "@/lib/actions/user/actions";
 import { createClient } from "@/lib/supabase/client";
 import { Profile } from "@/types";
 import toast, { Toaster } from "react-hot-toast";
-import { switchProfile, getProfileUncached } from "@/lib/actions/profile.server.actions";
+import { switchProfile, getProfileUncached } from "@/lib/actions/profile/server.actions";
 import { useProfile } from "@/lib/contexts/profileContext";
 import type { Database } from "@/types/database.types";
-import { getUserProfiles } from "@/lib/actions/profile.server.actions";
+import { getUserProfiles } from "@/lib/actions/profile/server.actions";
 
 interface AccountFormType {
   firstName: string;

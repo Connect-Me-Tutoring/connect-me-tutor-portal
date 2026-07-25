@@ -1,6 +1,6 @@
 import StudentList from "@/components/admin/StudentList";
 import SkeletonTable, { SkeletonCard } from "@/components/ui/skeleton";
-import { getAllProfiles } from "@/lib/actions/profile.server.actions";
+import { getAllProfiles } from "@/lib/actions/profile/server.actions";
 import { Suspense } from "react";
 
 async function MyStudentsData() {

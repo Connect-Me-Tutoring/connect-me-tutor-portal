@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/server";
-import { sendMonthlyCheckInEmail } from "@/lib/actions/email.server.actions";
+import { sendMonthlyCheckInEmail } from "@/lib/actions/email/server.actions";
 import { isCronRequestAuthorized } from "@/lib/security/cron";
 import { logError } from "@/lib/posthog";
 

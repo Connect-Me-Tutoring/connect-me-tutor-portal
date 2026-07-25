@@ -1,7 +1,7 @@
 // import { useState, useEffect } from "react";
 // import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
-// import { getProfile } from "@/lib/actions/user.actions";
-// import { getTutorSessions } from "@/lib/actions/tutor.actions";
+// import { getProfile } from "@/lib/actions/user/actions";
+// import { getTutorSessions } from "@/lib/actions/tutor/tutor.actions";
 // import { Profile, Session } from "@/types";
 // import toast from "react-hot-toast";
 // import { endOfWeek } from "date-fns";

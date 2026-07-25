@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { startOfWeek, endOfWeek } from "date-fns";
-import { addSessionsForCron, getAllSessionsForCron } from "@/lib/actions/session.server.actions";
-import { getAllActiveEnrollmentsForCron } from "@/lib/actions/enrollment.server.actions";
+import { addSessionsForCron, getAllSessionsForCron } from "@/lib/actions/session/server.actions";
+import { getAllActiveEnrollmentsForCron } from "@/lib/actions/enrollment/server.actions";
 import { isCronRequestAuthorized } from "@/lib/security/cron";
 import { getEasternWeekBounds } from "@/lib/utils";
 import { logError } from "@/lib/posthog";

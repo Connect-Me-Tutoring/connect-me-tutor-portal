@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import { sendInactiveEnrollmentWarning } from "@/lib/actions/enrollment.server.actions";
+import { sendInactiveEnrollmentWarning } from "@/lib/actions/enrollment/server.actions";
 import { createAdminClient } from "@/lib/supabase/server";
 import { Table } from "@/lib/supabase/tables";
 import { tableToInterfaceEnrollments, tableToInterfaceProfiles } from "@/lib/utils/type-utils";
 import { Enrollment, Profile } from "@/types";
-import { verifyAdmin } from "@/lib/actions/auth.server.actions";
+import { verifyAdmin } from "@/lib/actions/auth/server.actions";
 import { logError } from "@/lib/posthog";
 
 export async function GET(request: NextRequest) {

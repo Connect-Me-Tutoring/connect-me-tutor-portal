@@ -1,8 +1,8 @@
 "use client";
 import { useEffect, useState } from "react";
-import { getTutorSessions } from "@/lib/actions/tutor.actions";
-import { getEvents } from "@/lib/actions/event.server.actions";
-import { getProfile } from "@/lib/actions/user.actions";
+import { getTutorSessions } from "@/lib/actions/tutor/actions";
+import { getEvents } from "@/lib/actions/event/server.actions";
+import { getProfile } from "@/lib/actions/user/actions";
 import {
   Table,
   TableBody,
@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/table";
 import { Session, Event, Enrollment } from "@/types";
 import { addDays, subDays } from "date-fns";
-import { getAllEventDetailsForTutor, getSessionHoursByStudent } from "@/lib/actions/hours.actions";
+import { getAllEventDetailsForTutor, getSessionHoursByStudent } from "@/lib/actions/hours/actions";
 import toast from "react-hot-toast";
 import { Button } from "@/components/ui/button";
 import { Card, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";

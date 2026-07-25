@@ -18,8 +18,11 @@ import {
 } from "@/components/ui/card";
 import { PairingRequestCard } from "./que/request-card";
 import { useFetchProfile } from "@/hooks/auth";
-import { getIncomingPairingMatches, IncomingPairingMatch } from "@/lib/actions/pairing.actions";
-import { updatePairingMatchStatus } from "@/lib/actions/pairing.actions";
+import {
+  getIncomingPairingMatches,
+  IncomingPairingMatch,
+} from "@/lib/actions/pairing/client.actions";
+import { updatePairingMatchStatus } from "@/lib/actions/pairing/client.actions";
 
 import toast from "react-hot-toast";
 

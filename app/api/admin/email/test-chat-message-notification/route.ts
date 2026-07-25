@@ -1,5 +1,5 @@
-import { isAuthorized } from "@/lib/actions/auth.server.actions";
-import { sendChatMessageNotificationEmailTest } from "@/lib/actions/email.server.actions";
+import { isAuthorized } from "@/lib/actions/auth/server.actions";
+import { sendChatMessageNotificationEmailTest } from "@/lib/actions/email/server.actions";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 

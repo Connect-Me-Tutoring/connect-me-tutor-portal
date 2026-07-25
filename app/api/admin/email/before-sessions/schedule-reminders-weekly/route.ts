@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { Session } from "@/types";
-import { sendScheduledEmailsBeforeSessions } from "@/lib/actions/email.server.actions";
-import { getSessions } from "@/lib/actions/session.server.actions";
+import { sendScheduledEmailsBeforeSessions } from "@/lib/actions/email/server.actions";
+import { getSessions } from "@/lib/actions/session/server.actions";
 import { addDays } from "date-fns";
 import { isCronRequestAuthorized } from "@/lib/security/cron";
 

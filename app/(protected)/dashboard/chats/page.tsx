@@ -3,12 +3,12 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { MessageSquare, Shield, Users } from "lucide-react";
-import { getAccountPairings } from "@/lib/actions/pairing.server.actions";
+import { getAccountPairings } from "@/lib/actions/pairing/server.actions";
 import { cachedGetProfile } from "@/lib/actions/cache";
 import { redirect } from "next/navigation";
-import { fetchUserAdminConversation } from "@/lib/actions/chat.server.actions";
+import { fetchUserAdminConversation } from "@/lib/actions/chat/server.actions";
 import Link from "next/link";
-import { cachedGetUser } from "@/lib/actions/user.server.actions";
+import { cachedGetUser } from "@/lib/actions/user/server.actions";
 
 export default async function ChatPage() {
   const user = await cachedGetUser();

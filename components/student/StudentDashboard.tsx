@@ -5,15 +5,15 @@ import { Input } from "@/components/ui/input";
 import ActiveSessionsTable from "./components/ActiveSessionsTable";
 import CurrentSessionsTable from "./components/CurrentSessionsTable";
 import CompletedSessionsTable from "./components/CompletedSessionsTable";
-import { getProfile } from "@/lib/actions/user.actions";
+import { getProfile } from "@/lib/actions/user/actions";
 import { getMeetings } from "@/lib/actions/admin.actions";
-import { getTutorSessions, recordSessionExitForm } from "@/lib/actions/tutor.actions";
-import { getAllSessions } from "@/lib/actions/session.actions";
+import { getTutorSessions, recordSessionExitForm } from "@/lib/actions/tutor/actions";
+import { getAllSessions } from "@/lib/actions/session/actions";
 import {
   rescheduleSession,
   cancelSession,
   updateSession,
-} from "@/lib/actions/session.server.actions";
+} from "@/lib/actions/session/server.actions";
 import { Session, Profile, Meeting } from "@/types";
 import toast from "react-hot-toast";
 import {
@@ -28,7 +28,7 @@ import {
 } from "date-fns";
 import { SelectSeparator } from "@radix-ui/react-select";
 import { Description } from "@radix-ui/react-dialog";
-import { getStudentSessions } from "@/lib/actions/student.actions";
+import { getStudentSessions } from "@/lib/actions/student/actions";
 import { useProfile } from "@/lib/contexts/profileContext";
 import SkeletonTable, { Skeleton } from "../ui/skeleton";
 import { useDashboardContext } from "@/lib/contexts/dashboardContext";

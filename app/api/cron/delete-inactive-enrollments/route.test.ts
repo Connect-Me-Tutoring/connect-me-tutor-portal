@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { getEnrollmentsWithMissingSEF } from "@/lib/actions/enrollment.server.actions";
+import { getEnrollmentsWithMissingSEF } from "@/lib/actions/enrollment/server.actions";
 
 const mockFromDelete = vi.fn();
 const mockDelete = vi.fn();
@@ -11,7 +11,7 @@ vi.mock("@/lib/supabase/server", () => ({
   createClient: vi.fn().mockResolvedValue(mockSupabase()),
 }));
 
-vi.mock("@/lib/actions/enrollment.server.actions", () => ({
+vi.mock("@/lib/actions/enrollment/server.actions", () => ({
   getEnrollmentsWithMissingSEF: vi.fn(),
 }));
 

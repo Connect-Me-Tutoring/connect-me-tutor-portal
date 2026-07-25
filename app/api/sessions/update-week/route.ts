@@ -1,6 +1,6 @@
-import { getAllActiveEnrollmentsForCron } from "@/lib/actions/enrollment.server.actions";
+import { getAllActiveEnrollmentsForCron } from "@/lib/actions/enrollment/server.actions";
 import { NextRequest, NextResponse } from "next/server";
-import { addSessionsForCron, getAllSessionsForCron } from "@/lib/actions/session.server.actions";
+import { addSessionsForCron, getAllSessionsForCron } from "@/lib/actions/session/server.actions";
 import { Session } from "@/types";
 import { getEasternWeekBounds } from "@/lib/utils";
 import { isCronRequestAuthorized } from "@/lib/security/cron";

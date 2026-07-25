@@ -1,5 +1,5 @@
 import { cache } from "react";
-import { getProfile, getTutorStudents } from "./profile.server.actions";
+import { getProfile, getTutorStudents } from "./profile/server.actions";
 
 export const cachedGetProfile = cache(getProfile);
 

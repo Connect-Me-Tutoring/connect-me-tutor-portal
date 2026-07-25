@@ -22,7 +22,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { getProfileRole } from "@/lib/actions/user.actions";
+import { getProfileRole } from "@/lib/actions/user/actions";
 
 const formSchema = z.object({
   email: z.string().email({

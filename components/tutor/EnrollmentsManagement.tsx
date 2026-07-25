@@ -40,14 +40,14 @@ import {
   removeEnrollment,
   updateEnrollment,
   addEnrollment,
-} from "@/lib/actions/enrollment.server.actions";
-import { getEnrollments } from "@/lib/actions/enrollment.actions";
+} from "@/lib/actions/enrollment/server.actions";
+import { getEnrollments } from "@/lib/actions/enrollment/client.actions";
 import { getEnrollmentAvailability, getEnrollmentScheduleFields } from "@/lib/enrollment-schedule";
 import { Enrollment, Profile, Event, Meeting, Availability } from "@/types";
 import toast from "react-hot-toast";
 import AvailabilityFormat from "@/components/student/AvailabilityFormat";
 import { useRouter } from "next/navigation";
-import { checkAvailableMeetingForEnrollments } from "@/lib/actions/meeting.actions";
+import { checkAvailableMeetingForEnrollments } from "@/lib/actions/meeting/client.actions";
 import EnrollmentFormDialog from "@/components/shared/enrollment/EnrollmentFormDialog";
 import DeleteEnrollmentDialog from "@/components/shared/enrollment/DeleteEnrollmentDialog";
 // import Availability from "@/components/student/AvailabilityFormat";

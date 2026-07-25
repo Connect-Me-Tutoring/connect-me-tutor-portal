@@ -39,15 +39,15 @@ import {
   getMeetings,
   pauseEnrollmentOverSummer,
 } from "@/lib/actions/admin.actions";
-import { addEnrollment } from "@/lib/actions/enrollment.server.actions";
-import { removeEnrollment, updateEnrollment } from "@/lib/actions/enrollment.server.actions";
+import { addEnrollment } from "@/lib/actions/enrollment/server.actions";
+import { removeEnrollment, updateEnrollment } from "@/lib/actions/enrollment/server.actions";
 import { Enrollment, Profile, Event, Meeting, Availability } from "@/types";
 import toast from "react-hot-toast";
 import AvailabilityFormat from "@/components/student/AvailabilityFormat";
 import { z } from "zod";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { checkAvailableMeetingForEnrollments } from "@/lib/actions/meeting.actions";
+import { checkAvailableMeetingForEnrollments } from "@/lib/actions/meeting/client.actions";
 import { WeeklyMeetingSchedule } from "@/types/meeting";
 import { formatDateServer } from "@/lib/actions/utils.server.actions";
 import { QueryClient } from "@tanstack/react-query";
