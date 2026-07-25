@@ -3,7 +3,7 @@
 
 // lib/student.actions.ts
 import { getSupabase, supabase, supabaseClient } from "@/lib/supabase/client";
-import { Profile, Session, Notification, Event, Enrollment, Meeting, Availability } from "@/types";
+import { Profile, Session, Notification, Event, Enrollment, Meeting } from "@/types";
 import {
   deleteScheduledEmailBeforeSessions,
   sendScheduledEmailsBeforeSessions,
@@ -35,11 +35,11 @@ import { DatabaseIcon } from "lucide-react";
 import { Table } from "../supabase/tables";
 import { handleCalculateDuration } from "@/lib/utils";
 import {
+  tableToInterfaceEnrollments,
   tableToInterfaceProfiles,
   tableToInterfaceSessions,
   tableToInterfaceMeetings,
 } from "../type-utils";
-import { getEnrollmentAvailability, getEnrollmentSchedule } from "../enrollment-schedule";
 import { createPairingRequest } from "./pairing.actions";
 import { scheduleMultipleSessionReminders } from "../twilio";
 import { removeFutureSessions } from "./enrollment.server.actions";
@@ -54,24 +54,6 @@ const chunkArray = <T>(items: T[], size: number) =>
   Array.from({ length: Math.ceil(items.length / size) }, (_, index) =>
     items.slice(index * size, index * size + size),
   );
-
-type EnrollmentTableRow = {
-  availability?: Availability[] | null;
-  created_at?: string | null;
-  day?: string | null;
-  duration?: number | null;
-  end_date?: string | null;
-  end_time?: string | null;
-  frequency?: Database["public"]["Enums"]["session_frequency"] | null;
-  id?: string | null;
-  meetingId?: string | null;
-  paused?: boolean | null;
-  start_date?: string | null;
-  start_time?: string | null;
-  student?: unknown;
-  summary?: string | null;
-  tutor?: unknown;
-};
 
 /* PROFILES */
 export async function getAllProfiles(
@@ -550,7 +532,6 @@ export async function getAllEnrollments(): Promise<Enrollment[] | null> {
         tutor_id,
         start_date,
         end_date,
-        availability,
         day,
         start_time,
         end_time,
@@ -576,32 +557,7 @@ export async function getAllEnrollments(): Promise<Enrollment[] | null> {
     // Mapping the fetched data to the Notification object
     const enrollments: Enrollment[] = data
       .filter((enrollment) => enrollment.student && enrollment.tutor)
-      .map((enrollment) => {
-        const enrollmentRow = enrollment as EnrollmentTableRow;
-        const schedule = getEnrollmentSchedule({
-          availability: enrollmentRow.availability,
-          day: enrollmentRow.day,
-          startTime: enrollmentRow.start_time,
-          endTime: enrollmentRow.end_time,
-        });
-
-        return {
-          createdAt: enrollmentRow.created_at || "",
-          id: enrollmentRow.id || "",
-          summary: enrollmentRow.summary || "",
-          student: tableToInterfaceProfiles(enrollmentRow.student),
-          tutor: tableToInterfaceProfiles(enrollmentRow.tutor),
-          startDate: enrollmentRow.start_date || "",
-          endDate: enrollmentRow.end_date || null,
-          day: schedule.day || null,
-          startTime: schedule.startTime || null,
-          endTime: schedule.endTime || null,
-          meetingId: enrollmentRow.meetingId || "",
-          paused: Boolean(enrollmentRow.paused),
-          duration: enrollmentRow.duration || 0,
-          frequency: enrollmentRow.frequency || "weekly",
-        };
-      });
+      .map((enrollment) => tableToInterfaceEnrollments(enrollment));
 
     return enrollments; // Return the array of enrollments
   } catch (error) {

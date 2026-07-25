@@ -277,6 +277,14 @@ export const sendPairingAlertToWebhook = async (
   studentData: Profile,
   autoEnrollment: Omit<Enrollment, "id" | "createdAt">,
 ) => {
+  const day = autoEnrollment.day || "Not scheduled";
+  const startTime = autoEnrollment.startTime
+    ? `${to12Hour(autoEnrollment.startTime)} EST`
+    : "Not scheduled";
+  const endTime = autoEnrollment.endTime
+    ? `${to12Hour(autoEnrollment.endTime)} EST`
+    : "Not scheduled";
+
   const response = await fetch(`${process.env.PAIRING_ALERTS_WEBHOOK}`, {
     method: "POST",
     headers: {
@@ -295,9 +303,9 @@ Parent Phone: ${studentData.parentPhone}
 
 **Enrollment Information**
 
-**Day:** ${autoEnrollment.day}
-**Start Time:** ${to12Hour(autoEnrollment.startTime ?? "")} EST
-**End Time:** ${to12Hour(autoEnrollment.endTime ?? "")} EST
+**Day:** ${day}
+**Start Time:** ${startTime}
+**End Time:** ${endTime}
 
 **First Session Date:** ${formatDateAdmin(autoEnrollment.startDate, { includeTime: true, includeDate: true })}`,
     }),

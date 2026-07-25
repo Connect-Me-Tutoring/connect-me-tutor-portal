@@ -171,7 +171,7 @@ const sql = `
  ORDER BY created_at DESC
 `;
 
-export const sessionTimeFromEnrollment = (availability: Availability, start: string): string => {
+export const sessionTimeFromEnrollment = (schedule: Availability, start: string): string => {
   const dayMap: Record<string, number> = {
     sunday: 0,
     monday: 1,
@@ -185,14 +185,14 @@ export const sessionTimeFromEnrollment = (availability: Availability, start: str
   try {
     const startDate: Date = new Date(start);
     const startDateWeekDay: number = startDate.getDay();
-    const firstSessionWeekDay: number = dayMap[availability.day.toLowerCase()];
+    const firstSessionWeekDay: number = dayMap[schedule.day.toLowerCase()];
 
     const additionalDays = firstSessionWeekDay >= startDateWeekDay ? 0 : 7;
     const currentDate: Date = addDays(
       startDate,
       firstSessionWeekDay - startDateWeekDay + additionalDays,
     );
-    const dateString = `${format(currentDate, "yyyy-MM-dd")}T${availability.startTime}:00`;
+    const dateString = `${format(currentDate, "yyyy-MM-dd")}T${schedule.startTime}:00`;
     return fromZonedTime(dateString, "America/New_York").toISOString();
   } catch (error) {
     console.error("Unable to calculate session from enrollment");
@@ -203,7 +203,7 @@ export const sessionTimeFromEnrollment = (availability: Availability, start: str
 export const addEnrollment = async (enrollment: Omit<Enrollment, "id" | "createdAt">) => {
   try {
     if (!enrollment.day || !enrollment.startTime || !enrollment.endTime) {
-      throw new Error("Please add an availability");
+      throw new Error("Please add an enrollment schedule");
     }
 
     const duration = await handleCalculateDuration(enrollment.startTime, enrollment.endTime);
@@ -247,6 +247,10 @@ export const addEnrollment = async (enrollment: Omit<Enrollment, "id" | "created
 
     if (!data) {
       throw new Error("No data returned when adding enrollment");
+    }
+
+    if (!data.day || !data.start_time || !data.end_time || !data.start_date) {
+      throw new Error("No time specified");
     }
 
     {

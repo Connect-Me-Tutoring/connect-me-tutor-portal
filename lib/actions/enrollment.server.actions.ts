@@ -17,20 +17,16 @@ import { fromZonedTime } from "date-fns-tz";
 import { Resend } from "resend";
 import InactiveEnrollmentWarning from "@/components/emails/enrollments/inactve-enrollment-warning";
 import InactiveEnrollmentDeletion from "@/components/emails/enrollments/inactive-enrollment-deletion";
-import {
-  getEnrollmentSchedule,
-  getEnrollmentScheduleForSave,
-} from "../enrollment-schedule";
+import { getEnrollmentSchedule } from "../enrollment-schedule";
 import {
   requireAdmin,
   requireAuthenticatedProfile,
   requireEnrollmentAccess,
   requireTutorProfileAccess,
 } from "./authz.server";
-import type { Database, Json } from "@/types/database.types";
+import type { Database } from "@/types/database.types";
 
 type EnrollmentTableRow = {
-  availability?: Availability[] | null;
   created_at?: string | null;
   day?: string | null;
   duration?: number | null;
@@ -51,7 +47,6 @@ const profileOrNull = (profile: unknown) => (profile ? tableToInterfaceProfiles(
 
 const tableEnrollmentToInterface = (enrollment: EnrollmentTableRow): Enrollment => {
   const schedule = getEnrollmentSchedule({
-    availability: enrollment.availability,
     day: enrollment.day,
     startTime: enrollment.start_time,
     endTime: enrollment.end_time,
@@ -92,7 +87,6 @@ export async function getAllActiveEnrollmentsServer(endOfWeek: string): Promise<
         tutor_id,
         start_date,
         end_date,
-        availability,
         day,
         start_time,
         end_time,
@@ -153,7 +147,6 @@ export async function getAllEnrollments(): Promise<Enrollment[] | null> {
         tutor_id,
         start_date,
         end_date,
-        availability,
         day,
         start_time,
         end_time,
@@ -206,7 +199,6 @@ export async function getAllActiveEnrollments(endOfWeek?: string): Promise<Enrol
         tutor_id,
         start_date,
         end_date,
-        availability,
         day,
         start_time,
         end_time,
@@ -273,7 +265,6 @@ export async function getAllActiveEnrollmentsForCron(
         tutor_id,
         start_date,
         end_date,
-        availability,
         day,
         start_time,
         end_time,
@@ -329,7 +320,6 @@ export async function getEnrollments(tutorId: string): Promise<Enrollment[] | nu
         tutor_id,
         start_date,
         end_date,
-        availability,
         day,
         start_time,
         end_time,
@@ -416,10 +406,10 @@ export const updateEnrollment = async (enrollment: Enrollment) => {
   await requireEnrollmentAccess(enrollment.id);
   const supabase = await createClient();
   try {
-    const { availability, schedule } = getEnrollmentScheduleForSave(enrollment);
+    const schedule = getEnrollmentSchedule(enrollment);
 
-    if (availability.length == 0) {
-      throw new Error("Please add an availability");
+    if (!schedule.day || !schedule.startTime || !schedule.endTime) {
+      throw new Error("Please add an enrollment schedule");
     }
 
     enrollment.duration = await handleCalculateDuration(schedule.startTime, schedule.endTime);
@@ -432,7 +422,6 @@ export const updateEnrollment = async (enrollment: Enrollment) => {
         summary: enrollment.summary,
         start_date: enrollment.startDate,
         end_date: enrollment.endDate,
-        availability: availability as unknown as Json,
         day: schedule.day,
         start_time: schedule.startTime,
         end_time: schedule.endTime,
@@ -534,10 +523,10 @@ export const addEnrollment = async (
 
   const supabase = await createClient();
   try {
-    const { availability, schedule } = getEnrollmentScheduleForSave(enrollment);
+    const schedule = getEnrollmentSchedule(enrollment);
 
-    if (availability.length == 0) {
-      throw new Error("Please add an availability");
+    if (!schedule.day || !schedule.startTime || !schedule.endTime) {
+      throw new Error("Please add an enrollment schedule");
     }
 
     const duration = await handleCalculateDuration(schedule.startTime, schedule.endTime);
@@ -558,7 +547,6 @@ export const addEnrollment = async (
         summary: enrollment.summary,
         start_date: enrollment.startDate,
         end_date: enrollment.endDate,
-        availability: availability as unknown as Json,
         day: schedule.day,
         start_time: schedule.startTime,
         end_time: schedule.endTime,
@@ -629,7 +617,7 @@ export const addEnrollment = async (
 };
 
 export const sessionTimeFromEnrollment = async (
-  availability: Availability,
+  schedule: Availability,
   start: string,
 ): Promise<string> => {
   const dayMap: Record<string, number> = {
@@ -645,20 +633,20 @@ export const sessionTimeFromEnrollment = async (
   try {
     const startDate: Date = new Date(start);
     const startDateWeekDay: number = startDate.getDay();
-    const firstSessionWeekDay: number = dayMap[availability.day.toLowerCase()];
+    const firstSessionWeekDay: number = dayMap[schedule.day.toLowerCase()];
 
     const additionalDays = firstSessionWeekDay >= startDateWeekDay ? 0 : 7;
     const currentDate: Date = addDays(
       startDate,
       firstSessionWeekDay - startDateWeekDay + additionalDays,
     );
-    const dateString = `${format(currentDate, "yyyy-MM-dd")}T${availability.startTime}:00`;
+    const dateString = `${format(currentDate, "yyyy-MM-dd")}T${schedule.startTime}:00`;
     return fromZonedTime(dateString, "America/New_York").toISOString();
   } catch (error) {
     console.error("Unable to calculate session from enrollment");
     await logError(
       error,
-      { function: "sessionTimeFromEnrollment", day: availability.day, start },
+      { function: "sessionTimeFromEnrollment", day: schedule.day, start },
       "enrollment_error",
     );
     throw error;
@@ -728,7 +716,6 @@ async function inactiveEnrollmentsHelper(params: {
         tutor_id,
         start_date,
         end_date,
-        availability,
         day,
         start_time,
         end_time,

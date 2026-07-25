@@ -146,7 +146,7 @@ export async function addSessions(
       }
 
       // Skip invalid enrollments
-      if (!student?.id || !tutor?.id || !day || !startTime || !endTime) {
+      if (!student?.id || !tutor?.id || !day) {
         continue;
       }
 

@@ -127,7 +127,7 @@ export async function addSessionsForCron(
         continue;
       }
 
-      if (!student?.id || !tutor?.id || !day || !startTime || !endTime) {
+      if (!student?.id || !tutor?.id || !day) {
         continue;
       }
 

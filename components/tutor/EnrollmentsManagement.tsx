@@ -69,11 +69,7 @@ import {
   addEnrollment,
 } from "@/lib/actions/enrollment.server.actions";
 import { getEnrollments } from "@/lib/actions/enrollment.actions";
-import {
-  getEnrollmentAvailability,
-  getEnrollmentSchedule,
-  getEnrollmentScheduleFields,
-} from "@/lib/enrollment-schedule";
+import { getEnrollmentAvailability, getEnrollmentScheduleFields } from "@/lib/enrollment-schedule";
 import { Enrollment, Profile, Event, Meeting, Availability } from "@/types";
 import toast from "react-hot-toast";
 import AvailabilityFormat from "@/components/student/AvailabilityFormat";
@@ -243,91 +239,6 @@ const EnrollmentList = ({
 
   const normalizeText = (text: string) => text.toLowerCase().trim();
 
-  const toDateTime = (time: string, day: Number) => {
-    if (!time) {
-      return new Date(NaN);
-    }
-    const [hourStr, minuteStr] = time.split(":");
-    const parsedDate = new Date();
-    while (parsedDate.getDay() !== day) {
-      parsedDate.setDate(parsedDate.getDate() + 1);
-    }
-    parsedDate.setHours(parseInt(hourStr), parseInt(minuteStr), 0, 0);
-    return parsedDate;
-  };
-
-  const formatAvailabilityAsDate = (date: Availability): Date[] => {
-    try {
-      type DayName =
-        "Sunday" | "Monday" | "Tuesday" | "Wednesday" | "Thursday" | "Friday" | "Saturday";
-      const dayMap: { [key in DayName]: number } = {
-        Sunday: 0,
-        Monday: 1,
-        Tuesday: 2,
-        Wednesday: 3,
-        Thursday: 4,
-        Friday: 5,
-        Saturday: 6,
-      };
-
-      const dayIndex = dayMap[date.day as DayName];
-      if (dayIndex === undefined) {
-        throw new Error("Invalid Day of the Week");
-      }
-      return [toDateTime(date.startTime, dayIndex), toDateTime(date.endTime, dayIndex)];
-    } catch (error) {
-      console.error("Failed to Format Date", error);
-
-      const date5am = new Date(2024, 1, 23, 5, 0, 0, 0);
-      return [date5am, date5am];
-    }
-  };
-
-  const areMeetingsAvailable = (enroll: Omit<Enrollment, "id" | "createdAt">) => {
-    setIsCheckingMeetingAvailability(true);
-    const updatedMeetingAvailability: { [key: string]: boolean } = {};
-    meetings.forEach((meeting) => {
-      updatedMeetingAvailability[meeting.id] = true;
-    });
-    const enrollSchedule = getEnrollmentSchedule(enroll);
-    const [newEnrollmentStartTime, newEnrollmentEndTime] =
-      enrollSchedule.day && enrollSchedule.startTime && enrollSchedule.endTime
-        ? formatAvailabilityAsDate(enrollSchedule)
-        : [new Date(NaN), new Date(NaN)];
-    for (const enrollment of enrollments) {
-      const schedule = getEnrollmentSchedule(enrollment);
-      if (
-        !schedule.day ||
-        !schedule.startTime ||
-        !schedule.endTime ||
-        !enrollment?.meetingId
-      )
-        continue;
-      try {
-        const [existingStartTime, existingEndTime] =
-          formatAvailabilityAsDate(schedule);
-        const isOverlap =
-          (newEnrollmentStartTime.getTime() === existingStartTime.getTime() &&
-            newEnrollmentEndTime.getTime() === existingEndTime.getTime()) ||
-          (newEnrollmentStartTime < existingEndTime &&
-            newEnrollmentStartTime > existingStartTime) ||
-          (newEnrollmentEndTime < existingEndTime && newEnrollmentEndTime > existingStartTime);
-        //-----Only change to false if true before-----
-        if (updatedMeetingAvailability[enrollment.meetingId]) {
-          updatedMeetingAvailability[enrollment.meetingId] = !isOverlap;
-        }
-      } catch (error) {
-        console.error("Error processing enrollment date:", error);
-        updatedMeetingAvailability[enrollment.meetingId] = false;
-      }
-    }
-    setIsCheckingMeetingAvailability(false);
-    setMeetingAvailability(updatedMeetingAvailability);
-    Object.entries(updatedMeetingAvailability).forEach(([meetingId, isAvailable]) => {
-      const meetingName = meetings.find((m) => m.id === meetingId)?.name;
-    });
-  };
-
   const checkAvailableMeetings = async (enrollment: Omit<Enrollment, "id" | "createdAt">) => {
     setIsCheckingMeetingAvailability(true);
     const otherEnrollments: Enrollment[] | null =
@@ -341,35 +252,6 @@ const EnrollmentList = ({
       setMeetingAvailability(updatedMeetingAvailability);
       setAllEnrollments(otherEnrollments);
       setIsCheckingMeetingAvailability(false);
-    }
-  };
-
-  const isMeetingAvailable = (meetingId: string, enroll: Omit<Enrollment, "id" | "createdAt">) => {
-    try {
-      const now = new Date();
-      const enrollSchedule = getEnrollmentSchedule(enroll);
-      const new_enrollment_date = new Date(
-        `${enrollSchedule.day} ${enrollSchedule.endTime}`,
-      );
-      return !enrollments.some((enrollment) => {
-        // Skip sessions without dates or meeting IDs
-        if (!enrollment?.endDate || !enrollment?.meetingId) return false;
-
-        try {
-          const schedule = getEnrollmentSchedule(enrollment);
-          const sessionEndTime = new Date(
-            `${schedule.day}, ${schedule.endTime}`,
-          );
-          sessionEndTime.setHours(sessionEndTime.getHours() + 1.5);
-          return sessionEndTime < new_enrollment_date && enrollment.meetingId === meetingId;
-        } catch (error) {
-          console.error("Error processing session date:", error);
-          return false;
-        }
-      });
-    } catch (error) {
-      console.error("Error checking meeting availability:", error);
-      return true; // Default to available if there's an error
     }
   };
 
@@ -835,20 +717,19 @@ const EnrollmentList = ({
                             setAvailabilityList(availability);
                             setNewEnrollment({
                               ...newEnrollment,
-                              ...getEnrollmentScheduleFields({ availability }),
+                              ...getEnrollmentScheduleFields(availability[0]),
                             });
                           }}
                           openAvailabilities={overlappingAvailabilties}
                         />
                       ) : (
                         <AvailabilityForm
-                          // availabilityList={newEnrollment.availability}
                           availabilityList={availabilityList} // new enrollment by default will not have an availability
                           setAvailabilityList={(availability) => {
                             setAvailabilityList(availability);
                             setNewEnrollment({
                               ...newEnrollment,
-                              ...getEnrollmentScheduleFields({ availability }),
+                              ...getEnrollmentScheduleFields(availability[0]),
                             });
                           }}
                         />
@@ -1081,10 +962,7 @@ const EnrollmentList = ({
                   Tutor: {enrollment.tutor?.firstName} {enrollment.tutor?.lastName}
                 </div>
 
-                <AvailabilityFormat
-                  availability={getEnrollmentAvailability(enrollment)}
-                  card
-                />
+                <AvailabilityFormat availability={getEnrollmentAvailability(enrollment)} card />
 
                 <div className="text-sm">Summary: {enrollment.summary}</div>
 
@@ -1375,16 +1253,14 @@ const EnrollmentList = ({
                 </div>
                 <AvailabilityForm
                   availabilityList={
-                    selectedEnrollment
-                      ? getEnrollmentAvailability(selectedEnrollment)
-                      : []
+                    selectedEnrollment ? getEnrollmentAvailability(selectedEnrollment) : []
                   } // Default to empty array if undefined
                   setAvailabilityList={(availability) =>
                     setSelectedEnrollment((prev) =>
                       prev
                         ? {
                             ...prev,
-                            ...getEnrollmentScheduleFields({ availability }),
+                            ...getEnrollmentScheduleFields(availability[0]),
                           }
                         : prev,
                     )

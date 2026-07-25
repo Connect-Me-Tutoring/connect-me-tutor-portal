@@ -18,7 +18,7 @@ export const getActiveEnrollmentsWithMeetings = async (): Promise<Enrollment[]> 
     .select(
       `
       id, created_at, summary, start_date, end_date,
-      availability, day, start_time, end_time,
+      day, start_time, end_time,
       meetingId, paused, duration, frequency,
       student:Profiles!student_id(*),
       tutor:Profiles!tutor_id(*)
