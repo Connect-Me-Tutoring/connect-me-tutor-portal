@@ -29,11 +29,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import {
-  HoverCard,
-  HoverCardContent,
-  HoverCardTrigger,
-} from "@/components/ui/hover-card";
+import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
 import {
   Circle,
   Loader2,
@@ -106,18 +102,14 @@ const CompletedSessionsTable = ({
               </TableCell>
               <TableCell>{formatSessionDate(session.date)}</TableCell>
               <TableCell className="font-medium">
-                Tutoring Session with {session.tutor?.firstName}{" "}
-                {session.tutor?.lastName}
+                Tutoring Session with {session.tutor?.firstName} {session.tutor?.lastName}
               </TableCell>
               <TableCell>
                 {session.tutor?.firstName} {session.tutor?.lastName}
               </TableCell>
 
               <TableCell>
-                <Dialog
-                  open={isMeetingNotesOpen}
-                  onOpenChange={setIsMeetingNotesOpen}
-                >
+                <Dialog open={isMeetingNotesOpen} onOpenChange={setIsMeetingNotesOpen}>
                   <DialogTrigger asChild>
                     <Button
                       variant="ghost"
@@ -143,15 +135,15 @@ const CompletedSessionsTable = ({
       </Table>
 
       <div className="mt-4 flex justify-between items-center">
-        <span>{SC.filteredSessions.length} row(s) total.</span>
+        <span>{SC.filteredPastSessions.length} row(s) total.</span>
         <div className="flex items-center space-x-2">
           <span>Rows per page</span>
           <Select
-            value={SC.rowsPerPage.toString()}
+            value={SC.rowsPerPagePastSessions.toString()}
             onValueChange={handleRowsPerPageChange}
           >
             <SelectTrigger className="w-[70px]">
-              <SelectValue placeholder={SC.rowsPerPage.toString()} />
+              <SelectValue placeholder={SC.rowsPerPagePastSessions.toString()} />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="5">5</SelectItem>
@@ -160,29 +152,29 @@ const CompletedSessionsTable = ({
             </SelectContent>
           </Select>
           <span>
-            Page {SC.currentPage} of {totalPages}
+            Page {SC.currentPagePastSessions} of {totalPages}
           </span>
           <div className="flex space-x-1">
             <Button
               variant="ghost"
               size="icon"
               onClick={() => handlePageChange(1)}
-              disabled={SC.currentPage === 1}
+              disabled={SC.currentPagePastSessions === 1}
             >
               <ChevronsLeft className="h-4 w-4" />
             </Button>
             <Button
               variant="ghost"
               size="icon"
-              onClick={() => handlePageChange(SC.currentPage - 1)}
-              disabled={SC.currentPage === 1}
+              onClick={() => handlePageChange(SC.currentPagePastSessions - 1)}
+              disabled={SC.currentPagePastSessions === 1}
             >
               <ChevronLeft className="h-4 w-4" />
             </Button>
             <Button
               size="icon"
-              onClick={() => handlePageChange(SC.currentPage + 1)}
-              disabled={SC.currentPage === totalPages}
+              onClick={() => handlePageChange(SC.currentPagePastSessions + 1)}
+              disabled={SC.currentPagePastSessions === totalPages}
             >
               <ChevronRight className="h-4 w-4" />
             </Button>
@@ -190,7 +182,7 @@ const CompletedSessionsTable = ({
               variant="ghost"
               size="icon"
               onClick={() => handlePageChange(totalPages)}
-              disabled={SC.currentPage === totalPages}
+              disabled={SC.currentPagePastSessions === totalPages}
             >
               <ChevronsRight className="h-4 w-4" />
             </Button>

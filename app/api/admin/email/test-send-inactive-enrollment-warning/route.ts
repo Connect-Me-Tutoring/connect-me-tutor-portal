@@ -2,22 +2,20 @@ import { NextRequest, NextResponse } from "next/server";
 import { sendInactiveEnrollmentWarning } from "@/lib/actions/enrollment.server.actions";
 import { createAdminClient } from "@/lib/supabase/server";
 import { Table } from "@/lib/supabase/tables";
-import {
-  tableToInterfaceEnrollments,
-  tableToInterfaceProfiles,
-} from "@/lib/type-utils";
+import { tableToInterfaceEnrollments, tableToInterfaceProfiles } from "@/lib/type-utils";
 import { Enrollment, Profile } from "@/types";
+import { verifyAdmin } from "@/lib/actions/auth.server.actions";
+import { logError } from "@/lib/posthog";
 
 export async function GET(request: NextRequest) {
   const enrollmentId = request.nextUrl.searchParams.get("enrollmentId");
 
   if (!enrollmentId) {
-    return NextResponse.json(
-      { error: "Missing enrollmentId query param" },
-      { status: 400 },
-    );
+    return NextResponse.json({ error: "Missing enrollmentId query param" }, { status: 400 });
   }
   try {
+    await verifyAdmin();
+
     const supabase = await createAdminClient();
     const { data: enrollment, error } = await supabase
       .from(Table.Enrollments)
@@ -45,10 +43,7 @@ export async function GET(request: NextRequest) {
       .single();
 
     if (error || !enrollment) {
-      return NextResponse.json(
-        { error: "Enrollment not found", details: error },
-        { status: 404 },
-      );
+      return NextResponse.json({ error: "Enrollment not found", details: error }, { status: 404 });
     }
 
     const tutorData: Profile = tableToInterfaceProfiles(enrollment.tutor);
@@ -67,6 +62,7 @@ export async function GET(request: NextRequest) {
     });
   } catch (error) {
     console.error("Error sending test email:", error);
+    await logError(error, { enrollmentId }, "email_test_inactive_enrollment_warning_error");
     return NextResponse.json(
       { error: "Failed to send email", details: String(error) },
       { status: 500 },

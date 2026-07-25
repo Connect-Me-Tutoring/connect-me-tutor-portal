@@ -11,9 +11,7 @@ import { getProfileWithProfileId } from "./user.actions";
  * @returns A promise that resolves when all scheduling requests have been attempted.
  * @throws Will throw an error if any API request fails and is not caught internally.
  */
-export async function sendScheduledEmailsBeforeSessions(
-  sessions: Session[]
-): Promise<void> {
+export async function sendScheduledEmailsBeforeSessions(sessions: Session[]): Promise<void> {
   try {
     // Use Promise.all for parallel execution or for...of for sequential
     await Promise.all(
@@ -25,36 +23,27 @@ export async function sendScheduledEmailsBeforeSessions(
         }
 
         try {
-          const response = await fetch(
-            "/api/admin/email/before-sessions/schedule-reminder",
-            {
-              method: "POST",
-              body: JSON.stringify({ session }),
-              headers: {
-                "Content-Type": "application/json", // Fixed typo
-              },
-            }
-          );
+          const response = await fetch("/api/admin/email/before-sessions/schedule-reminder", {
+            method: "POST",
+            body: JSON.stringify({ session }),
+            headers: {
+              "Content-Type": "application/json", // Fixed typo
+            },
+          });
 
           if (!response.ok) {
-            const errorData = await response
-              .json()
-              .catch(() => ({ message: "Unknown error" }));
+            const errorData = await response.json().catch(() => ({ message: "Unknown error" }));
             throw new Error(
-              errorData.message ||
-                `HTTP ${response.status}: Unable to schedule email`
+              errorData.message || `HTTP ${response.status}: Unable to schedule email`,
             );
           }
 
           const data = await response.json();
         } catch (sessionError) {
-          console.error(
-            `Error processing session ${session.id}:`,
-            sessionError
-          );
+          console.error(`Error processing session ${session.id}:`, sessionError);
           // Continue processing other sessions instead of failing entirely
         }
-      })
+      }),
     );
   } catch (error) {
     console.error("Error scheduling session emails", error);

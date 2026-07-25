@@ -15,7 +15,7 @@ export const usePairing = (pairingId: string) => {
         .rpc("get_pairing_with_profiles", {
           pairing_uuid: pairingId,
         })
-        .single();
+        .maybeSingle();
 
       if (error) {
         console.error("get_pairing_with_profiles", error);
@@ -23,7 +23,7 @@ export const usePairing = (pairingId: string) => {
         return;
       }
       if (data) {
-        setPairing(data as SharedPairing);
+        setPairing(data as unknown as SharedPairing);
       }
     })();
   }, [pairingId]);

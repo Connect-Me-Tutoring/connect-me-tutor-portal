@@ -1,24 +1,19 @@
 // lib/student.actions.ts
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
+import { supabase } from "@/lib/supabase/client";
 import { Profile, Session } from "@/types";
 import { getProfileWithProfileId } from "./user.actions";
 import { getMeeting } from "./admin.actions";
 import { Table } from "../supabase/tables";
-import {
-  tableToInterfaceMeetings,
-  tableToInterfaceProfiles,
-} from "@/lib/type-utils";
+import { tableToInterfaceSessions } from "@/lib/type-utils";
+import type { Database } from "@/types/database.types";
 
-const supabase = createClientComponentClient({
-  supabaseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL,
-  supabaseKey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
-});
+type SessionStatus = Database["public"]["Enums"]["session_status"];
 
 export async function getStudentSessions(
   profileId: string,
   startDate?: string,
   endDate?: string,
-  status?: string | string[],
+  status?: SessionStatus | SessionStatus[],
   orderby?: string,
   ascending?: boolean,
 ): Promise<Session[]> {
@@ -61,22 +56,7 @@ export async function getStudentSessions(
   }
 
   // Map the result to the Session interface
-  const sessions: Session[] = data.map((session: any) => ({
-    id: session.id,
-    enrollmentId: session.enrollment_id,
-    createdAt: session.created_at,
-    date: session.date,
-    summary: session.summary,
-    // meetingId: session.meeting_id,
-    meeting: tableToInterfaceMeetings(session.meeting),
-    status: session.status,
-    student: tableToInterfaceProfiles(session.student),
-    tutor: tableToInterfaceProfiles(session.tutor),
-    session_exit_form: session.session_exit_form,
-    isQuestionOrConcern: session.isQuestionOrConcern,
-    isFirstSession: session.isFirstSession,
-    duration: session.duration,
-  }));
+  const sessions: Session[] = data.map(tableToInterfaceSessions);
 
   return sessions;
 }
@@ -98,22 +78,16 @@ export async function rescheduleSession(
       throw sessionError;
     }
 
-    if (sessionData) {
-      return sessionData[0];
-    }
-
     // Create a notification for the admin
-    const { error: notificationError } = await supabase
-      .from("Notifications")
-      .insert({
-        session_id: sessionId,
-        previous_date: sessionData.date,
-        suggested_date: newDate,
-        student_id: studentId,
-        tutor_id: sessionData.tutor_id,
-        type: "RESCHEDULE_REQUEST",
-        status: "PENDING",
-      });
+    const { error: notificationError } = await supabase.from("Notifications").insert({
+      session_id: sessionId,
+      previous_date: sessionData.date,
+      suggested_date: newDate,
+      student_id: studentId,
+      tutor_id: sessionData.tutor_id,
+      type: "RESCHEDULE_REQUEST",
+      status: "PENDING",
+    });
 
     if (notificationError) {
       throw notificationError;
@@ -157,66 +131,6 @@ export async function cancelEnrollment(sessionId: string) {
     return data;
   } catch (error) {
     console.error("Error cancelling enrollment:", error);
-    throw error;
-  }
-}
-
-export async function getStudentTutor(studentId: string) {
-  try {
-    const { data, error } = await supabase
-      .from("student_tutor_assignments")
-      .select(
-        `
-        *,
-        tutors (*)
-      `,
-      )
-      .eq("student_id", studentId)
-      .single();
-
-    if (error) throw error;
-    return data;
-  } catch (error) {
-    console.error("Error fetching student tutor:", error);
-    throw error;
-  }
-}
-
-export async function submitFeedback(
-  sessionId: string,
-  feedback: string,
-  rating: number,
-) {
-  try {
-    const { data, error } = await supabase
-      .from("session_feedback")
-      .insert({
-        session_id: sessionId,
-        feedback: feedback,
-        rating: rating,
-      })
-      .single();
-
-    if (error) throw error;
-    return data;
-  } catch (error) {
-    console.error("Error submitting feedback:", error);
-    throw error;
-  }
-}
-
-export async function getStudentProgress(studentId: string) {
-  try {
-    const { data, error } = await supabase
-      .from("student_progress")
-      .select("*")
-      .eq("student_id", studentId)
-      .order("date", { ascending: false });
-
-    if (error) throw error;
-    return data;
-  } catch (error) {
-    console.error("Error fetching student progress:", error);
     throw error;
   }
 }

@@ -1,6 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 
-// Setup mocks before importing the route
 const mockFrom = vi.fn();
 const mockSupabase = vi.fn(() => ({
   from: mockFrom,
@@ -10,16 +9,46 @@ vi.mock("@/lib/supabase/server", () => ({
   createClient: vi.fn().mockResolvedValue(mockSupabase()),
 }));
 
-// Now import after mocks are set up
 const { GET } = await import("./route");
+
+const authorizedRequest = () =>
+  new Request("http://localhost/api/cron/cancel-unsubmitted-sef", {
+    headers: { authorization: "Bearer test-secret" },
+  }) as any;
 
 describe("GET /api/cron/cancel-unsubmitted-sef", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    process.env.CRON_SECRET = "test-secret";
   });
 
   afterEach(() => {
+    delete process.env.CRON_SECRET;
     vi.resetModules();
+  });
+
+  it("should return 401 without cron authorization", async () => {
+    const response = await GET(
+      new Request("http://localhost/api/cron/cancel-unsubmitted-sef") as any,
+    );
+    const json = await response.json();
+
+    expect(response.status).toBe(401);
+    expect(json.error).toBe("Unauthorized");
+    expect(mockFrom).not.toHaveBeenCalled();
+  });
+
+  it("should return 401 with the wrong cron authorization", async () => {
+    const response = await GET(
+      new Request("http://localhost/api/cron/cancel-unsubmitted-sef", {
+        headers: { authorization: "Bearer wrong-value" },
+      }) as any,
+    );
+    const json = await response.json();
+
+    expect(response.status).toBe(401);
+    expect(json.error).toBe("Unauthorized");
+    expect(mockFrom).not.toHaveBeenCalled();
   });
 
   it("should return success with cancelled count when sessions exist", async () => {
@@ -29,13 +58,10 @@ describe("GET /api/cron/cancel-unsubmitted-sef", () => {
       { tutor_id: "tutor-1", session_date: "2024-01-03", status: "Active" },
     ];
 
-    // First call: select with eq and lt
-    // Second call: update with eq and lt
     let callCount = 0;
     mockFrom.mockImplementation(() => {
       callCount++;
       if (callCount === 1) {
-        // select chain
         return {
           select: vi.fn().mockReturnValue({
             eq: vi.fn().mockReturnValue({
@@ -44,7 +70,6 @@ describe("GET /api/cron/cancel-unsubmitted-sef", () => {
           }),
         };
       } else {
-        // update chain
         return {
           update: vi.fn().mockReturnValue({
             eq: vi.fn().mockReturnValue({
@@ -55,7 +80,7 @@ describe("GET /api/cron/cancel-unsubmitted-sef", () => {
       }
     });
 
-    const response = await GET();
+    const response = await GET(authorizedRequest());
     const json = await response.json();
 
     expect(response.status).toBe(200);
@@ -72,7 +97,7 @@ describe("GET /api/cron/cancel-unsubmitted-sef", () => {
       }),
     }));
 
-    const response = await GET();
+    const response = await GET(authorizedRequest());
     const json = await response.json();
 
     expect(response.status).toBe(200);
@@ -92,7 +117,7 @@ describe("GET /api/cron/cancel-unsubmitted-sef", () => {
       }),
     }));
 
-    const response = await GET();
+    const response = await GET(authorizedRequest());
     const json = await response.json();
 
     expect(response.status).toBe(500);
@@ -100,9 +125,7 @@ describe("GET /api/cron/cancel-unsubmitted-sef", () => {
   });
 
   it("should return 500 when update fails", async () => {
-    const mockSessions = [
-      { tutor_id: "tutor-1", session_date: "2024-01-01", status: "Active" },
-    ];
+    const mockSessions = [{ tutor_id: "tutor-1", session_date: "2024-01-01", status: "Active" }];
 
     let callCount = 0;
     mockFrom.mockImplementation(() => {
@@ -119,16 +142,14 @@ describe("GET /api/cron/cancel-unsubmitted-sef", () => {
         return {
           update: vi.fn().mockReturnValue({
             eq: vi.fn().mockReturnValue({
-              lt: vi
-                .fn()
-                .mockResolvedValue({ error: { message: "Update failed" } }),
+              lt: vi.fn().mockResolvedValue({ error: { message: "Update failed" } }),
             }),
           }),
         };
       }
     });
 
-    const response = await GET();
+    const response = await GET(authorizedRequest());
     const json = await response.json();
 
     expect(response.status).toBe(500);
@@ -140,7 +161,7 @@ describe("GET /api/cron/cancel-unsubmitted-sef", () => {
       throw new Error("Unexpected error");
     });
 
-    const response = await GET();
+    const response = await GET(authorizedRequest());
     const json = await response.json();
 
     expect(response.status).toBe(500);

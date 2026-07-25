@@ -8,7 +8,7 @@ import * as z from "zod";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
+import { createClient } from "@/lib/supabase/client";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -31,8 +31,8 @@ const emailSchema = z.object({
 
 const tokenSchema = z.object({
   email: z.string().email(),
-  token: z.string().min(6, {message: "Token must be 6 digits"}).max(6)
-})
+  token: z.string().min(6, { message: "Token must be 6 digits" }).max(6),
+});
 
 export default function ForgotPasswordPage() {
   const [resetPassword, setResetPassword] = useState<boolean>(false);
@@ -41,7 +41,7 @@ export default function ForgotPasswordPage() {
 
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
-  const supabase = createClientComponentClient();
+  const supabase = createClient();
 
   const sendResetPassword = async () => {
     try {
@@ -73,39 +73,39 @@ export default function ForgotPasswordPage() {
     resolver: zodResolver(tokenSchema),
     defaultValues: {
       email: "",
-      token: ""
-    }
-  })
+      token: "",
+    },
+  });
 
   const handleSendToken = async (values: z.infer<typeof emailSchema>) => {
-    setEmailForReset(values.email)
+    setEmailForReset(values.email);
     try {
       const { error } = await supabase.auth.signInWithOtp({
         email: values.email,
         // options: {
-          // emailRedirectTo: `${window.location.origin}/auth/callback`,
+        // emailRedirectTo: `${window.location.origin}/auth/callback`,
         // }
-      }) 
+      });
 
       if (error) {
         toast.error(error.message);
         throw error;
       }
 
-      toast.success("6-digit code sent to your email")
-      setIsEmailSent(true)
+      toast.success("6-digit code sent to your email");
+      setIsEmailSent(true);
       emailForm.reset();
 
       tokenForm.reset({
         email: values.email,
         token: "",
-      })
+      });
     } catch (error) {
-      console.error("Error sending token:", error)
+      console.error("Error sending token:", error);
     }
-  }
+  };
 
-    const handleVerifyOtp = async (values: z.infer<typeof tokenSchema>) => {
+  const handleVerifyOtp = async (values: z.infer<typeof tokenSchema>) => {
     setIsLoading(true);
     try {
       const {
@@ -151,9 +151,7 @@ export default function ForgotPasswordPage() {
               {!isEmailSent ? (
                 <>
                   <div className="flex flex-col gap-3">
-                    <h1 className="text-2xl text-center font-bold">
-                      Forgot Password
-                    </h1>
+                    <h1 className="text-2xl text-center font-bold">Forgot Password</h1>
                     <p className="text-sm text-gray-600"></p>
                   </div>
                   <Form {...emailForm}>
@@ -167,14 +165,11 @@ export default function ForgotPasswordPage() {
                         render={({ field }) => (
                           <FormItem>
                             <FormDescription>
-                              No worries! Just enter the email associated with
-                              your account to reset your password
+                              No worries! Just enter the email associated with your account to reset
+                              your password
                             </FormDescription>
                             <FormControl>
-                              <Input
-                                placeholder="youremail@example.com"
-                                {...field}
-                              />
+                              <Input placeholder="youremail@example.com" {...field} />
                             </FormControl>
 
                             <FormMessage />
@@ -194,8 +189,7 @@ export default function ForgotPasswordPage() {
                   <div className="flex flex-col gap-3 text-center">
                     <h1 className="text-xl sm:text-2xl font-bold">Enter Verification Code</h1>
                     <p className="text-sm text-gray-600">
-                      A verification code has been sent to {emailForReset}. Please enter it
-                      below.
+                      A verification code has been sent to {emailForReset}. Please enter it below.
                     </p>
                   </div>
                   <Form {...tokenForm} key="otp-form">

@@ -84,8 +84,7 @@ export const tutorResources = [
     title: "Virtual Labs (PHET) (K-5)",
     link: "https://phet.colorado.edu/en/simulations/filter?levels=elementary-school&type=html (K-5)",
     subject: "Math, Science",
-    description:
-      "Fun simulations regarding simple fractions, math, and basic sciences",
+    description: "Fun simulations regarding simple fractions, math, and basic sciences",
     type: "Activities, Games",
     gradeLevel: "K-5",
   },
@@ -128,8 +127,7 @@ export const tutorResources = [
     title: "Consonants",
     link: "https://www.k5learning.com/free-preschool-kindergarten-worksheets/consonants",
     subject: "English",
-    description:
-      "Learning to read: Beginning and ending consonants and consonant blends.",
+    description: "Learning to read: Beginning and ending consonants and consonant blends.",
     type: "Activities, Worksheet/practice questions",
     gradeLevel: "K-5",
   },
@@ -145,8 +143,7 @@ export const tutorResources = [
     title: "Phonemes",
     link: "https://www.k5learning.com/free-preschool-kindergarten-worksheets/phonics-phonemes",
     subject: "English",
-    description:
-      'Learning to read: Write letters and words by "sounding out" simple words.',
+    description: 'Learning to read: Write letters and words by "sounding out" simple words.',
     type: "Activities, Worksheet/practice questions",
     gradeLevel: "K-5",
   },

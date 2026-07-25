@@ -41,8 +41,11 @@ keys.json
 # vscode
 .vscode
 
-.env.locala
+#supabase
+supabase/.temp/*
+types/database.types.ts.new
 
 # unlighthouse
 .unlighthouse
 unlighthouse.config.mjs
+.env*

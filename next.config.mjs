@@ -1,17 +1,8 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  typescript: {
-    // !! WARN !!
-    // This allows production builds to successfully complete
-    // even if your project has type errors.
-    ignoreBuildErrors: true,
-  },
-
-  // Indicate that these packages should not be bundled by webpack
-  experimental: {
-    serverComponentsExternalPackages: ["sharp", "onnxruntime-node", "twilio"],
-    esmExternals: true,
-  },
+  outputFileTracingRoot: process.cwd(),
+  output: "standalone",
+  serverExternalPackages: ["sharp", "onnxruntime-node", "twilio"],
 
   webpack: (config, { isServer }) => {
     if (!isServer) {

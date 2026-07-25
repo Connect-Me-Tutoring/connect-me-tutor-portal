@@ -1,19 +1,23 @@
 import { getProfileByEmail } from "@/lib/actions/user.actions";
 import { Profile } from "@/types";
-import { SupabaseAuthClient } from "@supabase/supabase-js/dist/module/lib/SupabaseAuthClient";
-import { request } from "http";
 import { createClient } from "@/lib/supabase/server";
 import { NextRequest, NextResponse } from "next/server";
 import { Resend } from "resend";
-import { ideahub } from "googleapis/build/src/apis/ideahub";
-import { getSupabase } from "@/lib/supabase-server/serverClient";
 import { Table } from "@/lib/supabase/tables";
-import { isAuthorized, verifyAdmin } from "@/lib/actions/auth.server.actions";
+import { isAuthorized } from "@/lib/actions/auth.server.actions";
+import { logError } from "@/lib/posthog";
 import { z } from "zod";
 
 export const dynamic = "force-dynamic";
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+let resend: Resend | null = null;
+
+function getResend() {
+  if (!resend) {
+    resend = new Resend(process.env.RESEND_API_KEY);
+  }
+  return resend;
+}
 
 const emailSchema = z.object({
   to: z.string().trim(),
@@ -24,7 +28,9 @@ const emailSchema = z.object({
 
 export async function POST(request: NextRequest) {
   try {
-    if (!isAuthorized(request)) return;
+    if (!(await isAuthorized(request))) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
 
     const supabase = await createClient();
 
@@ -65,7 +71,7 @@ export async function POST(request: NextRequest) {
     if (!notification_settings) throw new Error("No Notification Settings");
 
     if (notification_settings.email_tutoring_session_notifications_enabled) {
-      await resend.emails.send({
+      await getResend().emails.send({
         from: "Connect Me Free Tutoring & Mentoring <reminder@connectmego.app>",
         to: to,
         cc: [process.env.OPERATIONS_EMAIL!],
@@ -83,6 +89,7 @@ export async function POST(request: NextRequest) {
     });
   } catch (error) {
     console.error("Error sending email:", error);
+    await logError(error, {}, "email_send_reminder_error");
     return NextResponse.json({
       status: 500,
       error: error,

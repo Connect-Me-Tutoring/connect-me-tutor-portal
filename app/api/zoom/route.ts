@@ -2,16 +2,14 @@ import { NextRequest, NextResponse } from "next/server";
 import crypto from "crypto";
 import { config } from "@/config";
 import { logZoomMetadata } from "@/lib/actions/zoom.server.actions";
+import { logEvent } from "@/lib/posthog";
 // import { logZoomMetadata } from "@/lib/actions/zoom.server.actions";
 // import { getActiveSessionFromMeetingID } from "@/lib/actions/session.server.actions";
 
 // Use a single signing secret for all Zoom webhooks
 const validationSecret = config.zoom.ZOOM_WEBHOOK_SECRET;
 
-export async function POST(
-  req: NextRequest,
-  { params }: { params: { meeting: string } }
-) {
+export async function POST(req: NextRequest) {
   const body = await req.json();
 
   if (!validationSecret) {
@@ -19,7 +17,7 @@ export async function POST(
       {
         err: "Webhook secret not configured",
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 
@@ -60,7 +58,8 @@ export async function POST(
         // console.log("JOINED: ", participant);
 
         await logZoomMetadata({
-          session_id: payload?.object?.id,
+          session_id: null,
+          zoom_meeting_uuid: payload?.object?.uuid ?? null,
           participant_id: participant?.user_id || "",
           name: participant?.user_name || "Unknown",
           email: participant?.email || null,
@@ -75,7 +74,8 @@ export async function POST(
         const participant = payload?.object?.participant;
 
         await logZoomMetadata({
-          session_id: payload?.object?.id,
+          session_id: null,
+          zoom_meeting_uuid: payload?.object?.uuid ?? null,
           participant_id: participant?.user_id || "",
           name: participant?.user_name || "Unknown",
           email: participant?.email || null,
@@ -88,7 +88,7 @@ export async function POST(
       break;
 
     default:
-      console.warn("Unhandled Zoom event:", event);
+      await logEvent("zoom_unhandled_event", { event });
   }
 
   return NextResponse.json({ status: "received" });

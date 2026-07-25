@@ -1,4 +1,4 @@
- import AvailabilityForm from "@/components/ui/availability-form";
+import AvailabilityForm from "@/components/ui/availability-form";
 import { Button } from "@/components/ui/button";
 import {
   Command,
@@ -17,11 +17,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { ScrollArea } from "@/components/ui/scrollarea";
 import {
   Select,
@@ -116,10 +112,7 @@ const EnrollmentForm = ({
               <Label htmlFor="tutor" className="text-right">
                 Student
               </Label>
-              <Popover
-                open={openStudentOptions}
-                onOpenChange={setOpenStudentOptions}
-              >
+              <Popover open={openStudentOptions} onOpenChange={setOpenStudentOptions}>
                 <PopoverTrigger asChild>
                   <Button
                     variant="outline"
@@ -147,11 +140,7 @@ const EnrollmentForm = ({
                           <CommandItem
                             key={student.id}
                             value={student.id}
-                            keywords={[
-                              student.firstName,
-                              student.lastName,
-                              student.email,
-                            ]}
+                            keywords={[student.firstName, student.lastName, student.email]}
                             onSelect={() => {
                               setSelectedStudentId(student.id);
                               handleInputChange({
@@ -166,13 +155,10 @@ const EnrollmentForm = ({
                             <Check
                               className={cn(
                                 "mr-2 h-4 w-4",
-                                selectedStudentId === student.id
-                                  ? "opacity-100"
-                                  : "opacity-0"
+                                selectedStudentId === student.id ? "opacity-100" : "opacity-0",
                               )}
                             />
-                            {student.firstName} {student.lastName} -{" "}
-                            {student.email}
+                            {student.firstName} {student.lastName} - {student.email}
                           </CommandItem>
                         ))}
                       </CommandGroup>
@@ -186,10 +172,7 @@ const EnrollmentForm = ({
               <Label htmlFor="tutor" className="text-right">
                 Tutor
               </Label>
-              <Popover
-                open={openTutorOptions}
-                onOpenChange={setOpenTutorOptions}
-              >
+              <Popover open={openTutorOptions} onOpenChange={setOpenTutorOptions}>
                 <PopoverTrigger asChild>
                   <Button
                     variant="outline"
@@ -199,14 +182,8 @@ const EnrollmentForm = ({
                   >
                     {selectedTutorId ? (
                       <>
-                        {
-                          tutors.find((tutor) => tutor.id === selectedTutorId)
-                            ?.firstName
-                        }{" "}
-                        {
-                          tutors.find((tutor) => tutor.id === selectedTutorId)
-                            ?.lastName
-                        }
+                        {tutors.find((tutor) => tutor.id === selectedTutorId)?.firstName}{" "}
+                        {tutors.find((tutor) => tutor.id === selectedTutorId)?.lastName}
                       </>
                     ) : (
                       "Select a tutor"
@@ -228,11 +205,7 @@ const EnrollmentForm = ({
                           <CommandItem
                             key={tutor.id}
                             value={tutor.id}
-                            keywords={[
-                              tutor.firstName,
-                              tutor.lastName,
-                              tutor.email,
-                            ]}
+                            keywords={[tutor.firstName, tutor.lastName, tutor.email]}
                             onSelect={() => {
                               setSelectedTutorId(tutor.id);
                               handleInputChange({
@@ -247,9 +220,7 @@ const EnrollmentForm = ({
                             <Check
                               className={cn(
                                 "mr-2 h-4 w-4",
-                                selectedTutorId === tutor.id
-                                  ? "opacity-100"
-                                  : "opacity-0"
+                                selectedTutorId === tutor.id ? "opacity-100" : "opacity-0",
                               )}
                             />
                             {tutor.firstName} {tutor.lastName} - {tutor.email}
@@ -309,9 +280,7 @@ const EnrollmentForm = ({
                 <Select
                   name="timeZone"
                   value={newEnrollment.frequency}
-                  onValueChange={(value) =>
-                    handleInputSelectionChange(value, "add")
-                  }
+                  onValueChange={(value) => handleInputSelectionChange(value, "add")}
                 >
                   <SelectTrigger className="w-full">
                     <SelectValue placeholder="weekly" />
@@ -381,9 +350,7 @@ const EnrollmentForm = ({
                         <Loader2 className="mx-2 h-4 w-4 animate-spin" />
                       </>
                     ) : newEnrollment.meetingId ? (
-                      meetings.find(
-                        (meeting) => meeting.id === newEnrollment.meetingId
-                      )?.name
+                      meetings.find((meeting) => meeting.id === newEnrollment.meetingId)?.name
                     ) : (
                       "Select a meeting"
                     )}
@@ -401,9 +368,7 @@ const EnrollmentForm = ({
                       </span>
                       <Circle
                         className={`w-2 h-2 ml-2 ${
-                          meetingAvailability[meeting.id]
-                            ? "text-green-500"
-                            : "text-red-500"
+                          meetingAvailability[meeting.id] ? "text-green-500" : "text-red-500"
                         } fill-current`}
                       />
                     </SelectItem>

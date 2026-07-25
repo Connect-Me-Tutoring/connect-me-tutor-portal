@@ -3,10 +3,6 @@ import { useState } from "react";
 import { formatSessionDate, formatDateAdmin } from "@/lib/utils";
 import { Session, Meeting } from "@/types";
 import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Checkbox } from "@/components/ui/checkbox";
 import {
   Table,
   TableBody,
@@ -29,11 +25,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import {
-  HoverCard,
-  HoverCardContent,
-  HoverCardTrigger,
-} from "@/components/ui/hover-card";
+import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
 import {
   AlertDialog,
   AlertDialogHeader,
@@ -54,13 +46,16 @@ import {
   ChevronsRight,
   ChevronLeft,
   ChevronRight,
-  Trash,
   CalendarDays,
   UserRoundPlus,
   CircleCheck,
+  MessageSquare,
+  CalendarX,
+  Video,
 } from "lucide-react";
 import { format, parseISO, isAfter } from "date-fns";
 import { AlertDialogTrigger } from "@radix-ui/react-alert-dialog";
+import CancellationForm from "../../tutor/components/CancellationForm";
 import { useDashboardContext } from "@/lib/contexts/dashboardContext";
 // import SessionExitForm from "./SessionExitForm";
 // import RescheduleForm from "./RescheduleDialog";
@@ -86,11 +81,7 @@ interface CurrentSessionTableProps {
   setNotes: (notes: string) => void;
   setNextClassConfirmed: (confirmed: boolean) => void;
   handleStatusChange: (session: Session) => void;
-  handleReschedule: (
-    sessionId: string,
-    newDate: string,
-    meetingId: string,
-  ) => void;
+  handleReschedule: (sessionId: string, newDate: string, meetingId: string) => void;
   handleSessionComplete: (
     session: Session,
     notes: string,
@@ -102,7 +93,11 @@ interface CurrentSessionTableProps {
   handleInputChange: (e: { target: { name: string; value: string } }) => void;
 }
 
-const CurrentSessionsTable = () => {
+const CurrentSessionsTable = ({
+  handleStatusChange,
+}: {
+  handleStatusChange: (session: Session) => void;
+}) => {
   const SC = useDashboardContext();
 
   return (
@@ -115,6 +110,8 @@ const CurrentSessionsTable = () => {
             <TableHead>Title</TableHead>
             <TableHead>Tutor</TableHead>
             <TableHead>Meeting</TableHead>
+            <TableHead>Feedback</TableHead>
+            <TableHead>Actions</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -142,8 +139,7 @@ const CurrentSessionsTable = () => {
               </TableCell>
               <TableCell>{formatSessionDate(session.date)}</TableCell>
               <TableCell className="font-medium">
-                Tutoring Session with {session.tutor?.firstName}{" "}
-                {session.tutor?.lastName}
+                Tutoring Session with {session.tutor?.firstName} {session.tutor?.lastName}
               </TableCell>
               <TableCell>
                 {session.tutor?.firstName} {session.tutor?.lastName}
@@ -151,20 +147,50 @@ const CurrentSessionsTable = () => {
               <TableCell>
                 {session?.meeting?.meetingId ? (
                   <button
-                    onClick={() =>
-                      (window.location.href = `/meeting/${session?.meeting?.id}`)
-                    }
-                    className="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600"
+                    onClick={() => (window.location.href = `/meeting/${session?.meeting?.id}`)}
+                    className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-connect-me-blue-2 transition-colors"
                   >
-                    View
+                    <Video className="h-4 w-4" />
+                    Meeting
                   </button>
                 ) : (
-                  <button className="text-black px-3 py-1 border border-gray-200 rounded">
-                    N/A
-                  </button>
+                  <span className="text-sm text-muted-foreground/50">N/A</span>
                 )}
               </TableCell>
-              <TableCell></TableCell>
+              <TableCell>
+                <a
+                  href="https://docs.google.com/forms/d/1YPS8angPHS1HEyDn6ub2d5iEsfjuvi0N_Yr7YevaSIc/viewform?edit_requested=true#responses"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-connect-me-blue-2 transition-colors"
+                >
+                  <MessageSquare className="h-4 w-4" />
+                  Feedback
+                </a>
+              </TableCell>
+              <TableCell>
+                {session.status === "Active" ? (
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="text-red-500 hover:text-red-600 hover:bg-red-50"
+                        title="Cancel session"
+                      >
+                        <CalendarX className="h-4 w-4 mr-1.5" />
+                        Cancel
+                      </Button>
+                    </AlertDialogTrigger>
+                    <CancellationForm
+                      session={session}
+                      handleStatusChange={handleStatusChange}
+                      onClose={() => {}}
+                      actor="student"
+                    />
+                  </AlertDialog>
+                ) : null}
+              </TableCell>
             </TableRow>
           ))}
         </TableBody>

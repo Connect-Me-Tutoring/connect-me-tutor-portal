@@ -2,9 +2,9 @@
 
 import Link from "next/link";
 // import { useRouter } from "next/router"; // Not used in the provided code, can be removed if not needed elsewhere
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, use } from "react";
 // import axios, { AxiosResponse } from "axios"; // Not used, can be removed
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
+import { createClient } from "@/lib/supabase/client";
 import { getMeeting } from "@/lib/actions/meeting.actions";
 import { Meeting } from "@/types";
 import { Button } from "@/components/ui/button";
@@ -12,7 +12,7 @@ import { Copy, ExternalLink, Loader2, AlertTriangle } from "lucide-react"; // Ad
 import toast, { Toaster } from "react-hot-toast";
 
 type ParamsProps = {
-  params: { meetingId: string };
+  params: Promise<{ meetingId: string }>;
 };
 
 // interface ZoomResponseData { // This interface is not used, can be removed if not needed for Zoom SDK integration
@@ -22,13 +22,14 @@ type ParamsProps = {
 //   sdkKey: any;
 // }
 
-const MeetingPage = ({ params }: ParamsProps) => {
+const MeetingPage = (props: ParamsProps) => {
+  const params = use(props.params);
   const meetingId = params.meetingId;
   // console.log("MEETING ID", meetingId);
 
   const [meeting, setMeeting] = useState<Meeting | null>(null);
   // const meetingSDKElementRef = useRef<HTMLDivElement>(null); // Not used for Zoom SDK in this version
-  const supabase = createClientComponentClient(); // Supabase client initialized but not used directly in this snippet
+  const supabase = createClient(); // Supabase client initialized but not used directly in this snippet
   const [loading, setLoading] = useState(true); // Start with loading true
   const [error, setError] = useState<string | null>(null); // State for error messages
 
@@ -82,9 +83,7 @@ const MeetingPage = ({ params }: ParamsProps) => {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 p-4 text-center">
         <Loader2 className="h-12 w-12 animate-spin text-blue-600 mb-4" />
-        <p className="text-lg font-medium text-gray-700">
-          Loading Meeting Details...
-        </p>
+        <p className="text-lg font-medium text-gray-700">Loading Meeting Details...</p>
         <p className="text-sm text-gray-500">Please wait a moment.</p>
       </div>
     );
@@ -94,9 +93,7 @@ const MeetingPage = ({ params }: ParamsProps) => {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-red-50 p-4 text-center">
         <AlertTriangle className="h-12 w-12 text-red-500 mb-4" />
-        <h2 className="text-xl font-semibold text-red-700 mb-2">
-          Error Loading Meeting
-        </h2>
+        <h2 className="text-xl font-semibold text-red-700 mb-2">Error Loading Meeting</h2>
         <p className="text-red-600 mb-6">{error}</p>
         <Button onClick={() => window.location.reload()}>Try Again</Button>
         <Link href="/dashboard" className="mt-4">
@@ -110,12 +107,8 @@ const MeetingPage = ({ params }: ParamsProps) => {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 p-4 text-center">
         <AlertTriangle className="h-12 w-12 text-yellow-500 mb-4" />
-        <h2 className="text-xl font-semibold text-gray-700 mb-2">
-          Meeting Not Found
-        </h2>
-        <p className="text-gray-600 mb-6">
-          The meeting you are looking for could not be found.
-        </p>
+        <h2 className="text-xl font-semibold text-gray-700 mb-2">Meeting Not Found</h2>
+        <p className="text-gray-600 mb-6">The meeting you are looking for could not be found.</p>
         <Link href="/dashboard">
           <Button variant="outline">Go to Dashboard</Button>
         </Link>
@@ -198,9 +191,7 @@ const MeetingPage = ({ params }: ParamsProps) => {
             <h1 className="text-2xl sm:text-3xl font-bold text-gray-800">
               {meeting.name || "Meeting Details"}
             </h1>
-            <p className="text-sm text-gray-500 mt-1">
-              Meeting ID: {meeting.id}
-            </p>
+            <p className="text-sm text-gray-500 mt-1">Meeting ID: {meeting.id}</p>
           </div>
 
           {/* Placeholder for Zoom SDK if you re-integrate it */}
@@ -230,9 +221,7 @@ const MeetingPage = ({ params }: ParamsProps) => {
           ) : (
             <div className="text-center py-8">
               <AlertTriangle className="h-10 w-10 text-orange-400 mx-auto mb-3" />
-              <p className="text-gray-600 font-medium">
-                No join link available for this meeting.
-              </p>
+              <p className="text-gray-600 font-medium">No join link available for this meeting.</p>
               <p className="text-sm text-gray-500 mt-1">
                 Please check back later or contact support.
               </p>
@@ -241,10 +230,7 @@ const MeetingPage = ({ params }: ParamsProps) => {
 
           <div className="mt-8 text-center">
             <Link href="/dashboard">
-              <Button
-                variant="ghost"
-                className="text-sm text-gray-600 hover:text-gray-800"
-              >
+              <Button variant="ghost" className="text-sm text-gray-600 hover:text-gray-800">
                 &larr; Back to Dashboard
               </Button>
             </Link>

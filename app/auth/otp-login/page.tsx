@@ -6,7 +6,8 @@ import * as z from "zod";
 import { useRouter } from "next/navigation";
 import toast, { Toaster } from "react-hot-toast";
 import { useState, useEffect, useRef, Suspense } from "react";
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
+import { createClient } from "@/lib/supabase/client";
+import { startNavigationProgress } from "@/components/ui/navigation-progress";
 import { useSearchParams } from "next/navigation";
 import Logo from "@/components/ui/logo"; // Import Logo
 import { Button } from "@/components/ui/button";
@@ -34,7 +35,7 @@ const otpSchema = z.object({
 function OTPLogin() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const supabase = createClientComponentClient();
+  const supabase = createClient();
   const [isLoading, setIsLoading] = useState(false);
   const [otpSent, setOtpSent] = useState(false);
   const [emailForOtp, setEmailForOtp] = useState("");
@@ -83,7 +84,7 @@ function OTPLogin() {
       const { error } = await supabase.auth.signInWithOtp({
         email: values.email,
         // options: {
-          // emailRedirectTo: `${window.location.origin}/auth/callback`,
+        // emailRedirectTo: `${window.location.origin}/auth/callback`,
         // },
       });
 
@@ -127,8 +128,9 @@ function OTPLogin() {
 
       if (session) {
         toast.success("Logged in successfully!");
-        router.push("/dashboard"); // Redirect to dashboard or home
-        router.refresh(); // Refresh server components
+        startNavigationProgress();
+        window.location.assign("/dashboard");
+        return;
       } else {
         toast.error("Failed to verify OTP. Please try again.");
       }
@@ -155,9 +157,7 @@ function OTPLogin() {
               {!otpSent ? (
                 <>
                   <div className="flex flex-col gap-3 text-center">
-                    <h1 className="text-xl sm:text-2xl font-bold">
-                      Login with OTP
-                    </h1>
+                    <h1 className="text-xl sm:text-2xl font-bold">Login with OTP</h1>
                     <p className="text-sm text-gray-600">
                       Enter your email to receive a One-Time Password.
                     </p>
@@ -174,11 +174,7 @@ function OTPLogin() {
                           <FormItem>
                             <FormLabel>Email</FormLabel>
                             <FormControl>
-                              <Input
-                                type="email"
-                                placeholder="youremail@example.com"
-                                {...field}
-                              />
+                              <Input type="email" placeholder="youremail@example.com" {...field} />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -199,8 +195,7 @@ function OTPLogin() {
                   <div className="flex flex-col gap-3 text-center">
                     <h1 className="text-xl sm:text-2xl font-bold">Enter OTP</h1>
                     <p className="text-sm text-gray-600">
-                      An OTP has been sent to {emailForOtp}. Please enter it
-                      below.
+                      An OTP has been sent to {emailForOtp}. Please enter it below.
                     </p>
                   </div>
                   <Form {...otpForm} key="otp-form">
@@ -256,10 +251,10 @@ function OTPLogin() {
   );
 }
 
-const OTPForm = async () => {
+const OTPForm = () => {
   return (
     <>
-      <Suspense>
+      <Suspense fallback={null}>
         <OTPLogin />
       </Suspense>
     </>

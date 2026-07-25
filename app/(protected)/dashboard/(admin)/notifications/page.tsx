@@ -1,10 +1,9 @@
-import NotificationCenter from '@/components/admin/NotificationCenter'
+import NotificationCenter from "@/components/admin/NotificationCenter";
 
 export default async function MyStudentsPage() {
-
-    return (
-        <main>
-            <NotificationCenter/>
-        </main>
-    )
+  return (
+    <main>
+      <NotificationCenter />
+    </main>
+  );
 }

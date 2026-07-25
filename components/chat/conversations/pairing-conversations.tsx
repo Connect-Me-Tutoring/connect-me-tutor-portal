@@ -1,12 +1,12 @@
+"use client";
+
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { Profile } from "@/types";
-
 import { SharedPairing } from "@/types/pairing";
 import { isUuidString } from "@/lib/utils";
 import Link from "next/link";
-import { redirect, useRouter } from "next/navigation";
+import { redirect } from "next/navigation";
 import { use, useMemo } from "react";
 
 interface ChatListProps {
@@ -28,9 +28,7 @@ const getUnreadCount = (pairingId: string): number => {
 
 // Mock function to get last message
 // In a real app, this would come from your messaging system
-const getLastMessage = (
-  pairingId: string,
-): { text: string; timestamp: string } => {
+const getLastMessage = (pairingId: string): { text: string; timestamp: string } => {
   const mockMessages: Record<string, { text: string; timestamp: string }> = {
     "c95f7af1-e531-479e-86e9-14cb22e45785": {
       text: "Great progress on today's lesson!",
@@ -57,7 +55,6 @@ const getLastMessage = (
   );
 };
 
-// Generate avatar URL based on name
 const getAvatarUrl = (name: string): string => {
   return `/placeholder.svg?height=48&width=48&text=${encodeURIComponent(name.charAt(0))}`;
 };
@@ -90,8 +87,7 @@ export function ChatList({ pairingsPromise, profilePromise }: ChatListProps) {
       pairings
         .filter((pairing) => isUuidString(pairing.id))
         .map((pairing) => {
-          const counterparty =
-            role === "Student" ? pairing["tutor"] : pairing["student"];
+          const counterparty = role === "Student" ? pairing["tutor"] : pairing["student"];
           return {
             counterpartyId: counterparty.id,
             name: `${counterparty.first_name}  ${counterparty.last_name}`,
@@ -101,9 +97,9 @@ export function ChatList({ pairingsPromise, profilePromise }: ChatListProps) {
         }),
     [pairings, role],
   );
+
   return (
     <div className="flex flex-col h-screen">
-      {/* Header */}
       <div className="p-4 border-b border-gray-100">
         <h1 className="text-xl font-semibold text-gray-900">Messages</h1>
         <p className="text-sm text-gray-500 mt-1">
@@ -112,7 +108,6 @@ export function ChatList({ pairingsPromise, profilePromise }: ChatListProps) {
         </p>
       </div>
 
-      {/* Chat List */}
       <div className="flex-1 overflow-y-auto">
         {pairings.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full p-8 text-center">
@@ -131,18 +126,14 @@ export function ChatList({ pairingsPromise, profilePromise }: ChatListProps) {
                 />
               </svg>
             </div>
-            <h3 className="text-lg font-medium text-gray-900 mb-2">
-              No active sessions
-            </h3>
-            <p className="text-gray-500">
-              Your tutoring conversations will appear here
-            </p>
+            <h3 className="text-lg font-medium text-gray-900 mb-2">No active sessions</h3>
+            <p className="text-gray-500">Your tutoring conversations will appear here</p>
           </div>
         ) : (
           clientConversations.map((conversation) => {
             const lastMessage = getLastMessage(conversation.pairingId);
             const unreadCount = getUnreadCount(conversation.pairingId);
-            const isActive = new Date() > new Date();
+            const isActive = true;
 
             return (
               <Link
@@ -154,9 +145,7 @@ export function ChatList({ pairingsPromise, profilePromise }: ChatListProps) {
                 <div className="relative mr-3">
                   <Avatar className="h-12 w-12">
                     <AvatarImage
-                      src={
-                        getAvatarUrl(conversation.name) || "/placeholder.svg"
-                      }
+                      src={getAvatarUrl(conversation.name) || "/placeholder.svg"}
                       alt={conversation.name}
                     />
                     <AvatarFallback className="bg-blue-100 text-blue-600 font-medium">
@@ -172,19 +161,13 @@ export function ChatList({ pairingsPromise, profilePromise }: ChatListProps) {
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between mb-1">
                     <div className="flex items-center">
-                      <h3 className="font-medium text-gray-900 truncate">
-                        {conversation.name}
-                      </h3>
+                      <h3 className="font-medium text-gray-900 truncate">{conversation.name}</h3>
                       <span className="text-xs text-gray-400 ml-2">Tutor</span>
                     </div>
-                    <span className="text-xs text-gray-500 ml-2">
-                      {lastMessage.timestamp}
-                    </span>
+                    <span className="text-xs text-gray-500 ml-2">{lastMessage.timestamp}</span>
                   </div>
 
-                  <p className="text-sm text-gray-600 truncate mb-2">
-                    {lastMessage.text}
-                  </p>
+                  <p className="text-sm text-gray-600 truncate mb-2">{lastMessage.text}</p>
 
                   <div className="flex items-center justify-between">
                     <div className="flex items-center text-xs text-gray-500">

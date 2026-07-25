@@ -1,12 +1,6 @@
 "use client";
 import React, { useState, useEffect } from "react";
-import {
-  format,
-  startOfMonth,
-  endOfMonth,
-  eachWeekOfInterval,
-  parseISO,
-} from "date-fns";
+import { format, startOfMonth, endOfMonth, eachWeekOfInterval, parseISO } from "date-fns";
 import {
   AlertDialog,
   AlertDialogTrigger,
@@ -63,7 +57,7 @@ import { getEvents } from "@/lib/actions/event.server.actions";
 import { deleteUser } from "@/lib/actions/auth.server.actions";
 import { addUser } from "@/lib/actions/auth.actions";
 import { getTutorSessions } from "@/lib/actions/tutor.actions";
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
+import { createClient } from "@/lib/supabase/client";
 import { Profile, Session, Event } from "@/types";
 import {
   Dialog,
@@ -80,15 +74,15 @@ import { Combobox } from "@/components/ui/combobox";
 import AddTutorForm from "./components/AddTutorForm";
 import DeleteTutorForm from "./components/DeleteTutorForm";
 import EditTutorForm from "./components/EditTutorForm";
+import ManageTutorSessions from "./components/ManageTutorSessionForm";
 import { Turret_Road } from "next/font/google";
 import { capitalizeFirstLetter } from "@/lib/utils";
 import { UserAvailabilities } from "../ui/UserAvailabilities";
 
 const TutorList = ({ initialTutors }: any) => {
-  const supabase = createClientComponentClient();
+  const supabase = createClient();
   const [tutors, setTutors] = useState<Profile[]>(initialTutors);
-  const [filteredTutors, setFilteredTutors] =
-    useState<Profile[]>(initialTutors);
+  const [filteredTutors, setFilteredTutors] = useState<Profile[]>(initialTutors);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
@@ -124,9 +118,7 @@ const TutorList = ({ initialTutors }: any) => {
     [key: string]: Session[];
   }>({});
   const [eventsData, setEventsData] = useState<{ [key: string]: Event[] }>({});
-  const [allTimeHours, setAllTimeHours] = useState<{ [key: string]: number }>(
-    {},
-  );
+  const [allTimeHours, setAllTimeHours] = useState<{ [key: string]: number }>({});
   const [addingTutor, setAddingTutor] = useState(false);
 
   const getTutorData = async () => {
@@ -141,9 +133,7 @@ const TutorList = ({ initialTutors }: any) => {
       setFilteredTutors(tutorsData);
     } catch (error) {
       console.error("Error fetching tutor data:", error);
-      setError(
-        error instanceof Error ? error.message : "An unknown error occurred",
-      );
+      setError(error instanceof Error ? error.message : "An unknown error occurred");
     } finally {
       setLoading(false);
     }
@@ -188,9 +178,7 @@ const TutorList = ({ initialTutors }: any) => {
   };
 
   const handleTimeZoneForEdit = (value: string) => {
-    setSelectedTutor((prev) =>
-      prev ? ({ ...prev, timeZone: value } as Profile) : null,
-    );
+    setSelectedTutor((prev) => (prev ? ({ ...prev, timeZone: value } as Profile) : null));
   };
 
   const paginatedTutors = filteredTutors.slice(
@@ -199,35 +187,24 @@ const TutorList = ({ initialTutors }: any) => {
   );
 
   const handleInputChange = (
-    e: React.ChangeEvent<
-      HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
-    >,
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>,
   ) => {
     const { name, value } = e.target;
     setNewTutor((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleInputChangeForEdit = (
-    e: React.ChangeEvent<
-      HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
-    >,
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>,
   ) => {
     const { name, value } = e.target;
-    setSelectedTutor((prev) =>
-      prev ? ({ ...prev, [name]: value } as Profile) : null,
-    );
+    setSelectedTutor((prev) => (prev ? ({ ...prev, [name]: value } as Profile) : null));
   };
 
   const handleComplexFieldsForEdit = (name: string, value: any) => {
-    setSelectedTutor((prev) =>
-      prev ? ({ ...prev, [name]: value } as Profile) : null,
-    );
+    setSelectedTutor((prev) => (prev ? ({ ...prev, [name]: value } as Profile) : null));
   };
 
-  const handleAvailabilityChange = (
-    e: React.ChangeEvent<HTMLInputElement>,
-    index: number,
-  ) => {
+  const handleAvailabilityChange = (e: React.ChangeEvent<HTMLInputElement>, index: number) => {
     const { name, value } = e.target;
     setNewTutor((prev) => {
       const newAvailability = [...(prev.availability || [])];
@@ -274,10 +251,12 @@ const TutorList = ({ initialTutors }: any) => {
     } catch (error) {
       const err = error as Error;
       console.error("Error adding tutor:", err.message);
-      
+
       // Provide more descriptive error messages
       if (err.message.includes("Email")) {
-        toast.error("Failed to add tutor. Please check the email address and ensure it is valid and unique.");
+        toast.error(
+          "Failed to add tutor. Please check the email address and ensure it is valid and unique.",
+        );
       } else if (err.message.includes("required")) {
         toast.error(`Failed to add tutor. Required field error: ${err.message}`);
       } else {
@@ -357,17 +336,11 @@ const TutorList = ({ initialTutors }: any) => {
 
   const handleExportCSV = () => {
     const headers = ["First Name", "Last Name", "Email"];
-    const csvData = filteredTutors.map((tutor) => [
-      tutor.firstName,
-      tutor.lastName,
-      tutor.email,
-    ]);
+    const csvData = filteredTutors.map((tutor) => [tutor.firstName, tutor.lastName, tutor.email]);
 
     const csvContent = [
       headers.join(","),
-      ...csvData.map((row) =>
-        row.map((cell) => `"${(cell || "").replace(/"/g, '""')}"`).join(",")
-      ),
+      ...csvData.map((row) => row.map((cell) => `"${(cell || "").replace(/"/g, '""')}"`).join(",")),
     ].join("\n");
 
     const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
@@ -429,6 +402,7 @@ const TutorList = ({ initialTutors }: any) => {
             handleComplexFieldsForEdit={handleComplexFieldsForEdit}
             handleTimeZoneForEdit={handleTimeZoneForEdit}
           />
+          <ManageTutorSessions tutors={tutors} />
           {/*Edit Page*/}
         </div>
       </div>
@@ -480,8 +454,8 @@ const TutorList = ({ initialTutors }: any) => {
                         Resend Confirmation Email for {tutor.firstName}
                       </AlertDialogTitle>
                       <AlertDialogDescription>
-                        Note: Will not resend confirmation email if the user has
-                        already signed in before
+                        Note: Will not resend confirmation email if the user has already signed in
+                        before
                       </AlertDialogDescription>
                     </AlertDialogHeader>{" "}
                     <AlertDialogFooter>
@@ -494,9 +468,7 @@ const TutorList = ({ initialTutors }: any) => {
                               toast.success("Resent Email Confirmation");
                             })
                             .catch(() => {
-                              toast.error(
-                                "Failed to resend email confirmation",
-                              );
+                              toast.error("Failed to resend email confirmation");
                             });
                         }}
                       >
@@ -514,10 +486,7 @@ const TutorList = ({ initialTutors }: any) => {
         <span>{filteredTutors.length} row(s) total.</span>
         <div className="flex items-center space-x-2">
           <span>Rows per page</span>
-          <Select
-            value={rowsPerPage.toString()}
-            onValueChange={handleRowsPerPageChange}
-          >
+          <Select value={rowsPerPage.toString()} onValueChange={handleRowsPerPageChange}>
             <SelectTrigger className="w-[70px]">
               <SelectValue placeholder={rowsPerPage.toString()} />
             </SelectTrigger>

@@ -1,10 +1,9 @@
 "use client";
-import { Profile } from "@/types";
+import { Profile, Session } from "@/types";
 import { createClient } from "@supabase/supabase-js";
 import { supabase } from "../supabase/client";
 import { Table } from "../supabase/tables";
-
-import axios from "axios";
+import type { Database } from "@/types/database.types";
 
 // export async function getProfileWithProfileId(
 //   profileId: string
@@ -104,22 +103,12 @@ export async function updateProfileDetails({
 }: UpdateProfileInput): Promise<{ success: boolean; error?: string }> {
   const updates: Record<string, any> = {};
   if (availability !== undefined) updates.availability = availability;
-  if (subjectsOfInterest !== undefined)
-    updates.subjects_of_interest = subjectsOfInterest;
+  if (subjectsOfInterest !== undefined) updates.subjects_of_interest = subjectsOfInterest;
   if (languagesSpoken !== undefined) updates.languages_spoken = languagesSpoken;
-
-  const updatedSubjects = updates["subjects_of_interest"] as string[];
-  if (updatedSubjects) {
-    const { data } = await axios.post("/api/pairing/embeds", {
-      subjects: updatedSubjects,
-    });
-    if (data.embed) updates["subject_embed"] = data.embed;
-  }
-
 
   const { error } = await supabase
     .from(Table.Profiles)
-    .update(updates)
+    .update(updates as Database["public"]["Tables"]["Profiles"]["Update"])
     .eq("user_id", userId);
 
   if (error) {
@@ -130,7 +119,22 @@ export async function updateProfileDetails({
   return { success: true };
 }
 
-export const switchAndGetProfileInfo = async () => {
+export const switchAndGetProfileInfo = async () => {};
 
+export function getStudentFromSession(session: Session): {
+  studentName: string;
+  studentEmail: string;
+  studentUserId: string;
+} {
+  const student = session.student;
+
+  if (!student) {
+    throw new Error("Session has no student assigned");
+  }
+
+  return {
+    studentName: `${student.firstName} ${student.lastName}`.trim(),
+    studentEmail: student.email,
+    studentUserId: student.userId,
+  };
 }
-

@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import crypto from "crypto";
 import { config } from "@/config";
+import { logZoomMetadata, updateParticipantLeaveTime } from "@/lib/actions/zoom.server.actions";
 import {
-  logZoomMetadata,
-  updateParticipantLeaveTime,
-} from "@/lib/actions/zoom.server.actions";
-import { resolvePortalSessionForZoomMeetingNumber } from "@/lib/actions/session.server.actions";
+  resolveAppSessionFromZoomWebhookObject,
+  zoomSessionResolutionStatus,
+  type ZoomSessionResolution,
+} from "@/lib/actions/session.server.actions";
 import { logEvent, logError, serializeForPosthog } from "@/lib/posthog";
 
 // Use a single signing secret for all Zoom webhooks
@@ -60,106 +61,73 @@ export async function POST(req: NextRequest) {
   const payload = body?.payload;
   const event = body?.event;
 
-  // Extract identifying information from the payload
-  // Zoom instance uuid (Base64) — portal matching uses numeric meeting id below, not this field
-  const zoomMeetingId = payload?.object?.uuid;
-  // Meeting number - the id field contains the meeting number (e.g., "77608067183")
-  const meetingNumberRaw =
-    payload?.object?.id || payload?.object?.meeting_number;
-  const meetingNumberNormalized = normalizeMeetingNumber(meetingNumberRaw);
-  const meetingNumber = meetingNumberNormalized ?? undefined;
-  const meetingNumberSpaced = meetingNumberNormalized
-    ? formatMeetingNumberForStorage(meetingNumberNormalized)
-    : undefined;
-  // Account information at payload level
+  const meetingNumberRaw = payload?.object?.id || payload?.object?.meeting_number;
   const accountId = payload?.account_id;
   const accountEmail = payload?.account_email;
-  // Host information
   const hostId = payload?.object?.host_id;
   const hostEmail = payload?.object?.host_email;
 
-  // console.log("Webhook payload:", JSON.stringify(payload, null, 2));
-  // console.log("Webhook identifiers:", {
-  //   zoomMeetingId,
-  //   accountId,
-  //   accountEmail,
-  //   meetingNumber,
-  //   meetingNumberRaw,
-  //   hostId,
-  //   hostEmail,
-  //   event,
-  // });
+  /** Zoom `payload.object.uuid` (often base64); not the app session id */
+  let zoomMeetingId: string | undefined =
+    payload?.object?.uuid !== undefined && payload?.object?.uuid !== null
+      ? String(payload.object.uuid)
+      : undefined;
 
-  // Find meeting and active session by meeting number
-  let sessionId: string | null = null;
-  let meetingRecord: { id: string; meeting_id: string } | null = null;
-
-  // console.log("meetingNumber", meetingNumber);
-  if (!meetingNumber && zoomMeetingId) {
-    await logEvent("zoom_webhook_uuid_only_input", {
+  // Payload → Zoom meeting number → Meetings row → Sessions row
+  let resolution: ZoomSessionResolution;
+  try {
+    resolution = await resolveAppSessionFromZoomWebhookObject(
+      payload?.object as Record<string, unknown> | undefined,
+    );
+    await logEvent("zoom_webhook_meeting_session_resolution", {
       request_id: requestId,
-      event_type: event,
-      zoom_meeting_id: zoomMeetingId,
-      meeting_number_raw: meetingNumberRaw,
-      resolution: "skipped_numeric_meeting_lookup",
+      resolution_status: await zoomSessionResolutionStatus(resolution),
+      zoom_meeting_number: resolution.zoomMeetingNumber ?? null,
+      zoom_meeting_uuid: resolution.zoomMeetingUuid ?? null,
+      meetings_row_id: resolution.meetingsRowId,
+      meetings_table_meeting_id: resolution.storedMeetingId,
+      app_session_id: resolution.appSessionId,
+      payload_object_json: serializeForPosthog(payload?.object),
     });
+  } catch (error) {
+    console.error("Error resolving meeting/session from Zoom payload:", error);
+    await logError(error, {
+      request_id: requestId,
+      step: "finding_meeting_session",
+      meeting_number_raw: meetingNumberRaw,
+      payload_object_json: serializeForPosthog(payload?.object),
+    });
+    resolution = {
+      zoomMeetingNumber:
+        meetingNumberRaw !== undefined && meetingNumberRaw !== null
+          ? String(meetingNumberRaw)
+          : undefined,
+      zoomMeetingUuid: zoomMeetingId,
+      meetingsRowId: null,
+      storedMeetingId: null,
+      appSessionId: null,
+    };
   }
 
-  if (meetingNumber) {
-    try {
-      await logEvent("zoom_webhook_finding_meeting_start", {
-        request_id: requestId,
-        meeting_number: meetingNumber,
-        meeting_number_spaced: meetingNumberSpaced,
-      });
-
-      const resolved =
-        await resolvePortalSessionForZoomMeetingNumber(meetingNumber);
-
-      if (!resolved) {
-        await logEvent("zoom_webhook_meeting_not_found", {
-          request_id: requestId,
-          meeting_number: meetingNumber,
-          meeting_number_spaced: meetingNumberSpaced,
-        });
-      } else {
-        meetingRecord = resolved.meetingRecord;
-        await logEvent("zoom_webhook_meeting_found", {
-          request_id: requestId,
-          meeting_number: meetingNumber,
-          meeting_number_spaced: meetingNumberSpaced,
-          meeting_id: meetingRecord.id,
-          stored_meeting_id: meetingRecord.meeting_id,
-        });
-
-        if (resolved.sessionId) {
-          sessionId = resolved.sessionId;
-          await logEvent("zoom_webhook_active_session_found", {
-            request_id: requestId,
-            meeting_number: meetingNumber,
-            meeting_number_spaced: meetingNumberSpaced,
-            meeting_id: meetingRecord.id,
-            session_id: sessionId,
-          });
-        } else {
-          await logEvent("zoom_webhook_no_active_session", {
-            request_id: requestId,
-            meeting_number: meetingNumber,
-            meeting_number_spaced: meetingNumberSpaced,
-            meeting_id: meetingRecord.id,
-            resolution: "no_session_in_scheduled_window",
-          });
+  zoomMeetingId = resolution.zoomMeetingUuid ?? zoomMeetingId;
+  const meetingNumber = resolution.zoomMeetingNumber;
+  const sessionId: string | null = resolution.appSessionId;
+  const meetingRecord =
+    resolution.meetingsRowId && resolution.storedMeetingId
+      ? {
+          id: resolution.meetingsRowId,
+          meeting_id: resolution.storedMeetingId,
         }
-      }
-    } catch (error) {
-      console.error("Error finding meeting/session:", error);
-      await logError(error, {
-        request_id: requestId,
-        step: "finding_meeting_session",
-        meeting_number: meetingNumber,
-      });
-    }
-  }
+      : null;
+
+  const zoomRelationshipLog = {
+    resolution_status: await zoomSessionResolutionStatus(resolution),
+    meetings_row_id: resolution.meetingsRowId,
+    meetings_table_meeting_id: resolution.storedMeetingId,
+    zoom_meeting_number: resolution.zoomMeetingNumber ?? null,
+    zoom_meeting_uuid: zoomMeetingId ?? null,
+    app_session_id: sessionId,
+  };
 
   await logEvent("zoom_webhook_identifiers_extracted", {
     request_id: requestId,
@@ -167,11 +135,13 @@ export async function POST(req: NextRequest) {
     account_id: accountId,
     account_email: accountEmail,
     meeting_number: meetingNumber,
-    meeting_number_spaced: meetingNumberSpaced,
     meeting_number_raw: meetingNumberRaw,
     host_id: hostId,
     host_email: hostEmail,
     event_type: event,
+    resolution_status: await zoomSessionResolutionStatus(resolution),
+    meetings_row_id: resolution.meetingsRowId,
+    meetings_table_meeting_id: resolution.storedMeetingId,
     has_zoom_meeting_id: !!zoomMeetingId,
     has_account_id: !!accountId,
     has_meeting_number: !!meetingNumber,
@@ -193,7 +163,7 @@ export async function POST(req: NextRequest) {
       {
         error: "Webhook secret not configured",
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 
@@ -218,10 +188,7 @@ export async function POST(req: NextRequest) {
         request_id: requestId,
         step: "url_validation",
       });
-      return NextResponse.json(
-        { error: "Missing plainToken" },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "Missing plainToken" }, { status: 400 });
     }
 
     const hashForValidate = crypto
@@ -264,10 +231,7 @@ export async function POST(req: NextRequest) {
     // Remove "Bearer " prefix if present and compare
     const authToken = authHeader.replace(/^Bearer\s+/i, "").trim();
     // Check if it matches the secret (with or without Bearer prefix)
-    if (
-      authToken === validationSecret ||
-      authHeader === `Bearer ${validationSecret}`
-    ) {
+    if (authToken === validationSecret || authHeader === `Bearer ${validationSecret}`) {
       isAuthorized = true;
       authMethod = "authorization_header";
     }
@@ -311,9 +275,7 @@ export async function POST(req: NextRequest) {
             .trim()
             .substring(0, 20)}...`
         : "none",
-      receivedSignature: signature
-        ? `${signature.substring(0, 20)}...`
-        : "none",
+      receivedSignature: signature ? `${signature.substring(0, 20)}...` : "none",
       hasTimestamp: !!timestamp,
       zoomMeetingId,
       accountId,
@@ -376,11 +338,10 @@ export async function POST(req: NextRequest) {
     case "meeting.participant_joined":
       {
         const participant = payload?.object?.participant;
-        const participantId =
-          participant?.user_id || participant?.participant_user_id || "";
+        const participantId = participant?.user_id || participant?.participant_user_id || "";
         const participantName = participant?.user_name;
         const participantEmail = participant?.email;
-          const joinTime = participant?.join_time || new Date().toISOString();
+        const joinTime = participant?.join_time || new Date().toISOString();
 
         console.warn("JOINED:", {
           meetingId: zoomMeetingId,
@@ -430,11 +391,13 @@ export async function POST(req: NextRequest) {
 
             await logZoomMetadata({
               session_id: sessionId,
+              zoom_meeting_uuid: zoomMeetingId ?? null,
               participant_id: participantId,
               name: participantName || "Unknown",
               email: participantEmail || null,
               action: "joined",
               timestamp: joinTime,
+              relationship: zoomRelationshipLog,
             });
 
             await logEvent("zoom_participant_join_db_success", {
@@ -471,8 +434,7 @@ export async function POST(req: NextRequest) {
         const participant = payload?.object?.participant;
         const leaveTime = participant?.leave_time || new Date().toISOString();
         const leaveReason = participant?.leave_reason || undefined;
-        const participantUuid =
-          participant?.user_id || participant?.participant_user_id;
+        const participantUuid = participant?.user_id || participant?.participant_user_id;
         const participantName = participant?.user_name;
         const participantEmail = participant?.email;
 
@@ -538,10 +500,12 @@ export async function POST(req: NextRequest) {
 
           await updateParticipantLeaveTime(
             sessionId,
+            zoomMeetingId ?? null,
             participantUuid,
             participantName || "Unknown",
             participantEmail || null,
-            leaveTime
+            leaveTime,
+            zoomRelationshipLog,
           );
 
           await logEvent("zoom_participant_left_db_success", {

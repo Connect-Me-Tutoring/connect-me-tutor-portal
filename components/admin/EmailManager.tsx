@@ -12,11 +12,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
 // Mock data for email logs with temp datetime
 const mockEmails = [
@@ -37,7 +33,7 @@ const mockEmails = [
     status: "Scheduled",
   },
   {
-    id: "3",
+    id: "4",
     sendDate: new Date(Date.now() - 172800000).toISOString(), // 2 days ago
     recipient: "admin@example.com",
     subject: "Weekly Report",
@@ -49,8 +45,7 @@ const mockEmails = [
     sendDate: new Date(Date.now() - 172800000).toISOString(), // 2 days ago
     recipient: "admin@example.com",
     subject: "Weekly Report",
-    content:
-      "This content aims to go out of bounds to test if the bounds can truncate or not.",
+    content: "This content aims to go out of bounds to test if the bounds can truncate or not.",
     status: "UnScheduled",
   },
 ];
@@ -84,9 +79,7 @@ const EmailManager = () => {
 
         <div className="flex gap-4 mb-6">
           <Button onClick={() => sendEmail()}>Send Email</Button>
-          <Button onClick={() => listScheduledMessages()}>
-            Show schedules
-          </Button>
+          <Button onClick={() => listScheduledMessages()}>Show schedules</Button>
         </div>
 
         <div className="rounded-md border bg-white">
@@ -101,14 +94,10 @@ const EmailManager = () => {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {emails.map((email) => (
-                <TableRow key={email.id}>
-                  <TableCell>
-                    {new Date(email.sendDate).toLocaleString()}
-                  </TableCell>
-                  <TableCell className="max-w-xs truncate">
-                    {email.recipient}
-                  </TableCell>
+              {emails.map((email, index) => (
+                <TableRow key={`${email.id}-${index}`}>
+                  <TableCell>{new Date(email.sendDate).toLocaleString()}</TableCell>
+                  <TableCell className="max-w-xs truncate">{email.recipient}</TableCell>
                   <TableCell>{email.subject}</TableCell>
                   <TableCell className="max-w-xs">
                     <Popover>

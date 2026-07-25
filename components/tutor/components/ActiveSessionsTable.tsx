@@ -22,11 +22,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  HoverCard,
-  HoverCardContent,
-  HoverCardTrigger,
-} from "@/components/ui/hover-card";
+import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -44,13 +40,14 @@ import {
   ChevronsRight,
   ChevronLeft,
   ChevronRight,
-  Trash,
+  CalendarX,
   UserRoundPlus,
   Clock,
   CircleCheckBig,
   CircleX,
   Copy,
   Ellipsis,
+  Video,
 } from "lucide-react";
 import { format, parseISO, isAfter } from "date-fns";
 import { AlertDialogTrigger } from "@radix-ui/react-alert-dialog";
@@ -88,16 +85,13 @@ interface SessionsTableProps {
   setNotes: (notes: string) => void;
   setNextClassConfirmed: (confirmed: boolean) => void;
   handleStatusChange: (session: Session) => void;
-  handleReschedule: (
-    sessionId: string,
-    newDate: string,
-    meetingId: string,
-  ) => void;
+  handleReschedule: (sessionId: string, newDate: string, meetingId: string) => void;
   handleSessionComplete: (
     session: Session,
     notes: string,
     isQuestionOrConcern: boolean,
     isFirstSession: boolean,
+    category?: string,
   ) => void;
   handlePageChange: (page: number) => void;
   handleRowsPerPageChange: (value: string) => void;
@@ -115,6 +109,33 @@ const ActiveSessionsTable = ({
   handleRowsPerPageChange,
 }: any) => {
   const TC = useDashboardContext();
+  const markSessionComplete = async (
+    updatedSession: Session,
+    notes: string,
+    isQuestionOrConcern: boolean,
+    isFirstSession: boolean,
+    category?: string,
+  ) => {
+    await handleSessionComplete(
+      updatedSession,
+      notes,
+      isQuestionOrConcern,
+      isFirstSession,
+      category,
+    );
+    try {
+      await fetch("/api/send-feedback-email", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          studentEmail: updatedSession.student?.email,
+          studentName: updatedSession.student?.firstName,
+        }),
+      });
+    } catch (emailError) {
+      console.error("Failed to send feedback email:", emailError);
+    }
+  };
   return (
     <>
       <Table>
@@ -155,8 +176,7 @@ const ActiveSessionsTable = ({
               </TableCell>
               <TableCell>{formatSessionDate(session.date)}</TableCell>
               <TableCell className="font-medium">
-                Tutoring Session with {session.student?.firstName}{" "}
-                {session.student?.lastName}
+                Tutoring Session with {session.student?.firstName} {session.student?.lastName}
               </TableCell>
               <TableCell>
                 {session.student?.firstName} {session.student?.lastName}
@@ -164,27 +184,22 @@ const ActiveSessionsTable = ({
               <TableCell>{formatSessionDuration(session.duration)}</TableCell>
               <TableCell>
                 {session?.meeting?.meetingId ? (
-                  <span>
-                    <button
-                      onClick={() =>
-                        (window.location.href = `/meeting/${session?.meeting?.id}`)
-                      }
-                      className="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600"
-                    >
-                      View
-                    </button>
-                  </span>
-                ) : (
-                  <button className="text-black px-3 py-1 border border-gray-200 rounded">
-                    N/A
+                  <button
+                    onClick={() => (window.location.href = `/meeting/${session?.meeting?.id}`)}
+                    className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-connect-me-blue-2 transition-colors"
+                  >
+                    <Video className="h-4 w-4" />
+                    Meeting
                   </button>
+                ) : (
+                  <span className="text-sm text-muted-foreground/50">N/A</span>
                 )}
               </TableCell>
               <TableCell>
                 <SessionExitForm
                   currSession={session}
                   setNextClassConfirmed={setNextClassConfirmed}
-                  handleSessionComplete={handleSessionComplete}
+                  handleSessionComplete={markSessionComplete}
                   handleStatusChange={handleStatusChange}
                 />
               </TableCell>
@@ -206,8 +221,7 @@ const ActiveSessionsTable = ({
                       />
                       <DropdownMenuItem
                         onClick={() =>
-                          (window.location.href =
-                            "https://forms.gle/AC4an7K6NSNumDwKA")
+                          (window.location.href = "https://forms.gle/AC4an7K6NSNumDwKA")
                         }
                       >
                         <UserRoundPlus className="h-4 w-4 mr-2" />
@@ -220,8 +234,8 @@ const ActiveSessionsTable = ({
                               e.preventDefault();
                             }}
                           >
-                            <Trash className="h-4 w-4 mr-2" />
-                            Trash
+                            <CalendarX className="h-4 w-4 mr-2" />
+                            Cancel
                           </DropdownMenuItem>
                         </AlertDialogTrigger>
                         <AlertDialogContent>
@@ -229,17 +243,13 @@ const ActiveSessionsTable = ({
                             <AlertDialogTitle>Cancel Session?</AlertDialogTitle>
                             <AlertDialogDescription>
                               Are you sure you want to cancel this session with{" "}
-                              {session.student?.firstName}{" "}
-                              {session.student?.lastName} on{" "}
-                              {formatSessionDate(session.date)}? This action
-                              cannot be undone.
+                              {session.student?.firstName} {session.student?.lastName} on{" "}
+                              {formatSessionDate(session.date)}? This action cannot be undone.
                             </AlertDialogDescription>
                           </AlertDialogHeader>
                           <AlertDialogFooter>
                             <AlertDialogCancel>Cancel</AlertDialogCancel>
-                            <AlertDialogAction
-                              onClick={() => handleStatusChange(session)}
-                            >
+                            <AlertDialogAction onClick={() => handleStatusChange(session)}>
                               Confirm Cancellation
                             </AlertDialogAction>
                           </AlertDialogFooter>
@@ -259,11 +269,11 @@ const ActiveSessionsTable = ({
         <div className="flex items-center space-x-2">
           <span>Rows per page</span>
           <Select
-            value={TC.rowsPerPage.toString()}
+            value={TC.rowsPerPageActiveSessions.toString()}
             onValueChange={handleRowsPerPageChange}
           >
             <SelectTrigger className="w-[70px]">
-              <SelectValue placeholder={TC.rowsPerPage.toString()} />
+              <SelectValue placeholder={TC.rowsPerPageActiveSessions.toString()} />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="5">5</SelectItem>
@@ -272,30 +282,30 @@ const ActiveSessionsTable = ({
             </SelectContent>
           </Select>
           <span>
-            Page {TC.currentPage} of {totalPages}
+            Page {TC.currentPageActiveSessions} of {totalPages}
           </span>
           <div className="flex space-x-1">
             <Button
               variant="ghost"
               size="icon"
               onClick={() => handlePageChange(1)}
-              disabled={TC.currentPage === 1}
+              disabled={TC.currentPageActiveSessions === 1}
             >
               <ChevronsLeft className="h-4 w-4" />
             </Button>
             <Button
               variant="ghost"
               size="icon"
-              onClick={() => handlePageChange(TC.currentPage - 1)}
-              disabled={TC.currentPage === 1}
+              onClick={() => handlePageChange(TC.currentPageActiveSessions - 1)}
+              disabled={TC.currentPageActiveSessions === 1}
             >
               <ChevronLeft className="h-4 w-4" />
             </Button>
             <Button
               variant="ghost"
               size="icon"
-              onClick={() => handlePageChange(TC.currentPage + 1)}
-              disabled={TC.currentPage === totalPages}
+              onClick={() => handlePageChange(TC.currentPageActiveSessions + 1)}
+              disabled={TC.currentPageActiveSessions === totalPages}
             >
               <ChevronRight className="h-4 w-4" />
             </Button>
@@ -303,7 +313,7 @@ const ActiveSessionsTable = ({
               variant="ghost"
               size="icon"
               onClick={() => handlePageChange(totalPages)}
-              disabled={TC.currentPage === totalPages}
+              disabled={TC.currentPageActiveSessions === totalPages}
             >
               <ChevronsRight className="h-4 w-4" />
             </Button>

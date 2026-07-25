@@ -1,8 +1,5 @@
 import EnrollmentsList from "@/components/tutor/EnrollmentsManagement";
-import {
-  cachedGetEnrollments,
-  getEnrollments,
-} from "@/lib/actions/enrollment.server.actions";
+import { cachedGetEnrollments, getEnrollments } from "@/lib/actions/enrollment.server.actions";
 import { cachedGetUser } from "@/lib/actions/user.server.actions";
 import { cachedGetProfile, cachedGetTutorStudents } from "@/lib/actions/cache";
 import { createClient } from "@/lib/supabase/server";

@@ -1,7 +1,8 @@
 "use client";
 
 import { use, useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -16,20 +17,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  getProfile,
-  getProfileWithProfileId,
-} from "@/lib/actions/user.actions";
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
+import { getProfile, getProfileWithProfileId } from "@/lib/actions/user.actions";
+import { createClient } from "@/lib/supabase/client";
 import { Profile } from "@/types";
 import toast, { Toaster } from "react-hot-toast";
-import {
-  switchProfile,
-  getProfileUncached,
-} from "@/lib/actions/profile.server.actions";
+import { switchProfile, getProfileUncached } from "@/lib/actions/profile.server.actions";
 import { useProfile } from "@/lib/contexts/profileContext";
+import type { Database } from "@/types/database.types";
 import { getUserProfiles } from "@/lib/actions/profile.server.actions";
-import { NetworkAccessProfileListInstance } from "twilio/lib/rest/supersim/v1/networkAccessProfile";
 
 interface AccountFormType {
   firstName: string;
@@ -48,13 +43,13 @@ export default function SettingsPage({
 }) {
   //   const profile = use(profilePromise);
 
-  const supabase = createClientComponentClient();
+  const supabase = createClient();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { profile, setProfile } = useProfile();
+  const showCompleteProfileBanner = searchParams.get("completeProfile") === "1";
   // changed to initialize from context so current profile is available at render time
-  const [lastActiveProfileId, setLastActiveProfileId] = useState<string>(
-    profile?.id || "",
-  );
+  const [lastActiveProfileId, setLastActiveProfileId] = useState<string>(profile?.id || "");
   const [userProfiles, setUserProfiles] = useState<Partial<Profile>[]>([]);
   const [isSavingProfile, setIsSavingProfile] = useState(false);
 
@@ -63,10 +58,7 @@ export default function SettingsPage({
     firstName: profile?.firstName || "",
     lastName: profile?.lastName || "",
     phoneNumber: profile?.phoneNumber || "",
-    age:
-      profile?.age !== undefined && profile?.age !== null
-        ? String(profile.age)
-        : "",
+    age: profile?.age !== undefined && profile?.age !== null ? String(profile.age) : "",
     email: profile?.email || "",
     subjectsOfInterest: Array.isArray((profile as any)?.subjects_of_interest)
       ? (profile as any).subjects_of_interest.join(", ")
@@ -80,15 +72,11 @@ export default function SettingsPage({
     profile?.status === "Inactive" ? "Inactive" : "Active",
   );
   const [sessionReminders, setSessionReminders] = useState(false);
-  const [sessionEmailNotifications, setSessionEmailNotifications] =
-    useState(false);
-  const [sessionTextNotifications, setSessionTextNotifications] =
-    useState(false);
+  const [sessionEmailNotifications, setSessionEmailNotifications] = useState(false);
+  const [sessionTextNotifications, setSessionTextNotifications] = useState(false);
   const [webinarReminders, setWebinarReminders] = useState(false);
-  const [webinarEmailNotifications, setWebinarEmailNotifications] =
-    useState(false);
-  const [webinarTextNotifications, setWebinarTextNotifications] =
-    useState(false);
+  const [webinarEmailNotifications, setWebinarEmailNotifications] = useState(false);
+  const [webinarTextNotifications, setWebinarTextNotifications] = useState(false);
   const [settingsId, setSettingsId] = useState("");
 
   const fetchUserInfo = async () => {
@@ -115,10 +103,7 @@ export default function SettingsPage({
       firstName: profile.firstName || "",
       lastName: profile.lastName || "",
       phoneNumber: profile.phoneNumber || "",
-      age:
-        profile.age !== undefined && profile.age !== null
-          ? String(profile.age)
-          : "",
+      age: profile.age !== undefined && profile.age !== null ? String(profile.age) : "",
       email: profile.email || "",
       subjectsOfInterest: Array.isArray((profile as any).subjects_of_interest)
         ? (profile as any).subjects_of_interest.join(", ")
@@ -149,11 +134,11 @@ export default function SettingsPage({
       if (!user) throw new Error("No user found");
 
       const profileData = await getProfile(user.id);
-      if (!profileData) throw new Error("No profile found");
-
-      // changed to refresh profile after page load so the context stays current
-      setProfile(profileData);
-      setLastActiveProfileId(profileData.id);
+      if (profileData) {
+        // changed to refresh profile after page load so the context stays current
+        setProfile(profileData);
+        setLastActiveProfileId(profileData.id);
+      }
       return user.id;
     } catch (error) {
       console.error("Error fetching user:", error);
@@ -171,33 +156,31 @@ export default function SettingsPage({
 
   const fetchNotificationSettings = async () => {
     try {
-      if (profile) {
-        const { data, error } = await supabase
-          .from("user_notification_settings")
-          .select("*")
-          .eq("id", profile.settingsId)
-          .single();
-        if (error) throw error;
+      if (!profile?.settingsId) return;
 
-        setSessionEmailNotifications(
-          data.email_tutoring_session_notifications_enabled,
-        );
-        setSessionTextNotifications(false);
-        setWebinarEmailNotifications(data.email_webinar_notifications_enabled);
-        setWebinarTextNotifications(data.text_webinar_notifications_enabled);
+      const { data, error } = await supabase
+        .from("user_notification_settings")
+        .select("*")
+        .eq("id", profile.settingsId)
+        .maybeSingle();
+      if (error) throw error;
+      if (!data) return;
 
-        setSessionReminders(
-          data.email_tutoring_session_notifications_enabled ||
-            data.text_tutoring_session_notifications_enabled,
-        );
+      setSessionEmailNotifications(data.email_tutoring_session_notifications_enabled);
+      setSessionTextNotifications(false);
+      setWebinarEmailNotifications(data.email_webinar_notifications_enabled);
+      setWebinarTextNotifications(data.text_webinar_notifications_enabled);
 
-        setWebinarReminders(false);
+      setSessionReminders(
+        data.email_tutoring_session_notifications_enabled ||
+          data.text_tutoring_session_notifications_enabled,
+      );
 
-        setSettingsId(profile.settingsId);
-      }
+      setWebinarReminders(false);
+
+      setSettingsId(profile.settingsId);
     } catch (error) {
       console.error("Unable to fetch notification settings", error);
-      throw error;
     }
   };
 
@@ -227,7 +210,7 @@ export default function SettingsPage({
 
       const { error } = await supabase
         .from("Profiles")
-        .update(updatePayload)
+        .update(updatePayload as Database["public"]["Tables"]["Profiles"]["Update"])
         .eq("id", profile.id);
 
       if (error) throw error;
@@ -252,8 +235,7 @@ export default function SettingsPage({
       await supabase
         .from("user_notification_settings")
         .update({
-          email_tutoring_session_notifications_enabled:
-            sessionEmailNotifications,
+          email_tutoring_session_notifications_enabled: sessionEmailNotifications,
           text_tutoring_session_notifications_enabled: sessionTextNotifications,
           email_webinar_notifications_enabled: webinarEmailNotifications,
           text_webinar_notifications_enabled: webinarTextNotifications,
@@ -291,6 +273,14 @@ export default function SettingsPage({
       <Toaster />{" "}
       <main className="p-8 max-w-4xl mx-auto">
         <div className="space-y-12">
+          {showCompleteProfileBanner && (
+            <Alert className="border-amber-200 bg-amber-50 text-amber-900">
+              <AlertDescription>
+                You must complete your profile first before using the rest of the dashboard.
+              </AlertDescription>
+            </Alert>
+          )}
+
           {/* Switch Profiles Section */}
           <section className="bg-white rounded-lg border p-6">
             <h1 className="text-2xl font-bold mb-6">Profiles</h1>
@@ -303,11 +293,7 @@ export default function SettingsPage({
                 <Select onValueChange={setLastActiveProfileId}>
                   <SelectTrigger className="h-12">
                     <SelectValue
-                      placeholder={
-                        profile
-                          ? `${profile?.firstName} ${profile?.lastName}`
-                          : ""
-                      }
+                      placeholder={profile ? `${profile?.firstName} ${profile?.lastName}` : ""}
                     />
                   </SelectTrigger>
                   <SelectContent>
@@ -325,10 +311,7 @@ export default function SettingsPage({
               </div>
             </div>
 
-            <Button
-              onClick={handleSwitchProfile}
-              className="mt-6 w-full sm:w-auto"
-            >
+            <Button onClick={handleSwitchProfile} className="mt-6 w-full sm:w-auto">
               Switch Profile
             </Button>
           </section>
@@ -438,10 +421,7 @@ export default function SettingsPage({
                 )}
               </div>
             </div>
-            <Button
-              onClick={handleSaveNotifications}
-              className="mt-6 w-full sm:w-auto"
-            >
+            <Button onClick={handleSaveNotifications} className="mt-6 w-full sm:w-auto">
               Save Notification Settings
             </Button>
           </section>
@@ -452,24 +432,17 @@ export default function SettingsPage({
                 In Development
               </span>
             </div>
-            <p className="text-gray-600 mb-6">
-              Manage your information and account preferences.
-            </p>
+            <p className="text-gray-600 mb-6">Manage your information and account preferences.</p>
             <form onSubmit={handleProfileSubmit} className="space-y-6">
               {/* students can toggle their own active inactive status here without needing admin intervention to deactivate account */}
               {profile?.role === "Student" && (
                 <div>
-                  <Label
-                    htmlFor="account-status"
-                    className="text-sm font-medium"
-                  >
+                  <Label htmlFor="account-status" className="text-sm font-medium">
                     Account Status
                   </Label>
                   <Select
                     value={accountStatus}
-                    onValueChange={(value) =>
-                      setAccountStatus(value as Profile["status"])
-                    }
+                    onValueChange={(value) => setAccountStatus(value as Profile["status"])}
                   >
                     <SelectTrigger id="account-status" className="mt-1">
                       <SelectValue placeholder="Select status" />

@@ -1,6 +1,6 @@
 export const zoom = {
-    SDK:{
-        KEY:'',
-        SECRET:''
-    }
-}
+  SDK: {
+    KEY: "",
+    SECRET: "",
+  },
+};

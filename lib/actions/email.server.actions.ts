@@ -18,6 +18,12 @@ import { parseISO, subMinutes } from "date-fns";
 import StudentRescheduleNotificationEmail, {
   SessionRescheduleEmailProps,
 } from "@/components/emails/student-reschedule-notification";
+import StudentSessionCancellationNotificationEmail, {
+  StudentSessionCancellationEmailProps,
+} from "@/components/emails/student-session-cancellation-notification";
+import TutorSessionCancellationNotificationEmail, {
+  TutorSessionCancellationEmailProps,
+} from "@/components/emails/tutor-session-cancellation-notification";
 import ChatMessageNotificationEmail, {
   type ChatMessageNotificationEmailProps,
 } from "@/components/emails/chats/chat-message-notification";
@@ -26,16 +32,18 @@ import EarlySessionCheckInEmail from "@/components/emails/early-session-check-in
 import { getAllActiveEnrollmentsForCron } from "./enrollment.server.actions";
 import { Table } from "../supabase/tables";
 import { formatInTimeZone } from "date-fns-tz";
+import { requireAdmin } from "./authz.server";
+import { logError } from "@/lib/posthog";
 
 export const fetchScheduledMessages = async () => {
+  await requireAdmin();
   const qstash = new Client({ token: process.env.EU_CENTRAL_1_QSTASH_TOKEN });
 
   const messages = await withRetry(() => qstash.schedules.list(), {
-    onRetry: (error, attempt) =>
-      console.error(
-        `fetchScheduledMessages attempt ${attempt + 1} failed:`,
-        error,
-      ),
+    onRetry: async (error, attempt) => {
+      console.error(`fetchScheduledMessages attempt ${attempt + 1} failed:`, error);
+      await logError(error, { attempt }, "email_error");
+    },
   });
   return messages;
 };
@@ -47,9 +55,7 @@ export const fetchScheduledMessages = async () => {
  * @returns A promise that resolves when all scheduling requests have been attempted.
  * @throws Will throw an error if any API request fails and is not caught internally.
  */
-export async function sendScheduledEmailsBeforeSessions(
-  sessions: Session[],
-): Promise<void> {
+export async function sendScheduledEmailsBeforeSessions(sessions: Session[]): Promise<void> {
   try {
     // Use Promise.all for parallel execution or for...of for sequential
     await Promise.all(
@@ -70,11 +76,13 @@ export async function sendScheduledEmailsBeforeSessions(
           await scheduleReminder({ session: session, type: "Student" });
         } catch (error) {
           console.error("Error processing session %s:", session.id, error);
+          await logError(error, { session_id: session.id }, "email_error");
         }
       }),
     );
   } catch (error) {
     console.error("Error scheduling session emails", error);
+    await logError(error, { session_ids: sessions.map((s) => s.id) }, "email_error");
     throw error;
   }
 }
@@ -92,6 +100,7 @@ export async function updateScheduledEmailBeforeSessions(session: Session) {
     await sendScheduledEmailsBeforeSessions([session]);
   } catch (error) {
     console.error("Unable to update scheduled message");
+    await logError(error, { session_id: session.id }, "email_error");
     throw error;
   }
 }
@@ -123,15 +132,15 @@ export async function deleteScheduledEmailBeforeSessions(sessionId: string) {
         }
       },
       {
-        onRetry: (error, attempt) =>
-          console.error(
-            `deleteScheduledEmailBeforeSessions attempt ${attempt + 1} failed:`,
-            error,
-          ),
+        onRetry: async (error, attempt) => {
+          console.error(`deleteScheduledEmailBeforeSessions attempt ${attempt + 1} failed:`, error);
+          await logError(error, { session_id: sessionId, attempt }, "email_error");
+        },
       },
     );
   } catch (error) {
     console.error("Unable to delete message");
+    await logError(error, { session_id: sessionId }, "email_error");
     // throw error;
   }
 }
@@ -140,11 +149,14 @@ export async function deleteMsg(messageId: string) {
   const qstash = new Client({ token: process.env.EU_CENTRAL_1_QSTASH_TOKEN });
   try {
     await withRetry(() => qstash.messages.delete(messageId), {
-      onRetry: (error, attempt) =>
-        console.error(`deleteMsg attempt ${attempt + 1} failed:`, error),
+      onRetry: async (error, attempt) => {
+        console.error(`deleteMsg attempt ${attempt + 1} failed:`, error);
+        await logError(error, { message_id: messageId, attempt }, "email_error");
+      },
     });
   } catch (qstashError: any) {
     console.warn("Failed to delete message from QStash");
+    await logError(qstashError, { message_id: messageId }, "email_error");
   }
 }
 
@@ -181,6 +193,7 @@ export async function scheduleEmail({
     return result;
   } catch (error) {
     console.error("Unable to schedule email");
+    await logError(error, { to, subject, sessionId }, "email_error");
     throw error;
   }
 }
@@ -193,9 +206,7 @@ export async function sendStudentPairingConfirmationEmail(
   data: PairingConfirmationEmailProps,
   emailTo: string,
 ) {
-  const emailHtml = await render(
-    React.createElement(StudentPairingConfirmationEmail, data),
-  );
+  const emailHtml = await render(React.createElement(StudentPairingConfirmationEmail, data));
   const emailResult = await withRetry(
     () =>
       resend.emails.send({
@@ -206,11 +217,10 @@ export async function sendStudentPairingConfirmationEmail(
         html: emailHtml,
       }),
     {
-      onRetry: (error, attempt) =>
-        console.error(
-          `sendStudentPairingConfirmationEmail attempt ${attempt + 1} failed:`,
-          error,
-        ),
+      onRetry: async (error, attempt) => {
+        console.error(`sendStudentPairingConfirmationEmail attempt ${attempt + 1} failed:`, error);
+        await logError(error, { email_to: emailTo, attempt }, "email_error");
+      },
     },
   );
 
@@ -221,29 +231,22 @@ export async function sendPairingRequestEmail(
   data: PairingRequestNotificationEmailProps,
   emailTo: string,
 ) {
-  const emailHtml = await render(
-    React.createElement(PairingRequestNotificationEmail, data),
-  );
+  const emailHtml = await render(React.createElement(PairingRequestNotificationEmail, data));
 
   const emailResult = await withRetry(
     () =>
       resend.emails.send({
         from: "reminder@connectmego.app",
         to: process.env.DEV_EMAIL!,
-        cc: [
-          process.env.DEV_EMAIL!,
-          "aaronmarsh755@gmail.com",
-          process.env.OPERATIONS_EMAIL!,
-        ],
+        cc: [process.env.DEV_EMAIL!, "aaronmarsh755@gmail.com", process.env.OPERATIONS_EMAIL!],
         subject: "Connect Me Pairing Request",
         html: emailHtml,
       }),
     {
-      onRetry: (error, attempt) =>
-        console.error(
-          `sendPairingRequestEmail attempt ${attempt + 1} failed:`,
-          error,
-        ),
+      onRetry: async (error, attempt) => {
+        console.error(`sendPairingRequestEmail attempt ${attempt + 1} failed:`, error);
+        await logError(error, { email_to: emailTo, attempt }, "email_error");
+      },
     },
   );
   return emailResult;
@@ -253,9 +256,7 @@ export async function sendTutorPairingConfirmationEmail(
   data: PairingConfirmationEmailProps,
   emailTo: string,
 ) {
-  const emailHtml = await render(
-    React.createElement(TutorPairingConfirmationEmail, data),
-  );
+  const emailHtml = await render(React.createElement(TutorPairingConfirmationEmail, data));
   const emailResult = await withRetry(
     () =>
       resend.emails.send({
@@ -266,11 +267,10 @@ export async function sendTutorPairingConfirmationEmail(
         html: emailHtml,
       }),
     {
-      onRetry: (error, attempt) =>
-        console.error(
-          `sendTutorPairingConfirmationEmail attempt ${attempt + 1} failed:`,
-          error,
-        ),
+      onRetry: async (error, attempt) => {
+        console.error(`sendTutorPairingConfirmationEmail attempt ${attempt + 1} failed:`, error);
+        await logError(error, { email_to: emailTo, attempt }, "email_error");
+      },
     },
   );
 
@@ -281,9 +281,7 @@ export async function sendSessionRescheduleEmail(
   data: SessionRescheduleEmailProps,
   emailTo: string,
 ) {
-  const emailHtml = await render(
-    React.createElement(StudentRescheduleNotificationEmail, data),
-  );
+  const emailHtml = await render(React.createElement(StudentRescheduleNotificationEmail, data));
 
   const emailResult = await withRetry(
     () =>
@@ -295,11 +293,66 @@ export async function sendSessionRescheduleEmail(
         html: emailHtml,
       }),
     {
-      onRetry: (error, attempt) =>
-        console.error(
-          `sendSessionRescheduleEmail attempt ${attempt + 1} failed:`,
-          error,
-        ),
+      onRetry: async (error, attempt) => {
+        console.error(`sendSessionRescheduleEmail attempt ${attempt + 1} failed:`, error);
+        await logError(error, { email_to: emailTo, attempt }, "email_error");
+      },
+    },
+  );
+
+  return emailResult;
+}
+
+export async function sendStudentSessionCancellationEmail(
+  data: StudentSessionCancellationEmailProps,
+  emailTo: string,
+) {
+  const emailHtml = await render(
+    React.createElement(StudentSessionCancellationNotificationEmail, data),
+  );
+
+  const emailResult = await withRetry(
+    () =>
+      resend.emails.send({
+        from: "Connect Me Free Tutoring & Mentoring <notifications@connectmego.app>",
+        to: emailTo,
+        cc: ["", process.env.DEV_EMAIL!, process.env.OPERATIONS_EMAIL!], // keeping consistent with other email methods for visibility
+        subject: "Your Tutoring Session Has Been Cancelled",
+        html: emailHtml,
+      }),
+    {
+      onRetry: async (error, attempt) => {
+        console.error(`sendStudentSessionCancellationEmail attempt ${attempt + 1} failed:`, error);
+        await logError(error, { email_to: emailTo, attempt }, "email_error");
+      },
+    },
+  );
+
+  return emailResult;
+}
+
+export async function sendTutorSessionCancellationEmail(
+  data: TutorSessionCancellationEmailProps,
+  emailTo: string,
+) {
+  const emailHtml = await render(
+    React.createElement(TutorSessionCancellationNotificationEmail, data),
+  );
+
+  const emailResult = await withRetry(
+    () =>
+      resend.emails.send({
+        from: "Connect Me Free Tutoring & Mentoring <notifications@connectmego.app>",
+        to: emailTo,
+        cc: ["", process.env.DEV_EMAIL!, process.env.OPERATIONS_EMAIL!], // keeping consistent with other email methods for visibility
+        subject: "A Tutoring Session Has Been Cancelled",
+        html: emailHtml,
+      }),
+    {
+      onRetry: async (error, attempt) => {
+        console.error(`sendTutorSessionCancellationEmail attempt ${attempt + 1} failed:`, error);
+        await logError(error, { email_to: emailTo, attempt }, "email_error");
+      },
     },
   );
 
@@ -334,11 +387,10 @@ export async function sendChatMessageNotificationEmail(
         html: emailHtml,
       }),
     {
-      onRetry: (error, attempt) =>
-        console.error(
-          `sendChatMessageNotificationEmail attempt ${attempt + 1} failed:`,
-          error,
-        ),
+      onRetry: async (error, attempt) => {
+        console.error(`sendChatMessageNotificationEmail attempt ${attempt + 1} failed:`, error);
+        await logError(error, { email_to: params.to, attempt }, "email_error");
+      },
     },
   );
 
@@ -355,8 +407,7 @@ export async function sendChatMessageNotificationEmailTest(
   >,
 ): Promise<{ ok: true } | { ok: false; error: string }> {
   try {
-    const siteUrl =
-      process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.connectmego.app";
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.connectmego.app";
     const base = siteUrl.replace(/\/$/, "");
 
     await sendChatMessageNotificationEmail({
@@ -370,11 +421,9 @@ export async function sendChatMessageNotificationEmailTest(
 
     return { ok: true };
   } catch (error) {
-    const message =
-      error instanceof Error
-        ? error.message
-        : "Unknown error sending test email";
+    const message = error instanceof Error ? error.message : "Unknown error sending test email";
     console.error("sendChatMessageNotificationEmailTest", error);
+    await logError(error, { to: params.to }, "email_error");
     return { ok: false, error: message };
   }
 }
@@ -393,9 +442,7 @@ export async function sendEarlySessionCheckInEmails(now = new Date()) {
       return false;
     }
 
-    return (
-      normalizeEnrollmentStartDate(enrollment.startDate) === targetStartDate
-    );
+    return normalizeEnrollmentStartDate(enrollment.startDate) === targetStartDate;
   });
 
   const recipients = dueEnrollments.flatMap((enrollment) =>
@@ -411,17 +458,14 @@ export async function sendEarlySessionCheckInEmails(now = new Date()) {
   }
 
   const descriptions = recipients.map(({ description }) => description);
-  const { data: existingEmailLogs, error: existingEmailLogsError } =
-    await supabase
-      .from(Table.Emails)
-      .select("description")
-      .in("description", descriptions);
+  const { data: existingEmailLogs, error: existingEmailLogsError } = await supabase
+    .from(Table.Emails)
+    .select("description")
+    .in("description", descriptions);
 
   if (existingEmailLogsError) {
-    console.error(
-      "Unable to fetch existing early session check-in logs",
-      existingEmailLogsError,
-    );
+    console.error("Unable to fetch existing early session check-in logs", existingEmailLogsError);
+    await logError(existingEmailLogsError, { target_start_date: targetStartDate }, "email_error");
     throw existingEmailLogsError;
   }
 
@@ -456,33 +500,25 @@ export async function sendEarlySessionCheckInEmails(now = new Date()) {
           html: emailHtml,
         }),
       {
-        onRetry: (error, attempt) =>
-          console.error(
-            `sendEarlySessionCheckInEmails attempt ${attempt + 1} failed:`,
-            error,
-          ),
+        onRetry: async (error, attempt) => {
+          console.error(`sendEarlySessionCheckInEmails attempt ${attempt + 1} failed:`, error);
+          await logError(error, { email_to: recipient.email, attempt }, "email_error");
+        },
       },
     );
 
-    const messageId =
-      "data" in emailResult && emailResult.data?.id
-        ? emailResult.data.id
-        : null;
+    const messageId = "data" in emailResult && emailResult.data?.id ? emailResult.data.id : null;
 
-    const { error: insertEmailLogError } = await supabase
-      .from(Table.Emails)
-      .insert({
-        recipient_id: recipient.recipientId,
-        session_id: null,
-        message_id: messageId,
-        description: recipient.description,
-      });
+    const { error: insertEmailLogError } = await supabase.from(Table.Emails).insert({
+      recipient_id: recipient.recipientId,
+      session_id: null,
+      message_id: messageId,
+      description: recipient.description,
+    });
 
     if (insertEmailLogError) {
-      console.error(
-        "Unable to record early session check-in email",
-        insertEmailLogError,
-      );
+      console.error("Unable to record early session check-in email", insertEmailLogError);
+      await logError(insertEmailLogError, { recipient_id: recipient.recipientId }, "email_error");
       throw insertEmailLogError;
     }
 
@@ -501,9 +537,7 @@ export async function sendMonthlyCheckInEmail(
   data: { firstName: string; role: "tutor" | "student" | "parent" },
   emailTo: string,
 ) {
-  const emailHtml = await render(
-    React.createElement(MonthlyCheckInEmail, data),
-  );
+  const emailHtml = await render(React.createElement(MonthlyCheckInEmail, data));
 
   const emailResult = await withRetry(
     () =>
@@ -515,23 +549,17 @@ export async function sendMonthlyCheckInEmail(
         html: emailHtml,
       }),
     {
-      onRetry: (error, attempt) =>
-        console.error(
-          `sendMonthlyCheckInEmail attempt ${attempt + 1} failed:`,
-          error,
-        ),
+      onRetry: async (error, attempt) => {
+        console.error(`sendMonthlyCheckInEmail attempt ${attempt + 1} failed:`, error);
+        await logError(error, { email_to: emailTo, attempt }, "email_error");
+      },
     },
   );
 
   return emailResult;
 }
 
-export const sendEmail = async (
-  from: string,
-  to: string,
-  subject: string,
-  body: string,
-) => {
+export const sendEmail = async (from: string, to: string, subject: string, body: string) => {
   const resend = new Resend(process.env.RESEND_API_KEY);
   try {
     await withRetry(
@@ -544,22 +572,20 @@ export const sendEmail = async (
           html: body,
         }),
       {
-        onRetry: (error, attempt) =>
-          console.error(`sendEmail attempt ${attempt + 1} failed:`, error),
+        onRetry: async (error, attempt) => {
+          console.error(`sendEmail attempt ${attempt + 1} failed:`, error);
+          await logError(error, { to, subject, attempt }, "email_error");
+        },
       },
     );
   } catch (error) {
     console.error("Unable to send email", error);
+    await logError(error, { to, subject }, "email_error");
     throw error;
   }
 };
 
-export const sendEmailTest = async (
-  from: string,
-  to: string,
-  subject: string,
-  body: string,
-) => {
+export const sendEmailTest = async (from: string, to: string, subject: string, body: string) => {
   const resend = new Resend(process.env.RESEND_API_KEY);
   try {
     await withRetry(
@@ -572,20 +598,20 @@ export const sendEmailTest = async (
           html: body,
         }),
       {
-        onRetry: (error, attempt) =>
-          console.error(`sendEmailTest attempt ${attempt + 1} failed:`, error),
+        onRetry: async (error, attempt) => {
+          console.error(`sendEmailTest attempt ${attempt + 1} failed:`, error);
+          await logError(error, { subject, attempt }, "email_error");
+        },
       },
     );
   } catch (error) {
     console.error("Unable to send email", error);
+    await logError(error, { subject }, "email_error");
     throw error;
   }
 };
 
-export const scheduleReminder = async (data: {
-  session: Session;
-  type: "Tutor" | "Student";
-}) => {
+export const scheduleReminder = async (data: { session: Session; type: "Tutor" | "Student" }) => {
   try {
     const supabase = await createAdminClient();
 
@@ -623,6 +649,7 @@ export const scheduleReminder = async (data: {
 
       if (error) {
         console.error("Supabase insert error", error);
+        await logError(error, { session_id: session.id, type }, "email_error");
         throw error;
       }
       if (!data) {
@@ -637,6 +664,7 @@ export const scheduleReminder = async (data: {
     };
   } catch (error) {
     console.error("Error scheduling reminder", error);
+    await logError(error, { session_id: data.session.id, type: data.type }, "email_error");
     throw error;
   }
 };
@@ -656,12 +684,8 @@ const createSessionNotification = (
   student: Profile,
   type: "Tutor" | "Student",
 ) => {
-  const tutorName: string = tutor
-    ? ` ${tutor.firstName} ${tutor.lastName}`
-    : "";
-  const studentName: string = student
-    ? `${student.firstName} ${student.lastName}`
-    : "your student";
+  const tutorName: string = tutor ? ` ${tutor.firstName} ${tutor.lastName}` : "";
+  const studentName: string = student ? `${student.firstName} ${student.lastName}` : "your student";
 
   if (type === "Tutor") {
     return `

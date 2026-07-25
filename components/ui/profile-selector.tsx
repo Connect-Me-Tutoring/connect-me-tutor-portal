@@ -4,11 +4,7 @@ import { Profile } from "@/types";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Check, ChevronDown } from "lucide-react";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
   Command,
   CommandEmpty,
@@ -120,7 +116,7 @@ const ProfileSelector: React.FC<ProfileSelectorProps> = ({
                     <Check
                       className={cn(
                         "mr-2 h-4 w-4",
-                        selectedId === profile.id ? "opacity-100" : "opacity-0"
+                        selectedId === profile.id ? "opacity-100" : "opacity-0",
                       )}
                     />
                     <div>
@@ -128,9 +124,7 @@ const ProfileSelector: React.FC<ProfileSelectorProps> = ({
                         {profile.firstName || ""} {profile.lastName || ""}
                       </span>
                       {profile.email && (
-                        <span className="ml-2 text-xs text-muted-foreground">
-                          {profile.email}
-                        </span>
+                        <span className="ml-2 text-xs text-muted-foreground">{profile.email}</span>
                       )}
                     </div>
                   </CommandItem>

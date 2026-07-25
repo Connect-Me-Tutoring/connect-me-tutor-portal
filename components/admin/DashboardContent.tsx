@@ -36,15 +36,14 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { getProfile } from "@/lib/actions/user.actions";
-import { getAllSessions, rescheduleSession } from "@/lib/actions/admin.actions";
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
+import { rescheduleSession } from "@/lib/actions/admin.actions";
+import { getSupabase } from "@/lib/supabase/client";
 import { Session, Profile } from "@/types";
 import { formatSessionDate, formatDateAdmin } from "@/lib/utils";
 import { time } from "console";
 
 const AdminDashboard = () => {
-  const supabase = createClientComponentClient();
+  const supabase = getSupabase();
   const [sessions, setSessions] = useState<Session[]>([]);
   const [filteredSessions, setFilteredSessions] = useState<Session[]>([]);
   const [profile, setProfile] = useState<Profile | null>(null);
@@ -54,9 +53,7 @@ const AdminDashboard = () => {
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [filterValue, setFilterValue] = useState("");
   const [selectedSession, setSelectedSession] = useState<Session | null>(null);
-  const [selectedSessionDate, setSelectedSessionDate] = useState<string | null>(
-    null,
-  );
+  const [selectedSessionDate, setSelectedSessionDate] = useState<string | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
   useEffect(() => {
@@ -85,15 +82,6 @@ const AdminDashboard = () => {
         tutorFullName.includes(searchTerm)
       );
     });
-    // }) (
-    //   (session) =>
-    //     session.tutor?.firstName
-    //       .toLowerCase()
-    //       .includes(filterValue.toLowerCase()) ||
-    //     session.tutor?.lastName
-    //       .toLowerCase()
-    //       .includes(filterValue.toLowerCase())
-    // );
     setFilteredSessions(filtered);
     setCurrentPage(1);
   }, [filterValue, sessions]);
@@ -120,10 +108,8 @@ const AdminDashboard = () => {
       await rescheduleSession(sessionId, newDate);
       setSelectedSession(null);
       setIsDialogOpen(false);
-      // You might want to show a success message to the user here
     } catch (error) {
       console.error("Error requesting session reschedule:", error);
-      // You might want to show an error message to the user here
     }
   };
 
@@ -182,9 +168,8 @@ const AdminDashboard = () => {
                     })}
                   </TableCell>
                   <TableCell className="font-medium">
-                    Tutoring Session with Tutor {session.tutor?.firstName}{" "}
-                    {session.tutor?.lastName} and Student{" "}
-                    {session.student?.firstName} {session.student?.lastName}
+                    Tutoring Session with Tutor {session.tutor?.firstName} {session.tutor?.lastName}{" "}
+                    and Student {session.student?.firstName} {session.student?.lastName}
                   </TableCell>
                   <TableCell>
                     {session.tutor?.firstName} {session.tutor?.lastName}
@@ -195,9 +180,7 @@ const AdminDashboard = () => {
                   <TableCell>
                     {session?.meeting?.meetingId ? (
                       <button
-                        onClick={() =>
-                          (window.location.href = `/meeting/${session?.meeting?.id}`)
-                        }
+                        onClick={() => (window.location.href = `/meeting/${session?.meeting?.id}`)}
                         className="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600"
                       >
                         View Link
@@ -225,8 +208,7 @@ const AdminDashboard = () => {
                         <DialogHeader>
                           <DialogTitle>
                             Reschedule Session with {session.tutor?.firstName}{" "}
-                            {session.tutor?.lastName} on{" "}
-                            {formatSessionDate(session.date)}
+                            {session.tutor?.lastName} on {formatSessionDate(session.date)}
                           </DialogTitle>
                         </DialogHeader>
                         <div className="py-4 space-y-6">
@@ -244,10 +226,7 @@ const AdminDashboard = () => {
                             onClick={() =>
                               selectedSession &&
                               selectedSessionDate &&
-                              handleReschedule(
-                                selectedSession?.id,
-                                selectedSessionDate,
-                              )
+                              handleReschedule(selectedSession?.id, selectedSessionDate)
                             }
                           >
                             Reschedule
@@ -265,10 +244,7 @@ const AdminDashboard = () => {
             <span>{filteredSessions.length} row(s) total.</span>
             <div className="flex items-center space-x-2">
               <span>Rows per page</span>
-              <Select
-                value={rowsPerPage.toString()}
-                onValueChange={handleRowsPerPageChange}
-              >
+              <Select value={rowsPerPage.toString()} onValueChange={handleRowsPerPageChange}>
                 <SelectTrigger className="w-[70px]">
                   <SelectValue placeholder={rowsPerPage.toString()} />
                 </SelectTrigger>

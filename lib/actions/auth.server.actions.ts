@@ -9,8 +9,10 @@ import { admin } from "googleapis/build/src/apis/admin";
 import { profile } from "console";
 import { tableToInterfaceProfiles } from "../type-utils";
 import { createPassword } from "../utils";
-import { cachedGetUser } from "./user.server.actions";
-import { cachedGetProfile } from "./cache";
+import { cachedGetUser, getProfileRole } from "./user.server.actions";
+import { isCronRequestAuthorized } from "@/lib/security/cron";
+import { logError } from "@/lib/posthog";
+import type { Database } from "@/types/database.types";
 
 interface UserMetadata {
   email: string;
@@ -34,6 +36,52 @@ interface UserMetadata {
   languages_spoken: string[];
 }
 
+const ensurePairingQueueForNewProfile = async (
+  supabase: Awaited<ReturnType<typeof createAdminClient>>,
+  profile: { id: string; role: string | null },
+) => {
+  const normalizedRole = profile.role?.toLowerCase();
+  if (normalizedRole !== "student" && normalizedRole !== "tutor") return;
+
+  const { data: existing, error: existingError } = await supabase
+    .from(Table.PairingRequests)
+    .select("id, in_queue, priority")
+    .eq("user_id", profile.id)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (existingError) throw existingError;
+
+  if (existing?.id) {
+    if (existing.in_queue === false) {
+      const { error: updateError } = await supabase
+        .from(Table.PairingRequests)
+        .update({
+          in_queue: true,
+          status: "pending",
+          type: normalizedRole,
+          priority: existing.priority ?? 1,
+        })
+        .eq("id", existing.id);
+      if (updateError) throw updateError;
+    }
+    return;
+  }
+
+  const { error: insertError } = await supabase.from(Table.PairingRequests).insert([
+    {
+      user_id: profile.id,
+      type: normalizedRole,
+      status: "pending",
+      priority: 1,
+      in_queue: true,
+      notes: "Auto-enqueued on account creation",
+    },
+  ]);
+  if (insertError) throw insertError;
+};
+
 export const isAuthorized = async (request: NextRequest) => {
   const authHeader = request.headers.get("authorization");
   return authHeader === `Bearer ${process.env.BEARER_TOKEN}`;
@@ -42,9 +90,8 @@ export const isAuthorized = async (request: NextRequest) => {
 export const verifyAdmin = async () => {
   const user = await cachedGetUser();
   if (!user) throw new Error("Unauthenticated access");
-  const profile = await cachedGetProfile(user.id);
-  if (!profile || profile.role !== "Admin")
-    throw new Error("Unauthorized Access");
+  const role = await getProfileRole(user.id);
+  if (role !== "Admin") throw new Error("Unauthorized Access");
 };
 
 /**
@@ -52,8 +99,7 @@ export const verifyAdmin = async () => {
  */
 
 export const verifyCron = async (request: NextRequest) => {
-  const authHeader = request.headers.get("authorization");
-  if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+  if (!isCronRequestAuthorized(request)) {
     throw new Error("Unauthorized cron access");
   }
 };
@@ -69,13 +115,15 @@ export const getUser = async () => {
 const inviteUser = async (newProfileData: CreatedProfileData) => {
   const supabase = await createAdminClient();
 
-  const { data: authData, error: authError } =
-    await supabase.auth.admin.inviteUserByEmail(newProfileData.email, {
+  const { data: authData, error: authError } = await supabase.auth.admin.inviteUserByEmail(
+    newProfileData.email,
+    {
       data: {
         first_name: newProfileData.firstName,
         last_name: newProfileData.lastName,
       },
-    });
+    },
+  );
 
   // await supabase.auth.admin.createUser({
   //   email: newProfileData.email,
@@ -98,6 +146,7 @@ const inviteUser = async (newProfileData: CreatedProfileData) => {
  */
 
 export const createUser = async (newProfileData: CreatedProfileData) => {
+  await verifyAdmin();
   const supabase = await createAdminClient();
   try {
     const { data: prevProfile } = await supabase
@@ -119,7 +168,8 @@ export const createUser = async (newProfileData: CreatedProfileData) => {
         const { data } = await supabase.rpc("get_user_by_email", {
           email: newProfileData.email,
         });
-        if (data) await supabase.auth.admin.deleteUser(data.id);
+        const userRecord = data as unknown as { id: string } | null;
+        if (userRecord) await supabase.auth.admin.deleteUser(userRecord.id);
         throw authError;
       }
       userId = newUserId;
@@ -149,7 +199,7 @@ export const createUser = async (newProfileData: CreatedProfileData) => {
 
     const { data: createdProfile, error: profileError } = await supabase
       .from("Profiles")
-      .insert(userMetadata)
+      .insert(userMetadata as unknown as Database["public"]["Tables"]["Profiles"]["Insert"])
       .select()
       .single();
 
@@ -159,16 +209,28 @@ export const createUser = async (newProfileData: CreatedProfileData) => {
      */
     if (!prevProfile && profileError) {
       console.error("Unable to create profile", profileError);
+      await logError(
+        profileError,
+        { action: "createUser", email: newProfileData.email },
+        "auth_error",
+      );
       await supabase.auth.admin.deleteUser(userId);
       throw profileError;
     }
 
-    const createdProfileData: Profile =
-      tableToInterfaceProfiles(createdProfile);
+    const createdProfileData: Profile = tableToInterfaceProfiles(createdProfile);
+
+    if (createdProfile?.id) {
+      await ensurePairingQueueForNewProfile(supabase, {
+        id: createdProfile.id,
+        role: createdProfile.role ?? null,
+      });
+    }
 
     return createdProfileData;
   } catch (error) {
     console.error("Error creating user:", error);
+    await logError(error, { action: "createUser", email: newProfileData.email }, "auth_error");
     throw error;
   }
 };
@@ -180,9 +242,7 @@ const replaceLastActiveProfile = async (
 ) => {
   const supabase = await createClient();
   try {
-    const availableProfile = userProfileIds.find(
-      (profile) => profile.id != lastActiveProfileId,
-    );
+    const availableProfile = userProfileIds.find((profile) => profile.id != lastActiveProfileId);
     if (availableProfile === undefined)
       throw new Error(
         "Called replaceLastActiveProfile with only one or zero profileIds attached to userId",
@@ -195,11 +255,17 @@ const replaceLastActiveProfile = async (
       .throwOnError();
   } catch (error) {
     console.error("Unable to replace last active profile", error);
+    await logError(
+      error,
+      { action: "replaceLastActiveProfile", userId, lastActiveProfileId },
+      "auth_error",
+    );
     throw error;
   }
 };
 
 export const deleteUser = async (profileId: string) => {
+  await verifyAdmin();
   const adminSupabase = await createAdminClient();
 
   try {
@@ -210,12 +276,13 @@ export const deleteUser = async (profileId: string) => {
       .single()
       .throwOnError();
 
+    if (!profile.user_id) {
+      throw new Error(`Profile ${profileId} has no associated user_id`);
+    }
+    const userId = profile.user_id;
+
     const [res1, res2] = await Promise.all([
-      adminSupabase
-        .from(Table.Profiles)
-        .select("id, user_id")
-        .eq("user_id", profile.user_id)
-        .throwOnError(),
+      adminSupabase.from(Table.Profiles).select("id, user_id").eq("user_id", userId).throwOnError(),
       adminSupabase
         .from("user_settings")
         .select(
@@ -225,7 +292,7 @@ export const deleteUser = async (profileId: string) => {
         `,
         )
         .eq("last_active_profile_id", profileId)
-        .eq("user_id", profile.user_id)
+        .eq("user_id", userId)
         .maybeSingle()
         .throwOnError(),
     ]);
@@ -234,15 +301,14 @@ export const deleteUser = async (profileId: string) => {
     const userSettings = res2.data;
 
     if (relatedProfiles.length == 1) {
-      const { error: authError } = await adminSupabase.auth.admin.deleteUser(
-        relatedProfiles[0].user_id,
-      );
+      const relatedUserId = relatedProfiles[0].user_id;
+      if (!relatedUserId) {
+        throw new Error(`Related profile ${relatedProfiles[0].id} has no associated user_id`);
+      }
+      const { error: authError } = await adminSupabase.auth.admin.deleteUser(relatedUserId);
 
       if (authError) throw authError;
-    } else if (
-      userSettings &&
-      userSettings.last_active_profile_id == profileId
-    ) {
+    } else if (userSettings && userSettings.last_active_profile_id == profileId) {
       replaceLastActiveProfile(
         userSettings.user_id,
         userSettings.last_active_profile_id,
@@ -250,18 +316,16 @@ export const deleteUser = async (profileId: string) => {
       );
     }
 
-    await adminSupabase
-      .from(Table.Profiles)
-      .delete()
-      .eq("id", profileId)
-      .throwOnError();
+    await adminSupabase.from(Table.Profiles).delete().eq("id", profileId).throwOnError();
   } catch (error: any) {
     console.error("Failed to delete user", error);
+    await logError(error, { action: "deleteUser", profileId }, "auth_error");
     throw error;
   }
 };
 
 export const createUserWithTempPassword = async (tutor: Partial<Profile>) => {
+  await verifyAdmin();
   try {
     const tempPassword = await createPassword();
     const supabase = await createClient();
@@ -273,5 +337,10 @@ export const createUserWithTempPassword = async (tutor: Partial<Profile>) => {
     return tutor as Profile;
   } catch (error) {
     console.error("Unable to create user", error);
+    await logError(
+      error,
+      { action: "createUserWithTempPassword", email: tutor.email },
+      "auth_error",
+    );
   }
 };

@@ -1,9 +1,6 @@
 import React from "react";
 import { useState } from "react";
-import {
-  formatSessionDate,
-  formatSessionDuration,
-} from "@/lib/utils";
+import { formatSessionDate, formatSessionDuration } from "@/lib/utils";
 import { Session, Meeting, Profile } from "@/types";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -32,11 +29,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import {
-  HoverCard,
-  HoverCardContent,
-  HoverCardTrigger,
-} from "@/components/ui/hover-card";
+import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
 import {
   AlertDialog,
   AlertDialogHeader,
@@ -77,10 +70,7 @@ interface DeletePairingFormProps {
 }
 
 const DeletePairingForm = ({ tutor, student, onRemove }: DeletePairingFormProps) => {
-  const handleDeletePairing = async (
-    tutorId: string | null,
-    studentId: string
-  ) => {
+  const handleDeletePairing = async (tutorId: string | null, studentId: string) => {
     try {
       if (!tutor) throw new Error("No tutor found");
 
@@ -94,7 +84,7 @@ const DeletePairingForm = ({ tutor, student, onRemove }: DeletePairingFormProps)
 
   return (
     <AlertDialog>
-      <AlertDialogTrigger>
+      <AlertDialogTrigger asChild>
         <Button variant="ghost" size="icon" aria-label="Remove student pairing">
           <Trash className="h-4 w-4" color="#ef4444" />
         </Button>
@@ -103,7 +93,8 @@ const DeletePairingForm = ({ tutor, student, onRemove }: DeletePairingFormProps)
         <AlertDialogHeader>
           <AlertDialogTitle>Remove Student</AlertDialogTitle>
           <AlertDialogDescription>
-            Removing this student will delete the pairing and automatically remove any related enrollments and future sessions. You do not need to delete the enrollments separately.
+            Removing this student will delete the pairing and automatically remove any related
+            enrollments and future sessions. You do not need to delete the enrollments separately.
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>

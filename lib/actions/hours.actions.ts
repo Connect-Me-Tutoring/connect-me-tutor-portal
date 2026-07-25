@@ -1,12 +1,4 @@
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
-import {
-  Profile,
-  Session,
-  Notification,
-  Event,
-  Enrollment,
-  Meeting,
-} from "@/types";
+import { Profile, Session, Notification, Event, Enrollment, Meeting } from "@/types";
 import {
   deleteScheduledEmailBeforeSessions,
   sendScheduledEmailsBeforeSessions,
@@ -30,16 +22,11 @@ import {
 import ResetPassword from "@/app/(auth)/set-password/page";
 import { getStudentSessions } from "./student.actions";
 import { date } from "zod";
-import { withCoalescedInvoke } from "next/dist/lib/coalesced-function";
 import toast from "react-hot-toast";
 import { DatabaseIcon, UserRoundIcon } from "lucide-react";
-import { SYSTEM_ENTRYPOINTS } from "next/dist/shared/lib/constants";
-import { getAllSessions } from "./admin.actions";
 import { timeStrToHours } from "../utils";
-import { supabase } from "@/lib/supabase/client"
+import { supabase } from "@/lib/supabase/client";
 // import { getMeeting } from "./meeting.actions";
-
-
 
 export const getAllSessionHours = async (userId: string) => {
   try {
@@ -54,20 +41,17 @@ export const getAllSessionHours = async (userId: string) => {
     throw new Error(
       `Failed to get session hours for user ${userId}: ${
         error instanceof Error ? error.message : "Unknown error"
-      }`
+      }`,
     );
   }
 };
 
-export const getAllSessionHoursWithStudent = async (
-  tutorId: string,
-  studentId: string
-) => {
+export const getAllSessionHoursWithStudent = async (tutorId: string, studentId: string) => {
   try {
-    const { data, error } = await supabase.rpc(
-      "get_all_session_hours_with_student",
-      { input_tutor_id: tutorId, input_student_id: studentId }
-    );
+    const { data, error } = await supabase.rpc("get_all_session_hours_with_student", {
+      input_tutor_id: tutorId,
+      input_student_id: studentId,
+    });
 
     if (error) throw error;
 
@@ -77,16 +61,12 @@ export const getAllSessionHoursWithStudent = async (
     throw new Error(
       `Failed to get session hours for tutor ${tutorId} and student ${studentId}: ${
         error instanceof Error ? error.message : "Unknown error"
-      }`
+      }`,
     );
   }
 };
 
-export const getSessionHoursRange = async (
-  userId: string,
-  start: string,
-  end: string
-) => {
+export const getSessionHoursRange = async (userId: string, start: string, end: string) => {
   try {
     const { data, error } = await supabase.rpc("get_session_hours_range", {
       input_tutor_id: userId,
@@ -103,7 +83,7 @@ export const getSessionHoursRange = async (
     throw new Error(
       `Failed to get session hours range for user ${userId} between ${start} and ${end}: ${
         error instanceof Error ? error.message : "Unknown error"
-      }`
+      }`,
     );
   }
 };
@@ -112,18 +92,15 @@ export const getSessionHoursRangeWithStudent = async (
   tutorId: string,
   studentId: string,
   startTime: string,
-  endTime: string
+  endTime: string,
 ) => {
   try {
-    const { data, error } = await supabase.rpc(
-      "get_session_hours_range_with_student",
-      {
-        input_tutor_id: tutorId,
-        input_student_id: studentId,
-        input_start_date: startTime,
-        input_end_date: endTime,
-      }
-    );
+    const { data, error } = await supabase.rpc("get_session_hours_range_with_student", {
+      input_tutor_id: tutorId,
+      input_student_id: studentId,
+      input_start_date: startTime,
+      input_end_date: endTime,
+    });
 
     if (error) throw error;
     return data || 0;
@@ -132,7 +109,7 @@ export const getSessionHoursRangeWithStudent = async (
     throw new Error(
       `Failed to get session hours range for tutor ${tutorId} and student ${studentId} between ${startTime} and ${endTime}: ${
         error instanceof Error ? error.message : "Unknown error"
-      }`
+      }`,
     );
   }
 };
@@ -151,16 +128,12 @@ export const getAllEventHours = async (userId: string) => {
     throw new Error(
       `Failed to get event hours for user ${userId}: ${
         error instanceof Error ? error.message : "Unknown error"
-      }`
+      }`,
     );
   }
 };
 
-export const getEventHoursRange = async (
-  userId: string,
-  start: string,
-  end: string
-) => {
+export const getEventHoursRange = async (userId: string, start: string, end: string) => {
   try {
     const { data, error } = await supabase.rpc("get_event_hours_range", {
       input_user_id: userId,
@@ -176,7 +149,7 @@ export const getEventHoursRange = async (
     throw new Error(
       `Failed to get event hours range for user ${userId} between ${start} and ${end}: ${
         error instanceof Error ? error.message : "Unknown error"
-      }`
+      }`,
     );
   }
 };
@@ -191,43 +164,29 @@ export const getAllHours = async (userId: string) => {
     throw new Error(
       `Failed to get total hours for user ${userId}: ${
         error instanceof Error ? error.message : "Unknown error"
-      }`
+      }`,
     );
   }
 };
 
-export const getAllHoursRange = async (
-  userId: string,
-  startTime: string,
-  endTime: string
-) => {
+export const getAllHoursRange = async (userId: string, startTime: string, endTime: string) => {
   try {
-    const sessionHoursRange = await getSessionHoursRange(
-      userId,
-      startTime,
-      endTime
-    );
-    const eventHoursRange = await getEventHoursRange(
-      userId,
-      startTime,
-      endTime
-    );
+    const sessionHoursRange = await getSessionHoursRange(userId, startTime, endTime);
+    const eventHoursRange = await getEventHoursRange(userId, startTime, endTime);
     return sessionHoursRange + eventHoursRange;
   } catch (error) {
     console.error("Error getting all hours range:", error);
     throw new Error(
       `Failed to get total hours range for user ${userId} between ${startTime} and ${endTime}: ${
         error instanceof Error ? error.message : "Unknown error"
-      }`
+      }`,
     );
   }
 };
 
 export const getAllHoursBatch = async () => {
   try {
-    const { data: hoursJson, error: rpcError } = await supabase.rpc(
-      "get_all_hours_batch"
-    );
+    const { data: hoursJson, error: rpcError } = await supabase.rpc("get_all_hours_batch");
 
     if (rpcError) throw rpcError;
 
@@ -244,10 +203,9 @@ export const getHoursBatch = async (profiles: Profile[]) => {};
 export const getAllEventHoursBatchWithType = async (type: string) => {
   try {
     //set tutor_ids to null to fetch all
-    const { data: hoursJson, error } = await supabase.rpc(
-      "get_all_event_hours_batch_with_type",
-      { event_type: type }
-    );
+    const { data: hoursJson, error } = await supabase.rpc("get_all_event_hours_batch_with_type", {
+      event_type: type,
+    });
 
     if (error) throw error;
 
@@ -260,9 +218,7 @@ export const getAllEventHoursBatchWithType = async (type: string) => {
 
 export const getAllEventHoursBatch = async () => {
   try {
-    const { data: hoursJson, error } = await supabase.rpc(
-      "get_all_event_hours_batch"
-    );
+    const { data: hoursJson, error } = await supabase.rpc("get_all_event_hours_batch");
     if (error) throw error;
     return hoursJson;
   } catch (error) {
@@ -273,10 +229,10 @@ export const getAllEventHoursBatch = async () => {
 
 export const getSessionHoursRangeBatch = async (start: string, end: string) => {
   try {
-    const { data: hoursJson, error } = await supabase.rpc(
-      "get_session_hours_range_batch",
-      { start_date: start, end_date: end }
-    );
+    const { data: hoursJson, error } = await supabase.rpc("get_session_hours_range_batch", {
+      start_date: start,
+      end_date: end,
+    });
     if (error) throw error;
     return hoursJson;
   } catch (error) {
@@ -287,13 +243,10 @@ export const getSessionHoursRangeBatch = async (start: string, end: string) => {
 
 export const getEventHoursRangeBatch = async (start: string, end: string) => {
   try {
-    const { data: hoursJson, error } = await supabase.rpc(
-      "get_event_hours_range_batch",
-      {
-        start_date: start,
-        end_date: end,
-      }
-    );
+    const { data: hoursJson, error } = await supabase.rpc("get_event_hours_range_batch", {
+      start_date: start,
+      end_date: end,
+    });
 
     if (error) throw error;
     return hoursJson;
@@ -305,10 +258,10 @@ export const getEventHoursRangeBatch = async (start: string, end: string) => {
 
 export const getHoursRangeBatch = async (start: string, end: string) => {
   try {
-    const { data: hoursJson, error } = await supabase.rpc(
-      "get_hours_range_batch",
-      { start_date: start, end_date: end }
-    );
+    const { data: hoursJson, error } = await supabase.rpc("get_hours_range_batch", {
+      start_date: start,
+      end_date: end,
+    });
 
     if (error) throw error;
     return hoursJson;
@@ -320,9 +273,7 @@ export const getHoursRangeBatch = async (start: string, end: string) => {
 
 export const getAllSessionHoursBatch = async () => {
   try {
-    const { data: hoursJson, error } = await supabase.rpc(
-      "get_all_session_hours_batch"
-    );
+    const { data: hoursJson, error } = await supabase.rpc("get_all_session_hours_batch");
     if (error) throw error;
     return hoursJson;
   } catch (error) {
@@ -333,13 +284,10 @@ export const getAllSessionHoursBatch = async () => {
 
 export const getTotalSessionHoursRange = async (start: string, end: string) => {
   try {
-    const { data: hoursJson, error } = await supabase.rpc(
-      "get_total_session_hours_range",
-      {
-        start_date: start,
-        end_date: end,
-      }
-    );
+    const { data: hoursJson, error } = await supabase.rpc("get_total_session_hours_range", {
+      start_date: start,
+      end_date: end,
+    });
     if (error) throw error;
     return hoursJson;
   } catch (error) {
@@ -350,13 +298,10 @@ export const getTotalSessionHoursRange = async (start: string, end: string) => {
 
 export const getTotalEventHoursRange = async (start: string, end: string) => {
   try {
-    const { data: hoursJson, error } = await supabase.rpc(
-      "get_total_event_hours_range",
-      {
-        start_date: start,
-        end_date: end,
-      }
-    );
+    const { data: hoursJson, error } = await supabase.rpc("get_total_event_hours_range", {
+      start_date: start,
+      end_date: end,
+    });
     if (error) throw error;
     return hoursJson;
   } catch (error) {
@@ -367,13 +312,10 @@ export const getTotalEventHoursRange = async (start: string, end: string) => {
 
 export const getTotalHoursRange = async (start: string, end: string) => {
   try {
-    const { data: hoursJson, error } = await supabase.rpc(
-      "get_total_hours_range",
-      {
-        start_date: start,
-        end_date: end,
-      }
-    );
+    const { data: hoursJson, error } = await supabase.rpc("get_total_hours_range", {
+      start_date: start,
+      end_date: end,
+    });
     if (error) throw error;
     return hoursJson;
   } catch (error) {
@@ -418,12 +360,9 @@ export const getSessionHoursByStudent = async (tutorId: string) => {
 
 export const getAllEventDetailsForTutor = async (tutorId: string) => {
   try {
-    const { data, error } = await supabase.rpc(
-      "get_all_event_details_for_tutor",
-      {
-        p_tutor_id: tutorId,
-      }
-    );
+    const { data, error } = await supabase.rpc("get_all_event_details_for_tutor", {
+      p_tutor_id: tutorId,
+    });
     if (error) throw error;
     return data;
   } catch (error) {
@@ -432,34 +371,35 @@ export const getAllEventDetailsForTutor = async (tutorId: string) => {
   }
 };
 
-
-
 /**
  * TODO:
- * 
- * Create a function below to calculate the number of hours 
+ *
+ * Create a function below to calculate the number of hours
  * for a tutor from a certain timeframe
- * 
+ *
  * @param profileId profile id of the tutor
  * @param start start of timeframe - assume in ISOstring format
  * @param end end of timeframe - assume in ISOstring format
  */
 
-export const getHoursTutored = async (profileId: string, start: ISOStringFormat, end: ISOStringFormat) => {
+export const getHoursTutored = async (
+  profileId: string,
+  start: ISOStringFormat,
+  end: ISOStringFormat,
+) => {
   try {
     const sessionHours = await getSessionHoursRange(profileId, start, end);
     const eventHours = await getEventHoursRange(profileId, start, end);
     return sessionHours + eventHours;
-
   } catch (error) {
     console.error("Error getting hours tutored:", error);
     throw new Error(
       `Failed to get hours tutored for user ${profileId} between ${start} and ${end}: ${
         error instanceof Error ? error.message : "Unknown error"
-      }`
+      }`,
     );
   }
-}
+};
 
 /**
  * 

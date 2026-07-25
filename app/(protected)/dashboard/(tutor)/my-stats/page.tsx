@@ -1,4 +1,4 @@
-import Stats from "@/components/tutor/my-stats";
+import Stats, { EnrollmentDetails, EventDetails } from "@/components/tutor/my-stats";
 import { getAllEventDetailsForTutor } from "@/lib/actions/hours.server.actions";
 import { getSessionHoursByStudent } from "@/lib/actions/hours.server.actions";
 import { cachedGetProfile } from "@/lib/actions/cache";
@@ -12,14 +12,16 @@ async function MyStatsData() {
   if (!user) redirect("/");
   const profile = await cachedGetProfile(user.id);
   if (!profile) throw new Error("Unable to find profile");
-  const enrollmentDetails = getSessionHoursByStudent(profile.id);
-  const eventDetails = getAllEventDetailsForTutor(profile.id);
+  const [enrollmentDetails, eventDetails] = await Promise.all([
+    getSessionHoursByStudent(profile.id),
+    getAllEventDetailsForTutor(profile.id),
+  ]);
 
   return (
     <Stats
       key={profile.id}
-      enrollmentDetailsPromise={enrollmentDetails}
-      eventDetailsPromise={eventDetails}
+      enrollmentDetails={enrollmentDetails as unknown as EnrollmentDetails[]}
+      eventDetails={eventDetails as unknown as { [key: string]: EventDetails[] }}
     />
   );
 }

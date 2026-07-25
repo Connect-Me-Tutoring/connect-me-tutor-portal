@@ -5,7 +5,8 @@ const Availability = ({
   availability,
   card,
 }: {
-  availability: { day: string; startTime: string; endTime: string }[], card: boolean;
+  availability: { day: string; startTime: string; endTime: string }[];
+  card: boolean;
 }) => (
   <div>
     <ul className={card ? "text-sm text-muted-foreground" : "text-xs"}>

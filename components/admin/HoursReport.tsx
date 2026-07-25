@@ -1,11 +1,5 @@
 import React from "react";
-import {
-  Document as PDFDocument,
-  Page,
-  Text,
-  View,
-  StyleSheet,
-} from "@react-pdf/renderer";
+import { Document as PDFDocument, Page, Text, View, StyleSheet } from "@react-pdf/renderer";
 import { eachWeekOfInterval, endOfMonth, startOfMonth, format } from "date-fns";
 
 interface Profile {
@@ -270,10 +264,7 @@ const styles = StyleSheet.create({
 });
 
 // Chunk tutors into groups that fit on a page
-const chunkTutors = (
-  tutors: Profile[],
-  maxPerPage: number = 15
-): Profile[][] => {
+const chunkTutors = (tutors: Profile[], maxPerPage: number = 15): Profile[][] => {
   const chunks: Profile[][] = [];
   for (let i = 0; i < tutors.length; i += maxPerPage) {
     chunks.push(tutors.slice(i, i + maxPerPage));
@@ -362,10 +353,7 @@ const TableHeader: React.FC<{
       ) : (
         <>
           {weeksInMonth.map((week) => (
-            <View
-              key={week.toISOString()}
-              style={[styles.tableColHeader, { width: colWidth }]}
-            >
+            <View key={week.toISOString()} style={[styles.tableColHeader, { width: colWidth }]}>
               <Text style={styles.tableCellHeader}>
                 {formatDateRange(week)} -{"\n"}
                 {formatDateRange(addDays(week, 6))}
@@ -425,13 +413,8 @@ const TotalsRow: React.FC<{
       {weeksInMonth.map((week) => {
         const hours = totalSessionHours[week.getTime().toString()] || 0;
         return (
-          <View
-            key={week.toString()}
-            style={[styles.tableCol, { width: colWidth }]}
-          >
-            <Text style={styles.totalsCell}>
-              {hours ? hours.toFixed(1) : "-"}
-            </Text>
+          <View key={week.toString()} style={[styles.tableCol, { width: colWidth }]}>
+            <Text style={styles.totalsCell}>{hours ? hours.toFixed(1) : "-"}</Text>
           </View>
         );
       })}
@@ -445,16 +428,12 @@ const TotalsRow: React.FC<{
       </View>
       <View style={[styles.tableCol, { width: colWidth }]}>
         <Text style={styles.totalsCell}>
-          {totalEventHours["Tutor Referral"]
-            ? totalEventHours["Tutor Referral"].toFixed(1)
-            : "-"}
+          {totalEventHours["Tutor Referral"] ? totalEventHours["Tutor Referral"].toFixed(1) : "-"}
         </Text>
       </View>
       <View style={[styles.tableCol, { width: colWidth }]}>
         <Text style={styles.totalsCell}>
-          {totalEventHours["Sub Hotline"]
-            ? totalEventHours["Sub Hotline"].toFixed(1)
-            : "-"}
+          {totalEventHours["Sub Hotline"] ? totalEventHours["Sub Hotline"].toFixed(1) : "-"}
         </Text>
       </View>
       <View style={[styles.tableCol, { width: colWidth }]}>
@@ -510,9 +489,7 @@ const TutorRow: React.FC<{
         <>
           <View style={[styles.tableCol, { width: colWidth }]}>
             <Text style={styles.tableCell}>
-              {allTimeSessionHours[tutor.id]
-                ? allTimeSessionHours[tutor.id].toFixed(1)
-                : "-"}
+              {allTimeSessionHours[tutor.id] ? allTimeSessionHours[tutor.id].toFixed(1) : "-"}
             </Text>
           </View>
           <View style={[styles.tableCol, { width: colWidth }]}>
@@ -544,12 +521,7 @@ const TutorRow: React.FC<{
             </Text>
           </View>
           <View style={[styles.tableCol, { width: colWidth }]}>
-            <Text
-              style={[
-                styles.tableCell,
-                { fontWeight: "bold", color: "#1e40af" },
-              ]}
-            >
+            <Text style={[styles.tableCell, { fontWeight: "bold", color: "#1e40af" }]}>
               {allTimeHours[tutor.id] ? allTimeHours[tutor.id].toFixed(1) : "-"}
             </Text>
           </View>
@@ -557,16 +529,10 @@ const TutorRow: React.FC<{
       ) : (
         <>
           {weeksInMonth.map((week) => {
-            const hours =
-              weeklySessionHours[tutor.id]?.[week.getTime().toString()] || 0;
+            const hours = weeklySessionHours[tutor.id]?.[week.getTime().toString()] || 0;
             return (
-              <View
-                key={week.toString()}
-                style={[styles.tableCol, { width: colWidth }]}
-              >
-                <Text style={styles.tableCell}>
-                  {hours ? hours.toFixed(1) : "-"}
-                </Text>
+              <View key={week.toString()} style={[styles.tableCol, { width: colWidth }]}>
+                <Text style={styles.tableCell}>{hours ? hours.toFixed(1) : "-"}</Text>
               </View>
             );
           })}
@@ -600,12 +566,7 @@ const TutorRow: React.FC<{
             </Text>
           </View>
           <View style={[styles.tableCol, { width: colWidth }]}>
-            <Text
-              style={[
-                styles.tableCell,
-                { fontWeight: "bold", color: "#1e40af" },
-              ]}
-            >
+            <Text style={[styles.tableCell, { fontWeight: "bold", color: "#1e40af" }]}>
               {monthlyHours[tutor.id] ? monthlyHours[tutor.id].toFixed(1) : "-"}
             </Text>
           </View>
@@ -660,40 +621,29 @@ const HoursPDFDocument: React.FC<{ data: HoursPDFData }> = ({ data }) => {
     const activeTutors = filteredTutors.filter((tutor) => {
       const hasSessionHours = allTimeView
         ? (allTimeSessionHours[tutor.id] || 0) > 0
-        : Object.values(weeklySessionHours[tutor.id] || {}).some(
-            (hours) => hours > 0
-          );
+        : Object.values(weeklySessionHours[tutor.id] || {}).some((hours) => hours > 0);
       const hasEventHours = Object.values(eventHoursData[tutor.id] || {}).some(
-        (hours) => hours > 0
+        (hours) => hours > 0,
       );
       return hasSessionHours || hasEventHours;
     });
 
     const totalTutorHours = filteredTutors.reduce((sum, tutor) => {
-      return (
-        sum +
-        (allTimeView
-          ? allTimeHours[tutor.id] || 0
-          : monthlyHours[tutor.id] || 0)
-      );
+      return sum + (allTimeView ? allTimeHours[tutor.id] || 0 : monthlyHours[tutor.id] || 0);
     }, 0);
 
     const averageHoursPerTutor =
       activeTutors.length > 0 ? totalTutorHours / activeTutors.length : 0;
 
     const topPerformer = filteredTutors.reduce((top, tutor) => {
-      const tutorHours = allTimeView
-        ? allTimeHours[tutor.id] || 0
-        : monthlyHours[tutor.id] || 0;
-      const topHours = allTimeView
-        ? allTimeHours[top?.id] || 0
-        : monthlyHours[top?.id] || 0;
+      const tutorHours = allTimeView ? allTimeHours[tutor.id] || 0 : monthlyHours[tutor.id] || 0;
+      const topHours = allTimeView ? allTimeHours[top?.id] || 0 : monthlyHours[top?.id] || 0;
       return tutorHours > topHours ? tutor : top;
     }, filteredTutors[0]);
 
     const totalEventHoursSum = Object.values(totalEventHours).reduce(
       (sum, hours) => sum + (hours || 0),
-      0
+      0,
     );
 
     return {
@@ -714,21 +664,14 @@ const HoursPDFDocument: React.FC<{ data: HoursPDFData }> = ({ data }) => {
   return (
     <PDFDocument>
       {tutorChunks.map((tutorChunk, pageIndex) => (
-        <Page
-          key={pageIndex}
-          size="A4"
-          orientation="landscape"
-          style={styles.page}
-        >
+        <Page key={pageIndex} size="A4" orientation="landscape" style={styles.page}>
           {/* Header Section - only on first page */}
           {pageIndex === 0 && (
             <View style={styles.header}>
               <View style={styles.headerContent}>
                 <Text style={styles.companyName}>Connect Me Tutoring</Text>
                 <Text style={styles.reportTitle}>
-                  {allTimeView
-                    ? "All-Time Hours Report"
-                    : "Monthly Hours Report"}
+                  {allTimeView ? "All-Time Hours Report" : "Monthly Hours Report"}
                 </Text>
                 <Text style={styles.reportSubtitle}>
                   {allTimeView
@@ -796,23 +739,17 @@ const HoursPDFDocument: React.FC<{ data: HoursPDFData }> = ({ data }) => {
                 </View>
 
                 <View style={styles.statsCard}>
-                  <Text style={styles.statsValue}>
-                    {stats.totalHours.toFixed(1)}
-                  </Text>
+                  <Text style={styles.statsValue}>{stats.totalHours.toFixed(1)}</Text>
                   <Text style={styles.statsLabel}>Total Hours</Text>
                 </View>
 
                 <View style={styles.statsCard}>
-                  <Text style={styles.statsValue}>
-                    {stats.averageHours.toFixed(1)}
-                  </Text>
+                  <Text style={styles.statsValue}>{stats.averageHours.toFixed(1)}</Text>
                   <Text style={styles.statsLabel}>Avg Hours/Tutor</Text>
                 </View>
 
                 <View style={styles.statsCard}>
-                  <Text style={styles.statsValue}>
-                    {stats.totalEventHours.toFixed(1)}
-                  </Text>
+                  <Text style={styles.statsValue}>{stats.totalEventHours.toFixed(1)}</Text>
                   <Text style={styles.statsLabel}>Event Hours</Text>
                 </View>
               </View>
@@ -823,13 +760,11 @@ const HoursPDFDocument: React.FC<{ data: HoursPDFData }> = ({ data }) => {
                 <View style={styles.insightItem}>
                   <View style={styles.insightBullet} />
                   <Text style={styles.insightText}>
-                    Top performer: {stats.topPerformer?.firstName}{" "}
-                    {stats.topPerformer?.lastName} with{" "}
+                    Top performer: {stats.topPerformer?.firstName} {stats.topPerformer?.lastName}{" "}
+                    with{" "}
                     {allTimeView
                       ? (allTimeHours[stats.topPerformer?.id] || 0).toFixed(1)
-                      : (monthlyHours[stats.topPerformer?.id] || 0).toFixed(
-                          1
-                        )}{" "}
+                      : (monthlyHours[stats.topPerformer?.id] || 0).toFixed(1)}{" "}
                     hours
                   </Text>
                 </View>
@@ -837,10 +772,8 @@ const HoursPDFDocument: React.FC<{ data: HoursPDFData }> = ({ data }) => {
                 <View style={styles.insightItem}>
                   <View style={styles.insightBullet} />
                   <Text style={styles.insightText}>
-                    {Math.round(
-                      (stats.activeTutors / filteredTutors.length) * 100
-                    )}
-                    % of tutors are actively contributing hours
+                    {Math.round((stats.activeTutors / filteredTutors.length) * 100)}% of tutors are
+                    actively contributing hours
                   </Text>
                 </View>
 
@@ -848,10 +781,7 @@ const HoursPDFDocument: React.FC<{ data: HoursPDFData }> = ({ data }) => {
                   <View style={styles.insightBullet} />
                   <Text style={styles.insightText}>
                     Event activities account for{" "}
-                    {Math.round(
-                      (stats.totalEventHours / stats.totalHours) * 100
-                    )}
-                    % of total hours
+                    {Math.round((stats.totalEventHours / stats.totalHours) * 100)}% of total hours
                   </Text>
                 </View>
               </View>
@@ -860,12 +790,9 @@ const HoursPDFDocument: React.FC<{ data: HoursPDFData }> = ({ data }) => {
 
           {/* Footer - on every page */}
           <View style={styles.footer}>
+            <Text style={styles.footerText}>Connect Me Tutoring - Hours Report</Text>
             <Text style={styles.footerText}>
-              ConnectMe Tutoring - Hours Report
-            </Text>
-            <Text style={styles.footerText}>
-              Report Period:{" "}
-              {allTimeView ? "All Time" : format(selectedDate, "MMMM yyyy")}
+              Report Period: {allTimeView ? "All Time" : format(selectedDate, "MMMM yyyy")}
             </Text>
             <Text style={styles.footerText}>
               Page {pageIndex + 1} of {totalPages}

@@ -7,7 +7,8 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import toast, { Toaster, ValueFunction } from "react-hot-toast";
 import { useState, Suspense } from "react";
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
+import { createClient } from "@/lib/supabase/client";
+import { startNavigationProgress } from "@/components/ui/navigation-progress";
 import { X, ExternalLink } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -21,7 +22,6 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { setDefaultAutoSelectFamily } from "net";
 import { getProfileRole } from "@/lib/actions/user.actions";
 
 const formSchema = z.object({
@@ -36,7 +36,7 @@ const formSchema = z.object({
 export default function LoginForm() {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
-  const supabase = createClientComponentClient();
+  const supabase = createClient();
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -62,21 +62,14 @@ export default function LoginForm() {
       const adminEmails = process.env.NEXT_PUBLIC_ADMIN_EMAILS;
       const adminEmailsList = adminEmails ? adminEmails.split(",") : [];
 
-      if (
-        userRole == "Admin" &&
-        data.user.email &&
-        !adminEmailsList.includes(data.user.email)
-      ) {
+      if (userRole == "Admin" && data.user.email && !adminEmailsList.includes(data.user.email)) {
         await supabase.auth.signOut();
-        router.push(
-          "/auth/otp-login?autoSend=true&email=" +
-            encodeURIComponent(values.email)
-        );
+        router.push("/auth/otp-login?autoSend=true&email=" + encodeURIComponent(values.email));
       } else if (data.user) {
         toast.success("Logged in successfully");
-        // showForms();
-        router.push("/dashboard");
-        router.refresh();
+        startNavigationProgress();
+        window.location.assign("/dashboard");
+        return;
       } else {
         toast.error("Something went wrong. Please try again.");
       }
@@ -135,7 +128,7 @@ export default function LoginForm() {
           </div>
         </div>
       ),
-      { duration: 1000000, position: "bottom-right" }
+      { duration: 1000000, position: "bottom-right" },
     );
   }
 
@@ -145,10 +138,7 @@ export default function LoginForm() {
       <Suspense>
         {" "}
         <Form {...form} key="login-form">
-          <form
-            onSubmit={form.handleSubmit(onSubmit)}
-            className="w-full space-y-4 p-0 rounded-md"
-          >
+          <form onSubmit={form.handleSubmit(onSubmit)} className="w-full space-y-4 p-0 rounded-md">
             <FormField
               control={form.control}
               name="email"
@@ -178,22 +168,14 @@ export default function LoginForm() {
                   </div>
 
                   <FormControl>
-                    <Input
-                      type="password"
-                      placeholder="Enter your password"
-                      {...field}
-                    />
+                    <Input type="password" placeholder="Enter your password" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
 
-            <Button
-              disabled={isLoading}
-              type="submit"
-              className="w-full bg-blue-400"
-            >
+            <Button disabled={isLoading} type="submit" className="w-full bg-blue-400">
               {isLoading ? "Logging in..." : "Login"}
             </Button>
             <div className="after:border-border relative text-center text-sm after:absolute after:inset-0 after:top-1/2 after:z-0 after:flex after:items-center after:border-t">

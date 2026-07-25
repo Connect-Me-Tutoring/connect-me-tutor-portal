@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -19,11 +19,12 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Trash2, Users, GraduationCap } from "lucide-react";
+import { Trash2, Users, GraduationCap, Waypoints } from "lucide-react";
 import { PairingRequest } from "@/types/pairing";
 import {
   getAllPairingRequests,
   removePairingRequest,
+  updatePairingRequest,
 } from "@/lib/actions/pairing.actions";
 import { to12Hour } from "@/lib/utils";
 import toast from "react-hot-toast";
@@ -39,12 +40,23 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-
-type QueViews = "tutors" | "students";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { buildQueuePriorityOverlapInsights } from "@/lib/pairing/queueOverlap";
+import { PairingCommitteeGraphDialog } from "../pairing-committee-graph";
 
 export default function PriorityQueue() {
   const [pairingRequests, setPairingRequests] = useState<PairingRequest[]>([]);
-  const [currentView, setCurrentView] = useState<QueViews>("tutors");
+  const [savedPriorities, setSavedPriorities] = useState<Record<string, number>>({});
+  const [isSavingResults, setIsSavingResults] = useState(false);
+  const [reviewOpen, setReviewOpen] = useState(false);
+  const [graphOpen, setGraphOpen] = useState(false);
 
   const removeFromQueue = async (id: string) => {
     // console.log("Current Data", currentData);
@@ -55,34 +67,38 @@ export default function PriorityQueue() {
     setPairingRequests((pairingRequests) =>
       pairingRequests.filter((request) => request.request_id !== id),
     );
+    setSavedPriorities((priorities) => {
+      const next = { ...priorities };
+      delete next[id];
+      return next;
+    });
   };
 
-  const requestsCache = useRef<Partial<Record<QueViews, PairingRequest[]>>>({});
-
   useEffect(() => {
-    if (currentView in requestsCache.current) {
-      setPairingRequests(requestsCache.current[currentView]!);
-      return;
-    }
     (async () => {
-      const { data, error } = await getAllPairingRequests(
-        currentView === "students" ? "student" : "tutor",
-      );
-      if (data) {
-        requestsCache.current[currentView] = data;
-        setPairingRequests(data);
-        return;
-      }
+      const [tutorRes, studentRes] = await Promise.all([
+        getAllPairingRequests("tutor"),
+        getAllPairingRequests("student"),
+      ]);
+      const error = tutorRes.error ?? studentRes.error;
       if (error) {
         toast.error("Failed to load pairing que");
         console.error("Failed to load pairing queue", error);
+        return;
       }
+      const tutorData = tutorRes.data ?? [];
+      const studentData = studentRes.data ?? [];
+      const merged = [...tutorData, ...studentData].sort((a, b) => a.priority - b.priority);
+      setPairingRequests(merged);
+      setSavedPriorities(
+        Object.fromEntries(merged.map((request) => [request.request_id, request.priority])),
+      );
     })();
-  }, [currentView]);
+  }, []);
 
   const updatePriority = (id: string, newPriority: number) => {
-    setPairingRequests(
-      pairingRequests.map((request) =>
+    setPairingRequests((current) =>
+      current.map((request) =>
         request.request_id === id
           ? {
               ...request,
@@ -94,14 +110,69 @@ export default function PriorityQueue() {
     );
   };
 
-  const sortedRequests = [...pairingRequests].sort(
-    (a, b) => a.priority - b.priority,
-  );
-  const tutors = sortedRequests.filter((r) => r.type === "tutor");
-  const students = sortedRequests.filter((r) => r.type === "student");
+  const pendingPriorityUpdates = pairingRequests.filter((request) => {
+    const savedPriority = savedPriorities[request.request_id];
+    return savedPriority === undefined || savedPriority !== request.priority;
+  });
 
-  const currentData = currentView === "tutors" ? tutors : students;
-  const currentCount = currentData.length;
+  const overlapInsights = useMemo(
+    () =>
+      buildQueuePriorityOverlapInsights(pendingPriorityUpdates, pairingRequests, savedPriorities),
+    [pendingPriorityUpdates, pairingRequests, savedPriorities],
+  );
+
+  const runPersistPrioritySave = async () => {
+    if (pendingPriorityUpdates.length === 0) {
+      toast.success("No pairing option changes to save");
+      return;
+    }
+
+    setIsSavingResults(true);
+    const savePromise = Promise.all(
+      pendingPriorityUpdates.map((request) =>
+        updatePairingRequest(request.request_id, {
+          priority: request.priority,
+        }),
+      ),
+    );
+
+    toast.promise(savePromise, {
+      loading: "Saving pairing options...",
+      success: "Pairing options saved",
+      error: "Failed to save pairing options",
+    });
+
+    try {
+      await savePromise;
+      setSavedPriorities((current) => {
+        const next = { ...current };
+        for (const request of pendingPriorityUpdates) {
+          next[request.request_id] = request.priority;
+        }
+        return next;
+      });
+      setReviewOpen(false);
+    } finally {
+      setIsSavingResults(false);
+    }
+  };
+
+  const openSaveReview = () => {
+    if (pendingPriorityUpdates.length === 0) {
+      toast.success("No pairing option changes to save");
+      return;
+    }
+    setReviewOpen(true);
+  };
+
+  const handleConfirmSaveFromReview = () => {
+    void runPersistPrioritySave();
+  };
+
+  const sortedRequests = [...pairingRequests].sort((a, b) => a.priority - b.priority);
+  const tutorCount = sortedRequests.filter((r) => r.type === "tutor").length;
+  const studentCount = sortedRequests.filter((r) => r.type === "student").length;
+  const currentCount = sortedRequests.length;
 
   const getPriorityColor = (level: number) => {
     switch (level) {
@@ -134,11 +205,9 @@ export default function PriorityQueue() {
       <div className="min-h-screen">
         <div className="max-w-7xl mx-auto">
           <div className="mb-8">
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">
-              Pairing Queue Management
-            </h1>
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">Pairing Queue Management</h1>
             <p className="text-gray-600">
-              Manage tutors and students in the priority queue system
+              Active pairing requests (tutors and students), sorted by priority
             </p>
           </div>
 
@@ -146,48 +215,157 @@ export default function PriorityQueue() {
             <TestingPairingControls />
           </div>
 
-          <div className="mb-6">
-            <div className="flex gap-2 p-1 bg-white rounded-lg border shadow-sm w-fit">
-              <Button
-                variant={currentView === "tutors" ? "default" : "ghost"}
-                size="sm"
-                onClick={() => setCurrentView("tutors")}
-                className="flex items-center gap-2"
-              >
-                <GraduationCap className="h-4 w-4" />
-                Tutors ({tutors.length})
-              </Button>
-              <Button
-                variant={currentView === "students" ? "default" : "ghost"}
-                size="sm"
-                onClick={() => setCurrentView("students")}
-                className="flex items-center gap-2"
-              >
-                <Users className="h-4 w-4" />
-                Students ({students.length})
-              </Button>
-            </div>
-          </div>
-
           <div className="bg-white rounded-lg border shadow-sm">
             <div className="p-6 border-b">
-              <div className="flex items-center gap-2">
-                {currentView === "tutors" ? (
-                  <GraduationCap className="h-6 w-6 text-blue-600" />
-                ) : (
-                  <Users className="h-6 w-6 text-green-600" />
-                )}
-                <h2 className="text-2xl font-semibold text-gray-900 capitalize">
-                  {currentView} ({currentCount})
-                </h2>
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div className="flex flex-wrap items-center gap-3">
+                  <Users className="h-6 w-6 text-gray-700" />
+                  <h2 className="text-2xl font-semibold text-gray-900">Queue ({currentCount})</h2>
+                  <span className="text-sm text-gray-500">
+                    {tutorCount} tutor{tutorCount === 1 ? "" : "s"} · {studentCount} student
+                    {studentCount === 1 ? "" : "s"}
+                  </span>
+                </div>
+                <div className="flex flex-wrap items-center gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setGraphOpen(true)}
+                    disabled={currentCount === 0}
+                    className="gap-2"
+                  >
+                    <Waypoints className="h-4 w-4" />
+                    View graph
+                  </Button>
+                  <Button
+                    onClick={openSaveReview}
+                    disabled={pendingPriorityUpdates.length === 0 || isSavingResults}
+                  >
+                    {isSavingResults
+                      ? "Saving..."
+                      : `Save Results${pendingPriorityUpdates.length > 0 ? ` (${pendingPriorityUpdates.length})` : ""}`}
+                  </Button>
+                </div>
               </div>
             </div>
+
+            <PairingCommitteeGraphDialog
+              open={graphOpen}
+              onOpenChange={setGraphOpen}
+              mode="queue"
+              requests={pairingRequests}
+            />
+
+            <Dialog open={reviewOpen} onOpenChange={setReviewOpen}>
+              <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+                <DialogHeader>
+                  <DialogTitle>Review priority changes</DialogTitle>
+                  <DialogDescription>
+                    Confirm priority updates and review how each profile overlaps (subjects and
+                    time) with top opposite-role candidates in the current queue.
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="space-y-6 py-2">
+                  {overlapInsights.map((row) => (
+                    <div
+                      key={row.request_id}
+                      className="rounded-lg border bg-muted/30 p-4 space-y-3"
+                    >
+                      <div className="flex flex-wrap items-baseline justify-between gap-2">
+                        <p className="font-semibold text-gray-900">
+                          {row.profileName}{" "}
+                          <Badge variant="outline" className="capitalize ml-1">
+                            {row.role}
+                          </Badge>
+                        </p>
+                        <p className="text-sm text-gray-600">
+                          Priority {row.previousPriority} → {row.newPriority}
+                        </p>
+                      </div>
+                      <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">
+                        Top overlap with other queue members
+                      </p>
+                      {row.topCandidates.length === 0 ? (
+                        <p className="text-sm text-muted-foreground">
+                          No opposite-role requests in queue to compare.
+                        </p>
+                      ) : (
+                        <ul className="space-y-3">
+                          {row.topCandidates.map((c) => (
+                            <li
+                              key={c.request_id}
+                              className="rounded-md border bg-background p-3 text-sm"
+                            >
+                              <p className="font-medium text-gray-900">
+                                {c.displayName}{" "}
+                                <span className="text-muted-foreground capitalize">({c.role})</span>
+                              </p>
+                              <div className="mt-2 flex flex-wrap gap-1">
+                                <span className="text-xs text-muted-foreground w-full">
+                                  Subject overlap
+                                </span>
+                                {c.overlapping_subjects.length === 0 ? (
+                                  <span className="text-xs text-muted-foreground">None</span>
+                                ) : (
+                                  c.overlapping_subjects.map((s) => (
+                                    <Badge key={s} variant="secondary" className="text-xs">
+                                      {s}
+                                    </Badge>
+                                  ))
+                                )}
+                              </div>
+                              <div className="mt-2 flex flex-wrap gap-1">
+                                <span className="text-xs text-muted-foreground w-full">
+                                  Time overlap
+                                </span>
+                                {c.overlapping_slots.length === 0 ? (
+                                  <span className="text-xs text-muted-foreground">None</span>
+                                ) : (
+                                  c.overlapping_slots.map((slot, i) => (
+                                    <Badge
+                                      key={`${slot.day}-${slot.startTime}-${i}`}
+                                      variant="outline"
+                                      className="text-xs"
+                                    >
+                                      {slot.day}: {to12Hour(slot.startTime)} –{" "}
+                                      {to12Hour(slot.endTime)}
+                                    </Badge>
+                                  ))
+                                )}
+                              </div>
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </div>
+                  ))}
+                </div>
+                <DialogFooter className="gap-2 sm:gap-0">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setReviewOpen(false)}
+                    disabled={isSavingResults}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    type="button"
+                    onClick={handleConfirmSaveFromReview}
+                    disabled={isSavingResults}
+                  >
+                    {isSavingResults ? "Saving…" : "Confirm save"}
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
 
             {currentCount > 0 ? (
               <Table>
                 <TableHeader>
                   <TableRow>
                     <TableHead>Profile</TableHead>
+                    <TableHead>Role</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead>Priority</TableHead>
                     <TableHead>Availability</TableHead>
@@ -197,17 +375,23 @@ export default function PriorityQueue() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {currentData.map((request) => {
+                  {sortedRequests.map((request) => {
+                    const availability = Array.isArray(request.profile.availability)
+                      ? request.profile.availability
+                      : [];
+                    const subjects = Array.isArray(request.profile.subjects_of_interest)
+                      ? request.profile.subjects_of_interest
+                      : [];
+                    const languages = Array.isArray(request.profile.languages_spoken)
+                      ? request.profile.languages_spoken
+                      : [];
                     const fullName = `${request.profile.firstName} ${request.profile.lastName}`;
                     const initials = fullName
                       .split(" ")
                       .map((n) => n[0])
                       .join("");
                     return (
-                      <TableRow
-                        key={request.request_id}
-                        className="hover:bg-gray-50"
-                      >
+                      <TableRow key={request.request_id} className="hover:bg-gray-50">
                         <TableCell>
                           <div className="flex items-center gap-3">
                             <Avatar className="h-10 w-10">
@@ -220,11 +404,19 @@ export default function PriorityQueue() {
                             </Avatar>
                             <div>
                               <p className="font-semibold">{fullName}</p>
-                              <p className="text-sm text-gray-600">
-                                {request.profile.email}
-                              </p>
+                              <p className="text-sm text-gray-600">{request.profile.email}</p>
                             </div>
                           </div>
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant="outline" className="capitalize gap-1 font-normal">
+                            {request.type === "tutor" ? (
+                              <GraduationCap className="h-3.5 w-3.5" />
+                            ) : (
+                              <Users className="h-3.5 w-3.5" />
+                            )}
+                            {request.type}
+                          </Badge>
                         </TableCell>
                         <TableCell>
                           <Badge
@@ -234,99 +426,67 @@ export default function PriorityQueue() {
                           </Badge>
                         </TableCell>
                         <TableCell>
-                          <Badge
-                            className={`${getPriorityColor(request.priority)} font-semibold`}
-                          >
+                          <Badge className={`${getPriorityColor(request.priority)} font-semibold`}>
                             Priority {request.priority}
                           </Badge>
                         </TableCell>
                         <TableCell>
                           <div className="flex flex-wrap gap-1 max-w-48">
-                            {request.profile.availability &&
-                              request.profile.availability
-                                .slice(0, 2)
-                                .map((time, index) => (
-                                  <Badge
-                                    key={index}
-                                    variant="outline"
-                                    className="text-xs"
-                                  >
-                                    {`${time.day}, ${to12Hour(time.startTime)} - ${to12Hour(time.endTime)}`}
-                                  </Badge>
-                                ))}
-                            {request.profile.availability &&
-                              request.profile.availability.length > 2 && (
-                                <Badge variant="outline" className="text-xs">
-                                  +{request.profile.availability.length - 2}{" "}
-                                  more
-                                </Badge>
-                              )}
+                            {availability.slice(0, 2).map((time, index) => (
+                              <Badge key={index} variant="outline" className="text-xs">
+                                {`${time.day}, ${to12Hour(time.startTime)} - ${to12Hour(time.endTime)}`}
+                              </Badge>
+                            ))}
+                            {availability.length > 2 && (
+                              <Badge variant="outline" className="text-xs">
+                                +{availability.length - 2} more
+                              </Badge>
+                            )}
                           </div>
                         </TableCell>
                         <TableCell>
                           <div className="flex flex-wrap gap-1 max-w-48">
-                            {request.profile.subjects_of_interest &&
-                              request.profile.subjects_of_interest
-                                .slice(0, 2)
-                                .map((subject, index) => (
-                                  <Badge
-                                    key={index}
-                                    variant="secondary"
-                                    className="text-xs"
-                                  >
-                                    {subject}
-                                  </Badge>
-                                ))}
-                            {request.profile.subjects_of_interest &&
-                              request.profile.subjects_of_interest.length >
-                                2 && (
-                                <Badge variant="secondary" className="text-xs">
-                                  +
-                                  {request.profile.subjects_of_interest.length -
-                                    2}{" "}
-                                  more
-                                </Badge>
-                              )}
+                            {subjects.slice(0, 2).map((subject, index) => (
+                              <Badge key={index} variant="secondary" className="text-xs">
+                                {subject}
+                              </Badge>
+                            ))}
+                            {subjects.length > 2 && (
+                              <Badge variant="secondary" className="text-xs">
+                                +{subjects.length - 2} more
+                              </Badge>
+                            )}
                           </div>
                         </TableCell>
                         <TableCell>
-                          {request.profile.languages_spoken &&
-                            request.profile.languages_spoken && (
-                              <div className="flex flex-wrap gap-1 max-w-32">
-                                {request.profile.languages_spoken
-                                  .slice(0, 2)
-                                  .map((language, index) => (
-                                    <Badge
-                                      key={index}
-                                      variant="outline"
-                                      className="text-xs bg-blue-50 text-blue-700 border-blue-200"
-                                    >
-                                      {language}
-                                    </Badge>
-                                  ))}
-                                {request.profile.languages_spoken.length >
-                                  2 && (
-                                  <Badge
-                                    variant="outline"
-                                    className="text-xs bg-blue-50 text-blue-700 border-blue-200"
-                                  >
-                                    +
-                                    {request.profile.languages_spoken.length -
-                                      2}
-                                  </Badge>
-                                )}
-                              </div>
-                            )}
+                          {languages.length > 0 && (
+                            <div className="flex flex-wrap gap-1 max-w-32">
+                              {languages.slice(0, 2).map((language, index) => (
+                                <Badge
+                                  key={index}
+                                  variant="outline"
+                                  className="text-xs bg-blue-50 text-blue-700 border-blue-200"
+                                >
+                                  {language}
+                                </Badge>
+                              ))}
+                              {languages.length > 2 && (
+                                <Badge
+                                  variant="outline"
+                                  className="text-xs bg-blue-50 text-blue-700 border-blue-200"
+                                >
+                                  +{languages.length - 2}
+                                </Badge>
+                              )}
+                            </div>
+                          )}
                         </TableCell>
                         <TableCell className="text-right">
                           <div className="flex items-center justify-end gap-2">
                             <Select
                               value={request.priority.toString()}
                               onValueChange={(value) =>
-                                updatePriority(
-                                  request.request_id,
-                                  Number.parseInt(value),
-                                )
+                                updatePriority(request.request_id, Number.parseInt(value))
                               }
                             >
                               <SelectTrigger className="w-16 h-8">
@@ -341,11 +501,7 @@ export default function PriorityQueue() {
 
                             <AlertDialog>
                               <AlertDialogTrigger asChild>
-                                <Button
-                                  variant="destructive"
-                                  size="sm"
-                                  className="h-8 w-8 p-0"
-                                >
+                                <Button variant="destructive" size="sm" className="h-8 w-8 p-0">
                                   <Trash2 className="h-4 w-4" />
                                 </Button>
                               </AlertDialogTrigger>
@@ -361,9 +517,7 @@ export default function PriorityQueue() {
                                 <AlertDialogFooter>
                                   <AlertDialogCancel>Back</AlertDialogCancel>
                                   <AlertDialogAction
-                                    onClick={() =>
-                                      removeFromQueue(request.request_id)
-                                    }
+                                    onClick={() => removeFromQueue(request.request_id)}
                                   >
                                     Remove Pairing Request
                                   </AlertDialogAction>
@@ -380,12 +534,8 @@ export default function PriorityQueue() {
             ) : (
               <div className="p-12 text-center">
                 <div className="flex flex-col items-center gap-2">
-                  {currentView === "tutors" ? (
-                    <GraduationCap className="h-12 w-12 text-gray-300" />
-                  ) : (
-                    <Users className="h-12 w-12 text-gray-300" />
-                  )}
-                  <p className="text-gray-500">No {currentView} in queue</p>
+                  <Users className="h-12 w-12 text-gray-300" />
+                  <p className="text-gray-500">No one in the pairing queue</p>
                 </div>
               </div>
             )}
