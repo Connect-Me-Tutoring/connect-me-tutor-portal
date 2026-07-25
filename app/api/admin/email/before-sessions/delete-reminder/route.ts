@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from "next/server";
 // import { createClient } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/server";
 import { deleteMsg } from "@/lib/actions/email.server.actions";
-import { getSupabase } from "@/lib/supabase-server/serverClient";
 import { verifyAdmin } from "@/lib/actions/auth.server.actions";
 import { logError } from "@/lib/posthog";
 

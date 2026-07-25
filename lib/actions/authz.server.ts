@@ -2,7 +2,7 @@ import { Profile } from "@/types";
 import { User } from "@supabase/supabase-js";
 import { createClient } from "../supabase/server";
 import { cachedGetUser } from "./user.server.actions";
-import { tableToInterfaceProfiles } from "../type-utils";
+import { tableToInterfaceProfiles } from "../utils/type-utils";
 
 function authzError(message = "Unauthorized"): never {
   throw new Error(message);

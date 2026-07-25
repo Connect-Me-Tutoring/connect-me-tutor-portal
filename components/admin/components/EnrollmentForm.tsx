@@ -27,6 +27,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
+import { getEnrollmentScheduleFields } from "@/lib/enrollment-schedule";
 import { Availability, Enrollment, Meeting, Profile } from "@/types";
 import { Check, ChevronDown, Circle, Loader2, Plus } from "lucide-react";
 import { useState } from "react";
@@ -232,11 +233,13 @@ const EnrollmentForm = ({
               </Popover>
             </div>
             <AvailabilityForm
-              // availabilityList={newEnrollment.availability}
               availabilityList={availabilityList} // new enrollment by default will not have an availability
               setAvailabilityList={(availability) => {
                 setAvailabilityList(availability);
-                setNewEnrollment({ ...newEnrollment, availability });
+                setNewEnrollment({
+                  ...newEnrollment,
+                  ...getEnrollmentScheduleFields(availability[0]),
+                });
               }}
             />
             <div className="grid grid-cols-[80px_1fr] items-center gap-4">

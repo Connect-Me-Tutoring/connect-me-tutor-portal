@@ -1,6 +1,6 @@
 import { Profile } from "@/types";
 import { Table } from "../supabase/tables";
-import { tableToInterfaceProfiles } from "../type-utils";
+import { tableToInterfaceProfiles } from "../utils/type-utils";
 import { table } from "console";
 import { supabase } from "@/lib/supabase/client";
 

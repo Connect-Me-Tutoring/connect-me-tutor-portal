@@ -25,7 +25,7 @@ import {
   getParticipantEventCountsBySessionIds,
 } from "./zoom.server.actions";
 import { normalizeZoomParticipationEvents } from "@/lib/zoom/participation-normalize";
-import { tableToInterfaceEnrollments, tableToInterfaceSessions } from "../type-utils";
+import { tableToInterfaceEnrollments, tableToInterfaceSessions } from "../utils/type-utils";
 import {
   deleteScheduledEmailBeforeSessions,
   sendScheduledEmailsBeforeSessions,
@@ -106,8 +106,18 @@ export async function addSessionsForCron(
     const sessionsToCreate: any[] = [];
 
     for (const enrollment of enrollments) {
-      const { id, student, tutor, availability, meetingId, summary, startDate, duration } =
-        enrollment;
+      const {
+        id,
+        student,
+        tutor,
+        day,
+        startTime,
+        endTime,
+        meetingId,
+        summary,
+        startDate,
+        duration,
+      } = enrollment;
 
       if (enrollment.paused) {
         continue;
@@ -117,19 +127,22 @@ export async function addSessionsForCron(
         continue;
       }
 
-      if (!student?.id || !tutor?.id || !availability?.length) {
+      if (!student?.id || !tutor?.id || !day) {
         continue;
       }
 
-      let { day, startTime, endTime } = availability[0];
-
       if (!startTime || !endTime) {
-        console.error(`Invalid time format in availability:`, availability[0]);
+        console.error(`Invalid time format in schedule:`, {
+          day,
+          startTime,
+          endTime,
+        });
         await logError(
           new Error("Invalid time format in availability"),
           {
-            availability: availability[0],
-            enrollment_id: id,
+            day: day,
+            startTime: startTime,
+            endTime: endTime,
           },
           "session_error",
         );

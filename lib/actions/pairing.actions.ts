@@ -20,8 +20,6 @@ import {
 } from "./email.server.actions";
 import { addEnrollment } from "./enrollment.server.actions";
 import { getOverlappingAvailabilites } from "./enrollment.actions";
-import { getSupabase } from "../supabase-server/serverClient";
-import { number } from "zod";
 import { getProfileWithProfileId } from "./user.actions";
 import { getMeeting } from "./meeting.actions";
 import { sendPairingAlertToWebhook } from "./pairing.server.actions";
@@ -550,8 +548,8 @@ export const findAvailableSessionTimes = async () => {
 };
 
 // Function to convert time string to minutes since midnight
-function timeToMinutes(timeString: string): number {
-  const [hours, minutes, seconds] = timeString.split(":").map(Number);
+export function timeToMinutes(timeString: string): number {
+  const [hours, minutes, seconds = 0] = timeString.split(":").map(Number);
   return hours * 60 + minutes + seconds / 60;
 }
 
@@ -595,7 +593,7 @@ function getAverageTimeWithDuration(
   };
 }
 
-const isOverlap = (start1: number, end1: number, start2: number, end2: number) => {
+export const isOverlap = (start1: number, end1: number, start2: number, end2: number) => {
   try {
     return start1 < end2 && start2 < end1;
   } catch (error) {
@@ -605,43 +603,40 @@ const isOverlap = (start1: number, end1: number, start2: number, end2: number) =
 
 export const getAvailableMeetingLink = async (start: string, end: string, day: string) => {
   try {
-    // Get all enrollments since we can't easily filter JSON arrays in Supabase
-    const { data: allEnrollmentsRaw, error } = await supabase
+    const requestedStart = timeToMinutes(start);
+    const requestedEnd = timeToMinutes(end);
+
+    if (!Number.isFinite(requestedStart) || !Number.isFinite(requestedEnd)) {
+      throw new Error(`Invalid requested meeting time: ${start}-${end}`);
+    }
+
+    const { data: allEnrollments, error } = await supabase
       .from("Enrollments")
-      .select("meetingId, availability");
+      .select("meetingId, day, start_time, end_time");
 
     if (error) throw error;
 
-    const allEnrollments = allEnrollmentsRaw as unknown as {
-      meetingId: string | null;
-      availability: { day: string; startTime: string; endTime: string }[];
-    }[];
-
-    // Filter in JavaScript for arrays
+    // Filter in JavaScript
     const availableMeetings =
-      allEnrollments?.filter(
-        (enrollment: { availability: { day: string; startTime: string; endTime: string }[] }) => {
-          // Check if this enrollment has any availability slots for the requested day
-          const daySlots = enrollment.availability.filter(
-            (slot: { day: string }) => slot.day === day,
-          );
+      allEnrollments?.filter((enrollment) => {
+        // Not scheduled for the requested day - consider it available
+        if (!enrollment.day || enrollment.day !== day) {
+          return true;
+        }
 
-          if (daySlots.length === 0) {
-            // No availability for this day - consider it available
-            return true;
-          }
+        const enrollmentStart = timeToMinutes(enrollment.start_time ?? "");
+        const enrollmentEnd = timeToMinutes(enrollment.end_time ?? "");
 
-          // Check if ALL slots for this day have no overlap with requested time
-          const hasConflict = daySlots.some((slot: { startTime: string; endTime: string }) => {
-            // Two ranges overlap if: slot.start < end AND slot.end > start
-            const overlap = slot.startTime < end && slot.endTime > start;
-            return overlap;
-          });
+        // An incomplete schedule cannot conflict with the requested slot.
+        if (!Number.isFinite(enrollmentStart) || !Number.isFinite(enrollmentEnd)) {
+          return true;
+        }
 
-          // Return true if NO conflict (available)
-          return !hasConflict;
-        },
-      ) || [];
+        const hasConflict = isOverlap(enrollmentStart, enrollmentEnd, requestedStart, requestedEnd);
+
+        // Return true if NO conflict (available)
+        return !hasConflict;
+      }) || [];
 
     return availableMeetings.length > 0 ? availableMeetings[0] : null;
   } catch (error) {
@@ -662,7 +657,7 @@ export const getAutoAvailableSessionTimes = async (start: string, end: string, d
         autoAvailability.endTime,
         autoAvailability.day,
       );
-      if (meetingId) return { availability: autoAvailability, meeting: meetingId };
+      if (meetingId) return { schedule: autoAvailability, meeting: meetingId };
     }
     return null;
   } catch (error) {}
@@ -689,12 +684,17 @@ export const getAutomaticEnrollment = async (
       );
 
       if (!autoAvailability) throw new Error("Unable to automatically set availability");
+      if (!autoAvailability.meeting || !autoAvailability.meeting.meetingId) {
+        throw new Error("Unable to identify meeting");
+      }
 
       const autoEnrollment: Omit<Enrollment, "id" | "createdAt"> = {
         student: student,
         tutor: tutor,
-        availability: [autoAvailability.availability],
-        meetingId: autoAvailability.meeting.meetingId || "",
+        day: autoAvailability.schedule.day,
+        startTime: autoAvailability.schedule.startTime,
+        endTime: autoAvailability.schedule.endTime,
+        meetingId: autoAvailability.meeting.meetingId,
         paused: false,
         duration: 1,
         startDate: new Date().toISOString(),
@@ -781,8 +781,9 @@ export const updatePairingMatchStatus = async (
     //auto select first availability & create enrollment
     if (
       !autoEnrollment ||
-      !autoEnrollment.availability ||
-      autoEnrollment.availability.length <= 0
+      !autoEnrollment.day ||
+      !autoEnrollment.startTime ||
+      !autoEnrollment.endTime
     ) {
       throw new Error("Unable to automatically find availability");
     }
@@ -795,7 +796,11 @@ export const updatePairingMatchStatus = async (
       student: studentData,
       tutor: tutorData,
       startDate: autoEnrollment.startDate,
-      availability: autoEnrollment.availability[0],
+      availability: {
+        day: autoEnrollment.day,
+        startTime: autoEnrollment.startTime,
+        endTime: autoEnrollment.endTime,
+      },
       meeting: meetingData,
     };
 
@@ -862,90 +867,3 @@ export const updatePairingMatchStatus = async (
     ]);
   }
 };
-
-// if (availabilities) {
-//         const firstAvailability = availabilities[0];
-//         if (!firstAvailability) return;
-
-//         const startDate = "";
-//         const endDate = "";
-
-//         //auto select first availability & create enrollment
-//         await addEnrollment(
-//           {
-//             student: student as unknown as Profile,
-//             tutor: tutor as unknown as Profile,
-//             availability: availabilities,
-//             meetingId: "",
-//             summerPaused: false,
-//             duration: 60,
-//             startDate,
-//             endDate,
-//             summary: "Automatically Created Enrollment",
-//           },
-//           true
-//         );
-//       }
-//     } else {
-//       console.warn("failed to automatically create enrollment");
-//     }
-
-//     const createdPairingError = createdPairingResult.error;
-//     if (createdPairingError) {
-//       if (createdPairingError?.code === "23505") {
-//         throw new Error("student - tutor pairing already exists");
-//       }
-//       console.error(createdPairingResult.error);
-//       throw new Error("failed to create pairings");
-//     }
-
-//     const emailData = {
-//       studentName: `${student.first_name} ${student.last_name}`,
-//       studentGender: student.gender ?? "male",
-//       parentName: `Parent Name`,
-//     } as TutorMatchingNotificationEmailProps;
-
-//     //send respective pairing email to student and tutor
-//     await axios.post(
-//       "http://localhost:3000/api/email/pairing?type=match-accepted",
-//       {
-//         emailType: "match-accepted",
-//         data: emailData,
-//       }
-//     );
-
-//     const log = await supabase.from("pairing_logs").insert([
-//       {
-//         type: "pairing-match-accepted",
-//         message: `${tutor.first_name} ${tutor.last_name} has accepted ${student.first_name} ${student.last_name} as a student`,
-//         error: false,
-//         metadata: {
-//           profile_id: profileId,
-//         },
-//       } as PairingLogSchemaType,
-//     ]);
-
-//     console.log("LOG ", log);
-
-//     //reset tutor and student status to be auto placed in que
-//   } else if (status === "rejected") {
-//     const { data, error } = await supabase
-//       .from("pairing_requests")
-//       .update({
-//         status: "pending",
-//       })
-//       .in("user_id", [student.id, tutor.id]);
-
-//     console.log(data, error);
-//     if (!error)
-//       await supabase.from("pairing_logs").insert([
-//         {
-//           type: "pairing-match-rejected",
-//           message: `${tutor.first_name} ${tutor.last_name} has declined ${student.first_name} ${student.last_name} as a student`,
-//           error: false,
-//           metadata: {
-//             profile_id: profileId,
-//           },
-//         } as PairingLogSchemaType,
-//       ]);
-//   }

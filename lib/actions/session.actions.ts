@@ -33,7 +33,7 @@ import {
   tableToInterfaceMeetings,
   tableToInterfaceProfiles,
   tableToInterfaceSessions,
-} from "../type-utils";
+} from "../utils/type-utils";
 import { supabase } from "@/lib/supabase/client";
 // import { getMeeting } from "./meeting.actions";
 
@@ -125,7 +125,9 @@ export async function addSessions(
         id,
         student,
         tutor,
-        availability,
+        day,
+        startTime,
+        endTime,
         meetingId,
         summary,
         startDate,
@@ -144,12 +146,9 @@ export async function addSessions(
       }
 
       // Skip invalid enrollments
-      if (!student?.id || !tutor?.id || !availability?.length) {
+      if (!student?.id || !tutor?.id || !day) {
         continue;
       }
-
-      // Process each availability slot
-      let { day, startTime, endTime } = availability[0];
 
       // Skip invalid time formats
       if (
@@ -158,7 +157,11 @@ export async function addSessions(
         // startTime.includes("-") ||
         // endTime.includes("-")
       ) {
-        console.error(`Invalid time format in availability:`, availability[0]);
+        console.error(`Invalid time format in schedule:`, {
+          day,
+          startTime,
+          endTime,
+        });
         continue;
       }
 

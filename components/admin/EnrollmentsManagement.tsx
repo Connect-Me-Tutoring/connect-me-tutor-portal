@@ -74,11 +74,7 @@ import { checkAvailableMeetingForEnrollments } from "@/lib/actions/meeting.actio
 import { WeeklyMeetingSchedule } from "@/types/meeting";
 import { formatDateServer } from "@/lib/actions/utils.server.actions";
 import { QueryClient } from "@tanstack/react-query";
-import {
-  getEnrollmentAvailability,
-  getEnrollmentSchedule,
-  getEnrollmentScheduleFields,
-} from "@/lib/enrollment-schedule";
+import { getEnrollmentAvailability, getEnrollmentScheduleFields } from "@/lib/enrollment-schedule";
 // import Availability from "@/components/student/AvailabilityFormat";
 
 const durationSchema = z.object({
@@ -120,22 +116,20 @@ const enrollmentMatchesTimeFilter = (
 
   if (!hasDayFilter && !hasTimeFilter) return true;
 
-  const availability = enrollment.availability || [];
+  const { day, startTime, endTime } = enrollment;
 
-  return availability.some((slot) => {
-    if (hasDayFilter && slot.day !== dayFilter) return false;
-    if (!hasTimeFilter) return true;
+  if (hasDayFilter && day !== dayFilter) return false;
+  if (!hasTimeFilter) return true;
 
-    const enrollmentStart = timeToMinutes(slot.startTime);
-    const enrollmentEnd = timeToMinutes(slot.endTime);
-    if (enrollmentStart === null || enrollmentEnd === null) return false;
+  const enrollmentStart = timeToMinutes(startTime);
+  const enrollmentEnd = timeToMinutes(endTime);
+  if (enrollmentStart === null || enrollmentEnd === null) return false;
 
-    const rangeStart = filterStart ?? 0;
-    const rangeEnd = filterEnd ?? 24 * 60;
-    if (rangeStart >= rangeEnd) return false;
+  const rangeStart = filterStart ?? 0;
+  const rangeEnd = filterEnd ?? 24 * 60;
+  if (rangeStart >= rangeEnd) return false;
 
-    return enrollmentStart < rangeEnd && enrollmentEnd > rangeStart;
-  });
+  return enrollmentStart < rangeEnd && enrollmentEnd > rangeStart;
 };
 
 const EnrollmentList = ({
@@ -200,7 +194,6 @@ const EnrollmentList = ({
     summary: "",
     startDate: "",
     endDate: null,
-    availability: [{ day: "", startTime: "", endTime: "" }],
     day: null,
     startTime: null,
     endTime: null,
@@ -268,46 +261,6 @@ const EnrollmentList = ({
 
   const normalizeText = (text: string) => text.toLowerCase().trim();
 
-  const toDateTime = (time: string, day: Number) => {
-    if (!time) {
-      return new Date(NaN);
-    }
-    const [hourStr, minuteStr] = time.split(":");
-    const parsedDate = new Date();
-    while (parsedDate.getDay() !== day) {
-      parsedDate.setDate(parsedDate.getDate() + 1);
-    }
-    parsedDate.setHours(parseInt(hourStr), parseInt(minuteStr), 0, 0);
-    return parsedDate;
-  };
-
-  const formatAvailabilityAsDate = (date: Availability): Date[] => {
-    try {
-      type DayName =
-        "Sunday" | "Monday" | "Tuesday" | "Wednesday" | "Thursday" | "Friday" | "Saturday";
-      const dayMap: { [key in DayName]: number } = {
-        Sunday: 0,
-        Monday: 1,
-        Tuesday: 2,
-        Wednesday: 3,
-        Thursday: 4,
-        Friday: 5,
-        Saturday: 6,
-      };
-
-      const dayIndex = dayMap[date.day as DayName];
-      if (dayIndex === undefined) {
-        throw new Error("Invalid Day of the Week");
-      }
-      return [toDateTime(date.startTime, dayIndex), toDateTime(date.endTime, dayIndex)];
-    } catch (error) {
-      console.error("Failed to Format Date", error);
-
-      const date5am = new Date(2024, 1, 23, 5, 0, 0, 0);
-      return [date5am, date5am];
-    }
-  };
-
   const checkMeetingAvailabilities = async (enroll: Omit<Enrollment, "id" | "createdAt">) => {
     setIsCheckingMeetingAvailability(true);
 
@@ -319,33 +272,6 @@ const EnrollmentList = ({
     );
     setIsCheckingMeetingAvailability(false);
     setMeetingAvailability(updatedMeetingAvailability);
-  };
-
-  const isMeetingAvailable = (meetingId: string, enroll: Omit<Enrollment, "id" | "createdAt">) => {
-    try {
-      const now = new Date();
-      const enrollSchedule = getEnrollmentSchedule(enroll);
-      const new_enrollment_date = new Date(`${enrollSchedule.day} ${enrollSchedule.endTime}`);
-      return !enrollments.some((enrollment) => {
-        // Skip sessions without dates or meeting IDs
-        if (!enrollment?.endDate || !enrollment?.meetingId) return false;
-
-        try {
-          const enrollmentSchedule = getEnrollmentSchedule(enrollment);
-          const sessionEndTime = new Date(
-            `${enrollmentSchedule.day}, ${enrollmentSchedule.endTime}`,
-          );
-          sessionEndTime.setHours(sessionEndTime.getHours() + 1.5);
-          return sessionEndTime < new_enrollment_date && enrollment.meetingId === meetingId;
-        } catch (error) {
-          console.error("Error processing session date:", error);
-          return false;
-        }
-      });
-    } catch (error) {
-      console.error("Error checking meeting availability:", error);
-      return true; // Default to available if there's an error
-    }
   };
 
   const fetchMeetings = async () => {
@@ -514,13 +440,12 @@ const EnrollmentList = ({
   };
 
   const handleAvailabilityChange = (availability: Availability[], type: "add" | "edit") => {
-    const scheduleFields = getEnrollmentScheduleFields({ availability });
+    const scheduleFields = getEnrollmentScheduleFields(availability[0]);
 
     if (type === "add") {
       setAvailabilityList(availability);
       setNewEnrollment((prev) => ({
         ...prev,
-        availability,
         ...scheduleFields,
       }));
       return;
@@ -530,7 +455,6 @@ const EnrollmentList = ({
       prev
         ? {
             ...prev,
-            availability,
             ...scheduleFields,
           }
         : null,
@@ -599,7 +523,6 @@ const EnrollmentList = ({
       summary: "",
       startDate: "",
       endDate: null,
-      availability: [{ day: "", startTime: "", endTime: "" }],
       day: null,
       startTime: null,
       endTime: null,
@@ -853,7 +776,6 @@ const EnrollmentList = ({
                         </Popover>
                       </div>
                       <AvailabilityForm
-                        // availabilityList={newEnrollment.availability}
                         availabilityList={availabilityList} // new enrollment by default will not have an availability
                         setAvailabilityList={(availability) =>
                           handleAvailabilityChange(availability, "add")

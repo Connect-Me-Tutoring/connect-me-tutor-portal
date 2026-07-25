@@ -10,7 +10,6 @@ import { getUserFromAction } from "./user.server.actions";
 import { IncomingPairingMatch } from "./pairing.actions";
 import { NextResponse } from "next/server";
 import { PairingLogSchemaType } from "../pairing/types";
-import { getSupabase } from "../supabase-server/serverClient";
 import { getOverlappingAvailabilites } from "./enrollment.actions";
 import { formatDateAdmin, to12Hour } from "../utils";
 import { requireAdmin, requireEnrollmentAccess, requireSelfOrAdmin } from "./authz.server";
@@ -277,6 +276,14 @@ export const sendPairingAlertToWebhook = async (
   studentData: Profile,
   autoEnrollment: Omit<Enrollment, "id" | "createdAt">,
 ) => {
+  const day = autoEnrollment.day || "Not scheduled";
+  const startTime = autoEnrollment.startTime
+    ? `${to12Hour(autoEnrollment.startTime)} EST`
+    : "Not scheduled";
+  const endTime = autoEnrollment.endTime
+    ? `${to12Hour(autoEnrollment.endTime)} EST`
+    : "Not scheduled";
+
   const response = await fetch(`${process.env.PAIRING_ALERTS_WEBHOOK}`, {
     method: "POST",
     headers: {
@@ -295,9 +302,9 @@ Parent Phone: ${studentData.parentPhone}
 
 **Enrollment Information**
 
-**Day:** ${autoEnrollment.availability[0].day} 
-**Start Time:** ${to12Hour(autoEnrollment.availability[0].startTime)} EST 
-**End Time:** ${to12Hour(autoEnrollment.availability[0].endTime)} EST
+**Day:** ${day}
+**Start Time:** ${startTime}
+**End Time:** ${endTime}
 
 **First Session Date:** ${formatDateAdmin(autoEnrollment.startDate, { includeTime: true, includeDate: true })}`,
     }),

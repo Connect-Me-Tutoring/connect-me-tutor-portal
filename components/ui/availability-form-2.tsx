@@ -194,7 +194,6 @@ const EnhancedAvailabilityForm: React.FC<AvailabilityFormProps> = ({
 
   const addAvailability = () => {
     const updatedList = [
-      ...availabilityList,
       {
         day: selectedDay,
         startTime: selectedStartTime,
@@ -226,22 +225,8 @@ const EnhancedAvailabilityForm: React.FC<AvailabilityFormProps> = ({
       return;
     }
 
-    const hasOverlap = availabilityList.some((existing) => {
-      if (existing.day !== availability.day) return false;
-      const existingStart = timeToMinutes(existing.startTime);
-      const existingEnd = timeToMinutes(existing.endTime);
-      const newStart = timeToMinutes(availability.startTime);
-      const newEnd = timeToMinutes(availability.endTime);
-      return newStart < existingEnd && newEnd > existingStart;
-    });
-
-    if (!hasOverlap) {
-      const updatedList = [...availabilityList, availability];
-      setAvailabilityList(updatedList);
-      setValidationError("");
-    } else {
-      setValidationError("This time slot overlaps with your existing availability.");
-    }
+    setAvailabilityList([availability]);
+    setValidationError("");
   };
 
   const handleStartTimeChange = (startTime: string) => {
@@ -305,7 +290,7 @@ const EnhancedAvailabilityForm: React.FC<AvailabilityFormProps> = ({
   return (
     <div className="availability-form space-y-6">
       <div>
-        <Label className="text-lg font-semibold">Manage Availability (EST)</Label>
+        <Label className="text-lg font-semibold">Enrollment Schedule (EST)</Label>
         {/* <div className="flex items-center gap-2 mt-2 p-3 bg-blue-50 border border-blue-200 rounded-lg">
           <Info className="h-4 w-4 text-blue-600" />
           <span className="text-sm text-blue-800">
@@ -469,7 +454,7 @@ const EnhancedAvailabilityForm: React.FC<AvailabilityFormProps> = ({
             disabled={!selectedDay || !selectedStartTime || !selectedEndTime}
             onClick={() => addAvailability()}
           >
-            Add Availability
+            Set Schedule
           </Button>
         </div>
       )}
@@ -478,7 +463,7 @@ const EnhancedAvailabilityForm: React.FC<AvailabilityFormProps> = ({
 
       {/* Current Availability List */}
       <div className="space-y-4">
-        <Label className="font-medium">Your Selected Availability</Label>
+        <Label className="font-medium">Selected Schedule</Label>
         {availabilityList.length > 0 ? (
           <div className="space-y-2">
             {availabilityList.map((availability, index) => (
@@ -505,7 +490,7 @@ const EnhancedAvailabilityForm: React.FC<AvailabilityFormProps> = ({
           </div>
         ) : (
           <p className="text-muted-foreground text-sm bg-muted/50 p-4 rounded-lg border-dashed border-2">
-            No availability selected. Add times within the open availability windows.
+            No schedule selected. Choose a time within the open availability windows.
           </p>
         )}
       </div>

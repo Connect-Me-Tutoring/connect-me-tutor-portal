@@ -6,7 +6,7 @@ import { getProfileWithProfileId } from "./user.actions";
 import { getMeeting } from "./admin.actions";
 import { Stats } from "fs";
 import { Table } from "../supabase/tables";
-import { tableToInterfaceSessions } from "../type-utils";
+import { tableToInterfaceSessions } from "../utils/type-utils";
 import type { Database } from "@/types/database.types";
 
 type SessionStatus = Database["public"]["Enums"]["session_status"];

@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { sendInactiveEnrollmentWarning } from "@/lib/actions/enrollment.server.actions";
 import { createAdminClient } from "@/lib/supabase/server";
 import { Table } from "@/lib/supabase/tables";
-import { tableToInterfaceEnrollments, tableToInterfaceProfiles } from "@/lib/type-utils";
+import { tableToInterfaceEnrollments, tableToInterfaceProfiles } from "@/lib/utils/type-utils";
 import { Enrollment, Profile } from "@/types";
 import { verifyAdmin } from "@/lib/actions/auth.server.actions";
 import { logError } from "@/lib/posthog";
@@ -28,7 +28,9 @@ export async function GET(request: NextRequest) {
         tutor_id,
         start_date,
         end_date,
-        availability,
+        day,
+        start_time,
+        end_time,
         meetingId,
         paused,
         duration,

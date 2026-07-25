@@ -7,7 +7,7 @@ import {
   tableToInterfaceProfiles,
   tableToInterfaceMeetings,
   tableToInterfaceEnrollments,
-} from "../type-utils";
+} from "../utils/type-utils";
 import { SharedEnrollment } from "@/types/enrollment";
 import { addOneSession } from "./session.actions";
 import { handleCalculateDuration, isValidUUID } from "../utils";
@@ -29,7 +29,9 @@ export async function getEnrollments(tutorId: string): Promise<Enrollment[] | nu
         tutor_id,
         start_date,
         end_date,
-        availability,
+        day,
+        start_time,
+        end_time,
         meetingId,
         paused,
         duration,
@@ -48,20 +50,9 @@ export async function getEnrollments(tutorId: string): Promise<Enrollment[] | nu
     // Check if data exists
 
     // Mapping the fetched data to the Notification object
-    const enrollments: Enrollment[] = data.map((enrollment: any) => ({
-      createdAt: enrollment.created_at,
-      id: enrollment.id,
-      summary: enrollment.summary,
-      student: tableToInterfaceProfiles(enrollment.student),
-      tutor: tableToInterfaceProfiles(enrollment.tutor),
-      startDate: enrollment.start_date,
-      endDate: enrollment.end_date,
-      availability: enrollment.availability,
-      meetingId: enrollment.meetingId,
-      paused: enrollment.paused,
-      duration: enrollment.duration,
-      frequency: enrollment.frequency,
-    }));
+    const enrollments: Enrollment[] = data.map((enrollment: any) =>
+      tableToInterfaceEnrollments(enrollment),
+    );
 
     return enrollments; // Return the array of enrollments
   } catch (error) {
@@ -125,7 +116,9 @@ export async function getAllActiveEnrollments(endOfWeek: string): Promise<Enroll
         tutor_id,
         start_date,
         end_date,
-        availability,
+        day,
+        start_time,
+        end_time,
         meetingId,
         paused,
         duration,
@@ -149,20 +142,9 @@ export async function getAllActiveEnrollments(endOfWeek: string): Promise<Enroll
     }
 
     // Mapping the fetched data to the Notification object
-    const enrollments: Enrollment[] = data.map((enrollment: any) => ({
-      createdAt: enrollment.created_at,
-      id: enrollment.id,
-      summary: enrollment.summary,
-      student: enrollment.student,
-      tutor: enrollment.tutor,
-      startDate: enrollment.start_date,
-      endDate: enrollment.end_date,
-      availability: enrollment.availability,
-      meetingId: enrollment.meetingId,
-      paused: enrollment.paused,
-      duration: enrollment.duration,
-      frequency: enrollment.frequency,
-    }));
+    const enrollments: Enrollment[] = data.map((enrollment: any) =>
+      tableToInterfaceEnrollments(enrollment),
+    );
 
     return enrollments; // Return the array of enrollments
   } catch (error) {
@@ -189,7 +171,7 @@ const sql = `
  ORDER BY created_at DESC
 `;
 
-export const sessionTimeFromEnrollment = (availability: Availability, start: string): string => {
+export const sessionTimeFromEnrollment = (schedule: Availability, start: string): string => {
   const dayMap: Record<string, number> = {
     sunday: 0,
     monday: 1,
@@ -203,14 +185,14 @@ export const sessionTimeFromEnrollment = (availability: Availability, start: str
   try {
     const startDate: Date = new Date(start);
     const startDateWeekDay: number = startDate.getDay();
-    const firstSessionWeekDay: number = dayMap[availability.day.toLowerCase()];
+    const firstSessionWeekDay: number = dayMap[schedule.day.toLowerCase()];
 
     const additionalDays = firstSessionWeekDay >= startDateWeekDay ? 0 : 7;
     const currentDate: Date = addDays(
       startDate,
       firstSessionWeekDay - startDateWeekDay + additionalDays,
     );
-    const dateString = `${format(currentDate, "yyyy-MM-dd")}T${availability.startTime}:00`;
+    const dateString = `${format(currentDate, "yyyy-MM-dd")}T${schedule.startTime}:00`;
     return fromZonedTime(dateString, "America/New_York").toISOString();
   } catch (error) {
     console.error("Unable to calculate session from enrollment");
@@ -220,14 +202,11 @@ export const sessionTimeFromEnrollment = (availability: Availability, start: str
 
 export const addEnrollment = async (enrollment: Omit<Enrollment, "id" | "createdAt">) => {
   try {
-    if (enrollment.availability.length === 0) {
-      throw new Error("Please add an availability");
+    if (!enrollment.day || !enrollment.startTime || !enrollment.endTime) {
+      throw new Error("Please add an enrollment schedule");
     }
 
-    const duration = await handleCalculateDuration(
-      enrollment.availability[0].startTime,
-      enrollment.availability[0].endTime,
-    );
+    const duration = await handleCalculateDuration(enrollment.startTime, enrollment.endTime);
 
     if (enrollment.duration <= 0) throw new Error("Duration should be a positive amount");
 
@@ -245,7 +224,9 @@ export const addEnrollment = async (enrollment: Omit<Enrollment, "id" | "created
         summary: enrollment.summary,
         start_date: enrollment.startDate,
         end_date: enrollment.endDate,
-        availability: enrollment.availability as unknown as Json,
+        day: enrollment.day,
+        start_time: enrollment.startTime,
+        end_time: enrollment.endTime,
         meetingId: enrollment.meetingId,
         duration: duration,
         frequency: enrollment.frequency,
@@ -268,13 +249,21 @@ export const addEnrollment = async (enrollment: Omit<Enrollment, "id" | "created
       throw new Error("No data returned when adding enrollment");
     }
 
+    if (!data.day || !data.start_time || !data.end_time || !data.start_date) {
+      throw new Error("No time specified");
+    }
+
     {
       const tutor = tableToInterfaceProfiles(data.tutor);
       const student = tableToInterfaceProfiles(data.student);
       const meeting = tableToInterfaceMeetings(data.meeting);
       const date = sessionTimeFromEnrollment(
-        (data.availability as unknown as Availability[])[0],
-        data.start_date ?? enrollment.startDate,
+        {
+          day: data.day,
+          startTime: data.start_time,
+          endTime: data.end_time,
+        },
+        data.start_date,
       );
 
       const firstSession: Session = {

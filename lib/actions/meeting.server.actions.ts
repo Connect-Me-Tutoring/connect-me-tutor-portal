@@ -1,13 +1,12 @@
 "use server";
 import { Availability, Enrollment, Meeting, Profile, Session } from "@/types";
 // import { createClient } from "@supabase/supabase-js";
-import { getSupabase } from "../supabase-server/serverClient";
 import { createClient } from "@/lib/supabase/server";
 import { fetchDaySessionsFromSchedule } from "./session.actions";
 import { addHours, areIntervalsOverlapping, isValid, parseISO } from "date-fns";
 import { Table } from "../supabase/tables";
 import { logError } from "@/lib/posthog";
-import { tableToInterfaceMeetings } from "../type-utils";
+import { tableToInterfaceMeetings } from "../utils/type-utils";
 
 export async function getMeeting(id: string): Promise<Meeting | null> {
   try {
