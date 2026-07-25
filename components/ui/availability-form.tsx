@@ -134,11 +134,7 @@ const AvailabilityForm: React.FC<AvailabilityFormProps> = ({
             <Label htmlFor="day" className="text-sm">
               Day
             </Label>
-            <Select
-              name="day"
-              value={selectedDay}
-              onValueChange={(value) => setSelectedDay(value)}
-            >
+            <Select name="day" value={selectedDay} onValueChange={(value) => setSelectedDay(value)}>
               <SelectTrigger>
                 <SelectValue placeholder="Select a day" />
               </SelectTrigger>
@@ -191,9 +187,7 @@ const AvailabilityForm: React.FC<AvailabilityFormProps> = ({
               >
                 <SelectTrigger>
                   <SelectValue
-                    placeholder={
-                      !selectedStartTime ? "Select start time first" : "Select end time"
-                    }
+                    placeholder={!selectedStartTime ? "Select start time first" : "Select end time"}
                   />
                 </SelectTrigger>
                 <SelectContent>
@@ -237,8 +231,8 @@ const AvailabilityForm: React.FC<AvailabilityFormProps> = ({
                 <div className="flex items-center gap-2">
                   <Clock className="h-4 w-4 text-muted-foreground" />
                   <span>
-                    <strong>{availability.day}</strong> from {formatTime(availability.startTime)}{" "}
-                    to {formatTime(availability.endTime)}
+                    <strong>{availability.day}</strong> from {formatTime(availability.startTime)} to{" "}
+                    {formatTime(availability.endTime)}
                   </span>
                 </div>
                 <Button

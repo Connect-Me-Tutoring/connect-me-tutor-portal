@@ -1,6 +1,11 @@
 "use client";
 import { Button } from "@/components/ui/button";
-import { DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import type { Enrollment } from "@/types";
 
 interface DeleteEnrollmentDialogProps {
