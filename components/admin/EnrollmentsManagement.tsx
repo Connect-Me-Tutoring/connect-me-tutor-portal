@@ -1,9 +1,8 @@
 "use client";
 import React, { use, useState, useEffect, useMemo } from "react";
 import { AlarmClockMinus, MessageCircleIcon, Search, Timer, TimerOff } from "lucide-react";
-import { cn, formatDateAdmin, formatDateUTC, formatSessionDuration } from "@/lib/utils";
+import { formatDateAdmin, formatDateUTC, formatSessionDuration } from "@/lib/utils";
 import {
-  ChevronDown,
   ChevronsLeft,
   ChevronsRight,
   ChevronLeft,
@@ -13,24 +12,11 @@ import {
   Trash,
   RefreshCw,
   ChevronsUpDown,
-  Check,
-  Circle,
-  Loader2,
   Copy,
   Activity,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { ScrollArea } from "@/components/ui/scrollarea";
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-} from "@/components/ui/command";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
   Table,
   TableBody,
@@ -46,15 +32,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
+import { Dialog, DialogTrigger } from "@/components/ui/dialog";
 import {
   getAllEnrollments,
   getAllProfiles,
@@ -66,7 +44,6 @@ import { removeEnrollment, updateEnrollment } from "@/lib/actions/enrollment.ser
 import { Enrollment, Profile, Event, Meeting, Availability } from "@/types";
 import toast from "react-hot-toast";
 import AvailabilityFormat from "@/components/student/AvailabilityFormat";
-import AvailabilityForm from "@/components/ui/availability-form";
 import { z } from "zod";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -75,6 +52,8 @@ import { WeeklyMeetingSchedule } from "@/types/meeting";
 import { formatDateServer } from "@/lib/actions/utils.server.actions";
 import { QueryClient } from "@tanstack/react-query";
 import { getEnrollmentAvailability, getEnrollmentScheduleFields } from "@/lib/enrollment-schedule";
+import EnrollmentFormDialog from "@/components/shared/enrollment/EnrollmentFormDialog";
+import DeleteEnrollmentDialog from "@/components/shared/enrollment/DeleteEnrollmentDialog";
 // import Availability from "@/components/student/AvailabilityFormat";
 
 const durationSchema = z.object({
@@ -168,8 +147,6 @@ const EnrollmentList = ({
   const [open, setOpen] = React.useState(false);
   const [value, setValue] = React.useState("");
 
-  const [openStudentOptions, setOpenStudentOptions] = useState(false);
-  const [openTutorOptions, setOpentTutorOptions] = useState(false);
   const [selectedTutorId, setSelectedTutorId] = useState("");
   const [selectedStudentId, setSelectedStudentId] = useState("");
 
@@ -181,8 +158,6 @@ const EnrollmentList = ({
   const [timeFilterDay, setTimeFilterDay] = useState("all");
   const [timeFilterStart, setTimeFilterStart] = useState("");
   const [timeFilterEnd, setTimeFilterEnd] = useState("");
-  const [tutorSearch, setTutorSearch] = useState("");
-  const [studentSearch, setStudentSearch] = useState("");
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
@@ -248,16 +223,6 @@ const EnrollmentList = ({
     setFilteredEnrollments(filtered);
     setCurrentPage(1);
   }, [filterValue, enrollments, timeFilterDay, timeFilterStart, timeFilterEnd]);
-
-  const studentsMap = useMemo(() => {
-    return students.reduce(
-      (map, student) => {
-        map[student.id] = student;
-        return map;
-      },
-      {} as Record<string, Profile>,
-    );
-  }, [students]);
 
   const normalizeText = (text: string) => text.toLowerCase().trim();
 
@@ -461,6 +426,16 @@ const EnrollmentList = ({
     );
   };
 
+  const handleStudentSelect = (student: Profile) => {
+    setSelectedStudentId(student.id);
+    handleInputChange({ target: { name: "student.id", value: student.id } });
+  };
+
+  const handleTutorSelect = (tutor: Profile) => {
+    setSelectedTutorId(tutor.id);
+    handleInputChange({ target: { name: "tutor.id", value: tutor.id } });
+  };
+
   const handleAddEnrollment = async () => {
     try {
       const addedEnrollment = await addEnrollment(newEnrollment);
@@ -630,292 +605,28 @@ const EnrollmentList = ({
                     <Plus className="mr-2 h-4 w-4" /> Add Enrollment
                   </Button>
                 </DialogTrigger>
-                <DialogContent className="sm:max-w-[500px]">
-                  <DialogHeader>
-                    <DialogTitle>Add New Enrollment</DialogTitle>
-                    <DialogDescription className="sr-only">add a new enrollment</DialogDescription>
-                  </DialogHeader>
-                  <ScrollArea className="max-h-[calc(80vh-120px)] pr-4">
-                    {" "}
-                    <div className="grid gap-4 py-4">
-                      <div className="grid grid-cols-4 items-center gap-4">
-                        {" "}
-                        <Label htmlFor="tutor" className="text-right">
-                          Student
-                        </Label>
-                        <Popover open={openStudentOptions} onOpenChange={setOpenStudentOptions}>
-                          <PopoverTrigger asChild>
-                            <Button
-                              variant="outline"
-                              role="combobox"
-                              aria-expanded={openStudentOptions}
-                              className="col-span-3"
-                            >
-                              {selectedStudentId && studentsMap[selectedStudentId]
-                                ? `${studentsMap[selectedStudentId].firstName} ${studentsMap[selectedStudentId].lastName}`
-                                : "Select a student"}
-                              <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                            </Button>
-                          </PopoverTrigger>
-                          <PopoverContent className="">
-                            <Command>
-                              <CommandInput
-                                placeholder="Search student..."
-                                value={studentSearch}
-                                onValueChange={setStudentSearch}
-                              />
-                              <CommandList>
-                                <CommandEmpty>No student found.</CommandEmpty>
-                                <CommandGroup>
-                                  {students.map((student) => (
-                                    <CommandItem
-                                      key={student.id}
-                                      value={student.id}
-                                      keywords={[
-                                        student.firstName,
-                                        student.lastName,
-                                        student.email,
-                                      ].filter(Boolean)}
-                                      onSelect={() => {
-                                        setSelectedStudentId(student.id);
-                                        handleInputChange({
-                                          target: {
-                                            name: "student.id",
-                                            value: student.id,
-                                          },
-                                        });
-                                        setOpenStudentOptions(false);
-                                      }}
-                                    >
-                                      <Check
-                                        className={cn(
-                                          "mr-2 h-4 w-4",
-                                          selectedStudentId === student.id
-                                            ? "opacity-100"
-                                            : "opacity-0",
-                                        )}
-                                      />
-                                      {student.firstName} {student.lastName} - {student.email}
-                                    </CommandItem>
-                                  ))}
-                                </CommandGroup>
-                              </CommandList>
-                            </Command>
-                          </PopoverContent>
-                        </Popover>
-                      </div>
-                      <div className="grid grid-cols-4 items-center gap-4">
-                        {" "}
-                        <Label htmlFor="tutor" className="text-right">
-                          Tutor
-                        </Label>
-                        <Popover open={openTutorOptions} onOpenChange={setOpentTutorOptions}>
-                          <PopoverTrigger asChild>
-                            <Button
-                              variant="outline"
-                              role="combobox"
-                              aria-expanded={openTutorOptions}
-                              className="col-span-3"
-                            >
-                              {selectedTutorId ? (
-                                <>
-                                  {tutors.find((tutor) => tutor.id === selectedTutorId)?.firstName}{" "}
-                                  {tutors.find((tutor) => tutor.id === selectedTutorId)?.lastName}
-                                </>
-                              ) : (
-                                "Select a tutor"
-                              )}
-                              <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                            </Button>
-                          </PopoverTrigger>
-                          <PopoverContent className="">
-                            <Command>
-                              <CommandInput
-                                placeholder="Search Tutor..."
-                                value={tutorSearch}
-                                onValueChange={setTutorSearch}
-                              />
-                              <CommandList>
-                                <CommandEmpty>No Tutor found.</CommandEmpty>
-                                <CommandGroup>
-                                  {tutors.map((tutor) => (
-                                    <CommandItem
-                                      key={tutor.id}
-                                      value={tutor.id}
-                                      keywords={[
-                                        tutor.firstName,
-                                        tutor.lastName,
-                                        tutor.email,
-                                      ].filter(Boolean)}
-                                      onSelect={() => {
-                                        setSelectedTutorId(tutor.id);
-                                        handleInputChange({
-                                          target: {
-                                            name: "tutor.id",
-                                            value: tutor.id,
-                                          },
-                                        });
-                                        setOpentTutorOptions(false);
-                                      }}
-                                    >
-                                      <Check
-                                        className={cn(
-                                          "mr-2 h-4 w-4",
-                                          selectedTutorId === tutor.id
-                                            ? "opacity-100"
-                                            : "opacity-0",
-                                        )}
-                                      />
-                                      {tutor.firstName} {tutor.lastName} - {tutor.email}
-                                    </CommandItem>
-                                  ))}
-                                </CommandGroup>
-                              </CommandList>
-                            </Command>
-                          </PopoverContent>
-                        </Popover>
-                      </div>
-                      <AvailabilityForm
-                        availabilityList={availabilityList} // new enrollment by default will not have an availability
-                        setAvailabilityList={(availability) =>
-                          handleAvailabilityChange(availability, "add")
-                        }
-                      />
-                      <div className="grid grid-cols-[80px_1fr] items-center gap-4">
-                        {/* <Label htmlFor="duration" className="text-right">
-                          Duration
-                        </Label> */}
-                        {/* <div className="flex items-center gap-2">
-                          <Input
-                            id="hours"
-                            name="hours"
-                            type="text"
-                            inputMode="numeric"
-                            value={hours.toString()}
-                            onChange={handleInputChange}
-                            placeholder="1"
-                            className={`w-16 ${hoursError ? "border-red-500" : ""}`}
-                          />
-                          <span className="text-sm">hrs</span>
-                          <Input
-                            id="minutes"
-                            name="minutes"
-                            type="text"
-                            inputMode="numeric"
-                            value={minutes.toString()}
-                            onChange={handleInputChange}
-                            placeholder="0"
-                            className={`w-16 ${minutesError ? "border-red-500" : ""}`}
-                          />
-                          <span className="text-sm">min</span>
-                          {/* <Label>{newEnrollment.duration}</Label> */}
-                        {/* </div> */}
-
-                        <Label htmlFor="frequency" className="text-right">
-                          Frequency
-                        </Label>
-                        <div className="flex items-center gap-2">
-                          <Select
-                            name="timeZone"
-                            value={newEnrollment.frequency}
-                            onValueChange={(value) => handleInputSelectionChange(value, "add")}
-                          >
-                            <SelectTrigger className="w-full">
-                              <SelectValue placeholder="weekly" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {/* Add time zone options here */}
-                              <SelectItem value="weekly">Weekly</SelectItem>
-                              <SelectItem value="biweekly">Biweekly</SelectItem>
-                              {/* <SelectItem value="MT">Monthy</SelectItem> */}
-                            </SelectContent>
-                          </Select>
-                        </div>
-
-                        <Label htmlFor="summary" className="text-right">
-                          Summary
-                        </Label>
-                        <Input
-                          id="summary"
-                          name="summary"
-                          value={newEnrollment.summary}
-                          onChange={handleInputChange}
-                        />
-                        <Label htmlFor="startDate" className="text-right">
-                          Start Date
-                        </Label>
-                        <Input
-                          id="startDate"
-                          name="startDate"
-                          type="date"
-                          value={newEnrollment.startDate}
-                          onChange={handleInputChange}
-                          // className="col-span-3"
-                        />
-                      </div>
-                      <div>
-                        <Label>Meeting Link</Label>
-                        <Select
-                          name="meetingId"
-                          value={newEnrollment.meetingId}
-                          onOpenChange={(open) => {
-                            if (open && newEnrollment) {
-                              checkMeetingAvailabilities(newEnrollment);
-                            }
-                          }}
-                          onValueChange={(value) =>
-                            handleInputChange({
-                              target: { name: "meetingId", value },
-                            } as any)
-                          }
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select a meeting link">
-                              {isCheckingMeetingAvailability ? (
-                                <>
-                                  Checking meeting availabilites
-                                  <Loader2 className="mx-2 h-4 w-4 animate-spin" />
-                                </>
-                              ) : newEnrollment.meetingId ? (
-                                meetings.find((meeting) => meeting.id === newEnrollment.meetingId)
-                                  ?.name
-                              ) : (
-                                "Select a meeting"
-                              )}
-                            </SelectValue>
-                          </SelectTrigger>
-                          <SelectContent>
-                            {meetings.map((meeting) => (
-                              <SelectItem
-                                key={meeting.id}
-                                value={meeting.id}
-                                className="flex items-center justify-between"
-                                disabled={
-                                  isCheckingMeetingAvailability ||
-                                  (!meetingAvailability[meeting.id] &&
-                                    meeting.name !== "Zoom Link HQ")
-                                }
-                              >
-                                <span>
-                                  {meeting.name} - {meeting.id}
-                                </span>
-                                <Circle
-                                  className={`w-2 h-2 ml-2 ${
-                                    meetingAvailability[meeting.id]
-                                      ? "text-green-500"
-                                      : "text-red-500"
-                                  } fill-current`}
-                                />
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    </div>
-                  </ScrollArea>
-
-                  <Button onClick={handleAddEnrollment}>Add Enrollment</Button>
-                </DialogContent>
+                <EnrollmentFormDialog
+                  mode="add"
+                  context="admin"
+                  enrollment={newEnrollment}
+                  onInputChange={handleInputChange}
+                  onFrequencyChange={(value) => handleInputSelectionChange(value, "add")}
+                  availabilityList={availabilityList}
+                  onAvailabilityChange={(availability) =>
+                    handleAvailabilityChange(availability, "add")
+                  }
+                  students={students}
+                  selectedStudentId={selectedStudentId}
+                  onStudentSelect={handleStudentSelect}
+                  tutors={tutors}
+                  selectedTutorId={selectedTutorId}
+                  onTutorSelect={handleTutorSelect}
+                  meetings={meetings}
+                  meetingAvailability={meetingAvailability}
+                  isCheckingMeetingAvailability={isCheckingMeetingAvailability}
+                  onMeetingDropdownOpen={() => checkMeetingAvailabilities(newEnrollment)}
+                  onSubmit={handleAddEnrollment}
+                />
               </Dialog>
             </div>
           </div>
@@ -1010,6 +721,8 @@ const EnrollmentList = ({
                       size="icon"
                       onClick={() => {
                         setSelectedEnrollment(enrollment);
+                        setSelectedStudentId(enrollment.student?.id ?? "");
+                        setSelectedTutorId(enrollment.tutor?.id ?? "");
                         setIsEditModalOpen(true);
                       }}
                     >
@@ -1132,320 +845,36 @@ const EnrollmentList = ({
       </div>
       {/* Edit Enrollment Modal */}
       <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
-        <DialogContent className="sm:max-w-[500px]">
-          <DialogHeader>
-            <DialogTitle>Edit Enrollment</DialogTitle>
-            <DialogDescription className="sr-only">edit enrollment details</DialogDescription>
-          </DialogHeader>
-          <ScrollArea className="max-h-[calc(80vh-120px)] pr-4">
-            {" "}
-            {selectedEnrollment && (
-              <div className="grid gap-4 py-4">
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="studentId" className="text-right">
-                    Student
-                  </Label>
-
-                  <Popover open={openStudentOptions} onOpenChange={setOpenStudentOptions}>
-                    <PopoverTrigger asChild>
-                      <Button
-                        variant="outline"
-                        role="combobox"
-                        aria-expanded={openStudentOptions}
-                        className="col-span-3"
-                      >
-                        {selectedEnrollment.student?.id ? (
-                          <>
-                            {
-                              students.find(
-                                (student) => student.id === selectedEnrollment.student?.id,
-                              )?.firstName
-                            }{" "}
-                            {
-                              students.find(
-                                (student) => student.id === selectedEnrollment.student?.id,
-                              )?.lastName
-                            }
-                          </>
-                        ) : (
-                          "Select a student"
-                        )}
-                        <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="">
-                      <Command>
-                        <CommandInput
-                          placeholder="Search Student..."
-                          value={studentSearch}
-                          onValueChange={setStudentSearch}
-                        />
-                        <CommandList>
-                          <CommandEmpty>No student found.</CommandEmpty>
-                          <CommandGroup>
-                            {students.map((student) => (
-                              <CommandItem
-                                key={student.id}
-                                value={student.id}
-                                keywords={[
-                                  student.firstName,
-                                  student.lastName,
-                                  student.email,
-                                ].filter(Boolean)}
-                                onSelect={() => {
-                                  setSelectedStudentId(student.id);
-                                  handleInputChange({
-                                    target: {
-                                      name: "student.id",
-                                      value: student.id,
-                                    },
-                                  });
-                                  setOpenStudentOptions(false);
-                                }}
-                              >
-                                <Check
-                                  className={cn(
-                                    "mr-2 h-4 w-4",
-                                    selectedStudentId === student.id ? "opacity-100" : "opacity-0",
-                                  )}
-                                />
-                                {student.firstName} {student.lastName}
-                              </CommandItem>
-                            ))}
-                          </CommandGroup>
-                        </CommandList>
-                      </Command>
-                    </PopoverContent>
-                  </Popover>
-                </div>
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="tutorId" className="text-right">
-                    Tutor
-                  </Label>
-
-                  <Popover open={openTutorOptions} onOpenChange={setOpentTutorOptions}>
-                    <PopoverTrigger asChild>
-                      <Button
-                        variant="outline"
-                        role="combobox"
-                        aria-expanded={openTutorOptions}
-                        className="col-span-3"
-                      >
-                        {selectedEnrollment.tutor?.id ? (
-                          <>
-                            {
-                              tutors.find((tutor) => tutor.id === selectedEnrollment.tutor?.id)
-                                ?.firstName
-                            }{" "}
-                            {
-                              tutors.find((tutor) => tutor.id === selectedEnrollment.tutor?.id)
-                                ?.lastName
-                            }
-                          </>
-                        ) : (
-                          "Select a tutor"
-                        )}
-                        <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="">
-                      <Command>
-                        <CommandInput
-                          placeholder="Search Tutor..."
-                          value={tutorSearch}
-                          onValueChange={setTutorSearch}
-                        />
-                        <CommandList>
-                          <CommandEmpty>No Tutor found.</CommandEmpty>
-                          <CommandGroup>
-                            {tutors.map((tutor) => (
-                              <CommandItem
-                                key={tutor.id}
-                                value={tutor.id}
-                                keywords={[tutor.firstName, tutor.lastName, tutor.email].filter(
-                                  Boolean,
-                                )}
-                                onSelect={() => {
-                                  setSelectedTutorId(tutor.id);
-                                  handleInputChange({
-                                    target: {
-                                      name: "tutor.id",
-                                      value: tutor.id,
-                                    },
-                                  });
-                                  setOpentTutorOptions(false);
-                                }}
-                              >
-                                <Check
-                                  className={cn(
-                                    "mr-2 h-4 w-4",
-                                    selectedTutorId === tutor.id ? "opacity-100" : "opacity-0",
-                                  )}
-                                />
-                                {tutor.firstName} {tutor.lastName}
-                              </CommandItem>
-                            ))}
-                          </CommandGroup>
-                        </CommandList>
-                      </Command>
-                    </PopoverContent>
-                  </Popover>
-                </div>
-                <AvailabilityForm
-                  availabilityList={
-                    selectedEnrollment ? getEnrollmentAvailability(selectedEnrollment) : []
-                  } // Default to empty array if undefined
-                  setAvailabilityList={(availability) =>
-                    handleAvailabilityChange(availability, "edit")
-                  }
-                />
-                <div className="grid grid-cols-[80px_1fr] items-center gap-4">
-                  {/* <Label htmlFor="duration" className="text-right">
-                    Duration
-                  </Label> */}
-                  {/* <div className="flex items-center gap-2">
-                    <Input
-                      id="hours"
-                      name="hours"
-                      type="text"
-                      inputMode="numeric"
-                      value={hours.toString()}
-                      onChange={handleInputChange}
-                      placeholder="1"
-                      className={`w-16 ${hoursError ? "border-red-500" : ""}`}
-                    />
-                    <span className="text-sm">hrs</span>
-                    <Input
-                      id="minutes"
-                      name="minutes"
-                      type="text"
-                      inputMode="numeric"
-                      value={minutes.toString()}
-                      onChange={handleInputChange}
-                      placeholder="0"
-                      className={`w-16 ${minutesError ? "border-red-500" : ""}`}
-                    />
-                    <span className="text-sm">min</span>
-                    <Label>{newEnrollment.duration}</Label>
-                  </div> */}
-
-                  <Label htmlFor="frequency" className="text-right">
-                    Frequency
-                  </Label>
-                  <div className="flex items-center gap-2">
-                    <Select
-                      name="timeZone"
-                      value={selectedEnrollment.frequency}
-                      onValueChange={(value) => handleInputSelectionChange(value, "edit")}
-                    >
-                      <SelectTrigger className="w-full">
-                        <SelectValue placeholder="weekly" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {/* Add time zone options here */}
-                        <SelectItem value="weekly">Weekly</SelectItem>
-                        <SelectItem value="biweekly" disabled={true}>
-                          Biweekly
-                        </SelectItem>
-                        {/* <SelectItem value="MT">Monthy</SelectItem> */}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <Label htmlFor="summary" className="text-right">
-                    Summary
-                  </Label>
-                  <Input
-                    id="summary"
-                    name="summary"
-                    value={selectedEnrollment.summary}
-                    onChange={handleInputChange}
-                    // className="col-span-3"
-                  />
-                </div>
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="startDate" className="text-right">
-                    Start Date
-                  </Label>
-                  <Input
-                    id="startDate"
-                    name="startDate"
-                    type="date"
-                    value={selectedEnrollment.startDate}
-                    onChange={handleInputChange}
-                    className="col-span-3"
-                  />
-                </div>
-                <div>
-                  <Label>Meeting Link</Label>
-                  <Select
-                    name="meetingId"
-                    value={selectedEnrollment.meetingId}
-                    onOpenChange={(open) => {
-                      if (open && selectedEnrollment) {
-                        checkMeetingAvailabilities(selectedEnrollment);
-                      }
-                    }}
-                    onValueChange={(value) =>
-                      handleInputChange({
-                        target: { name: "meetingId", value },
-                      } as any)
-                    }
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select a meeting link">
-                        {selectedEnrollment.meetingId
-                          ? meetings.find((meeting) => meeting.id === selectedEnrollment.meetingId)
-                              ?.name
-                          : "Select a meeting"}
-                      </SelectValue>
-                    </SelectTrigger>
-                    <SelectContent>
-                      {meetings.map((meeting) => (
-                        <SelectItem
-                          key={meeting.id}
-                          value={meeting.id}
-                          className="flex items-center justify-between"
-                        >
-                          <span>
-                            {meeting.name} - {meeting.id}
-                          </span>
-                          <Circle
-                            className={`w-2 h-2 ml-2 ${
-                              meetingAvailability[meeting.id] ? "text-green-500" : "text-red-500"
-                            } fill-current`}
-                          />
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-            )}
-          </ScrollArea>
-
-          <Button onClick={handleUpdateEnrollment}>Update Enrollment</Button>
-        </DialogContent>
+        <EnrollmentFormDialog
+          mode="edit"
+          context="admin"
+          enrollment={selectedEnrollment}
+          onInputChange={handleInputChange}
+          onFrequencyChange={(value) => handleInputSelectionChange(value, "edit")}
+          availabilityList={selectedEnrollment ? getEnrollmentAvailability(selectedEnrollment) : []}
+          onAvailabilityChange={(availability) => handleAvailabilityChange(availability, "edit")}
+          students={students}
+          selectedStudentId={selectedStudentId}
+          onStudentSelect={handleStudentSelect}
+          tutors={tutors}
+          selectedTutorId={selectedTutorId}
+          onTutorSelect={handleTutorSelect}
+          meetings={meetings}
+          meetingAvailability={meetingAvailability}
+          isCheckingMeetingAvailability={isCheckingMeetingAvailability}
+          onMeetingDropdownOpen={() =>
+            selectedEnrollment && checkMeetingAvailabilities(selectedEnrollment)
+          }
+          onSubmit={handleUpdateEnrollment}
+        />
       </Dialog>
       {/* Delete Enrollment Modal */}
       <Dialog open={isDeleteModalOpen} onOpenChange={setIsDeleteModalOpen}>
-        <DialogContent className="sm:max-w-[500px]">
-          <DialogHeader>
-            <DialogTitle>Delete Enrollment</DialogTitle>
-            <DialogDescription className="sr-only">confirm enrollment deletion</DialogDescription>
-          </DialogHeader>
-          <div className="py-4">
-            <p>Are you sure you want to delete this enrollment? This action cannot be undone.</p>
-          </div>
-          <div className="flex justify-end space-x-2">
-            <Button variant="outline" onClick={() => setIsDeleteModalOpen(false)}>
-              Cancel
-            </Button>
-            <Button variant="destructive" onClick={handleDeleteEnrollment}>
-              Delete
-            </Button>
-          </div>
-        </DialogContent>
+        <DeleteEnrollmentDialog
+          enrollment={selectedEnrollment}
+          onCancel={() => setIsDeleteModalOpen(false)}
+          onConfirm={handleDeleteEnrollment}
+        />
       </Dialog>
       {loading && <p>Loading...</p>}
       {error && <p className="text-red-500">Error: {error}</p>}
