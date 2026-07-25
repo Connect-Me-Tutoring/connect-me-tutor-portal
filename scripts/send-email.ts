@@ -18,9 +18,9 @@ import React from "react";
 import { Resend } from "resend";
 
 import ChatMessageNotificationEmail from "../components/emails/chats/chat-message-notification";
-import PairingRequestNotificationEmail from "../components/emails/pairing-request-notification";
-import StudentPairingConfirmationEmail from "../components/emails/student-confirmation-email";
-import TutorPairingConfirmationEmail from "../components/emails/tutor-confirmation-email";
+import PairingRequestNotificationEmail from "../components/emails/pairing-request/pairing-request-notification";
+import StudentPairingConfirmationEmail from "../components/emails/pairing-request/student-confirmation-email";
+import TutorPairingConfirmationEmail from "../components/emails/pairing-request/tutor-confirmation-email";
 
 import type { PairingConfirmationEmailProps } from "../types/email";
 

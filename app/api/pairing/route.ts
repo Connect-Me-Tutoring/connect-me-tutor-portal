@@ -3,7 +3,7 @@ import {
   PairingWorkflowResult,
   runPairingWorkflow,
 } from "@/lib/pairing";
-import { verifyAdmin } from "@/lib/actions/auth.server.actions";
+import { verifyAdmin } from "@/lib/actions/auth/server.actions";
 import { isCronRequestAuthorized } from "@/lib/security/cron";
 import { NextRequest, NextResponse } from "next/server";
 

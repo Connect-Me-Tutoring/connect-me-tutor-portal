@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getParticipationData } from "@/lib/actions/session.server.actions";
-import { requireAuthenticatedUser } from "@/lib/actions/authz.server";
+import { getParticipationData } from "@/lib/actions/session/server.actions";
+import { requireAuthenticatedUser } from "@/lib/actions/auth/authz.server";
 import { logError } from "@/lib/posthog";
 
 export async function GET(req: NextRequest, props: { params: Promise<{ sessionId: string }> }) {

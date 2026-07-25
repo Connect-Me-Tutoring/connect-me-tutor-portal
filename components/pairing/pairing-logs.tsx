@@ -25,7 +25,7 @@ import {
 import { Clock, Users, AlertCircle, Calendar, XCircle, CheckCircle, Waypoints } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
-import { getPairingLogs } from "@/lib/actions/pairing.actions";
+import { getPairingLogs } from "@/lib/actions/pairing/client.actions";
 import type { PairingMatchPreview, PairingWorkflowPreviewPayload } from "@/types/pairing";
 import { normalizePairingWorkflowPreviewPayload } from "@/lib/pairing/normalizePreviewPayload";
 import type { PairingLogSchemaType } from "@/lib/pairing/types";

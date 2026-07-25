@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useEffect, useState, useRef, use } from "react";
 // import axios, { AxiosResponse } from "axios"; // Not used, can be removed
 import { createClient } from "@/lib/supabase/client";
-import { getMeeting } from "@/lib/actions/meeting.actions";
+import { getMeeting } from "@/lib/actions/meeting/client.actions";
 import { Meeting } from "@/types";
 import { Button } from "@/components/ui/button";
 import { Copy, ExternalLink, Loader2, AlertTriangle } from "lucide-react"; // Added ExternalLink and AlertTriangle

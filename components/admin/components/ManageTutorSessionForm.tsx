@@ -17,8 +17,8 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { getTutorSessions } from "@/lib/actions/tutor.actions";
-import { updateSessionsStatus } from "@/lib/actions/session.server.actions";
+import { getTutorSessions } from "@/lib/actions/tutor/actions";
+import { updateSessionsStatus } from "@/lib/actions/session/server.actions";
 import { Profile, Session } from "@/types";
 import { format, parseISO } from "date-fns";
 import toast from "react-hot-toast";

@@ -1,6 +1,6 @@
 import SettingsPage from "@/components/settings/SettingsPage";
 import { cachedGetProfile } from "@/lib/actions/cache";
-import { cachedGetUser } from "@/lib/actions/user.server.actions";
+import { cachedGetUser } from "@/lib/actions/user/server.actions";
 import { redirect } from "next/navigation";
 
 export default async function Display() {

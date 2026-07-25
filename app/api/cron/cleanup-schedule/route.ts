@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { cancelUnsubmittedSEFCron } from "@/lib/actions/session.server.actions";
+import { cancelUnsubmittedSEFCron } from "@/lib/actions/session/server.actions";
 import {
   deleteInactiveEnrollments,
   warnInactiveEnrollments,
-} from "@/lib/actions/enrollment.server.actions";
+} from "@/lib/actions/enrollment/server.actions";
 import { isCronRequestAuthorized } from "@/lib/security/cron";
 
 export const dynamic = "force-dynamic";

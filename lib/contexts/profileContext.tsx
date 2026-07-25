@@ -4,7 +4,7 @@ import { createContext, useContext, useState } from "react";
 import { supabase } from "@/lib/supabase/client";
 import type { ReactNode } from "react";
 import type { Profile } from "@/types";
-import { getProfile } from "@/lib/actions/user.actions";
+import { getProfile } from "@/lib/actions/user/actions";
 
 type ProfileContextValue = {
   profile: Profile | null;

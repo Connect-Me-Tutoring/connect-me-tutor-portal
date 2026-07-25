@@ -61,7 +61,7 @@ import SessionExitForm from "./SessionExitForm";
 import RescheduleForm from "./RescheduleDialog";
 import CancellationForm from "./CancellationForm";
 import toast from "react-hot-toast";
-import { deletePairingServer } from "@/lib/actions/pairing.server.actions";
+import { deletePairingServer } from "@/lib/actions/pairing/server.actions";
 
 interface DeletePairingFormProps {
   student: Profile;

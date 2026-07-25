@@ -1,5 +1,5 @@
 import TutorList from "@/components/admin/TutorList";
-import { getAllProfiles } from "@/lib/actions/profile.server.actions";
+import { getAllProfiles } from "@/lib/actions/profile/server.actions";
 import { Suspense } from "react";
 import SkeletonTable, { SkeletonCard } from "@/components/ui/skeleton";
 

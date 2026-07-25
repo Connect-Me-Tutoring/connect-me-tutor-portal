@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { getEnrollmentsWithMissingSEF } from "@/lib/actions/enrollment.server.actions";
+import { getEnrollmentsWithMissingSEF } from "@/lib/actions/enrollment/server.actions";
 import { isCronRequestAuthorized } from "@/lib/security/cron";
 import { logError } from "@/lib/posthog";
 

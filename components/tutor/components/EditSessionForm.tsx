@@ -19,10 +19,10 @@ import {
 } from "@/components/ui/dialog";
 import { Loader2, Circle, Edit } from "lucide-react";
 import { format, parseISO, areIntervalsOverlapping, addHours } from "date-fns";
-import { checkAvailableMeeting } from "@/lib/actions/meeting.actions";
+import { checkAvailableMeeting } from "@/lib/actions/meeting/client.actions";
 import { toast } from "react-hot-toast";
 import { HoverCard, HoverCardTrigger, HoverCardContent } from "@/components/ui/hover-card";
-import { fetchDaySessionsFromSchedule } from "@/lib/actions/session.actions";
+import { fetchDaySessionsFromSchedule } from "@/lib/actions/session/actions";
 
 import { DropdownMenuItem } from "@/components/ui/dropdown-menu";
 

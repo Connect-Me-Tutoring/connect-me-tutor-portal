@@ -53,12 +53,12 @@
 //   createEnrollment,
 //   getAllEnrollments,
 // } from "@/lib/actions/admin.actions";
-// import { getProfileByEmail } from "@/lib/actions/user.actions";
+// import { getProfileByEmail } from "@/lib/actions/user/actions";
 // import {
 //   MEETING_CONFIG,
 //   getIdFromMeetingName,
 //   type MeetingName,
-// } from "@/lib/actions/meeting.actions";
+// } from "@/lib/actions/meeting/client.actions";
 // import { Loader2 } from "lucide-react";
 // import { Alert, AlertDescription } from "@/components/ui/alert";
 // import {

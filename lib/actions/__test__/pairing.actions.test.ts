@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { isOverlap, timeToMinutes } from "../pairing.actions";
+import { isOverlap, timeToMinutes } from "../pairing/client.actions";
 
 describe("timeToMinutes", () => {
   it("converts HH:MM (no seconds) to minutes since midnight", () => {

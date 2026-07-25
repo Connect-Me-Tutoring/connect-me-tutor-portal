@@ -25,7 +25,7 @@ import {
   getAllPairingRequests,
   removePairingRequest,
   updatePairingRequest,
-} from "@/lib/actions/pairing.actions";
+} from "@/lib/actions/pairing/client.actions";
 import { to12Hour } from "@/lib/utils";
 import toast from "react-hot-toast";
 import { TestingPairingControls } from "../test-controls";

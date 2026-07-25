@@ -43,7 +43,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { getProfile } from "@/lib/actions/user.actions";
+import { getProfile } from "@/lib/actions/user/actions";
 import {
   getAllProfiles,
   deactivateUser,
@@ -51,9 +51,9 @@ import {
   getUserFromId,
   resendEmailConfirmation,
 } from "@/lib/actions/admin.actions";
-import { editProfile } from "@/lib/actions/profile.server.actions";
-import { deleteUser } from "@/lib/actions/auth.server.actions";
-import { addUser } from "@/lib/actions/auth.actions";
+import { editProfile } from "@/lib/actions/profile/server.actions";
+import { deleteUser } from "@/lib/actions/auth/server.actions";
+import { addUser } from "@/lib/actions/auth/client.actions";
 import { createClient } from "@/lib/supabase/client";
 import { Profile } from "@/types";
 import {

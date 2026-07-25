@@ -1,11 +1,11 @@
 import EnrollmentsList from "@/components/tutor/EnrollmentsManagement";
-import { cachedGetEnrollments, getEnrollments } from "@/lib/actions/enrollment.server.actions";
-import { cachedGetUser } from "@/lib/actions/user.server.actions";
+import { cachedGetEnrollments, getEnrollments } from "@/lib/actions/enrollment/server.actions";
+import { cachedGetUser } from "@/lib/actions/user/server.actions";
 import { cachedGetProfile, cachedGetTutorStudents } from "@/lib/actions/cache";
 import { createClient } from "@/lib/supabase/server";
 import { Profile } from "@/types";
 import { profile } from "console";
-import { getMeetings } from "@/lib/actions/meeting.server.actions";
+import { getMeetings } from "@/lib/actions/meeting/server.actions";
 import { Suspense } from "react";
 import { Calendar } from "lucide-react";
 import SkeletonTable from "@/components/ui/skeleton";
