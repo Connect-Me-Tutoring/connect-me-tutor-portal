@@ -10,7 +10,6 @@ import { getUserFromAction } from "./user.server.actions";
 import { IncomingPairingMatch } from "./pairing.actions";
 import { NextResponse } from "next/server";
 import { PairingLogSchemaType } from "../pairing/types";
-import { getSupabase } from "../supabase-server/serverClient";
 import { getOverlappingAvailabilites } from "./enrollment.actions";
 import { formatDateAdmin, to12Hour } from "../utils";
 import { requireAdmin, requireEnrollmentAccess, requireSelfOrAdmin } from "./authz.server";

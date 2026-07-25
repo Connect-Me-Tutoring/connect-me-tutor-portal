@@ -27,9 +27,7 @@ describe("enrollment schedule column adapters", () => {
         startTime: "13:00",
         endTime: "14:00",
       }),
-    ).toEqual([
-      { day: "Tuesday", startTime: "13:00", endTime: "14:00" },
-    ]);
+    ).toEqual([{ day: "Tuesday", startTime: "13:00", endTime: "14:00" }]);
   });
 
   it("does not expose an incomplete schedule", () => {

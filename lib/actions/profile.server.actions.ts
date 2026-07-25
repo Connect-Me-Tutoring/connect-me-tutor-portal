@@ -5,7 +5,6 @@ import { createAdminClient, createClient } from "@/lib/supabase/server";
 import { Table } from "../supabase/tables";
 
 import axios from "axios";
-import { getSupabase } from "../supabase-server/serverClient";
 import { revalidatePath } from "next/cache";
 import { tableToInterfaceProfiles } from "../utils/type-utils";
 import {
