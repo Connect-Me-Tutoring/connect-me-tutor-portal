@@ -839,7 +839,6 @@ const EnrollmentList = ({
                       "Student",
                       "Tutor",
                       "Availability",
-                      "Summary",
                       "Start Date",
                       "Meeting Link",
                       "Actions",
@@ -870,8 +869,6 @@ const EnrollmentList = ({
                           card={false}
                         />
                       </TableCell>
-
-                      <TableCell className="min-w-[200px]">{enrollment.summary}</TableCell>
 
                       <TableCell className="whitespace-nowrap">
                         {formatDateUTC(enrollment.startDate, {
