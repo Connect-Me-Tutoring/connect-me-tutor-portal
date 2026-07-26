@@ -17,7 +17,7 @@ import {
   setExcludeRejectedTutorsPreference,
   updatePairingRequest,
   type MyPairingRequest,
-} from "@/lib/actions/pairing.actions";
+} from "@/lib/actions/pairing/client.actions";
 import toast from "react-hot-toast";
 
 export type PairingRequest = {

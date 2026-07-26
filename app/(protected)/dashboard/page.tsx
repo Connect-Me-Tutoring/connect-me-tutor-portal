@@ -3,17 +3,17 @@ import AdminDashboard from "@/components/admin/DashboardContent";
 import StudentDashboard from "@/components/student/StudentDashboard";
 import TutorDashboard from "@/components/tutor/dashboard";
 import SkeletonTable from "@/components/ui/skeleton";
-import { getMeetings } from "@/lib/actions/meeting.server.actions";
+import { getMeetings } from "@/lib/actions/meeting/server.actions";
 import { cachedGetProfile } from "@/lib/actions/cache";
-import { getTutorSessions } from "@/lib/actions/session.server.actions";
-import { getStudentSessions } from "@/lib/actions/session.server.actions";
-import { cachedGetUser } from "@/lib/actions/user.server.actions";
+import { getTutorSessions } from "@/lib/actions/session/server.actions";
+import { getStudentSessions } from "@/lib/actions/session/server.actions";
+import { cachedGetUser } from "@/lib/actions/user/server.actions";
 import { Meeting, Profile } from "@/types";
 import { endOfWeek, startOfWeek } from "date-fns";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { DashboardContextProvider } from "@/lib/contexts/dashboardContext";
-import { getProfile } from "@/lib/actions/profile.server.actions";
+import { getProfile } from "@/lib/actions/profile/server.actions";
 import { logEvent } from "@/lib/posthog";
 
 async function TutorDashboardPage({

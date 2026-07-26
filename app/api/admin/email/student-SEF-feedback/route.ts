@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
 import { Resend } from "resend";
-import FeedbackEmail from "@/components/emails/student-feedback-email";
-import { verifyAdmin } from "@/lib/actions/auth.server.actions";
-import { requireSelfOrAdmin } from "@/lib/actions/authz.server";
+import FeedbackEmail from "@/components/emails/feedback/student-feedback-email";
+import { verifyAdmin } from "@/lib/actions/auth/server.actions";
+import { requireSelfOrAdmin } from "@/lib/actions/auth/authz.server";
 import { logError } from "@/lib/posthog";
 
 let resend: Resend | null = null;

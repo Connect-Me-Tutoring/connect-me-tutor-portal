@@ -1,7 +1,7 @@
-import { cachedGetUser } from "@/lib/actions/user.server.actions";
+import { cachedGetUser } from "@/lib/actions/user/server.actions";
 import DashboardLayout from "@/components/dashboard/dashboard-layout";
 import DashboardProviders from "./dashboardprovider";
-import { getUserProfiles } from "@/lib/actions/profile.server.actions";
+import { getUserProfiles } from "@/lib/actions/profile/server.actions";
 import { cachedGetProfile } from "@/lib/actions/cache";
 import { redirect } from "next/navigation";
 import { logError } from "@/lib/posthog";

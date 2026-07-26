@@ -1,4 +1,4 @@
-import { getProfile } from "@/lib/actions/user.actions";
+import { getProfile } from "@/lib/actions/user/actions";
 import { Profile } from "@/types";
 import { supabase } from "@/lib/supabase/client";
 import { useEffect, useState } from "react";

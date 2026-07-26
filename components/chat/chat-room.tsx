@@ -17,7 +17,7 @@ import {
   getChatRoomEmailMutedState,
   sendChatMessage,
   setChatRoomEmailMuted,
-} from "@/lib/actions/chat.server.actions";
+} from "@/lib/actions/chat/server.actions";
 import { usePairing } from "@/hooks/pairings";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";

@@ -26,8 +26,8 @@ import {
 } from "@/components/ui/select";
 import { WeeklyMeetingSchedule } from "@/types/meeting";
 import { Meeting, Enrollment } from "@/types";
-import { updateWeeklyMeetingSchedule } from "@/lib/actions/meeting-schedule.server.actions";
-import { getWeeklyMeetingSchedules } from "@/lib/actions/meeting-schedule.client.actions";
+import { updateWeeklyMeetingSchedule } from "@/lib/actions/meeting-schedule/server.actions";
+import { getWeeklyMeetingSchedules } from "@/lib/actions/meeting-schedule/client.actions";
 import { checkAvailableMeetingForWeeklySchedules } from "@/lib/utils/meeting-schedule.utils";
 import { toast, Toaster } from "react-hot-toast";
 

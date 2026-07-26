@@ -6,7 +6,7 @@ import {
   resolveAppSessionFromZoomWebhookObject,
   zoomSessionResolutionStatus,
   type ZoomSessionResolution,
-} from "@/lib/actions/session.server.actions";
+} from "@/lib/actions/session/server.actions";
 import { logEvent, logError, serializeForPosthog } from "@/lib/posthog";
 
 // Use a single signing secret for all Zoom webhooks

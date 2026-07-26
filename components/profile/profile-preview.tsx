@@ -7,7 +7,7 @@ import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { ProfilePairingMetadata } from "@/types/profile";
-import { fetchProfileData } from "@/lib/profile-utils";
+import { fetchProfileData } from "@/lib/utils/profile-utils";
 import { useFetchProfile } from "@/hooks/auth";
 
 export function ProfilePreview() {

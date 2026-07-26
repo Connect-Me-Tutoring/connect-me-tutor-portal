@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { formatInTimeZone } from "date-fns-tz";
-import { sendEarlySessionCheckInEmails } from "@/lib/actions/email.server.actions";
+import { sendEarlySessionCheckInEmails } from "@/lib/actions/email/server.actions";
 import { isCronRequestAuthorized } from "@/lib/security/cron";
 import { logError } from "@/lib/posthog";
 

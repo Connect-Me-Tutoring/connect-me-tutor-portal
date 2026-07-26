@@ -4,18 +4,18 @@ import { Input } from "@/components/ui/input";
 import ActiveSessionsTable from "../components/ActiveSessionsTable";
 import CurrentSessionsTable from "../components/CurrentSessionsTable";
 import CompletedSessionsTable from "../components/CompletedSessionsTable";
-import { updateSession } from "@/lib/actions/session.server.actions";
-import { undoCancelSession } from "@/lib/actions/tutor.actions";
-import { rescheduleSession, cancelSession } from "@/lib/actions/session.server.actions";
+import { updateSession } from "@/lib/actions/session/server.actions";
+import { undoCancelSession } from "@/lib/actions/tutor/actions";
+import { rescheduleSession, cancelSession } from "@/lib/actions/session/server.actions";
 import { Session, Profile, Meeting } from "@/types";
 import toast from "react-hot-toast";
 import { useDashboardContext } from "@/lib/contexts/dashboardContext";
-import { undoSessionExitForm } from "@/lib/actions/tutor.actions";
-import { getSessionTimePassed, sendStudentSEFFeedbackEmail } from "@/lib/actions/session.actions";
+import { undoSessionExitForm } from "@/lib/actions/tutor/actions";
+import { getSessionTimePassed, sendStudentSEFFeedbackEmail } from "@/lib/actions/session/actions";
 import {
   sendSessionRescheduleEmail,
   updateScheduledEmailBeforeSessions,
-} from "@/lib/actions/email.server.actions";
+} from "@/lib/actions/email/server.actions";
 import { StudentAnnouncementsRoomId } from "@/constants/chat";
 import { format } from "date-fns";
 

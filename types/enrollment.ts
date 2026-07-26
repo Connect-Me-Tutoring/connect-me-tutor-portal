@@ -1,10 +1,3 @@
-interface AvailabilityItem {
-  // Fill in based on the actual structure inside the [Object] array
-  day?: string;
-  start_time?: string;
-  end_time?: string;
-}
-
 export interface Person {
   id: string;
   email: string;
@@ -20,7 +13,9 @@ export interface SharedEnrollment {
   summary: string;
   start_date: string; // ISO date string (YYYY-MM-DD)
   end_date: string; // ISO date string (YYYY-MM-DD)
-  availability: AvailabilityItem[];
+  day: string | null;
+  start_time: string | null;
+  end_time: string | null;
   meetingid: string;
   paused: boolean;
   duration: number;

@@ -1,5 +1,5 @@
 import { createAdminClient } from "@/lib/supabase/server";
-import { sendChatMessageNotificationEmail } from "@/lib/actions/email.server.actions";
+import { sendChatMessageNotificationEmail } from "@/lib/actions/email/server.actions";
 import {
   buildChatRoomUrl,
   isChatRoomEmailMuted,

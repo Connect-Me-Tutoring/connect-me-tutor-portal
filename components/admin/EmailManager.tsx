@@ -3,7 +3,7 @@ import React, { useState, useEffect, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import toast, { Toaster } from "react-hot-toast";
 import { Client } from "@upstash/qstash";
-import { fetchScheduledMessages } from "@/lib/actions/email.server.actions";
+import { fetchScheduledMessages } from "@/lib/actions/email/server.actions";
 import {
   Table,
   TableBody,

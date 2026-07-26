@@ -71,12 +71,12 @@ import {
   addStandaloneSession,
   removeSessionServer,
   updateSession,
-} from "@/lib/actions/session.server.actions";
+} from "@/lib/actions/session/server.actions";
 import { addHours, areIntervalsOverlapping } from "date-fns";
 
-import { getAllSessions } from "@/lib/actions/session.actions";
-import { addSessions } from "@/lib/actions/session.actions";
-import { getProfileWithProfileId } from "@/lib/actions/user.actions";
+import { getAllSessions } from "@/lib/actions/session/actions";
+import { addSessions } from "@/lib/actions/session/actions";
+import { getProfileWithProfileId } from "@/lib/actions/user/actions";
 import { toast, Toaster } from "react-hot-toast";
 import { Session, Enrollment, Meeting, Profile } from "@/types";
 import { getSessionTimespan } from "@/lib/utils";
@@ -90,8 +90,8 @@ import {
 } from "lucide-react";
 import { Textarea } from "../ui/textarea";
 import { boolean } from "zod";
-import { checkAvailableMeeting } from "@/lib/actions/meeting.actions";
-import { getAllActiveEnrollments } from "@/lib/actions/enrollment.actions";
+import { checkAvailableMeeting } from "@/lib/actions/meeting/client.actions";
+import { getAllActiveEnrollments } from "@/lib/actions/enrollment/client.actions";
 import { useMutation, useQueries, useQuery } from "@tanstack/react-query";
 import { useQueryClient } from "@tanstack/react-query";
 
