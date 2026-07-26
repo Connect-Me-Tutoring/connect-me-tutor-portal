@@ -2,7 +2,7 @@
 import { Availability, Enrollment, Meeting, Profile, Session } from "@/types";
 // import { createClient } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/server";
-import { fetchDaySessionsFromSchedule } from "../session/actions";
+import { fetchDaySessionsFromSchedule } from "../session/client.actions";
 import { addHours, areIntervalsOverlapping, isValid, parseISO } from "date-fns";
 import { Table } from "../../supabase/tables";
 import { logError } from "@/lib/posthog";

@@ -11,7 +11,10 @@ import { Session, Profile, Meeting } from "@/types";
 import toast from "react-hot-toast";
 import { useDashboardContext } from "@/lib/contexts/dashboardContext";
 import { undoSessionExitForm } from "@/lib/actions/tutor/actions";
-import { getSessionTimePassed, sendStudentSEFFeedbackEmail } from "@/lib/actions/session/actions";
+import {
+  getSessionTimePassed,
+  sendStudentSEFFeedbackEmail,
+} from "@/lib/actions/session/client.actions";
 import {
   sendSessionRescheduleEmail,
   updateScheduledEmailBeforeSessions,

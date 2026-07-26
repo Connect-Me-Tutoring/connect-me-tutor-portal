@@ -38,6 +38,7 @@ import { logError } from "@/lib/posthog";
 import { startOfWeek, endOfWeek, subDays, parseISO, format, addDays } from "date-fns"; // Only use date-fns
 
 import * as DateFNS from "date-fns-tz";
+import { ZoomSessionResolution } from "./actions";
 const { fromZonedTime } = DateFNS;
 
 async function isSessioninPastWeek(enrollmentId: string, midWeek: Date) {
@@ -447,34 +448,6 @@ export async function removeSessionServer(sessionId: string, updateEmail: boolea
   }
 }
 
-/** Zoom webhook: payload.object → Zoom meeting number → `Meetings` row → `Sessions` row */
-export type ZoomSessionResolution = {
-  /** Zoom `object.id` / `meeting_number` (numeric string) */
-  zoomMeetingNumber: string | undefined;
-  /** Zoom `object.uuid` (often base64) */
-  zoomMeetingUuid: string | undefined;
-  /** `Meetings.id` */
-  meetingsRowId: string | null;
-  /** `Meetings.meeting_id` as stored */
-  storedMeetingId: string | null;
-  /** `Sessions.id` when an active past session matches */
-  appSessionId: string | null;
-};
-
-export async function zoomSessionResolutionStatus(
-  r: ZoomSessionResolution,
-): Promise<
-  | "no_meeting_number_in_payload"
-  | "meeting_not_in_database"
-  | "no_matching_active_session"
-  | "session_resolved"
-> {
-  if (!r.zoomMeetingNumber) return "no_meeting_number_in_payload";
-  if (!r.meetingsRowId) return "meeting_not_in_database";
-  if (!r.appSessionId) return "no_matching_active_session";
-  return "session_resolved";
-}
-
 /**
  * Map Zoom webhook `payload.object` to app session: meeting number → normalized match on
  * `Meetings.meeting_id` → `Sessions.meeting_id` = `Meetings.id`.
@@ -551,6 +524,11 @@ export async function resolvePortalSessionForZoomMeetingNumber(
   const lookbackIso = new Date(
     nowMs - ZOOM_WEBHOOK_SESSION_LOOKBACK_HOURS * 60 * 60 * 1000,
   ).toISOString();
+  // Zoom meeting links are reused across many enrollments, so a single meeting_id
+  // can have far more than `limit(40)` sessions scheduled weeks/months out. Without
+  // this upper bound, ordering by date DESC returns the furthest-future sessions,
+  // crowding out the one actually happening now.
+  const upperBoundIso = new Date(nowMs + ZOOM_WEBHOOK_EARLY_JOIN_MS).toISOString();
 
   const { data: sessions, error: sessionError } = await supabase
     .from(Table.Sessions)
@@ -568,6 +546,7 @@ export async function resolvePortalSessionForZoomMeetingNumber(
     .eq("status", "Active")
     .not("date", "is", null)
     .gte("date", lookbackIso)
+    .lte("date", upperBoundIso)
     .order("date", { ascending: false })
     .limit(40);
 
