@@ -2,36 +2,20 @@ import { NextRequest, NextResponse } from "next/server";
 import crypto from "crypto";
 import { config } from "@/config";
 import { logZoomMetadata, updateParticipantLeaveTime } from "@/lib/actions/zoom.server.actions";
+import { resolveAppSessionFromZoomWebhookObject } from "@/lib/actions/session/server.actions";
 import {
-  resolveAppSessionFromZoomWebhookObject,
   zoomSessionResolutionStatus,
   type ZoomSessionResolution,
-} from "@/lib/actions/session/server.actions";
+} from "@/lib/actions/session/actions";
 import { logEvent, logError, serializeForPosthog } from "@/lib/posthog";
 
 // Use a single signing secret for all Zoom webhooks
 const validationSecret = config.zoom.ZOOM_WEBHOOK_SECRET;
 
-function normalizeMeetingNumber(raw: unknown): string | null {
-  if (raw === null || raw === undefined) return null;
-  const digitsOnly = String(raw).replace(/\D/g, "");
-  return digitsOnly.length > 0 ? digitsOnly : null;
-}
-
-function formatMeetingNumberForStorage(normalizedMeetingNumber: string): string {
-  if (!normalizedMeetingNumber) return "";
-  if (normalizedMeetingNumber.length <= 3) return normalizedMeetingNumber;
-  if (normalizedMeetingNumber.length <= 7) {
-    return `${normalizedMeetingNumber.slice(0, 3)} ${normalizedMeetingNumber.slice(3)}`;
-  }
-  return `${normalizedMeetingNumber.slice(0, 3)} ${normalizedMeetingNumber.slice(3, 7)} ${normalizedMeetingNumber.slice(7)}`;
-}
-
 export async function POST(req: NextRequest) {
   const requestId = crypto.randomUUID();
   const startTime = Date.now();
 
-  // console.log("Received Zoom webhook request");
   await logEvent("zoom_webhook_received", {
     request_id: requestId,
     timestamp: new Date().toISOString(),
@@ -81,7 +65,7 @@ export async function POST(req: NextRequest) {
     );
     await logEvent("zoom_webhook_meeting_session_resolution", {
       request_id: requestId,
-      resolution_status: await zoomSessionResolutionStatus(resolution),
+      resolution_status: zoomSessionResolutionStatus(resolution),
       zoom_meeting_number: resolution.zoomMeetingNumber ?? null,
       zoom_meeting_uuid: resolution.zoomMeetingUuid ?? null,
       meetings_row_id: resolution.meetingsRowId,
@@ -121,7 +105,7 @@ export async function POST(req: NextRequest) {
       : null;
 
   const zoomRelationshipLog = {
-    resolution_status: await zoomSessionResolutionStatus(resolution),
+    resolution_status: zoomSessionResolutionStatus(resolution),
     meetings_row_id: resolution.meetingsRowId,
     meetings_table_meeting_id: resolution.storedMeetingId,
     zoom_meeting_number: resolution.zoomMeetingNumber ?? null,
@@ -139,7 +123,7 @@ export async function POST(req: NextRequest) {
     host_id: hostId,
     host_email: hostEmail,
     event_type: event,
-    resolution_status: await zoomSessionResolutionStatus(resolution),
+    resolution_status: zoomSessionResolutionStatus(resolution),
     meetings_row_id: resolution.meetingsRowId,
     meetings_table_meeting_id: resolution.storedMeetingId,
     has_zoom_meeting_id: !!zoomMeetingId,

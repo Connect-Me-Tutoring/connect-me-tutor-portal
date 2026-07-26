@@ -4,7 +4,7 @@ import { Profile, Session, Meeting, Enrollment } from "@/types";
 import { WeeklyMeetingSchedule } from "@/types/meeting";
 import { getProfileWithProfileId } from "../user/actions";
 import { string } from "zod";
-import { fetchDaySessionsFromSchedule } from "../session/actions";
+import { fetchDaySessionsFromSchedule } from "../session/client.actions";
 import { addHours, areIntervalsOverlapping, isValid, parseISO } from "date-fns";
 import { formatAvailabilityAsDate } from "../../utils";
 import { getEnrollmentSchedule } from "../../enrollment-schedule";

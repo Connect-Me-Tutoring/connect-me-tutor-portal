@@ -8,7 +8,7 @@ import CompletedSessionsTable from "./components/CompletedSessionsTable";
 import { getProfile } from "@/lib/actions/user/actions";
 import { getMeetings } from "@/lib/actions/admin.actions";
 import { getTutorSessions, recordSessionExitForm } from "@/lib/actions/tutor/actions";
-import { getAllSessions } from "@/lib/actions/session/actions";
+import { getAllSessions } from "@/lib/actions/session/client.actions";
 import {
   rescheduleSession,
   cancelSession,
