@@ -61,14 +61,14 @@ import { Label } from "@/components/ui/label";
 import { Circle, Loader2, ChevronDown, Check } from "lucide-react";
 import {
   updateSession,
+  removeSession} from "@/lib/actions/session.actions"
+import {
   getMeetings,
-  getAllProfiles,
-  removeSession,
-  getMeeting,
-
-  // checkMeetingsAvailability,
-  // isMeetingAvailable,
-} from "@/lib/actions/admin.actions";
+  getMeeting} from "@/lib/actions/meeting.actions"
+import {
+  getAllProfiles
+  
+  } from "@/lib/actions/profile.server.actions";
 import { addStandaloneSession } from "@/lib/actions/session.server.actions";
 import { addHours, areIntervalsOverlapping } from "date-fns";
 

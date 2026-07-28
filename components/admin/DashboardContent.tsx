@@ -37,7 +37,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { getProfile } from "@/lib/actions/user.actions";
-import { getAllSessions, rescheduleSession } from "@/lib/actions/admin.actions";
+import { getAllSessions, rescheduleSession } from "@/lib/actions/session.actions";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import { Session, Profile } from "@/types";
 import { formatSessionDate, formatDateAdmin } from "@/lib/utils";

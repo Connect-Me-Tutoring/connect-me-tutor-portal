@@ -694,3 +694,21 @@ async function sendEmailHelper(
     throw error;
   }
 }
+
+export async function pauseEnrollmentOverSummer(enrollment: Enrollment) {
+  try {
+    const supabase = await createClient();
+    const { data, error } = await supabase
+      .from(Table.Enrollments)
+      .update({ paused: enrollment.paused })
+      .eq("id", enrollment.id)
+      .select()
+      .single();
+
+    if (error) throw error;
+    return enrollment;
+  } catch (error) {
+    console.error("Unable to pause/unpause enrollment over summer");
+    throw error;
+  }
+}

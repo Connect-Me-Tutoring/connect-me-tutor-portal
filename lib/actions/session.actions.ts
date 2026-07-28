@@ -32,7 +32,7 @@ import { withCoalescedInvoke } from "next/dist/lib/coalesced-function";
 import toast from "react-hot-toast";
 import { DatabaseIcon } from "lucide-react";
 import { SYSTEM_ENTRYPOINTS } from "next/dist/shared/lib/constants";
-import { getMeeting } from "./admin.actions";
+import { getMeeting } from "@/lib/actions/meeting.actions";
 import { fromZonedTime } from "date-fns-tz";
 import { Table } from "../supabase/tables";
 import {
@@ -468,5 +468,107 @@ export async function getAllSessions(
   } catch (error) {
     console.error("Error fetching sessions", error);
     return [];
+  }
+}
+
+export async function createSession(sessionData: any) {
+  const { data, error } = await supabase
+    .from(Table.Sessions)
+    .insert(sessionData)
+    .single();
+
+  if (error) throw error;
+  return data;
+}
+
+export async function rescheduleSession(sessionId: string, newDate: string) {
+  const { data, error } = await supabase
+    .from(Table.Sessions)
+    .update({ date: newDate })
+    .eq("id", sessionId)
+    .single();
+
+  if (error) throw error;
+  return data;
+}
+
+export async function isSingleMeetingAvailable(
+  meetingId: string,
+  session: Session,
+): Promise<void> {}
+
+export async function updateSession(
+  updatedSession: Session,
+  updateEmail: boolean = true,
+) {
+  try {
+    const {
+      id,
+      status,
+      tutor,
+      student,
+      date,
+      summary,
+      meeting,
+      session_exit_form,
+      isQuestionOrConcern,
+      isFirstSession,
+    } = updatedSession;
+
+    const { data, error } = await supabase
+      .from(Table.Sessions)
+      .update({
+        status: status,
+        student_id: student?.id,
+        tutor_id: tutor?.id,
+        date: date,
+        summary: summary,
+        meeting_id: meeting?.id,
+        session_exit_form: session_exit_form,
+        is_question_or_concern: isQuestionOrConcern,
+        is_first_session: isFirstSession,
+      })
+      .eq("id", id)
+      .select(
+        `*,
+        tutor:Profiles!tutor_id(*),
+        student:Profiles!student_id(*),
+        meeting:Meetings!meeting_id(*)`,
+      )
+      .single();
+
+    if (error) {
+      console.error("Error updating session:", error);
+      return null;
+    }
+
+    if (data) {
+      return data[0];
+    } else {
+      console.error("NO DATA");
+    }
+    if (updateEmail && data) {
+      const newSession: Session = tableToInterfaceSessions(data);
+      await updateScheduledEmailBeforeSessions(newSession);
+    }
+  } catch (error) {
+    console.error("Unable to update session");
+    throw error;
+  }
+}
+
+export async function removeSession(
+  sessionId: string,
+  updateEmail: boolean = true,
+) {
+  const { error: eventError } = await supabase
+    .from(Table.Sessions)
+    .delete()
+    .eq("id", sessionId);
+
+  if (eventError) throw eventError;
+
+  if (updateEmail) {
+    await deleteScheduledEmailBeforeSessions(sessionId);
   }
 }

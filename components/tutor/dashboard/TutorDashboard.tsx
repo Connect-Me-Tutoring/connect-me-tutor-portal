@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input";
 import ActiveSessionsTable from "../components/ActiveSessionsTable";
 import CurrentSessionsTable from "../components/CurrentSessionsTable";
 import CompletedSessionsTable from "../components/CompletedSessionsTable";
-import { updateSession } from "@/lib/actions/admin.actions";
+import { updateSession } from "@/lib/actions/session.actions";
 import { undoCancelSession } from "@/lib/actions/tutor.actions";
 import { rescheduleSession } from "@/lib/actions/session.server.actions";
 import { Session, Profile, Meeting } from "@/types";

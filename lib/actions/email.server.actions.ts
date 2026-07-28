@@ -474,3 +474,49 @@ const createSessionNotification = (
       </p>
       `;
 };
+
+export const sendConfirmationEmail = async (email: string) => {
+  try {
+    await resendEmailConfirmation(email);
+  } catch (error) {
+    console.error("Unable to send confirmation email", email);
+    throw error;
+  }
+};
+
+export const createConfirmationEmail = async (
+  email: string,
+  tempPassword: string,
+) => {
+  try {
+    const supabase = await createClient();
+    const { data, error } = await supabase.auth.admin.generateLink({
+      type: "signup",
+      email: email,
+      password: tempPassword,
+      options: {
+        redirectTo: `${window.location.origin}`,
+      },
+    });
+  } catch (error) {
+    console.error("Unable to create confirmation email");
+    throw error;
+  }
+};
+
+export const resendEmailConfirmation = async (email: string) => {
+  try {
+    const supabase = await createClient();
+    const { error } = await supabase.auth.resend({
+      type: "signup",
+      email: email,
+      options: {
+        emailRedirectTo: `${window.location.origin}`,
+      },
+    });
+    if (error) throw error;
+  } catch (error) {
+    console.error("Failed to resend Email Confirmation", error);
+    throw error;
+  }
+};

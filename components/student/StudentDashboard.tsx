@@ -10,7 +10,9 @@ import {
   User,
 } from "@supabase/auth-helpers-nextjs";
 import { getProfile } from "@/lib/actions/user.actions";
-import { updateSession, getMeetings } from "@/lib/actions/admin.actions";
+import { updateSession}
+from "@/lib/actions/session.actions";
+import { getMeetings } from "@/lib/actions/meeting.actions";
 import {
   getTutorSessions,
   recordSessionExitForm,

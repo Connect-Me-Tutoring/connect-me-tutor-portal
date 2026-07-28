@@ -71,10 +71,17 @@ import {
 import { Label } from "@/components/ui/label";
 import {
   getAllEnrollments,
-  getAllProfiles,
-  getMeetings,
-  pauseEnrollmentOverSummer,
-} from "@/lib/actions/admin.actions";
+  pauseEnrollmentOverSummer
+} from "@/lib/actions/enrollment.server.actions";
+
+import {
+  getAllProfiles
+} from "@/lib/actions/profile.server.actions";
+
+import {
+  getMeetings
+} from "@/lib/actions/meeting.actions";
+
 import { addEnrollment } from "@/lib/actions/enrollment.server.actions";
 import {
   removeEnrollment,

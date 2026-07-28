@@ -180,3 +180,36 @@ export const checkAvailableMeetingForEnrollments = async (
   return updatedMeetingAvailability;
 };
 
+export async function getMeetings(): Promise<Meeting[] | null> {
+  try {
+    const { data, error } = await supabase.from("Meetings").select(`
+        id,
+        link,
+        meeting_id,
+        password,
+        created_at,
+        name
+      `);
+
+    if (error) {
+      console.error("Error fetching meetings:", error.message);
+      return null;
+    }
+
+    if (!data) return null;
+
+    const meetings: Meeting[] = data.map((meeting: any) => ({
+      id: meeting.id,
+      name: meeting.name,
+      meetingId: meeting.meeting_id,
+      password: meeting.password,
+      link: meeting.link,
+      createdAt: meeting.created_at,
+    }));
+
+    return meetings;
+  } catch (error) {
+    console.error("Unexpected error in getMeetings:", error);
+    return null;
+  }
+}

@@ -47,9 +47,12 @@ import {
   getAllProfiles,
   deactivateUser,
   reactivateUser,
-  getUserFromId,
+  getUserFromId} from "@/lib/actions/profile.server.actions";
+
+
+import {  
   resendEmailConfirmation,
-} from "@/lib/actions/admin.actions";
+} from "@/lib/actions/email.server.actions";
 import { editProfile } from "@/lib/actions/profile.server.actions"
 import { deleteUser } from "@/lib/actions/auth.server.actions";
 import { addUser } from "@/lib/actions/auth.actions";

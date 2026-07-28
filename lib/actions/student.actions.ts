@@ -2,7 +2,7 @@
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import { Profile, Session } from "@/types";
 import { getProfileWithProfileId } from "./user.actions";
-import { getMeeting } from "./admin.actions";
+import { getMeeting } from "@/lib/actions/meeting.actions";
 import { Table } from "../supabase/tables";
 import {
   tableToInterfaceMeetings,

@@ -39,11 +39,12 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
-  getAllProfiles,
+  getAllProfiles} from "@/lib/actions/profile.server.actions"
+import {
   getEventsWithTutorMonth,
   createEvent,
   removeEvent,
-} from "@/lib/actions/admin.actions";
+} from "@/lib/actions/event.server.actions";
 import { getEvents } from "@/lib/actions/event.client.actions";
 import { getTutorSessions } from "@/lib/actions/tutor.actions";
 import { Profile, Session, Event } from "@/types";

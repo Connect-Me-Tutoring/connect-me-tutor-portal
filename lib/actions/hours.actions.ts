@@ -34,7 +34,6 @@ import { withCoalescedInvoke } from "next/dist/lib/coalesced-function";
 import toast from "react-hot-toast";
 import { DatabaseIcon, UserRoundIcon } from "lucide-react";
 import { SYSTEM_ENTRYPOINTS } from "next/dist/shared/lib/constants";
-import { getAllSessions } from "./admin.actions";
 import { timeStrToHours } from "../utils";
 import { supabase } from "@/lib/supabase/client"
 // import { getMeeting } from "./meeting.actions";

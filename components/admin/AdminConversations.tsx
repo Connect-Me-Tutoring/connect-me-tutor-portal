@@ -26,7 +26,7 @@ import {
 } from "@/components/ui/popover";
 import { Check, ChevronDown, MessageCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { getAllProfiles } from "@/lib/actions/admin.actions";
+import { getAllProfiles } from "@/lib/actions/profile.server.actions";
 import { Profile } from "@/types";
 import { createAdminConversation } from "@/lib/actions/chat.server.actions";
 import toast from "react-hot-toast";
