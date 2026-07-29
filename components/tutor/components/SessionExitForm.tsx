@@ -70,7 +70,13 @@ const sessionExitFormDeadline = (currSession: Session) => {
   let urgencyClass = "";
   let deadlineText = "";
 
-  if (isToday(deadlineDate) || daysUntilDeadline === 0) {
+  if (currSession.status === "Complete") {
+    urgencyClass = "bg-green-500 text-white hover:bg-green-600 border-green-500";
+    deadlineText = "SEF Submitted";
+  } else if (daysUntilDeadline < 0) {
+    urgencyClass = "bg-gray-400 text-white hover:bg-gray-500 border-gray-400";
+    deadlineText = "Deadline has passed";
+  } else if (isToday(deadlineDate) || daysUntilDeadline === 0) {
     urgencyClass = "bg-red-500 text-white hover:bg-red-600 border-red-500";
     deadlineText = "SEF Due TODAY by 11:59pm EST";
   } else if (isTomorrow(deadlineDate) || daysUntilDeadline === 1) {
