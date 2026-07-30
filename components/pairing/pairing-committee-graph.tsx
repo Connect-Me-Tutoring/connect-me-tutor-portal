@@ -295,7 +295,7 @@ export function PairingCommitteeGraphDialog({
 
   useEffect(() => {
     if (!edgeTip) return;
-    const onDown = (e: MouseEvent) => {
+    const onDown = (e: Event) => {
       if (tipRef.current?.contains(e.target as Node)) return;
       setEdgeTip(null);
     };

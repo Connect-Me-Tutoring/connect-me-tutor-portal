@@ -9,7 +9,8 @@ interface Props {
 }
 
 export default async function PairingChatRoomPage({ params }: Props) {
-  if (!isUuidString(params.id)) {
+  const { id } = await params;
+  if (!isUuidString(id)) {
     notFound();
   }
   const { supabase: supabaseConfig } = config;
@@ -26,7 +27,7 @@ export default async function PairingChatRoomPage({ params }: Props) {
 
       <ChatRoom
         type="pairing"
-        roomId={params.id}
+        roomId={id}
         supabaseUrl={supabaseConfig.url!}
         supabaseKey={supabaseConfig.key!}
       />

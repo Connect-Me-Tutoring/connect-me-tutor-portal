@@ -32,7 +32,7 @@ export async function POST(req: Request) {
 
     const streamResult = await agent.stream(allMessages);
 
-    return new Response(streamResult.textStream, {
+    return new Response(streamResult.textStream as unknown as BodyInit, {
       headers: {
         "Content-Type": "text/plain; charset=utf-8",
       },

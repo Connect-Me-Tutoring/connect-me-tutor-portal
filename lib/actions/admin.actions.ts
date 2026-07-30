@@ -932,6 +932,9 @@ export const updateNotification = async (notificationId: string, status: "Active
   }
 };
 
+export { getAllSessions } from "./session.actions";
+export { updateSession } from "./session.server.actions";
+
 // function zonedTimeToUtc(arg0: any, arg1: string) {
 //   throw new Error("Function not implemented.");
 // }

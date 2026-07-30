@@ -18,7 +18,7 @@ export async function POST(request: NextRequest) {
 
     const pdfBuffer = await renderToBuffer(<HoursPDFDocument data={data} />);
 
-    return new NextResponse(pdfBuffer, {
+    return new NextResponse(new Uint8Array(pdfBuffer), {
       headers: {
         "Content-Type": "application/pdf",
         "Content-Disposition": `attachment; filename="Connect Me Hours Report.pdf"`,

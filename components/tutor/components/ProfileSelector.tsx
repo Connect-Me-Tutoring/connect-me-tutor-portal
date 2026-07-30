@@ -41,7 +41,7 @@ export const ProfileSelector = ({
       <Label htmlFor="tutor" className="text-right">
         Student
       </Label>
-      <Popover open={openOptions} onOpenChange={}>
+      <Popover open={openOptions} onOpenChange={setOpenUserOptions}>
         <PopoverTrigger asChild>
           <Button
             variant="outline"
@@ -50,7 +50,7 @@ export const ProfileSelector = ({
             className="col-span-3"
           >
             {selectedUserId && usersMap[selectedUserId]
-              ? `${usersMap[selectedStudentId].firstName} ${studentsMap[selectedStudentId].lastName}`
+              ? `${usersMap[selectedUserId].firstName} ${usersMap[selectedUserId].lastName}`
               : "Select a student"}
             <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
           </Button>
@@ -59,28 +59,29 @@ export const ProfileSelector = ({
           <Command>
             <CommandInput
               placeholder="Search student..."
-              value={studentSearch}
-              onValueChange={setStudentSearch}
+              value={userSearch}
+              onValueChange={setUserSearch}
             />
             <CommandList>
               <CommandEmpty>No student found.</CommandEmpty>
               <CommandGroup>
-                {students.map((student) => (
+                {users.map((user) => (
                   <CommandItem
-                    key={student.id}
-                    value={student.id}
-                    keywords={[student.firstName, student.lastName, student.email]}
+                    key={user.id}
+                    value={user.id}
+                    keywords={[user.firstName, user.lastName, user.email]}
                     onSelect={() => {
-                      handleStudentSelect(student);
+                      setSelectedUserId(user.id);
+                      setOpenUserOptions(false);
                     }}
                   >
                     <Check
                       className={cn(
                         "mr-2 h-4 w-4",
-                        selectedStudentId === student.id ? "opacity-100" : "opacity-0",
+                        selectedUserId === user.id ? "opacity-100" : "opacity-0",
                       )}
                     />
-                    {student.firstName} {student.lastName} - {student.email}
+                    {user.firstName} {user.lastName} - {user.email}
                   </CommandItem>
                 ))}
               </CommandGroup>

@@ -68,6 +68,7 @@ export async function getStudentSessions(
     isQuestionOrConcern: session.isQuestionOrConcern,
     isFirstSession: session.isFirstSession,
     duration: session.duration,
+    isStandalone: Boolean(session.is_standalone || session.isStandalone),
   }));
 
   return sessions;
