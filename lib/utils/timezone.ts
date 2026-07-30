@@ -32,6 +32,7 @@ export function formatSessionDate(dateString: string): string {
     hour: "numeric",
     minute: "numeric",
     // second: "numeric",
+    timeZone: EASTERN_TIMEZONE,
     timeZoneName: "short", // To include time zone information
   };
 
@@ -51,6 +52,7 @@ export function formatDate(dateString: string): string {
     hour: "numeric",
     minute: "numeric",
     second: "numeric",
+    timeZone: EASTERN_TIMEZONE,
     timeZoneName: "short", // To include time zone information
   };
 
