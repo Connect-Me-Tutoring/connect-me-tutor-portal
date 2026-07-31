@@ -16,28 +16,18 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { getProfile } from "@/lib/actions/user.actions";
-import {
-  getAllNotifications,
-  updateNotification,
-} from "@/lib/actions/admin.actions";
+import { getProfile } from "@/lib/actions/user/actions";
+import { getAllNotifications, updateNotification } from "@/lib/actions/admin.actions";
 import { formatDate, formatDateAdmin } from "@/lib/utils";
 import { Notification } from "@/types";
-import {
-  ChevronsLeft,
-  ChevronLeft,
-  ChevronRight,
-  ChevronsRight,
-} from "lucide-react";
+import { ChevronsLeft, ChevronLeft, ChevronRight, ChevronsRight } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import toast from "react-hot-toast";
 import { Skeleton } from "@/components/ui/skeleton";
 
 const NotificationCenter = () => {
   const [notifications, setNotifications] = useState<Notification[]>([]);
-  const [filteredNotifications, setFilteredNotifications] = useState<
-    Notification[]
-  >([]);
+  const [filteredNotifications, setFilteredNotifications] = useState<Notification[]>([]);
   const [filterValue, setFilterValue] = useState("Active");
   const [searchValue, setSearchValue] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
@@ -72,14 +62,12 @@ const NotificationCenter = () => {
     let filtered = notifications;
 
     if (filterValue !== "All") {
-      filtered = filtered.filter(
-        (notification) => notification.status === filterValue
-      );
+      filtered = filtered.filter((notification) => notification.status === filterValue);
     }
 
     if (searchValue) {
       filtered = filtered.filter((notification) =>
-        notification.summary.toLowerCase().includes(searchValue.toLowerCase())
+        notification.summary.toLowerCase().includes(searchValue.toLowerCase()),
       );
     }
 
@@ -89,7 +77,7 @@ const NotificationCenter = () => {
 
   const paginatedNotifications = filteredNotifications.slice(
     (currentPage - 1) * rowsPerPage,
-    currentPage * rowsPerPage
+    currentPage * rowsPerPage,
   );
 
   const totalPages = Math.ceil(filteredNotifications.length / rowsPerPage);
@@ -103,18 +91,13 @@ const NotificationCenter = () => {
     setCurrentPage(1);
   };
 
-  const handleStatusChange = async (
-    notificationId: string,
-    value: "Active" | "Resolved"
-  ) => {
+  const handleStatusChange = async (notificationId: string, value: "Active" | "Resolved") => {
     try {
       await updateNotification(notificationId, value);
       setNotifications((prev) =>
         prev.map((notification) =>
-          notification.id === notificationId
-            ? { ...notification, status: value }
-            : notification
-        )
+          notification.id === notificationId ? { ...notification, status: value } : notification,
+        ),
       );
       toast.success("Notification status updated");
     } catch (error) {
@@ -184,18 +167,13 @@ const NotificationCenter = () => {
                 </TableCell>
                 <TableCell>{formatDateAdmin(notification.createdAt)}</TableCell>
                 <TableCell>{notification.summary}</TableCell>
-                <TableCell>
-                  {formatDateAdmin(notification.previousDate)}
-                </TableCell>
-                <TableCell>
-                  {formatDateAdmin(notification.suggestedDate)}
-                </TableCell>
+                <TableCell>{formatDateAdmin(notification.previousDate)}</TableCell>
+                <TableCell>{formatDateAdmin(notification.suggestedDate)}</TableCell>
                 <TableCell>
                   {notification.tutor?.firstName} {notification.tutor?.lastName}
                 </TableCell>
                 <TableCell>
-                  {notification.student?.firstName}{" "}
-                  {notification.student?.lastName}
+                  {notification.student?.firstName} {notification.student?.lastName}
                 </TableCell>
               </TableRow>
             ))}
@@ -207,10 +185,7 @@ const NotificationCenter = () => {
           <span>{filteredNotifications.length} row(s) total.</span>
           <div className="flex items-center space-x-2">
             <span>Rows per page</span>
-            <Select
-              value={rowsPerPage.toString()}
-              onValueChange={handleRowsPerPageChange}
-            >
+            <Select value={rowsPerPage.toString()} onValueChange={handleRowsPerPageChange}>
               <SelectTrigger className="w-[70px]">
                 <SelectValue placeholder={rowsPerPage.toString()} />
               </SelectTrigger>

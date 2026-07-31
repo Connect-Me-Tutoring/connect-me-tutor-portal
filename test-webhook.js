@@ -62,16 +62,10 @@ const samplePayload = {
 const webhookSecret = process.env.ZOOM_WEBHOOK_SECRET;
 
 if (!webhookSecret) {
-  console.error(
-    "❌ Error: ZOOM_WEBHOOK_SECRET environment variable is not set."
-  );
+  console.error("❌ Error: ZOOM_WEBHOOK_SECRET environment variable is not set.");
   console.error("Please set it before running:");
-  console.error(
-    "  Windows: set ZOOM_WEBHOOK_SECRET=your_secret && node test-webhook.js"
-  );
-  console.error(
-    "  Linux/Mac: ZOOM_WEBHOOK_SECRET=your_secret node test-webhook.js"
-  );
+  console.error("  Windows: set ZOOM_WEBHOOK_SECRET=your_secret && node test-webhook.js");
+  console.error("  Linux/Mac: ZOOM_WEBHOOK_SECRET=your_secret node test-webhook.js");
   process.exit(1);
 }
 
@@ -79,10 +73,7 @@ if (!webhookSecret) {
 const timestamp = Date.now().toString();
 const bodyString = JSON.stringify(samplePayload);
 const message = `v0:${timestamp}:${bodyString}`;
-const signature = `v0=${crypto
-  .createHmac("sha256", webhookSecret)
-  .update(message)
-  .digest("hex")}`;
+const signature = `v0=${crypto.createHmac("sha256", webhookSecret).update(message).digest("hex")}`;
 
 // Request options
 const options = {

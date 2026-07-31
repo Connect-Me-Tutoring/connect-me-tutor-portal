@@ -1,9 +1,5 @@
 import { useState } from "react";
-import {
-  Popover,
-  PopoverTrigger,
-  PopoverContent,
-} from "@/components/ui/popover";
+import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
 import { Check, ChevronDown } from "lucide-react";
 import {
@@ -82,7 +78,7 @@ export function Combobox2({
                   <Check
                     className={cn(
                       "mr-2 h-4 w-4",
-                      selectedId === profile.id ? "opacity-100" : "opacity-0"
+                      selectedId === profile.id ? "opacity-100" : "opacity-0",
                     )}
                   />
                   {profile.firstName} {profile.lastName} - {profile.email}

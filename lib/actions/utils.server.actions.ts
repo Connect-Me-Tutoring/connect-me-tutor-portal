@@ -5,7 +5,7 @@ export const formatDateServer = async (
   params: {
     includeTime?: boolean;
     includeDate?: boolean;
-  }
+  },
 ) => {
   const { includeTime = false, includeDate = false } = params;
   // Create a new Date object

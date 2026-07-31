@@ -1,9 +1,6 @@
 import React from "react";
 import { useState } from "react";
-import {
-  formatSessionDate,
-  formatSessionDuration,
-} from "@/lib/utils";
+import { formatSessionDate, formatSessionDuration } from "@/lib/utils";
 import { Session, Meeting, Profile } from "@/types";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -32,11 +29,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import {
-  HoverCard,
-  HoverCardContent,
-  HoverCardTrigger,
-} from "@/components/ui/hover-card";
+import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
 import {
   AlertDialog,
   AlertDialogHeader,
@@ -68,7 +61,7 @@ import SessionExitForm from "./SessionExitForm";
 import RescheduleForm from "./RescheduleDialog";
 import CancellationForm from "./CancellationForm";
 import toast from "react-hot-toast";
-import { deletePairingServer } from "@/lib/actions/pairing.server.actions";
+import { deletePairingServer } from "@/lib/actions/pairing/server.actions";
 
 interface DeletePairingFormProps {
   student: Profile;
@@ -77,10 +70,7 @@ interface DeletePairingFormProps {
 }
 
 const DeletePairingForm = ({ tutor, student, onRemove }: DeletePairingFormProps) => {
-  const handleDeletePairing = async (
-    tutorId: string | null,
-    studentId: string
-  ) => {
+  const handleDeletePairing = async (tutorId: string | null, studentId: string) => {
     try {
       if (!tutor) throw new Error("No tutor found");
 
@@ -103,7 +93,8 @@ const DeletePairingForm = ({ tutor, student, onRemove }: DeletePairingFormProps)
         <AlertDialogHeader>
           <AlertDialogTitle>Remove Student</AlertDialogTitle>
           <AlertDialogDescription>
-            Removing this student will delete the pairing and automatically remove any related enrollments and future sessions. You do not need to delete the enrollments separately.
+            Removing this student will delete the pairing and automatically remove any related
+            enrollments and future sessions. You do not need to delete the enrollments separately.
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>

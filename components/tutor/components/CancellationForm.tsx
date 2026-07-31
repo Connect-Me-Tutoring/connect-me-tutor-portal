@@ -40,8 +40,7 @@ const CancellationForm: React.FC<CancellationFormProps> = ({
   actor = "tutor",
 }) => {
   const [otherReason, setOtherReason] = useState<string>("");
-  const [cancellationReason, setCancellationReason] =
-    useState<cancellationReasonType>(null);
+  const [cancellationReason, setCancellationReason] = useState<cancellationReasonType>(null);
 
   const isCancellationOther = cancellationReason === "other";
   const isCancellationEmergency = cancellationReason === "emergency";
@@ -73,11 +72,7 @@ const CancellationForm: React.FC<CancellationFormProps> = ({
               onClick={(e) => {
                 const updatedSession: Session = {
                   ...session,
-                  status: "Cancelled" as
-                    | "Active"
-                    | "Complete"
-                    | "Cancelled"
-                    | "Rescheduled",
+                  status: "Cancelled" as "Active" | "Complete" | "Cancelled" | "Rescheduled",
                   session_exit_form: otherReason,
                 };
                 handleStatusChange(updatedSession);
@@ -154,12 +149,8 @@ const CancellationForm: React.FC<CancellationFormProps> = ({
                   ...session,
                   status: (isCancellationStudentAbsentWithoutPriorNotice
                     ? "Complete"
-                    : "Cancelled") as
-                    | "Active"
-                    | "Complete"
-                    | "Cancelled"
-                    | "Rescheduled",
-                  session_exit_form: isCancellationOther ? otherReason : "",
+                    : "Cancelled") as "Active" | "Complete" | "Cancelled" | "Rescheduled",
+                  session_exit_form: isCancellationOther ? otherReason : cancellationReason || "",
                 };
                 handleStatusChange(updatedSession);
                 onClose();

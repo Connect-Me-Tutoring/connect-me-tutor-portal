@@ -2,14 +2,6 @@
 const nextConfig = {
   outputFileTracingRoot: process.cwd(),
   output: "standalone",
-
-  typescript: {
-    // !! WARN !!
-    // This allows production builds to successfully complete
-    // even if your project has type errors.
-    ignoreBuildErrors: true,
-  },
-
   serverExternalPackages: ["sharp", "onnxruntime-node", "twilio"],
 
   webpack: (config, { isServer }) => {

@@ -89,12 +89,14 @@ Environment:
 function slugifyIdentityArgs(identityArgs) {
   const s = String(identityArgs ?? "").trim();
   if (!s) return "no_args";
-  return s
-    .replace(/\s+/g, "_")
-    .replace(/[^a-zA-Z0-9_]/g, "_")
-    .replace(/_+/g, "_")
-    .replace(/^_|_$/g, "")
-    .slice(0, 180) || "args";
+  return (
+    s
+      .replace(/\s+/g, "_")
+      .replace(/[^a-zA-Z0-9_]/g, "_")
+      .replace(/_+/g, "_")
+      .replace(/^_|_$/g, "")
+      .slice(0, 180) || "args"
+  );
 }
 
 function safeFilePart(s) {
@@ -165,9 +167,7 @@ async function main() {
 
   const databaseUrl = resolveDatabaseUrl();
   if (!databaseUrl) {
-    console.error(
-      "Set DATABASE_URL or start: docker compose up -d postgres",
-    );
+    console.error("Set DATABASE_URL or start: docker compose up -d postgres");
     process.exit(1);
   }
 

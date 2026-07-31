@@ -1,0 +1,293 @@
+"use client";
+// lib/student.actions.ts
+import { supabase } from "@/lib/supabase/client";
+import { Enrollment, Availability, Session } from "@/types";
+import { Table } from "../../supabase/tables";
+import {
+  tableToInterfaceProfiles,
+  tableToInterfaceMeetings,
+  tableToInterfaceEnrollments,
+} from "../../utils/type-utils";
+import { SharedEnrollment } from "@/types/enrollment";
+import { addOneSession } from "../session/client.actions";
+import { handleCalculateDuration, isValidUUID } from "../../utils";
+import { addDays, format } from "date-fns";
+import { fromZonedTime } from "date-fns-tz";
+import type { Json } from "@/types/database.types";
+
+export async function getEnrollments(tutorId: string): Promise<Enrollment[] | null> {
+  try {
+    // Fetch meeting details from Supabase
+    const { data, error } = await supabase
+      .from(Table.Enrollments)
+      .select(
+        `
+        id,
+        created_at,
+        summary,
+        student_id,
+        tutor_id,
+        start_date,
+        end_date,
+        day,
+        start_time,
+        end_time,
+        meetingId,
+        paused,
+        duration,
+        student:Profiles!student_id(*),
+        tutor:Profiles!tutor_id(*)
+      `,
+      )
+      .eq("tutor_id", tutorId);
+
+    // Check for errors and log them
+    if (error) {
+      console.error("Error fetching event details:", error.message);
+      return null; // Returning null here is valid since the function returns Promise<Notification[] | null>
+    }
+
+    // Check if data exists
+
+    // Mapping the fetched data to the Notification object
+    const enrollments: Enrollment[] = data.map((enrollment: any) =>
+      tableToInterfaceEnrollments(enrollment),
+    );
+
+    return enrollments; // Return the array of enrollments
+  } catch (error) {
+    console.error("Unexpected error in getMeeting:", error);
+    return null;
+  }
+}
+
+export const getHourInterval = async (availabilityList: Availability[]) => {
+  try {
+    let availabilityListHours: Availability[] = [];
+
+    availabilityList.map((availability) => {
+      availability.day;
+      availability.startTime;
+      availability.endTime;
+    });
+  } catch (error) {
+    console.error("Unable to split into hours", error);
+    throw error;
+  }
+};
+
+export const getOverlappingAvailabilites = async (
+  tutorAvailability: {
+    day: string;
+    startTime: string;
+    endTime: string;
+  }[],
+  studentAvailability: {
+    day: string;
+    startTime: string;
+    endTime: string;
+  }[],
+): Promise<Availability[]> => {
+  try {
+    const { data, error } = await supabase.rpc("get_overlapping_availabilities_array", {
+      a: tutorAvailability,
+      b: studentAvailability,
+    });
+    if (error) throw error;
+    return (data ?? []) as unknown as Availability[];
+  } catch (error) {
+    console.error("Failed to get overlapping availabilities");
+    throw error;
+    return [];
+  }
+};
+
+export async function getAllActiveEnrollments(endOfWeek: string): Promise<Enrollment[]> {
+  try {
+    // Fetch meeting details from Supabase
+    const { data, error } = await supabase
+      .from(Table.Enrollments)
+      .select(
+        `
+        id,
+        created_at,
+        summary,
+        student_id,
+        tutor_id,
+        start_date,
+        end_date,
+        day,
+        start_time,
+        end_time,
+        meetingId,
+        paused,
+        duration,
+        frequency,
+        student:Profiles!student_id(*),
+        tutor:Profiles!tutor_id(*)
+      `,
+      )
+      .eq("paused", false)
+      .lte("start_date", endOfWeek);
+
+    // Check for errors and log them
+    if (error) {
+      console.error("Error fetching event details:", error.message);
+      throw error;
+    }
+
+    // Check if data exists
+    if (!data) {
+      throw new Error("No data fetched");
+    }
+
+    // Mapping the fetched data to the Notification object
+    const enrollments: Enrollment[] = data.map((enrollment: any) =>
+      tableToInterfaceEnrollments(enrollment),
+    );
+
+    return enrollments; // Return the array of enrollments
+  } catch (error) {
+    console.error("Error getting needed enrollment information:", error);
+    throw error;
+  }
+}
+
+export async function getAccountEnrollments(userId: string) {
+  const { data, error } = await supabase.rpc("get_user_enrollments_with_profiles", {
+    requestor_auth_id: userId,
+  });
+
+  if (error) {
+    console.error("Error fetching enrollments:", error);
+    return null;
+  }
+
+  return (data as unknown as SharedEnrollment[]) || ([] as SharedEnrollment[]);
+}
+
+const sql = `
+ SELECT * FROM ${Table.Enrollments} LEFT JOIN ${Table.Profiles} ON ${Table.Profiles}.user_id = some inputted ID  WHERE tutor_id = ${Table.Profiles}.id OR student_id = ${Table.Profiles}.id
+ ORDER BY created_at DESC
+`;
+
+export const sessionTimeFromEnrollment = (schedule: Availability, start: string): string => {
+  const dayMap: Record<string, number> = {
+    sunday: 0,
+    monday: 1,
+    tuesday: 2,
+    wednesday: 3,
+    thursday: 4,
+    friday: 5,
+    saturday: 6,
+  };
+
+  try {
+    const startDate: Date = new Date(start);
+    const startDateWeekDay: number = startDate.getDay();
+    const firstSessionWeekDay: number = dayMap[schedule.day.toLowerCase()];
+
+    const additionalDays = firstSessionWeekDay >= startDateWeekDay ? 0 : 7;
+    const currentDate: Date = addDays(
+      startDate,
+      firstSessionWeekDay - startDateWeekDay + additionalDays,
+    );
+    const dateString = `${format(currentDate, "yyyy-MM-dd")}T${schedule.startTime}:00`;
+    return fromZonedTime(dateString, "America/New_York").toISOString();
+  } catch (error) {
+    console.error("Unable to calculate session from enrollment");
+    throw error;
+  }
+};
+
+export const addEnrollment = async (enrollment: Omit<Enrollment, "id" | "createdAt">) => {
+  try {
+    if (!enrollment.day || !enrollment.startTime || !enrollment.endTime) {
+      throw new Error("Please add an enrollment schedule");
+    }
+
+    const duration = await handleCalculateDuration(enrollment.startTime, enrollment.endTime);
+
+    if (enrollment.duration <= 0) throw new Error("Duration should be a positive amount");
+
+    if (!enrollment.student) throw new Error("Please select a Student");
+
+    if (enrollment.meetingId && !isValidUUID(enrollment.meetingId)) {
+      throw new Error("Invalid or no meeting link");
+    }
+
+    const { data, error } = await supabase
+      .from(Table.Enrollments)
+      .insert({
+        student_id: enrollment.student?.id,
+        tutor_id: enrollment.tutor?.id,
+        summary: enrollment.summary,
+        start_date: enrollment.startDate,
+        end_date: enrollment.endDate,
+        day: enrollment.day,
+        start_time: enrollment.startTime,
+        end_time: enrollment.endTime,
+        meetingId: enrollment.meetingId,
+        duration: duration,
+        frequency: enrollment.frequency,
+      })
+      .select(
+        `*,
+        student:Profiles!student_id(*),
+        tutor:Profiles!tutor_id(*),
+        meeting:Meetings!meetingId(*)
+        `,
+      )
+      .single();
+
+    if (error) {
+      console.error("Error adding enrollment:", error);
+      throw error;
+    }
+
+    if (!data) {
+      throw new Error("No data returned when adding enrollment");
+    }
+
+    if (!data.day || !data.start_time || !data.end_time || !data.start_date) {
+      throw new Error("No time specified");
+    }
+
+    {
+      const tutor = tableToInterfaceProfiles(data.tutor);
+      const student = tableToInterfaceProfiles(data.student);
+      const meeting = tableToInterfaceMeetings(data.meeting);
+      const date = sessionTimeFromEnrollment(
+        {
+          day: data.day,
+          startTime: data.start_time,
+          endTime: data.end_time,
+        },
+        data.start_date,
+      );
+
+      const firstSession: Session = {
+        id: "",
+        enrollmentId: data.id,
+        createdAt: new Date().toISOString(),
+        date: date,
+        summary: data.summary ?? enrollment.summary,
+        student: student,
+        tutor: tutor,
+        meeting: meeting,
+        status: (enrollment as any).status || "Active",
+        session_exit_form: "",
+        isQuestionOrConcern: false,
+        isFirstSession: true,
+        isStandalone: false,
+        duration: data.duration,
+      };
+
+      await addOneSession(firstSession);
+    }
+
+    return tableToInterfaceEnrollments(data);
+  } catch (error) {
+    throw error;
+  }
+};

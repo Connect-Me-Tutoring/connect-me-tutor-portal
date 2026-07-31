@@ -19,10 +19,10 @@ import {
 } from "@/components/ui/dialog";
 import { Loader2, Circle, Edit } from "lucide-react";
 import { format, parseISO, areIntervalsOverlapping, addHours } from "date-fns";
-import { checkAvailableMeeting } from "@/lib/actions/meeting.actions";
+import { checkAvailableMeeting } from "@/lib/actions/meeting/client.actions";
 import { toast } from "react-hot-toast";
 import { HoverCard, HoverCardTrigger, HoverCardContent } from "@/components/ui/hover-card";
-import { fetchDaySessionsFromSchedule } from "@/lib/actions/session.actions";
+import { fetchDaySessionsFromSchedule } from "@/lib/actions/session/client.actions";
 
 import { DropdownMenuItem } from "@/components/ui/dropdown-menu";
 
@@ -71,7 +71,7 @@ export default function EditSessionForm({
                     end: existing.date
                       ? addHours(parseISO(existing.date), existing.duration)
                       : new Date(),
-                  }
+                  },
                 )
               );
             })
@@ -146,7 +146,10 @@ export default function EditSessionForm({
                 type="datetime-local"
                 value={format(parseISO(editedSession.date), "yyyy-MM-dd'T'HH:mm")}
                 onChange={(e) => {
-                  const updated = { ...editedSession, date: new Date(e.target.value).toISOString() };
+                  const updated = {
+                    ...editedSession,
+                    date: new Date(e.target.value).toISOString(),
+                  };
                   setEditedSession(updated);
                   areMeetingsAvailable(updated);
                 }}

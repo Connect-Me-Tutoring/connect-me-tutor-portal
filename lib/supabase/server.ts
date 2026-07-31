@@ -2,10 +2,11 @@
 import { createServerClient as makeServerClient } from "@supabase/ssr";
 import { createClient as createAdmin } from "@supabase/supabase-js";
 import { cookies } from "next/headers";
+import type { Database } from "@/types/database.types";
 
 async function createCookieBoundClient() {
   const cookieStore = await cookies();
-  return makeServerClient(
+  return makeServerClient<Database>(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
@@ -18,8 +19,7 @@ async function createCookieBoundClient() {
             cookiesToSet.forEach(({ name, value, options }) =>
               cookieStore.set(name, value, options),
             );
-          } catch {
-          }
+          } catch {}
         },
       },
     },
@@ -35,7 +35,7 @@ export async function createClient() {
 }
 
 export async function createAdminClient() {
-  const adminSupabase = createAdmin(
+  const adminSupabase = createAdmin<Database>(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!, // ✅ Server-only environment variable
     {
@@ -47,29 +47,3 @@ export async function createAdminClient() {
   );
   return adminSupabase;
 }
-
-// export const supabase = createServerComponentClient(
-//   {
-//     cookies: () => cookies(),
-//   },
-//   {
-//     supabaseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL,
-//     supabaseKey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
-//   }
-// )
-
-// let supabaseInstance: SupabaseClient | null = null;
-
-// export const getSupabase = () => {
-//   if (!supabaseInstance) {
-//     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-//     const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-
-//     if (!supabaseUrl || !supabaseKey) {
-//       throw new Error("Missing Environments");
-//     }
-
-//     supabaseInstance = createClient(supabaseUrl, supabaseKey);
-//   }
-//   return supabaseInstance;
-// };

@@ -10,10 +10,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  StudentAnnouncementsRoomId,
-  TutorAnnouncementRoomId,
-} from "@/constants/chat";
+import { StudentAnnouncementsRoomId, TutorAnnouncementRoomId } from "@/constants/chat";
 import { useFetchProfile } from "@/hooks/auth";
 import { useEffect, useState } from "react";
 
@@ -30,11 +27,7 @@ export default function AnnouncementsPage() {
   }, [profile]);
 
   useEffect(() => {
-    setRoomID(
-      currentRoom === "students"
-        ? StudentAnnouncementsRoomId
-        : TutorAnnouncementRoomId
-    );
+    setRoomID(currentRoom === "students" ? StudentAnnouncementsRoomId : TutorAnnouncementRoomId);
   }, [currentRoom]);
   if (!profile || !roomID) return <>Loading...</>;
   // const { supabase: supabaseConfig } = config;
@@ -45,9 +38,7 @@ export default function AnnouncementsPage() {
         <div>
           <Select
             value={currentRoom}
-            onValueChange={(value) =>
-              setCurrentRoom(value as AnnouncementsRooms)
-            }
+            onValueChange={(value) => setCurrentRoom(value as AnnouncementsRooms)}
           >
             <SelectTrigger className="">
               <SelectValue placeholder="Announcements Room" />

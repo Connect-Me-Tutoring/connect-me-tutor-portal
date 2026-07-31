@@ -1,27 +1,25 @@
-import { getAllActiveEnrollmentsServer } from "@/lib/actions/enrollment.server.actions";
-import { endOfWeek, startOfWeek } from "date-fns";
+import { getAllActiveEnrollmentsForCron } from "@/lib/actions/enrollment/server.actions";
 import { NextRequest, NextResponse } from "next/server";
-import {
-  addSessionsServer,
-  getAllSessionsServer,
-} from "@/lib/actions/session.server.actions";
+import { addSessionsForCron, getAllSessionsForCron } from "@/lib/actions/session/server.actions";
 import { Session } from "@/types";
-import { verifyCron } from "@/lib/actions/auth.server.actions";
+import { getEasternWeekBounds } from "@/lib/utils";
+import { isCronRequestAuthorized } from "@/lib/security/cron";
+import { logError } from "@/lib/posthog";
 
 export const dynamic = "force-dynamic";
 
 export async function GET(request: NextRequest) {
+  if (!isCronRequestAuthorized(request)) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   try {
-    await verifyCron(request);
     const newSessions = await handleUpdateWeek();
 
     return NextResponse.json({ newSessions: newSessions }, { status: 200 });
   } catch (error) {
     const err = error as Error;
-    return NextResponse.json(
-      { error: `Update Week error ${err.message}` },
-      { status: 500 },
-    );
+    return NextResponse.json({ error: `Update Week error ${err.message}` }, { status: 500 });
   }
 }
 
@@ -29,29 +27,21 @@ const handleUpdateWeek = async (): Promise<Session[]> => {
   try {
     const today = new Date();
 
-    const weekStart = startOfWeek(today).toISOString();
-    const weekEnd = endOfWeek(today).toDateString();
+    const weekBounds = getEasternWeekBounds(today);
+    const weekStart = weekBounds.weekStart.toISOString();
+    const weekEnd = weekBounds.weekEnd.toISOString();
 
-    const enrollments = await getAllActiveEnrollmentsServer(weekEnd);
-    const sessions: Session[] = await getAllSessionsServer(
-      weekStart,
-      weekEnd,
-      "date",
-      true,
-    );
+    const enrollments = await getAllActiveEnrollmentsForCron(weekEnd);
+    const sessions: Session[] = await getAllSessionsForCron(weekStart, weekEnd, "date", true);
 
-    const newSessions = await addSessionsServer(
-      weekStart,
-      weekEnd,
-      enrollments,
-      sessions,
-    );
+    const newSessions = await addSessionsForCron(weekStart, weekEnd, enrollments, sessions);
     if (!newSessions) {
       throw new Error("No sessions were created");
     }
     return newSessions;
   } catch (error: any) {
     console.error("Failed to add sessions:", error);
+    await logError(error, {}, "cron_update_week_error");
     throw error;
   }
 };

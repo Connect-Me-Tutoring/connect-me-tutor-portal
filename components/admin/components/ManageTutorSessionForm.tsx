@@ -17,8 +17,8 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { getTutorSessions } from "@/lib/actions/tutor.actions";
-import { updateSessionsStatus } from "@/lib/actions/session.server.actions";
+import { getTutorSessions } from "@/lib/actions/tutor/actions";
+import { updateSessionsStatus } from "@/lib/actions/session/server.actions";
 import { Profile, Session } from "@/types";
 import { format, parseISO } from "date-fns";
 import toast from "react-hot-toast";
@@ -36,9 +36,7 @@ export default function ManageTutorSessions({ tutors }: { tutors: Profile[] }) {
     setLoading(true);
     try {
       const data = await getTutorSessions(tutorId);
-      data.sort(
-        (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime(),
-      );
+      data.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
       setSessions(data);
     } catch (error) {
       console.error(error);
@@ -72,7 +70,7 @@ export default function ManageTutorSessions({ tutors }: { tutors: Profile[] }) {
     );
   };
 
-  const handleUpdate = async (status: string) => {
+  const handleUpdate = async (status: "Cancelled" | "Complete") => {
     if (selectedIds.length === 0 || !selectedTutorId) return;
     setLoading(true);
     try {
@@ -121,10 +119,7 @@ export default function ManageTutorSessions({ tutors }: { tutors: Profile[] }) {
                     <TableRow>
                       <TableHead className="w-12">
                         <Checkbox
-                          checked={
-                            sessions.length > 0 &&
-                            selectedIds.length === sessions.length
-                          }
+                          checked={sessions.length > 0 && selectedIds.length === sessions.length}
                           onCheckedChange={(checked) => {
                             if (checked) {
                               setSelectedIds(sessions.map((s) => s.id));
@@ -156,14 +151,10 @@ export default function ManageTutorSessions({ tutors }: { tutors: Profile[] }) {
                             />
                           </TableCell>
                           <TableCell>
-                            {format(
-                              parseISO(session.date),
-                              "MMM d, yyyy h:mm a",
-                            )}
+                            {format(parseISO(session.date), "MMM d, yyyy h:mm a")}
                           </TableCell>
                           <TableCell>
-                            {session.student?.firstName}{" "}
-                            {session.student?.lastName}
+                            {session.student?.firstName} {session.student?.lastName}
                           </TableCell>
                           <TableCell>{session.status}</TableCell>
                         </TableRow>
@@ -175,9 +166,7 @@ export default function ManageTutorSessions({ tutors }: { tutors: Profile[] }) {
             </div>
 
             <div className="flex justify-between items-center pt-4 border-t">
-              <div className="text-sm text-gray-500">
-                {selectedIds.length} selected
-              </div>
+              <div className="text-sm text-gray-500">{selectedIds.length} selected</div>
               <div className="space-x-2">
                 <Button
                   variant="outline"

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getParticipationData } from "@/lib/actions/session.server.actions";
-import { requireAuthenticatedUser } from "@/lib/actions/authz.server";
+import { getParticipationData } from "@/lib/actions/session/server.actions";
+import { requireAuthenticatedUser } from "@/lib/actions/auth/authz.server";
+import { logError } from "@/lib/posthog";
 
 export async function GET(req: NextRequest, props: { params: Promise<{ sessionId: string }> }) {
   const params = await props.params;
@@ -9,10 +10,7 @@ export async function GET(req: NextRequest, props: { params: Promise<{ sessionId
     const sessionId = params.sessionId;
 
     if (!sessionId) {
-      return NextResponse.json(
-        { error: "Session ID is required" },
-        { status: 400 },
-      );
+      return NextResponse.json({ error: "Session ID is required" }, { status: 400 });
     }
 
     const enrollmentId = req.nextUrl.searchParams.get("enrollmentId");
@@ -25,9 +23,7 @@ export async function GET(req: NextRequest, props: { params: Promise<{ sessionId
     return NextResponse.json(data);
   } catch (error) {
     console.error("Error fetching participation data:", error);
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 },
-    );
+    await logError(error, { sessionId: params.sessionId }, "participation_fetch_error");
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }

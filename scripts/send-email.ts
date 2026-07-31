@@ -18,9 +18,9 @@ import React from "react";
 import { Resend } from "resend";
 
 import ChatMessageNotificationEmail from "../components/emails/chats/chat-message-notification";
-import PairingRequestNotificationEmail from "../components/emails/pairing-request-notification";
-import StudentPairingConfirmationEmail from "../components/emails/student-confirmation-email";
-import TutorPairingConfirmationEmail from "../components/emails/tutor-confirmation-email";
+import PairingRequestNotificationEmail from "../components/emails/pairing-request/pairing-request-notification";
+import StudentPairingConfirmationEmail from "../components/emails/pairing-request/student-confirmation-email";
+import TutorPairingConfirmationEmail from "../components/emails/pairing-request/tutor-confirmation-email";
 
 import type { PairingConfirmationEmailProps } from "../types/email";
 
@@ -35,10 +35,7 @@ function loadEnvLocal() {
     if (eq === -1) continue;
     const key = trimmed.slice(0, eq).trim();
     let val = trimmed.slice(eq + 1).trim();
-    if (
-      (val.startsWith('"') && val.endsWith('"')) ||
-      (val.startsWith("'") && val.endsWith("'"))
-    ) {
+    if ((val.startsWith('"') && val.endsWith('"')) || (val.startsWith("'") && val.endsWith("'"))) {
       val = val.slice(1, -1);
     }
     if (process.env[key] === undefined) {
@@ -127,8 +124,7 @@ function mockMeeting(): PairingConfirmationEmailProps["meeting"] {
   };
 }
 
-const DEFAULT_FROM =
-  "Connect Me Free Tutoring & Mentoring <notifications@connectmego.app>";
+const DEFAULT_FROM = "Connect Me Free Tutoring & Mentoring <notifications@connectmego.app>";
 
 async function main() {
   loadEnvLocal();
@@ -156,9 +152,7 @@ Options:
 
   if (!to || !template) {
     console.error("Error: --to and --template are required.");
-    console.error(
-      "Example: npx tsx scripts/send-email.ts --to you@x.com --template chat-message",
-    );
+    console.error("Example: npx tsx scripts/send-email.ts --to you@x.com --template chat-message");
     process.exit(1);
   }
 
@@ -169,8 +163,7 @@ Options:
   }
 
   const resend = new Resend(apiKey);
-  const siteUrl =
-    process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.connectmego.app";
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.connectmego.app";
   const base = siteUrl.replace(/\/$/, "");
 
   let html: string;
@@ -179,8 +172,7 @@ Options:
   switch (template) {
     case "chat-message": {
       const messagePreview =
-        args.message ??
-        "This is a sample message for the template preview block.";
+        args.message ?? "This is a sample message for the template preview block.";
       subject = args.subject ?? "New message on Connect Me";
       html = await render(
         React.createElement(ChatMessageNotificationEmail, {
@@ -217,9 +209,7 @@ Options:
         },
         meeting: mockMeeting(),
       };
-      html = await render(
-        React.createElement(StudentPairingConfirmationEmail, props),
-      );
+      html = await render(React.createElement(StudentPairingConfirmationEmail, props));
       break;
     }
     case "tutor-confirmation": {
@@ -235,9 +225,7 @@ Options:
         },
         meeting: mockMeeting(),
       };
-      html = await render(
-        React.createElement(TutorPairingConfirmationEmail, props),
-      );
+      html = await render(React.createElement(TutorPairingConfirmationEmail, props));
       break;
     }
     default:

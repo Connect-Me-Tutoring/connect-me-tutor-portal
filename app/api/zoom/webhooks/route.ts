@@ -1,40 +1,21 @@
 import { NextRequest, NextResponse } from "next/server";
 import crypto from "crypto";
 import { config } from "@/config";
+import { logZoomMetadata, updateParticipantLeaveTime } from "@/lib/actions/zoom.server.actions";
+import { resolveAppSessionFromZoomWebhookObject } from "@/lib/actions/session/server.actions";
 import {
-  logZoomMetadata,
-  updateParticipantLeaveTime,
-} from "@/lib/actions/zoom.server.actions";
-import {
-  resolveAppSessionFromZoomWebhookObject,
   zoomSessionResolutionStatus,
   type ZoomSessionResolution,
-} from "@/lib/actions/session.server.actions";
+} from "@/lib/actions/session/actions";
 import { logEvent, logError, serializeForPosthog } from "@/lib/posthog";
 
 // Use a single signing secret for all Zoom webhooks
 const validationSecret = config.zoom.ZOOM_WEBHOOK_SECRET;
 
-function normalizeMeetingNumber(raw: unknown): string | null {
-  if (raw === null || raw === undefined) return null;
-  const digitsOnly = String(raw).replace(/\D/g, "");
-  return digitsOnly.length > 0 ? digitsOnly : null;
-}
-
-function formatMeetingNumberForStorage(normalizedMeetingNumber: string): string {
-  if (!normalizedMeetingNumber) return "";
-  if (normalizedMeetingNumber.length <= 3) return normalizedMeetingNumber;
-  if (normalizedMeetingNumber.length <= 7) {
-    return `${normalizedMeetingNumber.slice(0, 3)} ${normalizedMeetingNumber.slice(3)}`;
-  }
-  return `${normalizedMeetingNumber.slice(0, 3)} ${normalizedMeetingNumber.slice(3, 7)} ${normalizedMeetingNumber.slice(7)}`;
-}
-
 export async function POST(req: NextRequest) {
   const requestId = crypto.randomUUID();
   const startTime = Date.now();
 
-  // console.log("Received Zoom webhook request");
   await logEvent("zoom_webhook_received", {
     request_id: requestId,
     timestamp: new Date().toISOString(),
@@ -64,8 +45,7 @@ export async function POST(req: NextRequest) {
   const payload = body?.payload;
   const event = body?.event;
 
-  const meetingNumberRaw =
-    payload?.object?.id || payload?.object?.meeting_number;
+  const meetingNumberRaw = payload?.object?.id || payload?.object?.meeting_number;
   const accountId = payload?.account_id;
   const accountEmail = payload?.account_email;
   const hostId = payload?.object?.host_id;
@@ -85,7 +65,7 @@ export async function POST(req: NextRequest) {
     );
     await logEvent("zoom_webhook_meeting_session_resolution", {
       request_id: requestId,
-      resolution_status: await zoomSessionResolutionStatus(resolution),
+      resolution_status: zoomSessionResolutionStatus(resolution),
       zoom_meeting_number: resolution.zoomMeetingNumber ?? null,
       zoom_meeting_uuid: resolution.zoomMeetingUuid ?? null,
       meetings_row_id: resolution.meetingsRowId,
@@ -125,7 +105,7 @@ export async function POST(req: NextRequest) {
       : null;
 
   const zoomRelationshipLog = {
-    resolution_status: await zoomSessionResolutionStatus(resolution),
+    resolution_status: zoomSessionResolutionStatus(resolution),
     meetings_row_id: resolution.meetingsRowId,
     meetings_table_meeting_id: resolution.storedMeetingId,
     zoom_meeting_number: resolution.zoomMeetingNumber ?? null,
@@ -143,7 +123,7 @@ export async function POST(req: NextRequest) {
     host_id: hostId,
     host_email: hostEmail,
     event_type: event,
-    resolution_status: await zoomSessionResolutionStatus(resolution),
+    resolution_status: zoomSessionResolutionStatus(resolution),
     meetings_row_id: resolution.meetingsRowId,
     meetings_table_meeting_id: resolution.storedMeetingId,
     has_zoom_meeting_id: !!zoomMeetingId,
@@ -167,7 +147,7 @@ export async function POST(req: NextRequest) {
       {
         error: "Webhook secret not configured",
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 
@@ -192,10 +172,7 @@ export async function POST(req: NextRequest) {
         request_id: requestId,
         step: "url_validation",
       });
-      return NextResponse.json(
-        { error: "Missing plainToken" },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "Missing plainToken" }, { status: 400 });
     }
 
     const hashForValidate = crypto
@@ -238,10 +215,7 @@ export async function POST(req: NextRequest) {
     // Remove "Bearer " prefix if present and compare
     const authToken = authHeader.replace(/^Bearer\s+/i, "").trim();
     // Check if it matches the secret (with or without Bearer prefix)
-    if (
-      authToken === validationSecret ||
-      authHeader === `Bearer ${validationSecret}`
-    ) {
+    if (authToken === validationSecret || authHeader === `Bearer ${validationSecret}`) {
       isAuthorized = true;
       authMethod = "authorization_header";
     }
@@ -285,9 +259,7 @@ export async function POST(req: NextRequest) {
             .trim()
             .substring(0, 20)}...`
         : "none",
-      receivedSignature: signature
-        ? `${signature.substring(0, 20)}...`
-        : "none",
+      receivedSignature: signature ? `${signature.substring(0, 20)}...` : "none",
       hasTimestamp: !!timestamp,
       zoomMeetingId,
       accountId,
@@ -350,11 +322,10 @@ export async function POST(req: NextRequest) {
     case "meeting.participant_joined":
       {
         const participant = payload?.object?.participant;
-        const participantId =
-          participant?.user_id || participant?.participant_user_id || "";
+        const participantId = participant?.user_id || participant?.participant_user_id || "";
         const participantName = participant?.user_name;
         const participantEmail = participant?.email;
-          const joinTime = participant?.join_time || new Date().toISOString();
+        const joinTime = participant?.join_time || new Date().toISOString();
 
         console.warn("JOINED:", {
           meetingId: zoomMeetingId,
@@ -447,8 +418,7 @@ export async function POST(req: NextRequest) {
         const participant = payload?.object?.participant;
         const leaveTime = participant?.leave_time || new Date().toISOString();
         const leaveReason = participant?.leave_reason || undefined;
-        const participantUuid =
-          participant?.user_id || participant?.participant_user_id;
+        const participantUuid = participant?.user_id || participant?.participant_user_id;
         const participantName = participant?.user_name;
         const participantEmail = participant?.email;
 
@@ -519,7 +489,7 @@ export async function POST(req: NextRequest) {
             participantName || "Unknown",
             participantEmail || null,
             leaveTime,
-            zoomRelationshipLog
+            zoomRelationshipLog,
           );
 
           await logEvent("zoom_participant_left_db_success", {
