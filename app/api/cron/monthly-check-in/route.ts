@@ -1,17 +1,18 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/server";
-import { sendMonthlyCheckInEmail } from "@/lib/actions/email.server.actions";
+import { sendMonthlyCheckInEmail } from "@/lib/actions/email/server.actions";
+import { isCronRequestAuthorized } from "@/lib/security/cron";
+import { logError } from "@/lib/posthog";
 
 export async function GET(request: Request) {
-  const authHeader = request.headers.get("authorization");
-  if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+  if (!isCronRequestAuthorized(request)) {
     return new Response("Unauthorized", { status: 401 });
   }
 
   try {
     const supabase = await createAdminClient();
 
-    // Fetch active users that need to be checked in on. 
+    // Fetch active users that need to be checked in on.
     // TODO: Update the query below to match your actual Supabase schema rules for active profiles
     //  and other relevant criteria
     const { data: users, error } = await supabase
@@ -21,22 +22,21 @@ export async function GET(request: Request) {
 
     if (error) {
       console.error("Error fetching users for monthly check-in:", error);
+      await logError(error, {}, "cron_monthly_check_in_error");
       throw error;
     }
 
     if (users && users.length > 0) {
-      const results = await Promise.all(
+      await Promise.all(
         users.map((user) => {
           if (!user.email || !user.first_name) return Promise.resolve();
 
           return sendMonthlyCheckInEmail(
             { firstName: user.first_name, role: user.role as any },
-            user.email
+            user.email,
           );
-        })
+        }),
       );
-      
-      console.log("Email dispatch results:", JSON.stringify(results, null, 2));
     }
 
     return NextResponse.json({
@@ -45,6 +45,7 @@ export async function GET(request: Request) {
     });
   } catch (error: any) {
     console.error("Monthly check-in cron failed:", error);
+    await logError(error, {}, "cron_monthly_check_in_error");
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }

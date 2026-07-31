@@ -1,6 +1,6 @@
 import { ChatRoom, type Message } from "@/components/chat/chat-room";
 import { config } from "@/config";
-import { getPairingFromEnrollmentId } from "@/lib/actions/pairing.server.actions";
+import { getPairingFromEnrollmentId } from "@/lib/actions/pairing/server.actions";
 import { isUuidString } from "@/lib/utils";
 import { notFound } from "next/navigation";
 
@@ -29,8 +29,8 @@ export default async function ChatRoomPage(props: Props) {
         roomId={pairingId}
         supabaseUrl={supabaseConfig.url}
         supabaseKey={supabaseConfig.key}
-        initialMessages={mockMessages} 
-        type={"pairing"}        // onSendMessage={(message) => console.log("Message sent:", message)}
+        initialMessages={mockMessages}
+        type={"pairing"} // onSendMessage={(message) => console.log("Message sent:", message)}
         // onFileUpload={(file) => console.log("File uploaded:", file.name)}
       />
     </main>

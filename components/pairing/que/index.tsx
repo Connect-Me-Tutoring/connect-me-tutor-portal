@@ -25,7 +25,7 @@ import {
   getAllPairingRequests,
   removePairingRequest,
   updatePairingRequest,
-} from "@/lib/actions/pairing.actions";
+} from "@/lib/actions/pairing/client.actions";
 import { to12Hour } from "@/lib/utils";
 import toast from "react-hot-toast";
 import { TestingPairingControls } from "../test-controls";
@@ -53,9 +53,7 @@ import { PairingCommitteeGraphDialog } from "../pairing-committee-graph";
 
 export default function PriorityQueue() {
   const [pairingRequests, setPairingRequests] = useState<PairingRequest[]>([]);
-  const [savedPriorities, setSavedPriorities] = useState<Record<string, number>>(
-    {},
-  );
+  const [savedPriorities, setSavedPriorities] = useState<Record<string, number>>({});
   const [isSavingResults, setIsSavingResults] = useState(false);
   const [reviewOpen, setReviewOpen] = useState(false);
   const [graphOpen, setGraphOpen] = useState(false);
@@ -90,9 +88,7 @@ export default function PriorityQueue() {
       }
       const tutorData = tutorRes.data ?? [];
       const studentData = studentRes.data ?? [];
-      const merged = [...tutorData, ...studentData].sort(
-        (a, b) => a.priority - b.priority,
-      );
+      const merged = [...tutorData, ...studentData].sort((a, b) => a.priority - b.priority);
       setPairingRequests(merged);
       setSavedPriorities(
         Object.fromEntries(merged.map((request) => [request.request_id, request.priority])),
@@ -121,11 +117,7 @@ export default function PriorityQueue() {
 
   const overlapInsights = useMemo(
     () =>
-      buildQueuePriorityOverlapInsights(
-        pendingPriorityUpdates,
-        pairingRequests,
-        savedPriorities,
-      ),
+      buildQueuePriorityOverlapInsights(pendingPriorityUpdates, pairingRequests, savedPriorities),
     [pendingPriorityUpdates, pairingRequests, savedPriorities],
   );
 
@@ -177,9 +169,7 @@ export default function PriorityQueue() {
     void runPersistPrioritySave();
   };
 
-  const sortedRequests = [...pairingRequests].sort(
-    (a, b) => a.priority - b.priority,
-  );
+  const sortedRequests = [...pairingRequests].sort((a, b) => a.priority - b.priority);
   const tutorCount = sortedRequests.filter((r) => r.type === "tutor").length;
   const studentCount = sortedRequests.filter((r) => r.type === "student").length;
   const currentCount = sortedRequests.length;
@@ -215,9 +205,7 @@ export default function PriorityQueue() {
       <div className="min-h-screen">
         <div className="max-w-7xl mx-auto">
           <div className="mb-8">
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">
-              Pairing Queue Management
-            </h1>
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">Pairing Queue Management</h1>
             <p className="text-gray-600">
               Active pairing requests (tutors and students), sorted by priority
             </p>
@@ -232,12 +220,10 @@ export default function PriorityQueue() {
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div className="flex flex-wrap items-center gap-3">
                   <Users className="h-6 w-6 text-gray-700" />
-                  <h2 className="text-2xl font-semibold text-gray-900">
-                    Queue ({currentCount})
-                  </h2>
+                  <h2 className="text-2xl font-semibold text-gray-900">Queue ({currentCount})</h2>
                   <span className="text-sm text-gray-500">
-                    {tutorCount} tutor{tutorCount === 1 ? "" : "s"} ·{" "}
-                    {studentCount} student{studentCount === 1 ? "" : "s"}
+                    {tutorCount} tutor{tutorCount === 1 ? "" : "s"} · {studentCount} student
+                    {studentCount === 1 ? "" : "s"}
                   </span>
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
@@ -275,9 +261,8 @@ export default function PriorityQueue() {
                 <DialogHeader>
                   <DialogTitle>Review priority changes</DialogTitle>
                   <DialogDescription>
-                    Confirm priority updates and review how each profile overlaps
-                    (subjects and time) with top opposite-role candidates in the
-                    current queue.
+                    Confirm priority updates and review how each profile overlaps (subjects and
+                    time) with top opposite-role candidates in the current queue.
                   </DialogDescription>
                 </DialogHeader>
                 <div className="space-y-6 py-2">
@@ -313,18 +298,14 @@ export default function PriorityQueue() {
                             >
                               <p className="font-medium text-gray-900">
                                 {c.displayName}{" "}
-                                <span className="text-muted-foreground capitalize">
-                                  ({c.role})
-                                </span>
+                                <span className="text-muted-foreground capitalize">({c.role})</span>
                               </p>
                               <div className="mt-2 flex flex-wrap gap-1">
                                 <span className="text-xs text-muted-foreground w-full">
                                   Subject overlap
                                 </span>
                                 {c.overlapping_subjects.length === 0 ? (
-                                  <span className="text-xs text-muted-foreground">
-                                    None
-                                  </span>
+                                  <span className="text-xs text-muted-foreground">None</span>
                                 ) : (
                                   c.overlapping_subjects.map((s) => (
                                     <Badge key={s} variant="secondary" className="text-xs">
@@ -338,9 +319,7 @@ export default function PriorityQueue() {
                                   Time overlap
                                 </span>
                                 {c.overlapping_slots.length === 0 ? (
-                                  <span className="text-xs text-muted-foreground">
-                                    None
-                                  </span>
+                                  <span className="text-xs text-muted-foreground">None</span>
                                 ) : (
                                   c.overlapping_slots.map((slot, i) => (
                                     <Badge
@@ -400,14 +379,10 @@ export default function PriorityQueue() {
                     const availability = Array.isArray(request.profile.availability)
                       ? request.profile.availability
                       : [];
-                    const subjects = Array.isArray(
-                      request.profile.subjects_of_interest,
-                    )
+                    const subjects = Array.isArray(request.profile.subjects_of_interest)
                       ? request.profile.subjects_of_interest
                       : [];
-                    const languages = Array.isArray(
-                      request.profile.languages_spoken,
-                    )
+                    const languages = Array.isArray(request.profile.languages_spoken)
                       ? request.profile.languages_spoken
                       : [];
                     const fullName = `${request.profile.firstName} ${request.profile.lastName}`;
@@ -416,10 +391,7 @@ export default function PriorityQueue() {
                       .map((n) => n[0])
                       .join("");
                     return (
-                      <TableRow
-                        key={request.request_id}
-                        className="hover:bg-gray-50"
-                      >
+                      <TableRow key={request.request_id} className="hover:bg-gray-50">
                         <TableCell>
                           <div className="flex items-center gap-3">
                             <Avatar className="h-10 w-10">
@@ -432,17 +404,12 @@ export default function PriorityQueue() {
                             </Avatar>
                             <div>
                               <p className="font-semibold">{fullName}</p>
-                              <p className="text-sm text-gray-600">
-                                {request.profile.email}
-                              </p>
+                              <p className="text-sm text-gray-600">{request.profile.email}</p>
                             </div>
                           </div>
                         </TableCell>
                         <TableCell>
-                          <Badge
-                            variant="outline"
-                            className="capitalize gap-1 font-normal"
-                          >
+                          <Badge variant="outline" className="capitalize gap-1 font-normal">
                             {request.type === "tutor" ? (
                               <GraduationCap className="h-3.5 w-3.5" />
                             ) : (
@@ -459,20 +426,14 @@ export default function PriorityQueue() {
                           </Badge>
                         </TableCell>
                         <TableCell>
-                          <Badge
-                            className={`${getPriorityColor(request.priority)} font-semibold`}
-                          >
+                          <Badge className={`${getPriorityColor(request.priority)} font-semibold`}>
                             Priority {request.priority}
                           </Badge>
                         </TableCell>
                         <TableCell>
                           <div className="flex flex-wrap gap-1 max-w-48">
                             {availability.slice(0, 2).map((time, index) => (
-                              <Badge
-                                key={index}
-                                variant="outline"
-                                className="text-xs"
-                              >
+                              <Badge key={index} variant="outline" className="text-xs">
                                 {`${time.day}, ${to12Hour(time.startTime)} - ${to12Hour(time.endTime)}`}
                               </Badge>
                             ))}
@@ -486,11 +447,7 @@ export default function PriorityQueue() {
                         <TableCell>
                           <div className="flex flex-wrap gap-1 max-w-48">
                             {subjects.slice(0, 2).map((subject, index) => (
-                              <Badge
-                                key={index}
-                                variant="secondary"
-                                className="text-xs"
-                              >
+                              <Badge key={index} variant="secondary" className="text-xs">
                                 {subject}
                               </Badge>
                             ))}
@@ -529,10 +486,7 @@ export default function PriorityQueue() {
                             <Select
                               value={request.priority.toString()}
                               onValueChange={(value) =>
-                                updatePriority(
-                                  request.request_id,
-                                  Number.parseInt(value),
-                                )
+                                updatePriority(request.request_id, Number.parseInt(value))
                               }
                             >
                               <SelectTrigger className="w-16 h-8">
@@ -547,11 +501,7 @@ export default function PriorityQueue() {
 
                             <AlertDialog>
                               <AlertDialogTrigger asChild>
-                                <Button
-                                  variant="destructive"
-                                  size="sm"
-                                  className="h-8 w-8 p-0"
-                                >
+                                <Button variant="destructive" size="sm" className="h-8 w-8 p-0">
                                   <Trash2 className="h-4 w-4" />
                                 </Button>
                               </AlertDialogTrigger>
@@ -567,9 +517,7 @@ export default function PriorityQueue() {
                                 <AlertDialogFooter>
                                   <AlertDialogCancel>Back</AlertDialogCancel>
                                   <AlertDialogAction
-                                    onClick={() =>
-                                      removeFromQueue(request.request_id)
-                                    }
+                                    onClick={() => removeFromQueue(request.request_id)}
                                   >
                                     Remove Pairing Request
                                   </AlertDialogAction>

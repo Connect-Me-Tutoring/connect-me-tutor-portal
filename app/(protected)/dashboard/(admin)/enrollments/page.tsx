@@ -1,9 +1,9 @@
 import EnrollmentsManager from "@/components/admin/EnrollmentsManagement";
 import SkeletonTable, { SkeletonCard } from "@/components/ui/skeleton";
-import { getAllEnrollments } from "@/lib/actions/enrollment.server.actions";
-import { getMeetings } from "@/lib/actions/meeting.server.actions";
-import { getAllProfiles } from "@/lib/actions/profile.server.actions";
-import { getWeeklyMeetingSchedules } from "@/lib/actions/meeting-schedule.server.actions";
+import { getAllEnrollments } from "@/lib/actions/enrollment/server.actions";
+import { getMeetings } from "@/lib/actions/meeting/server.actions";
+import { getAllProfiles } from "@/lib/actions/profile/server.actions";
+import { getWeeklyMeetingSchedules } from "@/lib/actions/meeting-schedule/server.actions";
 import { Suspense } from "react";
 
 function MyEnrollmentsData() {

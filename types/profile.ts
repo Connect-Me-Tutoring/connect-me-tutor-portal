@@ -9,7 +9,7 @@ export interface UpdateProfileInput {
   availability?: { day: string; startTime: string; endTime: string }[];
   subjectsOfInterest?: string[];
   languagesSpoken?: string[];
-  gender: string;
+  gender?: string;
 }
 
 export type ProfilePairingMetadata = UpdateProfileInput;

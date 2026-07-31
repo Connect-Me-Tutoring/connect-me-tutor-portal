@@ -1,5 +1,5 @@
-import { isAuthorized } from "@/lib/actions/auth.server.actions";
-import { sendChatMessageNotificationEmailTest } from "@/lib/actions/email.server.actions";
+import { isAuthorized } from "@/lib/actions/auth/server.actions";
+import { sendChatMessageNotificationEmailTest } from "@/lib/actions/email/server.actions";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 
@@ -29,10 +29,7 @@ export async function POST(request: NextRequest) {
     const result = await sendChatMessageNotificationEmailTest(parsed);
 
     if (!result.ok) {
-      return NextResponse.json(
-        { error: result.error },
-        { status: 500 },
-      );
+      return NextResponse.json({ error: result.error }, { status: 500 });
     }
 
     return NextResponse.json({ ok: true });

@@ -1,13 +1,5 @@
 import React from "react";
-import {
-  Html,
-  Head,
-  Body,
-  Container,
-  Text,
-  Link,
-  Section,
-} from "@react-email/components";
+import { Html, Head, Body, Container, Text, Link, Section } from "@react-email/components";
 
 export interface ChatMessageNotificationEmailProps {
   recipientName: string;
@@ -27,9 +19,7 @@ export default function ChatMessageNotificationEmail({
   const EmailContent = () => (
     <Container className="max-w-[600px] mx-auto p-5">
       <Section className="bg-connect-me-blue-3 text-white p-6 text-center">
-        <Text className="text-2xl font-bold m-0">
-          Connect Me Free Tutoring & Mentoring
-        </Text>
+        <Text className="text-2xl font-bold m-0">Connect Me Free Tutoring & Mentoring</Text>
       </Section>
 
       <Section className="p-6">
@@ -47,10 +37,7 @@ export default function ChatMessageNotificationEmail({
         </Section>
 
         <Text className="text-connect-me-black text-base leading-relaxed m-0">
-          <Link
-            href={chatRoomUrl}
-            className="text-connect-me-blue-3 font-bold underline"
-          >
+          <Link href={chatRoomUrl} className="text-connect-me-blue-3 font-bold underline">
             View the message
           </Link>{" "}
           to continue the conversation.

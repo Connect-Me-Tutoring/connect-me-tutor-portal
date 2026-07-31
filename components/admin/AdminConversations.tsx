@@ -2,13 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -19,22 +13,17 @@ import {
   CommandItem,
   CommandList,
 } from "@/components/ui/command";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Check, ChevronDown, MessageCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { getAllProfiles } from "@/lib/actions/admin.actions";
 import { Profile } from "@/types";
-import { createAdminConversation } from "@/lib/actions/chat.server.actions";
+import { createAdminConversation } from "@/lib/actions/chat/server.actions";
 import toast from "react-hot-toast";
-import { fetchAdminConversations } from "@/lib/actions/chat.actions";
+import { fetchAdminConversations } from "@/lib/actions/chat/actions";
 import { AdminConversation } from "@/types/chat";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-
 
 const existingConversations = [
   {
@@ -70,18 +59,14 @@ const existingConversations = [
 ];
 
 export function AdminConversationManager() {
-  const [selectedProfileUserId, setSelectedProfileUserId] =
-    useState<string>("");
+  const [selectedProfileUserId, setSelectedProfileUserId] = useState<string>("");
   const [openProfileOptions, setOpenProfileOptions] = useState(false);
   const [profileSearch, setProfileSearch] = useState("");
   const [conversationTitle, setConversationTitle] = useState("");
   const [conversationDescription, setConversationDescription] = useState("");
-  const [existingConversations, setExistingConversations] =
-    useState<AdminConversation[]>();
+  const [existingConversations, setExistingConversations] = useState<AdminConversation[]>();
   const [profiles, setProfiles] = useState<Profile[]>([]);
-  const selectedProfile = profiles.find(
-    (profile) => profile.userId === selectedProfileUserId
-  );
+  const selectedProfile = profiles.find((profile) => profile.userId === selectedProfileUserId);
 
   const router = useRouter();
 
@@ -128,12 +113,8 @@ export function AdminConversationManager() {
     <div className="min-h-screen bg-background p-6">
       <div className="mx-auto max-w-6xl">
         <div className="mb-8 text-center">
-          <h1 className="text-3xl font-bold text-foreground mb-2">
-            Create New Conversation
-          </h1>
-          <p className="text-muted-foreground">
-            Start a conversation with a team member
-          </p>
+          <h1 className="text-3xl font-bold text-foreground mb-2">Create New Conversation</h1>
+          <p className="text-muted-foreground">Start a conversation with a team member</p>
         </div>
 
         <div className="">
@@ -153,10 +134,7 @@ export function AdminConversationManager() {
                 {/* Profile Selection */}
                 <div className="space-y-2">
                   <Label htmlFor="profile">Select Profile</Label>
-                  <Popover
-                    open={openProfileOptions}
-                    onOpenChange={setOpenProfileOptions}
-                  >
+                  <Popover open={openProfileOptions} onOpenChange={setOpenProfileOptions}>
                     <PopoverTrigger asChild>
                       <Button
                         variant="outline"
@@ -167,9 +145,7 @@ export function AdminConversationManager() {
                         {selectedProfile ? (
                           <div className="flex items-center gap-3">
                             <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-primary-foreground text-sm font-medium">
-                              {selectedProfile.firstName
-                                .charAt(0)
-                                .toUpperCase()}
+                              {selectedProfile.firstName.charAt(0).toUpperCase()}
                             </div>
                             <div className="text-left">
                               <div className="font-medium">
@@ -181,9 +157,7 @@ export function AdminConversationManager() {
                             </div>
                           </div>
                         ) : (
-                          <span className="text-muted-foreground">
-                            Select a profile...
-                          </span>
+                          <span className="text-muted-foreground">Select a profile...</span>
                         )}
                         <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                       </Button>
@@ -203,11 +177,7 @@ export function AdminConversationManager() {
                                 key={profile.id}
                                 value={profile.id}
                                 className="text-black"
-                                keywords={[
-                                  profile.firstName,
-                                  profile.lastName,
-                                  profile.role,
-                                ]}
+                                keywords={[profile.firstName, profile.lastName, profile.role]}
                                 onSelect={() => {
                                   setSelectedProfileUserId(profile.userId);
                                   setOpenProfileOptions(false);
@@ -218,7 +188,7 @@ export function AdminConversationManager() {
                                     "mr-2 h-4 w-4",
                                     selectedProfileUserId === profile.id
                                       ? "opacity-100"
-                                      : "opacity-0"
+                                      : "opacity-0",
                                   )}
                                 />
                                 <div className="flex items-center gap-3">
@@ -282,13 +252,9 @@ export function AdminConversationManager() {
                           {selectedProfile.role}
                         </span>
                       </div>
-                      <h3 className="font-semibold text-foreground mb-1">
-                        {conversationTitle}
-                      </h3>
+                      <h3 className="font-semibold text-foreground mb-1">{conversationTitle}</h3>
                       {conversationDescription && (
-                        <p className="text-sm text-muted-foreground">
-                          {conversationDescription}
-                        </p>
+                        <p className="text-sm text-muted-foreground">{conversationDescription}</p>
                       )}
                     </div>
                   </div>

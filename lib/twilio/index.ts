@@ -18,10 +18,7 @@ export interface ScheduledMessage {
 }
 
 // Initialize Twilio client
-const twilioClient = twilio(
-  process.env.TWILIO_ACCOUNT_SID!,
-  process.env.TWILIO_AUTH_TOKEN!
-);
+const twilioClient = twilio(process.env.TWILIO_ACCOUNT_SID!, process.env.TWILIO_AUTH_TOKEN!);
 
 export function formatPhoneNumber(phoneNumber?: string): string | null {
   if (!phoneNumber) return null;
@@ -112,7 +109,7 @@ export async function scheduleReminderSMS(
   phoneNumber: string,
   message: string,
   sendAt: Date,
-  messagingServiceSid?: string
+  messagingServiceSid?: string,
 ): Promise<ScheduledMessage> {
   try {
     const messageOptions: any = {
@@ -140,8 +137,7 @@ export async function scheduleReminderSMS(
       body: message,
     };
   } catch (error) {
-    const errorMessage =
-      error instanceof Error ? error.message : "Unknown error";
+    const errorMessage = error instanceof Error ? error.message : "Unknown error";
     console.error(`Failed to schedule SMS to ${phoneNumber}:`, errorMessage);
     throw new Error(`SMS scheduling failed: ${errorMessage}`);
   }
@@ -156,7 +152,7 @@ export async function scheduleReminderSMS(
  */
 export async function scheduleSessionReminders(
   session: Session,
-  messagingServiceSid?: string
+  messagingServiceSid?: string,
 ): Promise<ScheduledMessage[]> {
   const scheduledMessages: ScheduledMessage[] = [];
 
@@ -196,23 +192,20 @@ export async function scheduleSessionReminders(
             studentPhone,
             studentMessage,
             reminderTime,
-            messagingServiceSid
+            messagingServiceSid,
           );
           scheduledMessages.push(scheduledStudentMessage);
         } catch (error) {
-          const errorMessage =
-            error instanceof Error ? error.message : "Unknown error";
+          const errorMessage = error instanceof Error ? error.message : "Unknown error";
           errors.push(`Student reminder: ${errorMessage}`);
           console.error(
             `Failed to schedule student reminder for session ${session.id}:`,
-            errorMessage
+            errorMessage,
           );
         }
       } else {
-       
       }
     } else {
-     
     }
 
     // Schedule reminder for tutor
@@ -225,41 +218,30 @@ export async function scheduleSessionReminders(
             tutorPhone,
             tutorMessage,
             reminderTime,
-            messagingServiceSid
+            messagingServiceSid,
           );
           scheduledMessages.push(scheduledTutorMessage);
         } catch (error) {
-          const errorMessage =
-            error instanceof Error ? error.message : "Unknown error";
+          const errorMessage = error instanceof Error ? error.message : "Unknown error";
           errors.push(`Tutor reminder: ${errorMessage}`);
           console.error(
             `Failed to schedule tutor reminder for session ${session.id}:`,
-            errorMessage
+            errorMessage,
           );
         }
       } else {
-      
       }
     } else {
-      
     }
 
     if (errors.length > 0) {
-      console.warn(
-        `Partial success for session ${session.id}. Errors:`,
-        errors
-      );
+      console.warn(`Partial success for session ${session.id}. Errors:`, errors);
     }
 
-   
     return scheduledMessages;
   } catch (error) {
-    const errorMessage =
-      error instanceof Error ? error.message : "Unknown error";
-    console.error(
-      `Error scheduling reminders for session ${session.id}:`,
-      errorMessage
-    );
+    const errorMessage = error instanceof Error ? error.message : "Unknown error";
+    console.error(`Error scheduling reminders for session ${session.id}:`, errorMessage);
     throw error;
   }
 }
@@ -272,7 +254,7 @@ export async function scheduleSessionReminders(
  */
 export async function scheduleMultipleSessionReminders(
   sessions: Session[],
-  messagingServiceSid?: string
+  messagingServiceSid?: string,
 ): Promise<{
   scheduled: number;
   errors: string[];
@@ -284,7 +266,6 @@ export async function scheduleMultipleSessionReminders(
   const errors: string[] = [];
   const allScheduledMessages: ScheduledMessage[] = [];
 
-
   for (const session of sessions) {
     try {
       // Validate session has basic required data
@@ -295,9 +276,7 @@ export async function scheduleMultipleSessionReminders(
       }
 
       if (!session.student || !session.tutor) {
-        errors.push(
-          `Session ${session.id}: Missing student or tutor data - skipping`
-        );
+        errors.push(`Session ${session.id}: Missing student or tutor data - skipping`);
         skippedCount++;
         continue;
       }
@@ -308,20 +287,13 @@ export async function scheduleMultipleSessionReminders(
         continue;
       }
 
-      const scheduledMessages = await scheduleSessionReminders(
-        session,
-        messagingServiceSid
-      );
+      const scheduledMessages = await scheduleSessionReminders(session, messagingServiceSid);
       scheduledCount += scheduledMessages.length;
       allScheduledMessages.push(...scheduledMessages);
     } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : "Unknown error";
+      const errorMessage = error instanceof Error ? error.message : "Unknown error";
       errors.push(`Session ${session.id}: ${errorMessage}`);
-      console.error(
-        `Failed to schedule reminders for session ${session.id}:`,
-        errorMessage
-      );
+      console.error(`Failed to schedule reminders for session ${session.id}:`, errorMessage);
     }
   }
 
@@ -332,8 +304,6 @@ export async function scheduleMultipleSessionReminders(
     skipped: skippedCount,
   };
 
- 
-
   return summary;
 }
 
@@ -342,19 +312,13 @@ export async function scheduleMultipleSessionReminders(
  * @param messageSid - SID of the scheduled message to cancel
  * @returns Promise with cancellation result
  */
-export async function cancelScheduledReminder(
-  messageSid: string
-): Promise<boolean> {
+export async function cancelScheduledReminder(messageSid: string): Promise<boolean> {
   try {
     await twilioClient.messages(messageSid).update({ status: "canceled" });
     return true;
   } catch (error) {
-    const errorMessage =
-      error instanceof Error ? error.message : "Unknown error";
-    console.error(
-      `Failed to cancel scheduled message ${messageSid}:`,
-      errorMessage
-    );
+    const errorMessage = error instanceof Error ? error.message : "Unknown error";
+    console.error(`Failed to cancel scheduled message ${messageSid}:`, errorMessage);
     return false;
   }
 }
@@ -364,9 +328,7 @@ export async function cancelScheduledReminder(
  * @param messageSid - SID of the scheduled message
  * @returns Promise with message details
  */
-export async function getScheduledMessageStatus(
-  messageSid: string
-): Promise<any> {
+export async function getScheduledMessageStatus(messageSid: string): Promise<any> {
   try {
     const message = await twilioClient.messages(messageSid).fetch();
     return {
@@ -381,12 +343,8 @@ export async function getScheduledMessageStatus(
       errorMessage: message.errorMessage,
     };
   } catch (error) {
-    const errorMessage =
-      error instanceof Error ? error.message : "Unknown error";
-    console.error(
-      `Failed to fetch message status ${messageSid}:`,
-      errorMessage
-    );
+    const errorMessage = error instanceof Error ? error.message : "Unknown error";
+    console.error(`Failed to fetch message status ${messageSid}:`, errorMessage);
     throw error;
   }
 }

@@ -6,22 +6,22 @@ The app defines a custom Connect Me brand palette in `tailwind.config.ts` under 
 
 ### Brand blues (light → dark)
 
-| Class                 | Hex       |
-| --------------------- | --------- |
-| `connect-me-blue-1`   | `#B7E2F2` |
-| `connect-me-blue-2`   | `#6AB2D7` |
-| `connect-me-blue-3`   | `#0E5B94` |
-| `connect-me-blue-4`   | `#104A75` |
-| `connect-me-blue-5`   | `#0B3967` |
+| Class               | Hex       |
+| ------------------- | --------- |
+| `connect-me-blue-1` | `#B7E2F2` |
+| `connect-me-blue-2` | `#6AB2D7` |
+| `connect-me-blue-3` | `#0E5B94` |
+| `connect-me-blue-4` | `#104A75` |
+| `connect-me-blue-5` | `#0B3967` |
 
 ### Grays & black
 
-| Class                 | Hex       |
-| --------------------- | --------- |
-| `connect-me-gray-1`   | `#8494A8` |
-| `connect-me-gray-2`   | `#495860` |
-| `connect-me-gray-3`   | `#30302F` |
-| `connect-me-black`    | `#040405` |
+| Class               | Hex       |
+| ------------------- | --------- |
+| `connect-me-gray-1` | `#8494A8` |
+| `connect-me-gray-2` | `#495860` |
+| `connect-me-gray-3` | `#30302F` |
+| `connect-me-black`  | `#040405` |
 
 ### Semantic / theme colors
 

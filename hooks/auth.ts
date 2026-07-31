@@ -1,4 +1,4 @@
-import { getProfile } from "@/lib/actions/user.actions";
+import { getProfile } from "@/lib/actions/user/actions";
 import { Profile } from "@/types";
 import { supabase } from "@/lib/supabase/client";
 import { useEffect, useState } from "react";
@@ -11,9 +11,8 @@ import { useEffect, useState } from "react";
 export const useFetchProfile = () => {
   const [loading, setLoading] = useState<boolean>(true);
   const [profile, setProfile] = useState<Profile | null>(null);
-  const [error, setError] = useState<Error | null>(null)
+  const [error, setError] = useState<Error | null>(null);
   useEffect(() => {
-
     let isMounted = true;
 
     (async () => {
@@ -29,20 +28,19 @@ export const useFetchProfile = () => {
         const profileData = await getProfile(user.id);
         if (profileData && isMounted) setProfile(profileData);
       } catch (error: any) {
-        if (isMounted) setError(error)
+        if (isMounted) setError(error);
         console.error("Error fetching profile:", error);
       } finally {
         if (isMounted) setLoading(false);
       }
     })();
 
-    return () => { isMounted = false };
-
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   return { profile: profile, loading, error };
 };
 
-export const useFetchUser = () => {
-  
-}
+export const useFetchUser = () => {};

@@ -1,37 +1,39 @@
 import { NextResponse } from "next/server";
 import { startOfWeek, endOfWeek } from "date-fns";
-import { addSessionsServer, getAllSessionsServer } from "@/lib/actions/session.server.actions";
-import { getAllActiveEnrollmentsServer } from "@/lib/actions/enrollment.server.actions";
+import { addSessionsForCron, getAllSessionsForCron } from "@/lib/actions/session/server.actions";
+import { getAllActiveEnrollmentsForCron } from "@/lib/actions/enrollment/server.actions";
+import { isCronRequestAuthorized } from "@/lib/security/cron";
+import { getEasternWeekBounds } from "@/lib/utils";
+import { logError } from "@/lib/posthog";
 
 export async function GET(request: Request) {
-  const authHeader = request.headers.get("authorization");
-  if (
-    process.env.CRON_SECRET &&
-    authHeader !== `Bearer ${process.env.CRON_SECRET}`
-) {
+  if (!isCronRequestAuthorized(request)) {
     return new NextResponse("Unauthorized", { status: 401 });
   }
 
   try {
     const now = new Date();
-    const weekStartString = startOfWeek(now, { weekStartsOn: 0 }).toISOString();
-    const weekEndString = endOfWeek(now, { weekStartsOn: 0 }).toISOString();
+    const { weekStart, weekEnd } = getEasternWeekBounds(now);
+    const weekStartString = weekStart.toISOString();
+    const weekEndString = weekEnd.toISOString();
 
-    // Fetch required enrollments and existing sessions
-    const enrollments = await getAllActiveEnrollmentsServer(weekEndString);
-    const sessions = await getAllSessionsServer(weekStartString, weekEndString);
+    const enrollments = await getAllActiveEnrollmentsForCron(weekEndString);
+    const sessions = await getAllSessionsForCron(weekStartString, weekEndString);
 
-    // Generate sessions for the week
-    const createdSessions = await addSessionsServer(
+    const createdSessions = await addSessionsForCron(
       weekStartString,
       weekEndString,
       enrollments,
-      sessions
+      sessions,
     );
 
-    return NextResponse.json({ success: true, createdCount: createdSessions.length });
+    return NextResponse.json({
+      success: true,
+      createdCount: createdSessions.length,
+    });
   } catch (error) {
     console.error("Cron job add-sessions failed:", error);
+    await logError(error, {}, "cron_add_sessions_error");
     return NextResponse.json({ success: false, error: "Internal Server Error" }, { status: 500 });
   }
 }

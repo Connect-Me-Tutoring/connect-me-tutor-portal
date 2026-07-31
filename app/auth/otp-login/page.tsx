@@ -84,7 +84,7 @@ function OTPLogin() {
       const { error } = await supabase.auth.signInWithOtp({
         email: values.email,
         // options: {
-          // emailRedirectTo: `${window.location.origin}/auth/callback`,
+        // emailRedirectTo: `${window.location.origin}/auth/callback`,
         // },
       });
 
@@ -157,9 +157,7 @@ function OTPLogin() {
               {!otpSent ? (
                 <>
                   <div className="flex flex-col gap-3 text-center">
-                    <h1 className="text-xl sm:text-2xl font-bold">
-                      Login with OTP
-                    </h1>
+                    <h1 className="text-xl sm:text-2xl font-bold">Login with OTP</h1>
                     <p className="text-sm text-gray-600">
                       Enter your email to receive a One-Time Password.
                     </p>
@@ -176,11 +174,7 @@ function OTPLogin() {
                           <FormItem>
                             <FormLabel>Email</FormLabel>
                             <FormControl>
-                              <Input
-                                type="email"
-                                placeholder="youremail@example.com"
-                                {...field}
-                              />
+                              <Input type="email" placeholder="youremail@example.com" {...field} />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -201,8 +195,7 @@ function OTPLogin() {
                   <div className="flex flex-col gap-3 text-center">
                     <h1 className="text-xl sm:text-2xl font-bold">Enter OTP</h1>
                     <p className="text-sm text-gray-600">
-                      An OTP has been sent to {emailForOtp}. Please enter it
-                      below.
+                      An OTP has been sent to {emailForOtp}. Please enter it below.
                     </p>
                   </div>
                   <Form {...otpForm} key="otp-form">

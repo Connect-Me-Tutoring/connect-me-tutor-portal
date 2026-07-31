@@ -15,18 +15,10 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import type { ProfilePairingMetadata } from "@/types/profile";
-import { fetchProfileData, updateProfileData } from "@/lib/profile-utils";
+import { fetchProfileData, updateProfileData } from "@/lib/utils/profile-utils";
 import { useToast } from "@/hooks/use-toast";
 
-const DAYS_OF_WEEK = [
-  "Monday",
-  "Tuesday",
-  "Wednesday",
-  "Thursday",
-  "Friday",
-  "Saturday",
-  "Sunday",
-];
+const DAYS_OF_WEEK = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
 
 const COMMON_SUBJECTS = [
   "Mathematics",
@@ -124,11 +116,7 @@ export function ProfileEditor() {
   };
 
   const addAvailability = () => {
-    if (
-      !newAvailability.day ||
-      !newAvailability.startTime ||
-      !newAvailability.endTime
-    ) {
+    if (!newAvailability.day || !newAvailability.startTime || !newAvailability.endTime) {
       toast({
         title: "Missing information",
         description: "Please fill in all availability fields",
@@ -223,11 +211,7 @@ export function ProfileEditor() {
                     <div className="text-sm">{slot.startTime}</div>
                     <div className="text-sm">{slot.endTime}</div>
                   </div>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => removeAvailability(index)}
-                  >
+                  <Button variant="ghost" size="icon" onClick={() => removeAvailability(index)}>
                     <X className="h-4 w-4" />
                     <span className="sr-only">Remove</span>
                   </Button>
@@ -236,9 +220,7 @@ export function ProfileEditor() {
             </div>
           ) : (
             <div className="text-center py-4 border rounded-md bg-muted/50">
-              <p className="text-sm text-muted-foreground">
-                No availability set
-              </p>
+              <p className="text-sm text-muted-foreground">No availability set</p>
             </div>
           )}
 
@@ -247,9 +229,7 @@ export function ProfileEditor() {
               <Label htmlFor="day">Day</Label>
               <Select
                 value={newAvailability.day}
-                onValueChange={(value) =>
-                  setNewAvailability((prev) => ({ ...prev, day: value }))
-                }
+                onValueChange={(value) => setNewAvailability((prev) => ({ ...prev, day: value }))}
               >
                 <SelectTrigger id="day">
                   <SelectValue placeholder="Select day" />
@@ -313,14 +293,9 @@ export function ProfileEditor() {
         </p>
 
         <div className="flex flex-wrap gap-2 mb-4">
-          {profile.subjectsOfInterest &&
-          profile.subjectsOfInterest.length > 0 ? (
+          {profile.subjectsOfInterest && profile.subjectsOfInterest.length > 0 ? (
             profile.subjectsOfInterest.map((subject, index) => (
-              <Badge
-                key={index}
-                variant="secondary"
-                className="pl-3 pr-2 py-1.5"
-              >
+              <Badge key={index} variant="secondary" className="pl-3 pr-2 py-1.5">
                 {subject}
                 <button
                   className="ml-1 hover:text-destructive"
@@ -346,7 +321,7 @@ export function ProfileEditor() {
               </SelectTrigger>
               <SelectContent>
                 {COMMON_SUBJECTS.filter(
-                  (subject) => !profile.subjectsOfInterest?.includes(subject)
+                  (subject) => !profile.subjectsOfInterest?.includes(subject),
                 ).map((subject) => (
                   <SelectItem key={subject} value={subject}>
                     {subject}
@@ -366,9 +341,7 @@ export function ProfileEditor() {
 
       <div className="space-y-4">
         <h2 className="text-xl font-semibold">Languages Spoken</h2>
-        <p className="text-sm text-muted-foreground">
-          Add languages you can communicate in.
-        </p>
+        <p className="text-sm text-muted-foreground">Add languages you can communicate in.</p>
 
         <div className="flex flex-wrap gap-2 mb-4">
           {profile.languagesSpoken && profile.languagesSpoken.length > 0 ? (
@@ -386,9 +359,7 @@ export function ProfileEditor() {
             ))
           ) : (
             <div className="w-full text-center py-4 border rounded-md bg-muted/50">
-              <p className="text-sm text-muted-foreground">
-                No languages added
-              </p>
+              <p className="text-sm text-muted-foreground">No languages added</p>
             </div>
           )}
         </div>
@@ -401,7 +372,7 @@ export function ProfileEditor() {
               </SelectTrigger>
               <SelectContent>
                 {COMMON_LANGUAGES.filter(
-                  (language) => !profile.languagesSpoken?.includes(language)
+                  (language) => !profile.languagesSpoken?.includes(language),
                 ).map((language) => (
                   <SelectItem key={language} value={language}>
                     {language}

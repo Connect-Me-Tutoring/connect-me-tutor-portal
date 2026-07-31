@@ -1,13 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { getEnrollmentSessionsActivityData } from "@/lib/actions/session.server.actions";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { getEnrollmentSessionsActivityData } from "@/lib/actions/session/server.actions";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -60,9 +54,7 @@ export default async function EnrollmentActivityPage(props: {
           <div className="flex flex-wrap gap-2 items-center">
             <span className="text-muted-foreground">Frequency</span>
             <Badge variant="secondary">{enrollment.frequency}</Badge>
-            {enrollment.paused && (
-              <Badge variant="destructive">Paused</Badge>
-            )}
+            {enrollment.paused && <Badge variant="destructive">Paused</Badge>}
           </div>
           {enrollment.summary ? (
             <p>
@@ -77,9 +69,9 @@ export default async function EnrollmentActivityPage(props: {
         <CardHeader>
           <CardTitle>Sessions</CardTitle>
           <CardDescription>
-            Open a session to see normalized Zoom join/leave activity. Links
-            include <code className="text-xs">enrollmentId</code> so the session
-            view can show this enrollment breakdown.
+            Open a session to see normalized Zoom join/leave activity. Links include{" "}
+            <code className="text-xs">enrollmentId</code> so the session view can show this
+            enrollment breakdown.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -116,13 +108,9 @@ export default async function EnrollmentActivityPage(props: {
                     </TableCell>
                     <TableCell>
                       <div className="font-medium">{s.meetingTitle}</div>
-                      <div className="text-xs text-muted-foreground">
-                        {s.meetingId}
-                      </div>
+                      <div className="text-xs text-muted-foreground">{s.meetingId}</div>
                     </TableCell>
-                    <TableCell className="text-right tabular-nums">
-                      {s.zoomEventCount}
-                    </TableCell>
+                    <TableCell className="text-right tabular-nums">{s.zoomEventCount}</TableCell>
                     <TableCell className="text-right">
                       <Button variant="outline" size="sm" asChild>
                         <Link

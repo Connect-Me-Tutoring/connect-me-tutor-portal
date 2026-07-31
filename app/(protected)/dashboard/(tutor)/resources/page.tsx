@@ -1,10 +1,9 @@
-import ResourceList from '@/components/tutor/ResourceList'
+import ResourceList from "@/components/tutor/ResourceList";
 
 export default function MyStudentsPage() {
-
-    return (
-        <main>
-            <ResourceList/>
-        </main>
-    )
+  return (
+    <main>
+      <ResourceList />
+    </main>
+  );
 }

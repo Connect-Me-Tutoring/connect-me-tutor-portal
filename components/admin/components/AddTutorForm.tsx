@@ -30,27 +30,14 @@ interface AddTutorFormProps {
   newTutor: Partial<Profile>;
   addingTutor: boolean;
   handleInputChange: (
-    e: React.ChangeEvent<
-      HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
-    >
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>,
   ) => void;
-  handleAddTutor: (
-    value: Partial<Profile>,
-    addToPairingQueue?: boolean
-  ) => void;
+  handleAddTutor: (value: Partial<Profile>, addToPairingQueue?: boolean) => void;
   handleTimeZone: (value: string) => void;
   setNewTutor: React.Dispatch<React.SetStateAction<Partial<Profile>>>; // 👈 add this
 }
 
-const DAYS_OF_WEEK = [
-  "Monday",
-  "Tuesday",
-  "Wednesday",
-  "Thursday",
-  "Friday",
-  "Saturday",
-  "Sunday",
-];
+const DAYS_OF_WEEK = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
 
 const AddTutorForm = ({
   newTutor,
@@ -62,8 +49,7 @@ const AddTutorForm = ({
 }: AddTutorFormProps) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("basic");
-  const [addNewProfilesToQueue, setAddNewProfilesToQueue] =
-    useState<boolean>(false);
+  const [addNewProfilesToQueue, setAddNewProfilesToQueue] = useState<boolean>(false);
 
   // Extended profile fields (moved from the original component state)
   const [subjectsOfInterest, setSubjectsOfInterest] = useState<string[]>([]);
@@ -77,16 +63,13 @@ const AddTutorForm = ({
   const [newGender, setNewGender] = useState("");
 
   const addAvailabilitySlot = () => {
-    setAvailability([
-      ...availability,
-      { day: "Monday", startTime: "09:00", endTime: "17:00" },
-    ]);
+    setAvailability([...availability, { day: "Monday", startTime: "09:00", endTime: "17:00" }]);
   };
 
   const updateAvailabilitySlot = (
     index: number,
     field: keyof (typeof availability)[0],
-    value: string
+    value: string,
   ) => {
     const updated = [...availability];
     updated[index] = { ...updated[index], [field]: value };
@@ -151,7 +134,7 @@ const AddTutorForm = ({
 
   // Enhanced handleAddTutor to include extended fields
   const handleEnhancedAddTutor = (addToPairingQueue?: boolean) => {
-    // validate basic forms 
+    // validate basic forms
     const validationError = validateBasicForm();
     if (validationError) {
       toast.error(validationError);
@@ -174,7 +157,7 @@ const AddTutorForm = ({
     <>
       <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
         <DialogTrigger asChild>
-          <Button className = "bg-connect-me-blue-2">Add Tutor</Button>
+          <Button className="bg-connect-me-blue-2">Add Tutor</Button>
         </DialogTrigger>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
@@ -280,10 +263,7 @@ const AddTutorForm = ({
                       Time Zone
                     </Label>
                     <div className="col-span-3">
-                        <TimeZoneSelector
-                        profile={newTutor}
-                        handleTimeZone={handleTimeZone}
-                      />
+                      <TimeZoneSelector profile={newTutor} handleTimeZone={handleTimeZone} />
                     </div>
                   </div>
                 </div>
@@ -297,16 +277,11 @@ const AddTutorForm = ({
                   <div className="space-y-4">
                     <h3 className="text-lg font-semibold">Availability</h3>
                     {availability.map((slot, index) => (
-                      <div
-                        key={index}
-                        className="flex gap-2 p-3 border rounded-lg bg-gray-50"
-                      >
+                      <div key={index} className="flex gap-2 p-3 border rounded-lg bg-gray-50">
                         <div className="flex-1">
                           <Select
                             value={slot.day}
-                            onValueChange={(value) =>
-                              updateAvailabilitySlot(index, "day", value)
-                            }
+                            onValueChange={(value) => updateAvailabilitySlot(index, "day", value)}
                           >
                             <SelectTrigger>
                               <SelectValue />
@@ -325,11 +300,7 @@ const AddTutorForm = ({
                             type="time"
                             value={slot.startTime}
                             onChange={(e) =>
-                              updateAvailabilitySlot(
-                                index,
-                                "startTime",
-                                e.target.value
-                              )
+                              updateAvailabilitySlot(index, "startTime", e.target.value)
                             }
                           />
                         </div>
@@ -338,11 +309,7 @@ const AddTutorForm = ({
                             type="time"
                             value={slot.endTime}
                             onChange={(e) =>
-                              updateAvailabilitySlot(
-                                index,
-                                "endTime",
-                                e.target.value
-                              )
+                              updateAvailabilitySlot(index, "endTime", e.target.value)
                             }
                           />
                         </div>
@@ -369,19 +336,14 @@ const AddTutorForm = ({
 
                   {/* Subjects Section */}
                   <div className="space-y-4">
-                    <h3 className="text-lg font-semibold">
-                      Subjects of Interest
-                    </h3>
+                    <h3 className="text-lg font-semibold">Subjects of Interest</h3>
                     <div className="flex gap-2">
                       <Input
                         type="text"
                         placeholder="e.g., Mathematics, Physics"
                         value={newSubject}
                         onChange={(e) => setNewSubject(e.target.value)}
-                        onKeyDown={(e) =>
-                          e.key === "Enter" &&
-                          (e.preventDefault(), addSubject())
-                        }
+                        onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), addSubject())}
                       />
                       <Button type="button" onClick={addSubject} size="sm">
                         <Plus className="h-4 w-4" />
@@ -418,10 +380,7 @@ const AddTutorForm = ({
                         placeholder="e.g., English, Spanish"
                         value={newLanguage}
                         onChange={(e) => setNewLanguage(e.target.value)}
-                        onKeyDown={(e) =>
-                          e.key === "Enter" &&
-                          (e.preventDefault(), addLanguage())
-                        }
+                        onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), addLanguage())}
                       />
                       <Button type="button" onClick={addLanguage} size="sm">
                         <Plus className="h-4 w-4" />
@@ -495,10 +454,7 @@ const AddTutorForm = ({
             )}
           </div>
 
-          <Button
-            onClick={() => handleEnhancedAddTutor(true)}
-            disabled={addingTutor}
-          >
+          <Button onClick={() => handleEnhancedAddTutor(true)} disabled={addingTutor}>
             {addingTutor ? "Adding Tutor..." : "Add Tutor"}
           </Button>
         </DialogContent>

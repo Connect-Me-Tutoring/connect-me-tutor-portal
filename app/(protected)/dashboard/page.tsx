@@ -3,17 +3,18 @@ import AdminDashboard from "@/components/admin/DashboardContent";
 import StudentDashboard from "@/components/student/StudentDashboard";
 import TutorDashboard from "@/components/tutor/dashboard";
 import SkeletonTable from "@/components/ui/skeleton";
-import { getMeetings } from "@/lib/actions/meeting.server.actions";
+import { getMeetings } from "@/lib/actions/meeting/server.actions";
 import { cachedGetProfile } from "@/lib/actions/cache";
-import { getTutorSessions } from "@/lib/actions/session.server.actions";
-import { getStudentSessions } from "@/lib/actions/session.server.actions";
-import { cachedGetUser } from "@/lib/actions/user.server.actions";
+import { getTutorSessions } from "@/lib/actions/session/server.actions";
+import { getStudentSessions } from "@/lib/actions/session/server.actions";
+import { cachedGetUser } from "@/lib/actions/user/server.actions";
 import { Meeting, Profile } from "@/types";
 import { endOfWeek, startOfWeek } from "date-fns";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { DashboardContextProvider } from "@/lib/contexts/dashboardContext";
-import { getProfile } from "@/lib/actions/profile.server.actions";
+import { getProfile } from "@/lib/actions/profile/server.actions";
+import { logEvent } from "@/lib/posthog";
 
 async function TutorDashboardPage({
   profile,
@@ -33,10 +34,7 @@ async function TutorDashboardPage({
 
   const pastTutorSessions = sessions.then((sessions) =>
     sessions
-      .filter(
-        (session) =>
-          session.status == "Complete" || session.status == "Cancelled",
-      )
+      .filter((session) => session.status == "Complete" || session.status == "Cancelled")
       .toReversed(),
   );
 
@@ -96,10 +94,7 @@ async function StudentDashboardPage({
 
   const pastStudentSessions = sessions.then((sessions) =>
     sessions
-      .filter(
-        (session) =>
-          session.status == "Complete" || session.status == "Cancelled",
-      )
+      .filter((session) => session.status == "Complete" || session.status == "Cancelled")
       .toReversed(),
   );
 
@@ -124,7 +119,7 @@ async function StudentDashboardPage({
 export default async function DashboardPage() {
   const user = await cachedGetUser();
   if (!user) {
-    console.log("Redirecting back to root");
+    await logEvent("dashboard_redirect_unauthenticated", {});
     redirect("/");
   }
   const profile = await cachedGetProfile(user.id);
@@ -134,18 +129,10 @@ export default async function DashboardPage() {
   return (
     <>
       {profile.role === "Student" && (
-        <StudentDashboardPage
-          key={profile.id}
-          profile={profile}
-          meetings={meetings}
-        />
+        <StudentDashboardPage key={profile.id} profile={profile} meetings={meetings} />
       )}
       {profile.role === "Tutor" && (
-        <TutorDashboardPage
-          key={profile.id}
-          profile={profile}
-          meetings={meetings}
-        />
+        <TutorDashboardPage key={profile.id} profile={profile} meetings={meetings} />
       )}
       {profile.role === "Admin" && <AdminDashboard />}
     </>

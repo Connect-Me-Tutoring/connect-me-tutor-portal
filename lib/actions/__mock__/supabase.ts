@@ -1,4 +1,4 @@
-import { vi } from 'vitest'
+import { vi } from "vitest";
 
 export const createMockSupabaseClient = () => ({
   from: vi.fn(() => ({
@@ -49,7 +49,7 @@ export const createMockSupabaseClient = () => ({
             unsubscribe: vi.fn(),
           },
         },
-      }
+      };
     }),
     admin: {
       createUser: vi.fn().mockResolvedValue({
@@ -74,9 +74,9 @@ export const createMockSupabaseClient = () => ({
       remove: vi.fn().mockResolvedValue({ data: null, error: null }),
       list: vi.fn().mockResolvedValue({ data: [], error: null }),
       getPublicUrl: vi.fn().mockReturnValue({
-        data: { publicUrl: 'https://example.com/file.jpg' },
+        data: { publicUrl: "https://example.com/file.jpg" },
       }),
     })),
   },
   rpc: vi.fn().mockResolvedValue({ data: null, error: null }),
-})
+});

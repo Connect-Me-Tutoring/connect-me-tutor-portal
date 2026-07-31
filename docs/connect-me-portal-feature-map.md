@@ -6,14 +6,14 @@ This document ties the Connect Me tutor portal **product requirements** (introdu
 
 ## Development technologies (as stated in the brief)
 
-| Requirement | Where it shows up in this repo |
-|-------------|-------------------------------|
-| **Next.js** (App Router, server + client components) | App routes under `app/`, API routes under `app/api/`, server actions under `lib/actions/`. |
-| **React** | Components under `components/`, pages composed in `app/`. |
-| **Tailwind CSS** | `tailwind.config.ts`, utility classes throughout UI; global styles typically in `app/globals.css` (if present). |
-| **shadcn/ui** | Radix-based primitives under `components/ui/`; project config in `components.json`. |
-| **Supabase** (Postgres + client) | `lib/supabase/` (client/server helpers), `supabase/migrations/` (schema and RPCs), typed tables in `lib/supabase/tables.ts`. |
-| **Vercel** | Typical Next.js deployment target; `@vercel/speed-insights` in `package.json`. Hosting config is environment-specific (not always checked into the repo). |
+| Requirement                                          | Where it shows up in this repo                                                                                                                            |
+| ---------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Next.js** (App Router, server + client components) | App routes under `app/`, API routes under `app/api/`, server actions under `lib/actions/`.                                                                |
+| **React**                                            | Components under `components/`, pages composed in `app/`.                                                                                                 |
+| **Tailwind CSS**                                     | `tailwind.config.ts`, utility classes throughout UI; global styles typically in `app/globals.css` (if present).                                           |
+| **shadcn/ui**                                        | Radix-based primitives under `components/ui/`; project config in `components.json`.                                                                       |
+| **Supabase** (Postgres + client)                     | `lib/supabase/` (client/server helpers), `supabase/migrations/` (schema and RPCs), typed tables in `lib/supabase/tables.ts`.                              |
+| **Vercel**                                           | Typical Next.js deployment target; `@vercel/speed-insights` in `package.json`. Hosting config is environment-specific (not always checked into the repo). |
 
 ---
 
@@ -158,18 +158,18 @@ Below, each item lists **what exists in code**, **key files**, and **notable gap
 
 ## Quick reference: feature → primary locations
 
-| Feature area | Primary paths |
-|--------------|----------------|
-| Zoom timestamps & DB | `app/api/zoom/webhooks/route.ts`, `lib/actions/zoom.server.actions.ts`, `supabase/migrations/*zoom_participant*` |
-| Participation report | `app/(protected)/dashboard/session/[sessionID]/participation/page.tsx` |
-| Duration / frequency | `components/admin/EnrollmentsManagement.tsx`, `lib/actions/enrollment.server.actions.ts` |
-| Profile fields | `app/(protected)/dashboard/profile/page.tsx`, `lib/actions/profile.actions.ts` |
-| Pairing SQL | `supabase/migrations/20260408120000_pairing_subject_priority_alignment.sql`, `20260408130000_subject_alignment_json_output.sql` |
-| Pairing app logic | `lib/pairing/index.ts`, `lib/actions/pairing.actions.ts`, `components/pairing/` |
-| Chat | `components/chat/chat-room.tsx`, `app/(protected)/dashboard/**/chat/` |
-| Embedded Zoom | `app/(protected)/meeting/[meetingId]/page.tsx` (commented SDK) |
-| Time zones | `lib/actions/session.actions.ts`, `app/api/sessions/update-week/route.ts` |
-| SMS | `lib/twilio/index.ts`, `components/settings/SettingsPage.tsx` |
+| Feature area         | Primary paths                                                                                                                   |
+| -------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| Zoom timestamps & DB | `app/api/zoom/webhooks/route.ts`, `lib/actions/zoom.server.actions.ts`, `supabase/migrations/*zoom_participant*`                |
+| Participation report | `app/(protected)/dashboard/session/[sessionID]/participation/page.tsx`                                                          |
+| Duration / frequency | `components/admin/EnrollmentsManagement.tsx`, `lib/actions/enrollment.server.actions.ts`                                        |
+| Profile fields       | `app/(protected)/dashboard/profile/page.tsx`, `lib/actions/profile.actions.ts`                                                  |
+| Pairing SQL          | `supabase/migrations/20260408120000_pairing_subject_priority_alignment.sql`, `20260408130000_subject_alignment_json_output.sql` |
+| Pairing app logic    | `lib/pairing/index.ts`, `lib/actions/pairing.actions.ts`, `components/pairing/`                                                 |
+| Chat                 | `components/chat/chat-room.tsx`, `app/(protected)/dashboard/**/chat/`                                                           |
+| Embedded Zoom        | `app/(protected)/meeting/[meetingId]/page.tsx` (commented SDK)                                                                  |
+| Time zones           | `lib/actions/session.actions.ts`, `app/api/sessions/update-week/route.ts`                                                       |
+| SMS                  | `lib/twilio/index.ts`, `components/settings/SettingsPage.tsx`                                                                   |
 
 ---
 

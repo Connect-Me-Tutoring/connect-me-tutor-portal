@@ -24,9 +24,7 @@ const getUnreadCount = (enrollmentId: string): number => {
 
 // Mock function to get last message
 // In a real app, this would come from your messaging system
-const getLastMessage = (
-  enrollmentId: string
-): { text: string; timestamp: string } => {
+const getLastMessage = (enrollmentId: string): { text: string; timestamp: string } => {
   const mockMessages: Record<string, { text: string; timestamp: string }> = {
     "c95f7af1-e531-479e-86e9-14cb22e45785": {
       text: "Great progress on today's lesson!",
@@ -76,8 +74,7 @@ export function ChatList({ enrollments, currentUserId, role }: ChatListProps) {
   const clientConversations = useMemo(
     () =>
       enrollments.map((enrollment) => {
-        const profile =
-          role === "Student" ? enrollment["tutor"] : enrollment["student"];
+        const profile = role === "Student" ? enrollment["tutor"] : enrollment["student"];
         return {
           id: profile.id,
           name: `${profile.first_name}  ${profile.last_name}`,
@@ -88,7 +85,7 @@ export function ChatList({ enrollments, currentUserId, role }: ChatListProps) {
         };
       }),
     // const d
-    [enrollments, role]
+    [enrollments, role],
   );
   return (
     <div className="flex flex-col h-screen">
@@ -120,12 +117,8 @@ export function ChatList({ enrollments, currentUserId, role }: ChatListProps) {
                 />
               </svg>
             </div>
-            <h3 className="text-lg font-medium text-gray-900 mb-2">
-              No active sessions
-            </h3>
-            <p className="text-gray-500">
-              Your tutoring conversations will appear here
-            </p>
+            <h3 className="text-lg font-medium text-gray-900 mb-2">No active sessions</h3>
+            <p className="text-gray-500">Your tutoring conversations will appear here</p>
           </div>
         ) : (
           clientConversations.map((conversation) => {
@@ -143,9 +136,7 @@ export function ChatList({ enrollments, currentUserId, role }: ChatListProps) {
                 <div className="relative mr-3">
                   <Avatar className="h-12 w-12">
                     <AvatarImage
-                      src={
-                        getAvatarUrl(conversation.name) || "/placeholder.svg"
-                      }
+                      src={getAvatarUrl(conversation.name) || "/placeholder.svg"}
                       alt={conversation.name}
                     />
                     <AvatarFallback className="bg-blue-100 text-blue-600 font-medium">
@@ -161,19 +152,13 @@ export function ChatList({ enrollments, currentUserId, role }: ChatListProps) {
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between mb-1">
                     <div className="flex items-center">
-                      <h3 className="font-medium text-gray-900 truncate">
-                        {conversation.name}
-                      </h3>
+                      <h3 className="font-medium text-gray-900 truncate">{conversation.name}</h3>
                       <span className="text-xs text-gray-400 ml-2">Tutor</span>
                     </div>
-                    <span className="text-xs text-gray-500 ml-2">
-                      {lastMessage.timestamp}
-                    </span>
+                    <span className="text-xs text-gray-500 ml-2">{lastMessage.timestamp}</span>
                   </div>
 
-                  <p className="text-sm text-gray-600 truncate mb-2">
-                    {lastMessage.text}
-                  </p>
+                  <p className="text-sm text-gray-600 truncate mb-2">{lastMessage.text}</p>
 
                   <div className="flex items-center justify-between">
                     <div className="flex items-center text-xs text-gray-500">

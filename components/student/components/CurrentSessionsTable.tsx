@@ -25,11 +25,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import {
-  HoverCard,
-  HoverCardContent,
-  HoverCardTrigger,
-} from "@/components/ui/hover-card";
+import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
 import {
   AlertDialog,
   AlertDialogHeader,
@@ -85,11 +81,7 @@ interface CurrentSessionTableProps {
   setNotes: (notes: string) => void;
   setNextClassConfirmed: (confirmed: boolean) => void;
   handleStatusChange: (session: Session) => void;
-  handleReschedule: (
-    sessionId: string,
-    newDate: string,
-    meetingId: string,
-  ) => void;
+  handleReschedule: (sessionId: string, newDate: string, meetingId: string) => void;
   handleSessionComplete: (
     session: Session,
     notes: string,
@@ -147,8 +139,7 @@ const CurrentSessionsTable = ({
               </TableCell>
               <TableCell>{formatSessionDate(session.date)}</TableCell>
               <TableCell className="font-medium">
-                Tutoring Session with {session.tutor?.firstName}{" "}
-                {session.tutor?.lastName}
+                Tutoring Session with {session.tutor?.firstName} {session.tutor?.lastName}
               </TableCell>
               <TableCell>
                 {session.tutor?.firstName} {session.tutor?.lastName}
@@ -156,9 +147,7 @@ const CurrentSessionsTable = ({
               <TableCell>
                 {session?.meeting?.meetingId ? (
                   <button
-                    onClick={() =>
-                      (window.location.href = `/meeting/${session?.meeting?.id}`)
-                    }
+                    onClick={() => (window.location.href = `/meeting/${session?.meeting?.id}`)}
                     className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-connect-me-blue-2 transition-colors"
                   >
                     <Video className="h-4 w-4" />

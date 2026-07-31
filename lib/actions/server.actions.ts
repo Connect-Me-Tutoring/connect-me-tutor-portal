@@ -9,10 +9,7 @@ export type ProcessDMPayload = {
 
 const WORKER_URL = `${process.env.CHATBOT_URL}/process-dm`;
 
-
-export async function processDMStream(
-  payload: ProcessDMPayload,
-) {
+export async function processDMStream(payload: ProcessDMPayload) {
   // Ensure timeoutMs cannot cause excessively long-lived timers
   const DEFAULT_TIMEOUT_MS = 30_000;
   // const MAX_TIMEOUT_MS = 60_000;
@@ -37,9 +34,7 @@ export async function processDMStream(
 
     if (!res.ok) {
       const text = await res.text().catch(() => "");
-      throw new Error(
-        `processDMStream failed: ${res.status} ${res.statusText} ${text}`
-      );
+      throw new Error(`processDMStream failed: ${res.status} ${res.statusText} ${text}`);
     }
 
     if (!res.body) throw new Error("No body stream available on worker response");

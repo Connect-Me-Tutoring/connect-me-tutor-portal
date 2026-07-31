@@ -1,9 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/types/database.types";
-import {
-  StudentAnnouncementsRoomId,
-  TutorAnnouncementRoomId,
-} from "@/constants/chat";
+import { StudentAnnouncementsRoomId, TutorAnnouncementRoomId } from "@/constants/chat";
+import { logError } from "@/lib/posthog";
 
 export type ChatRoomType = "pairing" | "announcements" | "admin";
 
@@ -44,12 +42,11 @@ async function fetchProfilesByIds(
 
   if (error) {
     console.error("fetchProfilesByIds", error);
+    await logError(error, { ids }, "chat_resolve_recipients_error");
     return [];
   }
 
-  const rows = (data ?? []) as Array<
-    ChatRecipientRow & { user_id: string | null }
-  >;
+  const rows = (data ?? []) as Array<ChatRecipientRow & { user_id: string | null }>;
   const missingEmailRows = rows.filter((r) => !r.email && r.user_id);
 
   if (missingEmailRows.length === 0) {
@@ -69,6 +66,7 @@ async function fetchProfilesByIds(
 
   if (settingsError) {
     console.error("fetchProfilesByIds user_settings fallback", settingsError);
+    await logError(settingsError, { userIds }, "chat_resolve_recipients_error");
   }
 
   const userIdToEmail = new Map(
@@ -79,8 +77,7 @@ async function fetchProfilesByIds(
 
   const withFallback = rows.map((r) => ({
     id: r.id,
-    email:
-      r.email ?? (r.user_id ? (userIdToEmail.get(r.user_id) ?? null) : null),
+    email: r.email ?? (r.user_id ? (userIdToEmail.get(r.user_id) ?? null) : null),
     first_name: r.first_name,
     last_name: r.last_name,
   }));
@@ -88,16 +85,12 @@ async function fetchProfilesByIds(
   return withFallback;
 }
 
-async function fetchAdminProfileIds(
-  admin: SupabaseClient<Database>,
-): Promise<string[]> {
-  const { data, error } = await admin
-    .from("Profiles")
-    .select("id")
-    .eq("role", "Admin");
+async function fetchAdminProfileIds(admin: SupabaseClient<Database>): Promise<string[]> {
+  const { data, error } = await admin.from("Profiles").select("id").eq("role", "Admin");
 
   if (error) {
     console.error("fetchAdminProfileIds", error);
+    await logError(error, {}, "chat_resolve_recipients_error");
     return [];
   }
 
@@ -117,7 +110,10 @@ export async function resolveChatRecipientProfiles(
       .maybeSingle();
 
     if (error || !pairing) {
-      if (error) console.error("resolveChatRecipientProfiles pairing", error);
+      if (error) {
+        console.error("resolveChatRecipientProfiles pairing", error);
+        await logError(error, { roomId, roomType }, "chat_resolve_recipients_error");
+      }
       return [];
     }
 
@@ -134,6 +130,7 @@ export async function resolveChatRecipientProfiles(
 
     if (error) {
       console.error("resolveChatRecipientProfiles admin participants", error);
+      await logError(error, { roomId, roomType }, "chat_resolve_recipients_error");
       return [];
     }
 
@@ -150,13 +147,11 @@ export async function resolveChatRecipientProfiles(
 
     if (!roleFilter) return [];
 
-    const { data, error } = await admin
-      .from("Profiles")
-      .select("id")
-      .eq("role", roleFilter);
+    const { data, error } = await admin.from("Profiles").select("id").eq("role", roleFilter);
 
     if (error) {
       console.error("resolveChatRecipientProfiles announcements", error);
+      await logError(error, { roomId, roomType }, "chat_resolve_recipients_error");
       return [];
     }
 
@@ -167,11 +162,7 @@ export async function resolveChatRecipientProfiles(
   return [];
 }
 
-export function buildChatRoomUrl(
-  siteUrl: string,
-  roomType: ChatRoomType,
-  roomId: string,
-): string {
+export function buildChatRoomUrl(siteUrl: string, roomType: ChatRoomType, roomId: string): string {
   const base = siteUrl.replace(/\/$/, "");
   if (roomType === "pairing") {
     return `${base}/dashboard/pairings/${roomId}/chat`;

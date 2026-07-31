@@ -15,11 +15,11 @@ const AnalyticsDashboard = () => {
           .download("city_map.html");
 
         if (error) throw error;
-        
+
         const html = await data.text();
-        
+
         // Create a blob URL
-        const blob = new Blob([html], { type: 'text/html' });
+        const blob = new Blob([html], { type: "text/html" });
         const url = URL.createObjectURL(blob);
         setMapUrl(url);
       } catch (error) {
@@ -29,7 +29,7 @@ const AnalyticsDashboard = () => {
         setIsLoading(false);
       }
     };
-    
+
     fetchMap();
 
     // Cleanup
@@ -43,10 +43,10 @@ const AnalyticsDashboard = () => {
   return (
     <iframe
       src={mapUrl}
-      style={{ 
-        width: '100%', 
-        height: '100vh',
-        border: 'none' 
+      style={{
+        width: "100%",
+        height: "100vh",
+        border: "none",
       }}
       title="City Map"
     />

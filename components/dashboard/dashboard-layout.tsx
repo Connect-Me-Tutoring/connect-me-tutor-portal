@@ -4,7 +4,7 @@ import React, { use, useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
-import { logoutUser } from "@/lib/actions/user.actions";
+import { logoutUser } from "@/lib/actions/user/actions";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useProfile } from "@/lib/contexts/profileContext";
 import {
@@ -67,10 +67,7 @@ import {
 import { toast, Toaster } from "react-hot-toast";
 import { Select, SelectContent, SelectItem, SelectTrigger } from "../ui/select";
 import { Profile } from "@/types";
-import {
-  getUserProfiles,
-  switchProfile,
-} from "@/lib/actions/profile.server.actions";
+import { getUserProfiles, switchProfile } from "@/lib/actions/profile/server.actions";
 
 export default function DashboardLayout({
   children,
@@ -329,9 +326,7 @@ export default function DashboardLayout({
                   {/* <Compass size={18} /> */}
                   <Image alt="logo" height="30" width="30" src="/logo.png" />
                 </div>
-                {isOpen && (
-                  <span className="font-bold text-lg ml-2">Connect Me</span>
-                )}
+                {isOpen && <span className="font-bold text-lg ml-2">Connect Me</span>}
               </Link>
             </div>
             {/* Close button (shown when sidebar is open) */}
@@ -363,9 +358,7 @@ export default function DashboardLayout({
                   <Breadcrumb className="p-4">
                     <BreadcrumbList>
                       <BreadcrumbItem>
-                        <BreadcrumbLink href="/dashboard">
-                          Dashboard
-                        </BreadcrumbLink>
+                        <BreadcrumbLink href="/dashboard">Dashboard</BreadcrumbLink>
                       </BreadcrumbItem>
                       <BreadcrumbSeparator />
                       <BreadcrumbItem>
@@ -380,10 +373,7 @@ export default function DashboardLayout({
                         <Button
                           asChild
                           variant="ghost"
-                          className={cn(
-                            "w-full justify-start",
-                            !isOpen && "justify-center px-2",
-                          )}
+                          className={cn("w-full justify-start", !isOpen && "justify-center px-2")}
                         >
                           <Link href="/dashboard/">
                             <LayoutDashboardIcon className="h-5 w-5" />
@@ -418,9 +408,7 @@ export default function DashboardLayout({
                           >
                             <Link href={item.href}>
                               {item.icon}
-                              {isOpen && (
-                                <span className="ml-3">{item.title}</span>
-                              )}
+                              {isOpen && <span className="ml-3">{item.title}</span>}
                             </Link>
                           </Button>
                         </TooltipTrigger>
@@ -457,9 +445,7 @@ export default function DashboardLayout({
                           >
                             <Link href={item.href}>
                               {item.icon}
-                              {isOpen && (
-                                <span className="ml-3">{item.title}</span>
-                              )}
+                              {isOpen && <span className="ml-3">{item.title}</span>}
                             </Link>
                           </Button>
                         </TooltipTrigger>
@@ -492,9 +478,7 @@ export default function DashboardLayout({
                           >
                             <Link href={item.href}>
                               {item.icon}
-                              {isOpen && (
-                                <span className="ml-3">{item.title}</span>
-                              )}
+                              {isOpen && <span className="ml-3">{item.title}</span>}
                             </Link>
                           </Button>
                         </TooltipTrigger>
@@ -527,9 +511,7 @@ export default function DashboardLayout({
                           >
                             <Link href={item.href}>
                               {item.icon}
-                              {isOpen && (
-                                <span className="ml-3">{item.title}</span>
-                              )}
+                              {isOpen && <span className="ml-3">{item.title}</span>}
                             </Link>
                           </Button>
                         </TooltipTrigger>
@@ -552,10 +534,7 @@ export default function DashboardLayout({
                   <Button
                     asChild
                     variant="ghost"
-                    className={cn(
-                      "w-full justify-start",
-                      !isOpen && "justify-center px-2",
-                    )}
+                    className={cn("w-full justify-start", !isOpen && "justify-center px-2")}
                   >
                     <a
                       href="https://docs.google.com/forms/d/e/1FAIpQLSdWtwkfILDsd6o6skBhUoeEa0SprHxk4-B1ZjRpa3zPPiwTzw/viewform?usp=sharing"
@@ -580,10 +559,7 @@ export default function DashboardLayout({
                     <Button
                       asChild
                       variant="ghost"
-                      className={cn(
-                        "w-full justify-start",
-                        !isOpen && "justify-center px-2",
-                      )}
+                      className={cn("w-full justify-start", !isOpen && "justify-center px-2")}
                     >
                       <Link href="/dashboard/settings">
                         <Settings className="h-5 w-5" />
@@ -603,10 +579,7 @@ export default function DashboardLayout({
                   <Button
                     asChild
                     variant="ghost"
-                    className={cn(
-                      "w-full justify-start",
-                      !isOpen && "justify-center px-2",
-                    )}
+                    className={cn("w-full justify-start", !isOpen && "justify-center px-2")}
                   >
                     <a
                       href="https://docs.google.com/document/d/1Tzc0JA90Ghy76UdBPCRFrUcT27jOxTvqh4yxq1_xVXY/edit?tab=t.0#heading=h.kk1966kbedef"
@@ -614,9 +587,7 @@ export default function DashboardLayout({
                       rel="noopener noreferrer"
                     >
                       <HelpCircleIcon className="h-5 w-5" />
-                      {isOpen && (
-                        <span className="ml-3">Tutor Portal Manual</span>
-                      )}
+                      {isOpen && <span className="ml-3">Tutor Portal Manual</span>}
                     </a>
                   </Button>
                 </TooltipTrigger>
@@ -630,10 +601,7 @@ export default function DashboardLayout({
                 <TooltipTrigger asChild>
                   <Button
                     variant="ghost"
-                    className={cn(
-                      "w-full justify-start",
-                      !isOpen && "justify-center px-2",
-                    )}
+                    className={cn("w-full justify-start", !isOpen && "justify-center px-2")}
                     onClick={handleLogout}
                   >
                     <LogOut className="h-5 w-5" />
@@ -651,10 +619,7 @@ export default function DashboardLayout({
         </aside>
         {mobileOpen && (
           <div className="fixed inset-0 z-50 flex sm:hidden">
-            <div
-              className="fixed inset-0 bg-black/50"
-              onClick={() => setMobileOpen(false)}
-            />
+            <div className="fixed inset-0 bg-black/50" onClick={() => setMobileOpen(false)} />
 
             <div className="relative w-64 bg-card h-full p-6 z-50">
               <Button

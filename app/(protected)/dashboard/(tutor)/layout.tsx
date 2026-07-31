@@ -2,7 +2,7 @@ import { Inter } from "next/font/google";
 
 import { redirect } from "next/navigation";
 
-import { getSessionUserProfile } from "@/lib/actions/user.actions";
+import { getSessionUserProfile } from "@/lib/actions/user/actions";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata = {
@@ -10,11 +10,7 @@ export const metadata = {
   description: "Instructors can create courses here",
 };
 
-export default async function Layout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default async function Layout({ children }: { children: React.ReactNode }) {
   // const data = await getSessionUserProfile();
 
   // const role = data?.role;

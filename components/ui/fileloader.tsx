@@ -34,12 +34,7 @@ export const FileLoader: React.FC<FileLoaderProps> = ({
           <Label htmlFor="file" className="text-sm font-medium">
             File
           </Label>
-          <Input
-            id="file"
-            type="file"
-            placeholder="File"
-            accept={acceptedFormats}
-          />
+          <Input id="file" type="file" placeholder="File" accept={acceptedFormats} />
         </div>
       </CardContent>
       <CardFooter>
