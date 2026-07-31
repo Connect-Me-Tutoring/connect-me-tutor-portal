@@ -10,8 +10,7 @@ export interface QuizQuestion {
 export const policyQuizQuestions: QuizQuestion[] = [
   {
     id: "attendance-policy",
-    question:
-      "What should you do if you cannot attend a scheduled tutoring session?",
+    question: "What should you do if you cannot attend a scheduled tutoring session?",
     options: [
       "Simply don't show up — the student will understand",
       "Notify your student at least 24 hours in advance and reschedule",
@@ -26,12 +25,7 @@ export const policyQuizQuestions: QuizQuestion[] = [
   {
     id: "session-frequency",
     question: "How often are tutoring sessions typically held with a student?",
-    options: [
-      "Once a month",
-      "Every day",
-      "Once a week",
-      "Twice a week, always",
-    ],
+    options: ["Once a month", "Every day", "Once a week", "Twice a week, always"],
     correctIndex: 2,
     explanation:
       "Sessions are generally held once a week. The specific day and time are set when you are paired with your student based on overlapping availability.",
@@ -48,8 +42,7 @@ export const policyQuizQuestions: QuizQuestion[] = [
   },
   {
     id: "first-session",
-    question:
-      "What should you prioritize during your first session with a new student?",
+    question: "What should you prioritize during your first session with a new student?",
     options: [
       "Jump straight into a lesson plan you prepared",
       "Build rapport, learn about the student's interests, and assess their needs",
@@ -91,8 +84,7 @@ export const policyQuizQuestions: QuizQuestion[] = [
   },
   {
     id: "reschedule-process",
-    question:
-      "If you need to reschedule a session, what is the correct process?",
+    question: "If you need to reschedule a session, what is the correct process?",
     options: [
       "Just pick a new time and show up then",
       "Use the reschedule feature in the tutor portal to propose a new time",
@@ -121,8 +113,7 @@ export const policyQuizQuestions: QuizQuestion[] = [
   },
   {
     id: "communication-channels",
-    question:
-      "What is the primary way to communicate with your student between sessions?",
+    question: "What is the primary way to communicate with your student between sessions?",
     options: [
       "Personal phone number",
       "Instagram DMs",
@@ -136,8 +127,7 @@ export const policyQuizQuestions: QuizQuestion[] = [
   },
   {
     id: "tutor-resources",
-    question:
-      "Where can you find lesson plans and worksheets for your sessions?",
+    question: "Where can you find lesson plans and worksheets for your sessions?",
     options: [
       "You must create all materials from scratch",
       "The Resources page in the tutor portal has curated links and materials",
@@ -165,8 +155,7 @@ export const policyQuizQuestions: QuizQuestion[] = [
   },
   {
     id: "unpair-process",
-    question:
-      "What should you do if you feel your pairing with a student isn't working out?",
+    question: "What should you do if you feel your pairing with a student isn't working out?",
     options: [
       "Stop showing up until they reassign you",
       "Tell the student you don't want to tutor them anymore",

@@ -34,10 +34,7 @@ export default async function PolicyQuizPreviewPage() {
               Policy Quiz Component — with Transluscent Test
             </span>
           </div>
-          <a
-            href="/dashboard"
-            className="text-sm text-amber-700 underline hover:text-amber-900"
-          >
+          <a href="/dashboard" className="text-sm text-amber-700 underline hover:text-amber-900">
             ← Back to Dashboard
           </a>
         </div>

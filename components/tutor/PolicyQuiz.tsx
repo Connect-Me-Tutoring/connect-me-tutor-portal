@@ -13,10 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
-import {
-  policyQuizQuestions,
-  type QuizQuestion,
-} from "@/constants/policy-quiz";
+import { policyQuizQuestions, type QuizQuestion } from "@/constants/policy-quiz";
 import {
   CheckCircle2,
   XCircle,
@@ -109,8 +106,7 @@ export default function PolicyQuiz() {
           const rest = prev.slice(1);
           if (rest.length === 0) return [current];
           const minPos = Math.max(1, Math.floor(rest.length / 2));
-          const insertAt =
-            minPos + Math.floor(Math.random() * (rest.length - minPos + 1));
+          const insertAt = minPos + Math.floor(Math.random() * (rest.length - minPos + 1));
           const next = [...rest];
           next.splice(insertAt, 0, current);
           return next;
@@ -159,9 +155,7 @@ export default function PolicyQuiz() {
                   <p className="text-sm text-green-600">Questions</p>
                 </div>
                 <div className="rounded-xl bg-blue-50 p-4">
-                  <p className="text-2xl font-bold text-blue-700">
-                    {totalAttempts}
-                  </p>
+                  <p className="text-2xl font-bold text-blue-700">{totalAttempts}</p>
                   <p className="text-sm text-blue-600">Total Attempts</p>
                 </div>
                 <div className="rounded-xl bg-amber-50 p-4">
@@ -174,28 +168,23 @@ export default function PolicyQuiz() {
                 <div className="flex items-center gap-3 rounded-lg border border-green-200 bg-green-50 p-4">
                   <Sparkles className="h-5 w-5 flex-shrink-0 text-green-600" />
                   <p className="text-sm text-green-800">
-                    <strong>Perfect score!</strong> You answered every question
-                    correctly on your first try. You&apos;re ready to start
-                    tutoring!
+                    <strong>Perfect score!</strong> You answered every question correctly on your
+                    first try. You&apos;re ready to start tutoring!
                   </p>
                 </div>
               ) : (
                 <div className="flex items-center gap-3 rounded-lg border border-blue-200 bg-blue-50 p-4">
                   <BookOpen className="h-5 w-5 flex-shrink-0 text-blue-600" />
                   <p className="text-sm text-blue-800">
-                    Great job working through the tricky questions! You now have
-                    a solid understanding of Connect Me&apos;s policies.
+                    Great job working through the tricky questions! You now have a solid
+                    understanding of Connect Me&apos;s policies.
                   </p>
                 </div>
               )}
             </CardContent>
 
             <CardFooter className="border-t bg-gray-50 px-8 py-4">
-              <Button
-                variant="outline"
-                onClick={handleRestart}
-                className="w-full gap-2"
-              >
+              <Button variant="outline" onClick={handleRestart} className="w-full gap-2">
                 <RotateCcw className="h-4 w-4" />
                 Retake Quiz
               </Button>
@@ -216,8 +205,8 @@ export default function PolicyQuiz() {
         <div className="mb-8">
           <h1 className="mb-1 text-3xl font-bold">Policy &amp; FAQ Quiz</h1>
           <p className="text-sm text-muted-foreground">
-            Answer all questions correctly to complete the quiz. Missed
-            questions will come back later.
+            Answer all questions correctly to complete the quiz. Missed questions will come back
+            later.
           </p>
         </div>
 
@@ -227,9 +216,7 @@ export default function PolicyQuiz() {
             <span className="font-medium text-muted-foreground">
               {completed.size} of {total} mastered
             </span>
-            <span className="font-medium text-muted-foreground">
-              {queue.length} remaining
-            </span>
+            <span className="font-medium text-muted-foreground">{queue.length} remaining</span>
           </div>
           <div className="h-3 overflow-hidden rounded-full bg-gray-100">
             <div
@@ -262,13 +249,9 @@ export default function PolicyQuiz() {
                 >
                   {current.category === "policy" ? "Policy" : "FAQ"}
                 </Badge>
-                <span className="text-sm text-muted-foreground">
-                  Question {questionNumber}
-                </span>
+                <span className="text-sm text-muted-foreground">Question {questionNumber}</span>
               </div>
-              <CardTitle className="mt-3 text-lg leading-relaxed">
-                {current.question}
-              </CardTitle>
+              <CardTitle className="mt-3 text-lg leading-relaxed">{current.question}</CardTitle>
             </CardHeader>
 
             <CardContent className="p-6">
@@ -283,11 +266,9 @@ export default function PolicyQuiz() {
                   let optionStyle = "";
                   if (phase === "feedback") {
                     if (idx === current.correctIndex) {
-                      optionStyle =
-                        "border-green-300 bg-green-50 ring-1 ring-green-300";
+                      optionStyle = "border-green-300 bg-green-50 ring-1 ring-green-300";
                     } else if (idx === selectedAnswer && !wasCorrect) {
-                      optionStyle =
-                        "border-red-300 bg-red-50 ring-1 ring-red-300";
+                      optionStyle = "border-red-300 bg-red-50 ring-1 ring-red-300";
                     }
                   } else if (selectedAnswer === idx) {
                     optionStyle =
@@ -315,9 +296,7 @@ export default function PolicyQuiz() {
 
             {/* feedback banner */}
             {phase === "feedback" && (
-              <div
-                className={`border-t px-6 py-4 ${wasCorrect ? "bg-green-50" : "bg-red-50"}`}
-              >
+              <div className={`border-t px-6 py-4 ${wasCorrect ? "bg-green-50" : "bg-red-50"}`}>
                 <div className="flex items-start gap-3">
                   {wasCorrect ? (
                     <CheckCircle2 className="mt-0.5 h-5 w-5 flex-shrink-0 text-green-600" />
@@ -328,13 +307,9 @@ export default function PolicyQuiz() {
                     <p
                       className={`text-sm font-semibold ${wasCorrect ? "text-green-800" : "text-red-800"}`}
                     >
-                      {wasCorrect
-                        ? "Correct!"
-                        : "Not quite — this one will come back later"}
+                      {wasCorrect ? "Correct!" : "Not quite — this one will come back later"}
                     </p>
-                    <p
-                      className={`mt-1 text-sm ${wasCorrect ? "text-green-700" : "text-red-700"}`}
-                    >
+                    <p className={`mt-1 text-sm ${wasCorrect ? "text-green-700" : "text-red-700"}`}>
                       {current.explanation}
                     </p>
                   </div>
