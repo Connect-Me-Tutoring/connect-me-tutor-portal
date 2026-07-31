@@ -48,7 +48,8 @@ export const policyQuizQuestions: QuizQuestion[] = [
   },
   {
     id: "first-session",
-    question: "What should you prioritize during your first session with a new student?",
+    question:
+      "What should you prioritize during your first session with a new student?",
     options: [
       "Jump straight into a lesson plan you prepared",
       "Build rapport, learn about the student's interests, and assess their needs",
@@ -135,7 +136,8 @@ export const policyQuizQuestions: QuizQuestion[] = [
   },
   {
     id: "tutor-resources",
-    question: "Where can you find lesson plans and worksheets for your sessions?",
+    question:
+      "Where can you find lesson plans and worksheets for your sessions?",
     options: [
       "You must create all materials from scratch",
       "The Resources page in the tutor portal has curated links and materials",

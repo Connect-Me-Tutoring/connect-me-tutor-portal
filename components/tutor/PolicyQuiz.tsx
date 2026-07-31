@@ -165,9 +165,7 @@ export default function PolicyQuiz() {
                   <p className="text-sm text-blue-600">Total Attempts</p>
                 </div>
                 <div className="rounded-xl bg-amber-50 p-4">
-                  <p className="text-2xl font-bold text-amber-700">
-                    {retries}
-                  </p>
+                  <p className="text-2xl font-bold text-amber-700">{retries}</p>
                   <p className="text-sm text-amber-600">Retries Needed</p>
                 </div>
               </div>
@@ -218,8 +216,8 @@ export default function PolicyQuiz() {
         <div className="mb-8">
           <h1 className="mb-1 text-3xl font-bold">Policy &amp; FAQ Quiz</h1>
           <p className="text-sm text-muted-foreground">
-            Answer all questions correctly to complete the quiz. Missed questions
-            will come back later.
+            Answer all questions correctly to complete the quiz. Missed
+            questions will come back later.
           </p>
         </div>
 
@@ -330,7 +328,9 @@ export default function PolicyQuiz() {
                     <p
                       className={`text-sm font-semibold ${wasCorrect ? "text-green-800" : "text-red-800"}`}
                     >
-                      {wasCorrect ? "Correct!" : "Not quite — this one will come back later"}
+                      {wasCorrect
+                        ? "Correct!"
+                        : "Not quite — this one will come back later"}
                     </p>
                     <p
                       className={`mt-1 text-sm ${wasCorrect ? "text-green-700" : "text-red-700"}`}
