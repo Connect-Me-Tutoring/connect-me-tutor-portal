@@ -35,6 +35,8 @@ import { StudentAnnouncementsRoomId } from "@/constants/chat";
 import { UserAvailabilities } from "../ui/UserAvailabilities";
 import DeletePairingForm from "./components/DeletePairingForm";
 import { useProfile } from "@/lib/contexts/profileContext";
+import { LoadMoreButton } from "@/components/ui/load-more-button";
+import { useLoadMore } from "@/hooks/useLoadMore";
 
 const StudentList = ({ initialStudents }: any) => {
   const supabase = createClient();
@@ -77,6 +79,12 @@ const StudentList = ({ initialStudents }: any) => {
     (currentPage - 1) * rowsPerPage,
     currentPage * rowsPerPage,
   );
+
+  const {
+    visibleItems: visibleStudents,
+    hasMore: hasMoreStudents,
+    loadMore: loadMoreStudents,
+  } = useLoadMore(filteredStudents);
 
   return (
     <div className="w-full space-y-4">
@@ -135,7 +143,7 @@ const StudentList = ({ initialStudents }: any) => {
         </div>
       </div>
       <div className="md:hidden space-y-4">
-        {paginatedStudents.map((student, index) => (
+        {visibleStudents.map((student, index) => (
           <div key={index} className="bg-white rounded-xl shadow p-4 space-y-3 border">
             <div className="flex justify-between items-start">
               <div className="font-semibold text-base">
@@ -166,8 +174,9 @@ const StudentList = ({ initialStudents }: any) => {
             )}
           </div>
         ))}
+        <LoadMoreButton hasMore={hasMoreStudents} onClick={loadMoreStudents} />
       </div>
-      <div className="flex justify-between mt-4">
+      <div className="hidden md:flex justify-between mt-4">
         <span>{filteredStudents.length} row(s) total.</span>
 
         <div className="flex items-center space-x-2">

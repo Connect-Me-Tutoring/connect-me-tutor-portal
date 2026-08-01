@@ -25,6 +25,9 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { MobileCard } from "@/components/ui/mobile-card";
+import { LoadMoreButton } from "@/components/ui/load-more-button";
+import { useLoadMore } from "@/hooks/useLoadMore";
 
 interface Resource {
   title: string;
@@ -66,6 +69,12 @@ const ResourceList = () => {
     currentPage * rowsPerPage,
   );
 
+  const {
+    visibleItems: visibleResources,
+    hasMore: hasMoreResources,
+    loadMore: loadMoreResources,
+  } = useLoadMore(filteredResources);
+
   return (
     <main className="relative p-8">
       <div className="lg:flex lg:top-8 h-fit">
@@ -73,7 +82,7 @@ const ResourceList = () => {
       </div>
 
       <h1 className="text-3xl font-bold mb-6">Tutor Resources</h1>
-      <div className="flex space-x-6">
+      <div className="flex flex-col lg:flex-row gap-6">
         <div className="flex-grow bg-white rounded-lg shadow p-6">
           <div className="flex justify-between items-center mb-4">
             <input
@@ -85,6 +94,7 @@ const ResourceList = () => {
             />
           </div>
 
+          <div className="hidden md:block w-full">
           <Table>
             <TableHeader>
               <TableRow>
@@ -112,7 +122,7 @@ const ResourceList = () => {
             </TableBody>
           </Table>
 
-          <div className="mt-4 flex justify-between items-center">
+          <div className="mt-4 hidden md:flex justify-between items-center">
             <span>{filteredResources.length} resource(s) total.</span>
             <div className="flex items-center space-x-2">
               <span>Rows per page</span>
@@ -164,6 +174,28 @@ const ResourceList = () => {
                 </Button>
               </div>
             </div>
+          </div>
+          </div>
+
+          <div className="md:hidden space-y-4">
+            {visibleResources.map((resource, index) => (
+              <MobileCard key={index}>
+                <div className="font-semibold text-base">{resource.title}</div>
+                <div className="text-sm text-muted-foreground">{resource.description}</div>
+                <div className="text-sm space-y-1">
+                  <div>Type: {resource.type}</div>
+                  <div>Subject: {resource.subject}</div>
+                </div>
+                <Button
+                  variant="outline"
+                  className="w-full"
+                  onClick={() => window.open(resource.link, "_blank")}
+                >
+                  Open Resource
+                </Button>
+              </MobileCard>
+            ))}
+            <LoadMoreButton hasMore={hasMoreResources} onClick={loadMoreResources} />
           </div>
         </div>
 

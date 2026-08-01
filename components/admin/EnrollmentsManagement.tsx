@@ -54,6 +54,9 @@ import { QueryClient } from "@tanstack/react-query";
 import { getEnrollmentAvailability, getEnrollmentScheduleFields } from "@/lib/enrollment-schedule";
 import EnrollmentFormDialog from "@/components/shared/enrollment/EnrollmentFormDialog";
 import DeleteEnrollmentDialog from "@/components/shared/enrollment/DeleteEnrollmentDialog";
+import { MobileCard } from "@/components/ui/mobile-card";
+import { LoadMoreButton } from "@/components/ui/load-more-button";
+import { useLoadMore } from "@/hooks/useLoadMore";
 // import Availability from "@/components/student/AvailabilityFormat";
 
 const durationSchema = z.object({
@@ -300,6 +303,12 @@ const EnrollmentList = ({
     (currentPage - 1) * rowsPerPage,
     currentPage * rowsPerPage,
   );
+
+  const {
+    visibleItems: visibleEnrollments,
+    hasMore: hasMoreEnrollments,
+    loadMore: loadMoreEnrollments,
+  } = useLoadMore(filteredEnrollments);
 
   const calculateDuration = (hours: number, minutes: number) => {
     return parseFloat((hours + minutes / 60.0).toFixed(2));
@@ -630,6 +639,7 @@ const EnrollmentList = ({
               </Dialog>
             </div>
           </div>
+          <div className="hidden md:block w-full">
           <Table>
             <TableHeader>
               <TableRow>
@@ -786,7 +796,7 @@ const EnrollmentList = ({
               ))}
             </TableBody>
           </Table>
-          <div className="flex justify-between mt-4">
+          <div className="hidden md:flex justify-between mt-4">
             <span>{filteredEnrollments.length} row(s) total.</span>
             <div className="flex items-center space-x-2">
               <span>Rows per page</span>
@@ -840,6 +850,123 @@ const EnrollmentList = ({
                 </Button>
               </div>
             </div>
+          </div>
+          </div>
+
+          <div className="md:hidden space-y-4">
+            {visibleEnrollments.map((enrollment) => (
+              <MobileCard key={enrollment.id}>
+                <div className="flex justify-between items-start gap-2">
+                  <div>
+                    <div className="font-semibold text-base">
+                      {enrollment.student?.firstName} {enrollment.student?.lastName}
+                    </div>
+                    <div className="text-sm text-muted-foreground">
+                      with {enrollment.tutor?.firstName} {enrollment.tutor?.lastName}
+                    </div>
+                  </div>
+                  <div className="flex gap-1">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => {
+                        setSelectedEnrollment(enrollment);
+                        setSelectedStudentId(enrollment.student?.id ?? "");
+                        setSelectedTutorId(enrollment.tutor?.id ?? "");
+                        setIsEditModalOpen(true);
+                      }}
+                    >
+                      <Edit className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => {
+                        setSelectedEnrollment(enrollment);
+                        setIsDeleteModalOpen(true);
+                      }}
+                    >
+                      <Trash className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+                <AvailabilityFormat
+                  availability={getEnrollmentAvailability(enrollment)}
+                  card={false}
+                />
+                <div className="text-sm space-y-1">
+                  <div>Summary: {enrollment.summary}</div>
+                  <div>
+                    Start Date:{" "}
+                    {formatDateUTC(enrollment.startDate, {
+                      includeTime: false,
+                      includeDate: true,
+                    })}
+                  </div>
+                  <div>Duration: {formatSessionDuration(enrollment.duration)} hr(s)</div>
+                  <div>Frequency: {enrollment.frequency}</div>
+                  <div>
+                    Meeting Link:{" "}
+                    {(() => {
+                      const meeting = meetings.find(
+                        (m) => String(m.id) === String(enrollment.meetingId),
+                      );
+                      if (!meeting) return "No Meeting Link";
+                      return (
+                        <button
+                          type="button"
+                          onClick={() => handleCopyMeetingLink(meeting.id)}
+                          className="underline text-black-600"
+                        >
+                          {meeting.name}
+                        </button>
+                      );
+                    })()}
+                  </div>
+                </div>
+                <div className="flex flex-wrap items-center gap-2 pt-1">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => {
+                      const updatedEnrollment = {
+                        ...enrollment,
+                        summerPaused: !enrollment.paused,
+                      };
+                      handlePausePairingOverSummer(updatedEnrollment);
+                    }}
+                  >
+                    {enrollment.paused ? (
+                      <span className="px-3 py-1 inline-flex items-center rounded-full bg-red-100 text-red-800 border border-red-200">
+                        <TimerOff size={14} className="mr-1" />
+                        Paused
+                      </span>
+                    ) : (
+                      <span className="px-3 py-1 inline-flex items-center rounded-full bg-connect-me-blue-1 text-connect-me-black border border-connect-me-blue-3">
+                        <Timer size={14} className="mr-1" />
+                        Ongoing
+                      </span>
+                    )}
+                  </Button>
+                  <Button variant="outline" size="sm" className="gap-2" asChild>
+                    <Link href={`/dashboard/enrollments/${enrollment.id}/activity`}>
+                      <Activity className="h-4 w-4" />
+                      Activity
+                    </Link>
+                  </Button>
+                  <Button
+                    className="gap-2"
+                    size="sm"
+                    onClick={() => router.push(`/dashboard/enrollment/${enrollment.id}/chat`)}
+                    variant="outline"
+                  >
+                    <MessageCircleIcon className="h-4 w-4" />
+                    View Chat
+                  </Button>
+                </div>
+              </MobileCard>
+            ))}
+            <LoadMoreButton hasMore={hasMoreEnrollments} onClick={loadMoreEnrollments} />
           </div>
         </div>
       </div>

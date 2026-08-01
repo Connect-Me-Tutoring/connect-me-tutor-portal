@@ -65,6 +65,9 @@ import {
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { MobileCard } from "@/components/ui/mobile-card";
+import { LoadMoreButton } from "@/components/ui/load-more-button";
+import { useLoadMore } from "@/hooks/useLoadMore";
 import toast, { Toaster } from "react-hot-toast";
 import { set } from "date-fns";
 import { AlertDialogCancel } from "@radix-ui/react-alert-dialog";
@@ -240,6 +243,12 @@ const StudentList = ({ initialStudents }: any) =>
       (currentPage - 1) * rowsPerPage,
       currentPage * rowsPerPage,
     );
+
+    const {
+      visibleItems: visibleStudents,
+      hasMore: hasMoreStudents,
+      loadMore: loadMoreStudents,
+    } = useLoadMore(filteredStudents);
 
     const handleInputChange = (
       e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>,
@@ -551,6 +560,7 @@ const StudentList = ({ initialStudents }: any) =>
           </div>
         </div>
 
+        <div className="hidden md:block w-full">
         <Table>
           <TableHeader>
             <TableRow>
@@ -626,7 +636,7 @@ const StudentList = ({ initialStudents }: any) =>
           </TableBody>
         </Table>
 
-        <div className="mt-4 flex justify-between items-center">
+        <div className="mt-4 hidden md:flex justify-between items-center">
           <span>{filteredStudents.length} row(s) total.</span>
           <div className="flex items-center space-x-2">
             <span>Rows per page</span>
@@ -678,6 +688,78 @@ const StudentList = ({ initialStudents }: any) =>
               </Button>
             </div>
           </div>
+        </div>
+        </div>
+
+        <div className="md:hidden space-y-4">
+          {visibleStudents.map((student, index) => (
+            <MobileCard key={index}>
+              <div className="flex justify-between items-start gap-2">
+                <div>
+                  <div className="font-semibold text-base">
+                    {student.firstName} {student.lastName}
+                  </div>
+                  <div className="text-sm text-muted-foreground">
+                    #{student.studentNumber} &middot; {student.status}
+                  </div>
+                </div>
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button variant="ghost" size="icon">
+                      <RefreshCcw className="h-4 w-4" />
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>
+                        Resend Email Confirmation for {student.firstName}
+                      </AlertDialogTitle>
+                      <AlertDialogDescription>
+                        {" "}
+                        Note: Will not resend confirmation email if the user has already signed in
+                        before
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                      <AlertDialogAction
+                        onClick={() =>
+                          resendEmailConfirmation(student.email)
+                            .then(() => toast.success("Resent Email Confirmation"))
+                            .catch(() => toast.error("Failed to resend email"))
+                        }
+                      >
+                        Resend
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              </div>
+              <div className="text-sm text-muted-foreground">Start Date: {student.startDate}</div>
+              <div className="text-sm">Grade Level: {student.grade}</div>
+              <div>
+                <UserAvailabilities user={student} />
+              </div>
+              <div className="text-sm space-y-1">
+                <div>Email: {student.email}</div>
+                <div>Parent Email: {student.parentEmail || ""}</div>
+                <div>Parent Phone: {student.parentPhone}</div>
+              </div>
+              {student.subjects_of_interest?.length > 0 && (
+                <div className="text-sm">
+                  <div className="font-medium">Subjects Learning:</div>
+                  <div className="flex flex-wrap gap-2 mt-1">
+                    {student.subjects_of_interest.map((subject, i) => (
+                      <span key={i} className="px-2 py-1 text-xs bg-muted rounded-md">
+                        {subject}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </MobileCard>
+          ))}
+          <LoadMoreButton hasMore={hasMoreStudents} onClick={loadMoreStudents} />
         </div>
 
         <Toaster />

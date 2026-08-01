@@ -55,6 +55,7 @@ import SessionExitForm from "./SessionExitForm";
 import CancellationForm from "./CancellationForm";
 import EditSessionForm from "./EditSessionForm";
 import { useDashboardContext } from "@/lib/contexts/dashboardContext";
+import { MobileCard } from "@/components/ui/mobile-card";
 
 const CurrentSessionsTable = ({
   meetings,
@@ -117,6 +118,7 @@ const CurrentSessionsTable = ({
   const TC = useDashboardContext();
   return (
     <>
+      <div className="hidden md:block w-full">
       <Table>
         <TableHeader>
           <TableRow>
@@ -246,6 +248,94 @@ const CurrentSessionsTable = ({
           ))}
         </TableBody>
       </Table>
+      </div>
+
+      <div className="md:hidden space-y-4">
+        {TC.currentSessions.map((session, index) => (
+          <MobileCard key={index}>
+            <div className="flex justify-between items-start gap-2">
+              <div className="font-medium text-sm">
+                Tutoring Session with {session.student?.firstName} {session.student?.lastName}
+              </div>
+              {session.status === "Active" ? (
+                <span className="px-3 py-1 inline-flex items-center rounded-full bg-blue-100 text-blue-800 border border-blue-200 whitespace-nowrap">
+                  <Clock size={14} className="mr-1" />
+                  Active
+                </span>
+              ) : session.status === "Complete" ? (
+                <span className="px-3 py-1 inline-flex items-center rounded-full bg-green-100 text-green-800 border border-green-200 whitespace-nowrap">
+                  <CircleCheckBig size={14} className="mr-1" />
+                  Complete
+                </span>
+              ) : session.status === "Cancelled" ? (
+                <span className="px-3 py-1 inline-flex items-center rounded-full bg-red-100 text-red-800 border border-red-200 whitespace-nowrap">
+                  <CircleX size={14} className="mr-1" />
+                  Cancelled
+                </span>
+              ) : (
+                ""
+              )}
+            </div>
+            <div className="text-sm text-muted-foreground">{formatSessionDate(session.date)}</div>
+            <div className="text-sm space-y-1">
+              <div>Duration: {formatSessionDuration(session.duration)}</div>
+              <div>
+                {session?.meeting?.meetingId ? (
+                  <button
+                    onClick={() => (window.location.href = `/meeting/${session?.meeting?.id}`)}
+                    className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-connect-me-blue-2 transition-colors"
+                  >
+                    <Video className="h-4 w-4" />
+                    Meeting
+                  </button>
+                ) : (
+                  <span className="text-sm text-muted-foreground/50">No meeting link</span>
+                )}
+              </div>
+            </div>
+            <div>
+              <SessionExitForm
+                currSession={session}
+                handleSessionComplete={markSessionComplete}
+                handleStatusChange={handleStatusChange}
+              />
+            </div>
+            <div className="flex flex-wrap items-center gap-1">
+              <EditSessionForm
+                session={session}
+                meetings={meetings}
+                handleStatusChange={handleStatusChange}
+                isDropdownItem={false}
+              />
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => (window.location.href = "https://forms.gle/AC4an7K6NSNumDwKA")}
+              >
+                <UserRoundPlus className="h-4 w-4" />
+              </Button>
+              {session.status === "Cancelled" ? (
+                <Button variant="ghost" size="icon" onClick={() => handleUndoCancel?.(session.id)}>
+                  <X className="h-4 w-4" color="#10b981" />
+                </Button>
+              ) : (
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button variant="ghost" size="icon">
+                      <CalendarX className="h-4 w-4" color="#ef4444" />
+                    </Button>
+                  </AlertDialogTrigger>
+                  <CancellationForm
+                    session={session}
+                    handleStatusChange={handleStatusChange}
+                    onClose={() => {}}
+                  />
+                </AlertDialog>
+              )}
+            </div>
+          </MobileCard>
+        ))}
+      </div>
     </>
   );
 };

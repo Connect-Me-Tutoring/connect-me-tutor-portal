@@ -72,6 +72,9 @@ import { resourceLimits } from "worker_threads";
 import { number } from "zod";
 import { Loader2, ChevronDown } from "lucide-react";
 import { useEvents } from "@/hooks/events";
+import { MobileCard } from "@/components/ui/mobile-card";
+import { LoadMoreButton } from "@/components/ui/load-more-button";
+import { useLoadMore } from "@/hooks/useLoadMore";
 
 const HoursManager = () => {
   const [tutors, setTutors] = useState<Profile[]>([]);
@@ -630,6 +633,12 @@ const HoursManager = () => {
     }
   };
 
+  const {
+    visibleItems: visibleTutors,
+    hasMore: hasMoreTutors,
+    loadMore: loadMoreTutors,
+  } = useLoadMore(filteredTutors);
+
   return (
     <main className="p-8">
       <div>
@@ -909,6 +918,7 @@ const HoursManager = () => {
             </div>
           </div>
 
+          <div className="hidden md:block w-full">
           <Table>
             <TableHeader>
               <TableRow>
@@ -1029,6 +1039,95 @@ const HoursManager = () => {
               ))}
             </TableBody>
           </Table>
+          </div>
+
+          <div className="md:hidden space-y-4">
+            {!allTimeView && (
+              <MobileCard className="bg-muted/50">
+                <div className="font-semibold text-base">Totals</div>
+                <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm">
+                  <div>Biweekly Meetings</div>
+                  <div>{totalEventHours["Biweekly Meeting"] || ""}</div>
+                  <div>Tutor Referral</div>
+                  <div>{totalEventHours["Tutor Referral"] || ""}</div>
+                  <div>Sub Hotline</div>
+                  <div>{totalEventHours["Sub Hotline"] || ""}</div>
+                  <div>Other</div>
+                  <div>{totalEventHours["Other"] || ""}</div>
+                  <div>This Month</div>
+                  <div>{totalMonthlyHours}</div>
+                  <div>All Time</div>
+                  <div>{totalHours}</div>
+                </div>
+                <div className="flex gap-2 overflow-x-auto pt-1">
+                  {weeksInMonth.map((week) => (
+                    <span
+                      key={week.toISOString()}
+                      className="shrink-0 text-xs bg-white border rounded-md px-2 py-1 whitespace-nowrap"
+                    >
+                      {format(week, "MMM d")}-{format(addDays(week, 6), "MMM d")}:{" "}
+                      {totalSessionHours[week.getTime().toString()] || 0}h
+                    </span>
+                  ))}
+                </div>
+              </MobileCard>
+            )}
+
+            {visibleTutors.map((tutor) => (
+              <MobileCard key={tutor.id}>
+                <div className="font-semibold text-base">
+                  {tutor.firstName} {tutor.lastName}
+                </div>
+                <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm">
+                  {allTimeView ? (
+                    <>
+                      <div>All Sessions</div>
+                      <div>{allTimeSessionHours[tutor.id] || ""}</div>
+                      <div>Biweekly Meetings</div>
+                      <div>{eventHoursData[tutor.id]?.["Biweekly Meeting"] || ""}</div>
+                      <div>Tutor Referral</div>
+                      <div>{eventHoursData[tutor.id]?.["Tutor Referral"] || ""}</div>
+                      <div>Sub Hotline</div>
+                      <div>{eventHoursData[tutor.id]?.["Sub Hotline"] || ""}</div>
+                      <div>Other</div>
+                      <div>{eventHoursData[tutor.id]?.["Other"] || ""}</div>
+                      <div>All Time</div>
+                      <div>{allTimeHours[tutor.id] || ""}</div>
+                    </>
+                  ) : (
+                    <>
+                      <div>Biweekly Meetings</div>
+                      <div>{eventHoursData[tutor.id]?.["Biweekly Meetings"] || ""}</div>
+                      <div>Tutor Referral</div>
+                      <div>{eventHoursData[tutor.id]?.["Tutor Referral"] || ""}</div>
+                      <div>Sub Hotline</div>
+                      <div>{eventHoursData[tutor.id]?.["Sub Hotline"] || ""}</div>
+                      <div>Other</div>
+                      <div>{eventHoursData[tutor.id]?.["Other"] || ""}</div>
+                      <div>This Month</div>
+                      <div>{monthlyHours[tutor.id] || ""}</div>
+                      <div>All Time</div>
+                      <div>{allTimeHours[tutor.id] || ""}</div>
+                    </>
+                  )}
+                </div>
+                {!allTimeView && (
+                  <div className="flex gap-2 overflow-x-auto pt-1">
+                    {weeksInMonth.map((week) => (
+                      <span
+                        key={week.toISOString()}
+                        className="shrink-0 text-xs bg-muted rounded-md px-2 py-1 whitespace-nowrap"
+                      >
+                        {format(week, "MMM d")}-{format(addDays(week, 6), "MMM d")}:{" "}
+                        {weeklySessionHours[tutor.id]?.[week.getTime().toString()] || 0}h
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </MobileCard>
+            ))}
+            <LoadMoreButton hasMore={hasMoreTutors} onClick={loadMoreTutors} />
+          </div>
         </div>
       </div>
       <Toaster />

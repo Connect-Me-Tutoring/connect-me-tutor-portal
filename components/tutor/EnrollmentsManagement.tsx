@@ -50,6 +50,8 @@ import { useRouter } from "next/navigation";
 import { checkAvailableMeetingForEnrollments } from "@/lib/actions/meeting/client.actions";
 import EnrollmentFormDialog from "@/components/shared/enrollment/EnrollmentFormDialog";
 import DeleteEnrollmentDialog from "@/components/shared/enrollment/DeleteEnrollmentDialog";
+import { LoadMoreButton } from "@/components/ui/load-more-button";
+import { useLoadMore } from "@/hooks/useLoadMore";
 // import Availability from "@/components/student/AvailabilityFormat";
 
 const DAYS_OF_WEEK = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
@@ -263,6 +265,12 @@ const EnrollmentList = ({
     (currentPage - 1) * rowsPerPage,
     currentPage * rowsPerPage,
   );
+
+  const {
+    visibleItems: visibleEnrollments,
+    hasMore: hasMoreEnrollments,
+    loadMore: loadMoreEnrollments,
+  } = useLoadMore(filteredEnrollments);
 
   const handleInputChange = (e: { target: { name: string; value: string } }) => {
     const { name, value } = e.target;
@@ -634,7 +642,7 @@ const EnrollmentList = ({
 
           {/* mobile cards for those screens that are smaller than md wide*/}
           <div className="md:hidden space-y-4">
-            {paginatedEnrollments.map((enrollment) => (
+            {visibleEnrollments.map((enrollment) => (
               <div key={enrollment.id} className="bg-white rounded-xl shadow p-4 space-y-3 border">
                 <div className="font-semibold text-lg">
                   {enrollment.student?.firstName} {enrollment.student?.lastName}
@@ -715,10 +723,11 @@ const EnrollmentList = ({
                 </div>
               </div>
             ))}
+            <LoadMoreButton hasMore={hasMoreEnrollments} onClick={loadMoreEnrollments} />
           </div>
 
           {/* Pagination */}
-          <div className="flex justify-between mt-4">
+          <div className="hidden md:flex justify-between mt-4">
             <span>{filteredEnrollments.length} row(s) total.</span>
 
             <div className="flex items-center space-x-2">

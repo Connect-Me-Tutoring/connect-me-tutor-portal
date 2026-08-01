@@ -68,6 +68,9 @@ import {
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { MobileCard } from "@/components/ui/mobile-card";
+import { LoadMoreButton } from "@/components/ui/load-more-button";
+import { useLoadMore } from "@/hooks/useLoadMore";
 import toast, { Toaster } from "react-hot-toast";
 import { Combobox } from "@/components/ui/combobox";
 
@@ -185,6 +188,12 @@ const TutorList = ({ initialTutors }: any) => {
     (currentPage - 1) * rowsPerPage,
     currentPage * rowsPerPage,
   );
+
+  const {
+    visibleItems: visibleTutors,
+    hasMore: hasMoreTutors,
+    loadMore: loadMoreTutors,
+  } = useLoadMore(filteredTutors);
 
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>,
@@ -406,6 +415,7 @@ const TutorList = ({ initialTutors }: any) => {
           {/*Edit Page*/}
         </div>
       </div>
+      <div className="hidden md:block w-full">
       <Table>
         <TableHeader>
           <TableRow>
@@ -482,7 +492,7 @@ const TutorList = ({ initialTutors }: any) => {
           ))}
         </TableBody>
       </Table>
-      <div className="mt-4 flex justify-between items-center">
+      <div className="mt-4 hidden md:flex justify-between items-center">
         <span>{filteredTutors.length} row(s) total.</span>
         <div className="flex items-center space-x-2">
           <span>Rows per page</span>
@@ -535,6 +545,82 @@ const TutorList = ({ initialTutors }: any) => {
           </div>
         </div>
       </div>
+      </div>
+
+      <div className="md:hidden space-y-4">
+        {visibleTutors.map((tutor, index) => (
+          <MobileCard key={index}>
+            <div className="flex justify-between items-start gap-2">
+              <div>
+                <div className="font-semibold text-base">
+                  {tutor.firstName} {tutor.lastName}
+                </div>
+                <div className="text-sm text-muted-foreground">{tutor.status}</div>
+              </div>
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button variant="ghost" size="icon">
+                    <RefreshCw className="h-4 w-4" />
+                  </Button>
+                </AlertDialogTrigger>
+
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>
+                      {" "}
+                      Resend Confirmation Email for {tutor.firstName}
+                    </AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Note: Will not resend confirmation email if the user has already signed in
+                      before
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>{" "}
+                  <AlertDialogFooter>
+                    {" "}
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction
+                      onClick={() => {
+                        resendEmailConfirmation(tutor.email)
+                          .then(() => {
+                            toast.success("Resent Email Confirmation");
+                          })
+                          .catch(() => {
+                            toast.error("Failed to resend email confirmation");
+                          });
+                      }}
+                    >
+                      Resend
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            </div>
+            <div className="text-sm text-muted-foreground">Start Date: {tutor.startDate}</div>
+            <div>
+              <UserAvailabilities user={tutor} />
+            </div>
+            <div className="text-sm space-y-1">
+              <div>Email: {tutor.email}</div>
+              <div>Phone Number: {tutor.phoneNumber}</div>
+              <div>Gender: {capitalizeFirstLetter(tutor.gender)}</div>
+            </div>
+            {tutor.subjects_of_interest?.length > 0 && (
+              <div className="text-sm">
+                <div className="font-medium">Subjects Teaching:</div>
+                <div className="flex flex-wrap gap-2 mt-1">
+                  {tutor.subjects_of_interest.map((subject, i) => (
+                    <span key={i} className="px-2 py-1 text-xs bg-muted rounded-md">
+                      {subject}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+          </MobileCard>
+        ))}
+        <LoadMoreButton hasMore={hasMoreTutors} onClick={loadMoreTutors} />
+      </div>
+
       <Toaster />
     </>
   );

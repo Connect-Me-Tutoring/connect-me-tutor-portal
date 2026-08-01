@@ -24,6 +24,9 @@ import { ChevronsLeft, ChevronLeft, ChevronRight, ChevronsRight } from "lucide-r
 import { Input } from "@/components/ui/input";
 import toast from "react-hot-toast";
 import { Skeleton } from "@/components/ui/skeleton";
+import { MobileCard } from "@/components/ui/mobile-card";
+import { LoadMoreButton } from "@/components/ui/load-more-button";
+import { useLoadMore } from "@/hooks/useLoadMore";
 
 const NotificationCenter = () => {
   const [notifications, setNotifications] = useState<Notification[]>([]);
@@ -82,6 +85,12 @@ const NotificationCenter = () => {
 
   const totalPages = Math.ceil(filteredNotifications.length / rowsPerPage);
 
+  const {
+    visibleItems: visibleNotifications,
+    hasMore: hasMoreNotifications,
+    loadMore: loadMoreNotifications,
+  } = useLoadMore(filteredNotifications);
+
   const handlePageChange = (newPage: number) => {
     setCurrentPage(newPage);
   };
@@ -134,6 +143,7 @@ const NotificationCenter = () => {
             </SelectContent>
           </Select>
         </div>
+        <div className="hidden md:block w-full">
         <Table className="bg-white">
           <TableHeader>
             <TableRow>
@@ -181,7 +191,7 @@ const NotificationCenter = () => {
         </Table>
 
         {/* Pagination Controls */}
-        <div className="mt-4 flex justify-between items-center">
+        <div className="mt-4 hidden md:flex justify-between items-center">
           <span>{filteredNotifications.length} row(s) total.</span>
           <div className="flex items-center space-x-2">
             <span>Rows per page</span>
@@ -233,6 +243,45 @@ const NotificationCenter = () => {
               </Button>
             </div>
           </div>
+        </div>
+        </div>
+
+        <div className="md:hidden space-y-4">
+          {visibleNotifications.map((notification) => (
+            <MobileCard key={notification.id}>
+              <div className="flex justify-between items-start gap-2">
+                <div className="text-sm text-muted-foreground">
+                  {formatDateAdmin(notification.createdAt)}
+                </div>
+                <Select
+                  value={notification.status}
+                  onValueChange={(value: "Active" | "Resolved") =>
+                    handleStatusChange(notification.id, value)
+                  }
+                >
+                  <SelectTrigger className="w-[120px]">
+                    <SelectValue placeholder={notification.status} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Active">Active</SelectItem>
+                    <SelectItem value="Resolved">Resolved</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="text-sm">{notification.summary}</div>
+              <div className="text-sm space-y-1">
+                <div>Previous Date: {formatDateAdmin(notification.previousDate)}</div>
+                <div>Suggested Date: {formatDateAdmin(notification.suggestedDate)}</div>
+                <div>
+                  Tutor: {notification.tutor?.firstName} {notification.tutor?.lastName}
+                </div>
+                <div>
+                  Student: {notification.student?.firstName} {notification.student?.lastName}
+                </div>
+              </div>
+            </MobileCard>
+          ))}
+          <LoadMoreButton hasMore={hasMoreNotifications} onClick={loadMoreNotifications} />
         </div>
       </div>
     </main>

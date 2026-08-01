@@ -43,6 +43,8 @@ import {
 } from "lucide-react";
 import { format, parseISO, isAfter } from "date-fns";
 import { useDashboardContext } from "@/lib/contexts/dashboardContext";
+import { MobileCard } from "@/components/ui/mobile-card";
+import { LoadMoreButton } from "@/components/ui/load-more-button";
 
 interface SessionsTableProps {
   paginatedSessions: Session[];
@@ -58,6 +60,9 @@ interface SessionsTableProps {
 
 const CompletedSessionsTable = ({
   paginatedSessions,
+  visibleSessions,
+  hasMore,
+  loadMore,
   // filteredSessions,
   // currentPage,
   totalPages,
@@ -72,6 +77,7 @@ const CompletedSessionsTable = ({
 
   return (
     <>
+      <div className="hidden md:block w-full">
       <Table>
         <TableHeader>
           <TableRow>
@@ -134,7 +140,7 @@ const CompletedSessionsTable = ({
         </TableBody>
       </Table>
 
-      <div className="mt-4 flex justify-between items-center">
+      <div className="mt-4 hidden md:flex justify-between items-center">
         <span>{SC.filteredPastSessions.length} row(s) total.</span>
         <div className="flex items-center space-x-2">
           <span>Rows per page</span>
@@ -188,6 +194,54 @@ const CompletedSessionsTable = ({
             </Button>
           </div>
         </div>
+      </div>
+      </div>
+
+      <div className="md:hidden space-y-4">
+        {(visibleSessions ?? []).map((session: Session, index: number) => (
+          <MobileCard key={index}>
+            <div className="flex justify-between items-start gap-2">
+              <div className="font-medium text-sm">
+                Tutoring Session with {session.tutor?.firstName} {session.tutor?.lastName}
+              </div>
+              {session.status === "Complete" ? (
+                <span className="px-3 py-1 inline-flex items-center rounded-full bg-green-100 text-green-800 border border-green-200 whitespace-nowrap">
+                  <CircleCheckBig size={14} className="mr-1" />
+                  Complete
+                </span>
+              ) : session.status === "Cancelled" ? (
+                <span className="px-3 py-1 inline-flex items-center rounded-full bg-red-100 text-red-800 border border-red-200 whitespace-nowrap">
+                  <CircleX size={14} className="mr-1" />
+                  Cancelled
+                </span>
+              ) : (
+                ""
+              )}
+            </div>
+            <div className="text-sm text-muted-foreground">{formatSessionDate(session.date)}</div>
+            <Dialog open={isMeetingNotesOpen} onOpenChange={setIsMeetingNotesOpen}>
+              <DialogTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    setIsMeetingNotesOpen(true);
+                    SC.setSelectedSession(session);
+                  }}
+                >
+                  View Session Notes
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Meeting Notes</DialogTitle>
+                </DialogHeader>
+                <Textarea>{SC.selectedSession?.session_exit_form}</Textarea>
+              </DialogContent>
+            </Dialog>
+          </MobileCard>
+        ))}
+        <LoadMoreButton hasMore={!!hasMore} onClick={() => loadMore?.()} />
       </div>
     </>
   );
