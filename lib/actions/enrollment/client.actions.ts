@@ -9,7 +9,7 @@ import {
   tableToInterfaceEnrollments,
 } from "../../utils/type-utils";
 import { SharedEnrollment } from "@/types/enrollment";
-import { addOneSession } from "../session/actions";
+import { addOneSession } from "../session/client.actions";
 import { handleCalculateDuration, isValidUUID } from "../../utils";
 import { addDays, format } from "date-fns";
 import { fromZonedTime } from "date-fns-tz";

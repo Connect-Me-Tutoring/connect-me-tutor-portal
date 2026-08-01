@@ -22,7 +22,7 @@ import { format, parseISO, areIntervalsOverlapping, addHours } from "date-fns";
 import { checkAvailableMeeting } from "@/lib/actions/meeting/client.actions";
 import { toast } from "react-hot-toast";
 import { HoverCard, HoverCardTrigger, HoverCardContent } from "@/components/ui/hover-card";
-import { fetchDaySessionsFromSchedule } from "@/lib/actions/session/actions";
+import { fetchDaySessionsFromSchedule } from "@/lib/actions/session/client.actions";
 
 import { DropdownMenuItem } from "@/components/ui/dropdown-menu";
 
