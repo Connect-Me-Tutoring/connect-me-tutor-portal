@@ -3,9 +3,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { renderToBuffer } from "@react-pdf/renderer";
 import React from "react";
 import HoursPDFDocument from "@/components/admin/HoursReport";
-import { cachedGetUser } from "@/lib/actions/user.server.actions";
+import { cachedGetUser } from "@/lib/actions/user/server.actions";
 import { cachedGetProfile } from "@/lib/actions/cache";
-import { verifyAdmin } from "@/lib/actions/auth.server.actions";
+import { verifyAdmin } from "@/lib/actions/auth/server.actions";
 import { z } from "zod";
 
 export async function POST(request: NextRequest) {

@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
-import { sendInactiveEnrollmentWarning } from "@/lib/actions/enrollment.server.actions";
+import { sendInactiveEnrollmentWarning } from "@/lib/actions/enrollment/server.actions";
 import { createAdminClient } from "@/lib/supabase/server";
 import { Table } from "@/lib/supabase/tables";
-import { tableToInterfaceEnrollments, tableToInterfaceProfiles } from "@/lib/type-utils";
+import { tableToInterfaceEnrollments, tableToInterfaceProfiles } from "@/lib/utils/type-utils";
 import { Enrollment, Profile } from "@/types";
-import { verifyAdmin } from "@/lib/actions/auth.server.actions";
+import { verifyAdmin } from "@/lib/actions/auth/server.actions";
+import { logError } from "@/lib/posthog";
 
 export async function GET(request: NextRequest) {
   const enrollmentId = request.nextUrl.searchParams.get("enrollmentId");
@@ -27,7 +28,9 @@ export async function GET(request: NextRequest) {
         tutor_id,
         start_date,
         end_date,
-        availability,
+        day,
+        start_time,
+        end_time,
         meetingId,
         paused,
         duration,
@@ -59,6 +62,7 @@ export async function GET(request: NextRequest) {
     });
   } catch (error) {
     console.error("Error sending test email:", error);
+    await logError(error, { enrollmentId }, "email_test_inactive_enrollment_warning_error");
     return NextResponse.json(
       { error: "Failed to send email", details: String(error) },
       { status: 500 },

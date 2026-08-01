@@ -1,6 +1,7 @@
 import { google } from "googleapis";
 import { sanitizeForSheetCell } from "@/lib/security/spreadsheet";
 import { SessionExitFormPayload } from "@/types/sessionExitForm";
+import { logError } from "@/lib/posthog";
 
 // Columns: tutorName, studentName, tutorEmail, studentEmail, formContent, category
 const SHEET_RANGE_COLUMNS = "B:G";
@@ -64,6 +65,7 @@ export async function getSheetSize(sheetName: string = "Questions & Concerns") {
     return { numRows, numCols };
   } catch (error) {
     console.error("Error getting sheet size:", error);
+    await logError(error, { sheetName }, "google_sheet_error");
     throw error;
   }
 }

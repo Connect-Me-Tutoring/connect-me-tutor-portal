@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { Button } from "../ui/button";
 import axios from "axios";
 import toast from "react-hot-toast";
-import { deleteAllPairingRequests, resetPairingQueues } from "@/lib/actions/pairing.server.actions";
+import { deleteAllPairingRequests, resetPairingQueues } from "@/lib/actions/pairing/server.actions";
 import {
   AlertDialog,
   AlertDialogAction,

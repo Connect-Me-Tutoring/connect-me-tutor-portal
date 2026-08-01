@@ -1,4 +1,4 @@
-import { getEvents } from "@/lib/actions/event.client.actions";
+import { getEvents } from "@/lib/actions/event/client.actions";
 import { useQuery } from "@tanstack/react-query";
 
 export const useEvents = (tutorId: string, orderBy?: { field: string; ascending: boolean }) => {

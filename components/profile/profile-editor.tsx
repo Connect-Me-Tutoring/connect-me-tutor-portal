@@ -15,7 +15,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import type { ProfilePairingMetadata } from "@/types/profile";
-import { fetchProfileData, updateProfileData } from "@/lib/profile-utils";
+import { fetchProfileData, updateProfileData } from "@/lib/utils/profile-utils";
 import { useToast } from "@/hooks/use-toast";
 
 const DAYS_OF_WEEK = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];

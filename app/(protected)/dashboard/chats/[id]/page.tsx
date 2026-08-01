@@ -1,6 +1,6 @@
 import { ChatRoom, type User, type Message } from "@/components/chat/chat-room";
 import { config } from "@/config";
-import { getPairingFromEnrollmentId } from "@/lib/actions/pairing.server.actions";
+import { getPairingFromEnrollmentId } from "@/lib/actions/pairing/server.actions";
 import { createClient } from "@/lib/supabase/server";
 
 interface Props {

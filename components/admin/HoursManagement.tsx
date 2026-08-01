@@ -46,8 +46,8 @@ import {
   createEventsBatch,
   removeEvent,
 } from "@/lib/actions/admin.actions";
-import { getEvents } from "@/lib/actions/event.client.actions";
-import { getTutorSessions } from "@/lib/actions/tutor.actions";
+import { getEvents } from "@/lib/actions/event/client.actions";
+import { getTutorSessions } from "@/lib/actions/tutor/actions";
 import { Profile, Session, Event } from "@/types";
 import { toast, Toaster } from "react-hot-toast";
 import { Combobox } from "../ui/combobox";
@@ -67,7 +67,7 @@ import {
   getTotalHours,
   getTotalHoursRange,
   getTotalSessionHoursRange,
-} from "@/lib/actions/hours.actions";
+} from "@/lib/actions/hours/actions";
 import { resourceLimits } from "worker_threads";
 import { number } from "zod";
 import { Loader2, ChevronDown } from "lucide-react";
@@ -267,7 +267,7 @@ const HoursManager = () => {
 
   const calculateAllTimeHoursBatch = async () => {
     try {
-      const data: { [key: string]: number } = await getAllHoursBatch();
+      const data = (await getAllHoursBatch()) as unknown as { [key: string]: number };
       setAllTimeHours(data);
     } catch (error) {
       toast.error("Unable to set all time hours");
@@ -287,10 +287,10 @@ const HoursManager = () => {
       const firstDay = startOfWeek(startOfMonth(selectedDate));
       const lastDay = endOfWeek(endOfMonth(selectedDate));
 
-      const data: { [key: string]: { [key: string]: number } } = await getEventHoursRangeBatch(
+      const data = (await getEventHoursRangeBatch(
         firstDay.toISOString(),
         lastDay.toISOString(),
-      );
+      )) as unknown as { [key: string]: { [key: string]: number } };
       setEventHoursData(data);
     } catch (error) {
       toast.error("Unable to get event hours");
@@ -310,10 +310,10 @@ const HoursManager = () => {
 
     const weekPromises = weeksInMonth.map(async (week) => {
       const nextWeek = addDays(week, 7);
-      const data: { [key: string]: number } = await getSessionHoursRangeBatch(
+      const data = (await getSessionHoursRangeBatch(
         week.toISOString(),
         nextWeek.toISOString(),
-      );
+      )) as unknown as { [key: string]: number };
       return {
         weekKey: week.getTime().toString(),
         data: data,
@@ -337,10 +337,10 @@ const HoursManager = () => {
       const firstDay = startOfWeek(startOfMonth(selectedDate));
       const lastDay = endOfWeek(endOfMonth(selectedDate));
 
-      const data: { [key: string]: number } = await getHoursRangeBatch(
+      const data = (await getHoursRangeBatch(
         firstDay.toISOString(),
         lastDay.toISOString(),
-      );
+      )) as unknown as { [key: string]: number };
       setMonthlyHours(data);
     } catch (error) {
       toast.error("Error fetching monthly hours");
@@ -349,7 +349,9 @@ const HoursManager = () => {
 
   const calculateAllTimeEventHours = async () => {
     try {
-      const data: { [key: string]: { [key: string]: number } } = await getAllEventHoursBatch();
+      const data = (await getAllEventHoursBatch()) as unknown as {
+        [key: string]: { [key: string]: number };
+      };
       setEventHoursData(data);
     } catch (error) {
       toast.error("Error fetching All Time Event Hours");
@@ -379,7 +381,7 @@ const HoursManager = () => {
 
   const calculateAllTimeSessionHours = async () => {
     try {
-      const data: { [key: string]: number } = await getAllSessionHoursBatch();
+      const data = (await getAllSessionHoursBatch()) as unknown as { [key: string]: number };
       setAllTimeSessionHours(data);
     } catch (error) {
       toast.error("Error fetching All Time Session Hours");
@@ -433,10 +435,10 @@ const HoursManager = () => {
     try {
       const firstDay = startOfWeek(startOfMonth(selectedDate));
       const lastDay = endOfWeek(endOfMonth(selectedDate));
-      const data: { [key: string]: number } = await getTotalEventHoursRange(
+      const data = (await getTotalEventHoursRange(
         firstDay.toISOString(),
         lastDay.toISOString(),
-      );
+      )) as unknown as { [key: string]: number };
 
       setTotalEventHours(data);
     } catch (error) {
@@ -698,7 +700,7 @@ const HoursManager = () => {
                       value={eventType}
                       onValueChange={(value) => {
                         setEventType(value);
-                        setNewEvent({ ...newEvent, type: value });
+                        setNewEvent({ ...newEvent, type: value as Event["type"] });
                       }}
                     >
                       <SelectTrigger className="">

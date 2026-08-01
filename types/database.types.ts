@@ -91,6 +91,33 @@ export type Database = {
         };
         Relationships: [];
       };
+      discord_chatbot_conversations: {
+        Row: {
+          created_at: string;
+          discord_channel_id: string | null;
+          discord_user_id: string | null;
+          id: string;
+          prompt: string | null;
+          response: string | null;
+        };
+        Insert: {
+          created_at?: string;
+          discord_channel_id?: string | null;
+          discord_user_id?: string | null;
+          id?: string;
+          prompt?: string | null;
+          response?: string | null;
+        };
+        Update: {
+          created_at?: string;
+          discord_channel_id?: string | null;
+          discord_user_id?: string | null;
+          id?: string;
+          prompt?: string | null;
+          response?: string | null;
+        };
+        Relationships: [];
+      };
       Emails: {
         Row: {
           created_at: string;
@@ -852,6 +879,7 @@ export type Database = {
           participant_id: string;
           session_id: string | null;
           timestamp: string;
+          zoom_meeting_uuid: string | null;
         };
         Insert: {
           action: string;
@@ -861,6 +889,7 @@ export type Database = {
           participant_id: string;
           session_id?: string | null;
           timestamp?: string;
+          zoom_meeting_uuid?: string | null;
         };
         Update: {
           action?: string;
@@ -870,6 +899,7 @@ export type Database = {
           participant_id?: string;
           session_id?: string | null;
           timestamp?: string;
+          zoom_meeting_uuid?: string | null;
         };
         Relationships: [
           {
@@ -1071,7 +1101,7 @@ export type Database = {
           student_id: string;
           tutor: Json;
           tutor_id: string;
-          tutor_status: string | null;
+          tutor_status: string;
         }[];
       };
       get_pairing_requests_with_profiles: {
@@ -1261,7 +1291,8 @@ export type Database = {
         | "Rescheduled"
         | "Sub-Request"
         | "Expired"
-        | "Standalone";
+        | "Standalone"
+        | "Unsubmitted";
       timezone: "EST" | "CST" | "PST" | "MST" | "MT" | "Other";
     };
     CompositeTypes: {
@@ -1412,6 +1443,7 @@ export const Constants = {
         "Sub-Request",
         "Expired",
         "Standalone",
+        "Unsubmitted",
       ],
       timezone: ["EST", "CST", "PST", "MST", "MT", "Other"],
     },

@@ -4,7 +4,7 @@ import React, { use, useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
-import { logoutUser } from "@/lib/actions/user.actions";
+import { logoutUser } from "@/lib/actions/user/actions";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useProfile } from "@/lib/contexts/profileContext";
 import {
@@ -67,7 +67,7 @@ import {
 import { toast, Toaster } from "react-hot-toast";
 import { Select, SelectContent, SelectItem, SelectTrigger } from "../ui/select";
 import { Profile } from "@/types";
-import { getUserProfiles, switchProfile } from "@/lib/actions/profile.server.actions";
+import { getUserProfiles, switchProfile } from "@/lib/actions/profile/server.actions";
 
 export default function DashboardLayout({
   children,

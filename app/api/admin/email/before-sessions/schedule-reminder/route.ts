@@ -3,9 +3,9 @@ import { Session } from "@/types";
 import { Profile } from "@/types";
 import { createClient } from "@/lib/supabase/server";
 import { addMinutes, subMinutes, parseISO } from "date-fns";
-import { scheduleEmail } from "@/lib/actions/email.server.actions";
-import { getSupabase } from "@/lib/supabase-server/serverClient";
-import { verifyAdmin } from "@/lib/actions/auth.server.actions";
+import { scheduleEmail } from "@/lib/actions/email/server.actions";
+import { verifyAdmin } from "@/lib/actions/auth/server.actions";
+import { logError } from "@/lib/posthog";
 
 export const dynamic = "force-dynamic";
 
@@ -52,6 +52,7 @@ export async function POST(request: NextRequest) {
 
       if (error) {
         console.error("Supabase insert error", error);
+        await logError(error, { sessionId: session.id }, "email_schedule_reminder_error");
         throw error;
       }
       if (!data) {
@@ -66,6 +67,7 @@ export async function POST(request: NextRequest) {
     });
   } catch (error) {
     console.error("Error scheduling reminder", error);
+    await logError(error, {}, "email_schedule_reminder_error");
     return NextResponse.json({
       status: 500,
       message: "Unable to reschedule email",

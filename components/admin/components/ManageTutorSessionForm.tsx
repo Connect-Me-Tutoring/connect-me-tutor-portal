@@ -17,8 +17,8 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { getTutorSessions } from "@/lib/actions/tutor.actions";
-import { updateSessionsStatus } from "@/lib/actions/session.server.actions";
+import { getTutorSessions } from "@/lib/actions/tutor/actions";
+import { updateSessionsStatus } from "@/lib/actions/session/server.actions";
 import { Profile, Session } from "@/types";
 import { format, parseISO } from "date-fns";
 import toast from "react-hot-toast";
@@ -70,7 +70,7 @@ export default function ManageTutorSessions({ tutors }: { tutors: Profile[] }) {
     );
   };
 
-  const handleUpdate = async (status: string) => {
+  const handleUpdate = async (status: "Cancelled" | "Complete") => {
     if (selectedIds.length === 0 || !selectedTutorId) return;
     setLoading(true);
     try {

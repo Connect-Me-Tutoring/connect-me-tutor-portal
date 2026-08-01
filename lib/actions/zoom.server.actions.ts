@@ -39,6 +39,11 @@ async function resolveAppSessionIdForZoomEvent(
 
   if (error) {
     console.error("resolveAppSessionIdForZoomEvent:", error);
+    await logError(
+      error,
+      { action: "resolveAppSessionIdForZoomEvent", candidate: sid, zoomMeetingUuid: zoom },
+      "zoom_action_error",
+    );
     return null;
   }
   return data?.id ?? null;
@@ -242,6 +247,11 @@ export async function getParticipationByZoomMeetingId(
 
   if (error) {
     console.error("Error fetching participation data:", error);
+    await logError(
+      error,
+      { action: "getParticipationByZoomMeetingId", zoomMeetingId },
+      "zoom_action_error",
+    );
     throw error;
   }
 
@@ -265,6 +275,11 @@ export async function getParticipationBySessionId(
 
   if (error) {
     console.error("Error fetching participation data:", error);
+    await logError(
+      error,
+      { action: "getParticipationBySessionId", sessionId },
+      "zoom_action_error",
+    );
     throw error;
   }
 
@@ -287,6 +302,11 @@ export async function getParticipantEventCountsBySessionIds(
 
   if (error) {
     console.error("Error counting zoom participant events:", error);
+    await logError(
+      error,
+      { action: "getParticipantEventCountsBySessionIds", sessionIds },
+      "zoom_action_error",
+    );
     throw error;
   }
 

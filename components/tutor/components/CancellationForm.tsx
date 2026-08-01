@@ -150,7 +150,7 @@ const CancellationForm: React.FC<CancellationFormProps> = ({
                   status: (isCancellationStudentAbsentWithoutPriorNotice
                     ? "Complete"
                     : "Cancelled") as "Active" | "Complete" | "Cancelled" | "Rescheduled",
-                  session_exit_form: isCancellationOther ? otherReason : "",
+                  session_exit_form: isCancellationOther ? otherReason : cancellationReason || "",
                 };
                 handleStatusChange(updatedSession);
                 onClose();

@@ -2,8 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import crypto from "crypto";
 import { config } from "@/config";
 import { logZoomMetadata } from "@/lib/actions/zoom.server.actions";
+import { logEvent } from "@/lib/posthog";
 // import { logZoomMetadata } from "@/lib/actions/zoom.server.actions";
-// import { getActiveSessionFromMeetingID } from "@/lib/actions/session.server.actions";
+// import { getActiveSessionFromMeetingID } from "@/lib/actions/session/session.server.actions";
 
 // Use a single signing secret for all Zoom webhooks
 const validationSecret = config.zoom.ZOOM_WEBHOOK_SECRET;
@@ -87,7 +88,7 @@ export async function POST(req: NextRequest) {
       break;
 
     default:
-      console.warn("Unhandled Zoom event:", event);
+      await logEvent("zoom_unhandled_event", { event });
   }
 
   return NextResponse.json({ status: "received" });

@@ -1,8 +1,10 @@
-import Stats from "@/components/tutor/my-stats";
-import { getAllEventDetailsForTutor } from "@/lib/actions/hours.server.actions";
-import { getSessionHoursByStudent } from "@/lib/actions/hours.server.actions";
+import Stats, { EnrollmentDetails, EventDetails } from "@/components/tutor/my-stats";
+import {
+  getSessionHoursByStudent,
+  getAllEventDetailsForTutor,
+} from "@/lib/actions/hours/server.actions";
 import { cachedGetProfile } from "@/lib/actions/cache";
-import { cachedGetUser } from "@/lib/actions/user.server.actions";
+import { cachedGetUser } from "@/lib/actions/user/server.actions";
 import { Calendar } from "lucide-react";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
@@ -18,7 +20,11 @@ async function MyStatsData() {
   ]);
 
   return (
-    <Stats key={profile.id} enrollmentDetails={enrollmentDetails} eventDetails={eventDetails} />
+    <Stats
+      key={profile.id}
+      enrollmentDetails={enrollmentDetails as unknown as EnrollmentDetails[]}
+      eventDetails={eventDetails as unknown as { [key: string]: EventDetails[] }}
+    />
   );
 }
 

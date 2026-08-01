@@ -3,7 +3,8 @@
   "version": "0.1.0",
   "private": true,
   "engines": {
-    "npm": ">=11"
+    "node": "24.x",
+    "npm": ">=11.18.0"
   },
   "scripts": {
     "dev": "next dev --webpack",
@@ -22,7 +23,8 @@
     "test:lookup-static": "bash scripts/lookup-proposed-matches-perf/run-static-test.sh",
     "lookup-static:json": "node scripts/lookup-proposed-matches-perf/run-static-from-json.mjs",
     "dump:rpc": "node scripts/dump-rpc-definitions.mjs --clean --out rpc",
-    "dump:best-match-resolution": "node scripts/dump-get-best-match-resolution.mjs"
+    "dump:best-match-resolution": "node scripts/dump-get-best-match-resolution.mjs",
+    "gen:types": "bash scripts/gen-types.sh"
   },
   "dependencies": {
     "@ai-sdk/google": "^3.0.83",
@@ -48,7 +50,7 @@
     "@react-email/components": "^0.5.1",
     "@react-pdf/renderer": "^4.3.0",
     "@supabase/auth-helpers-nextjs": "^0.10.0",
-    "@supabase/ssr": "^0.5.2",
+    "@supabase/ssr": "^0.12.3",
     "@supabase/supabase-js": "^2.56.1",
     "@tanstack/react-query": "^4.42.0",
     "@upstash/qstash": "^2.8.1",

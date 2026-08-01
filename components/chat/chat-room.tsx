@@ -17,7 +17,7 @@ import {
   getChatRoomEmailMutedState,
   sendChatMessage,
   setChatRoomEmailMuted,
-} from "@/lib/actions/chat.server.actions";
+} from "@/lib/actions/chat/server.actions";
 import { usePairing } from "@/hooks/pairings";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
@@ -125,7 +125,7 @@ export function ChatRoom({
               {} as Record<string, User>,
             ) || {};
 
-          const chatRoomUsers = {
+          const chatRoomUsers: Record<string, User> = {
             [pairing.tutor.id]: {
               role: "tutor",
               id: pairing.tutor.id,
@@ -164,7 +164,7 @@ export function ChatRoom({
               [profile.id]: {
                 id: profile.id,
                 name: `${profile.firstName} ${profile.lastName}`,
-                role: profile.role.toLowerCase(),
+                role: profile.role.toLowerCase() as User["role"],
               },
             });
           }

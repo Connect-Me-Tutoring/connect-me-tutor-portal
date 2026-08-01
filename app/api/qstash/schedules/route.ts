@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { fetchScheduledMessages } from "@/lib/actions/email.server.actions";
-import { verifyAdmin } from "@/lib/actions/auth.server.actions";
+import { fetchScheduledMessages } from "@/lib/actions/email/server.actions";
+import { verifyAdmin } from "@/lib/actions/auth/server.actions";
+import { logError } from "@/lib/posthog";
 
 export async function GET(request: NextRequest) {
   try {
@@ -14,6 +15,7 @@ export async function GET(request: NextRequest) {
     });
   } catch (error) {
     console.error("Error fetching scheduled messages:", error);
+    await logError(error, {}, "qstash_schedules_error");
     return NextResponse.json(
       {
         success: false,
