@@ -18,14 +18,6 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import {
   Select,
   SelectContent,
   SelectItem,
@@ -54,6 +46,9 @@ import { QueryClient } from "@tanstack/react-query";
 import { getEnrollmentAvailability, getEnrollmentScheduleFields } from "@/lib/enrollment-schedule";
 import EnrollmentFormDialog from "@/components/shared/enrollment/EnrollmentFormDialog";
 import DeleteEnrollmentDialog from "@/components/shared/enrollment/DeleteEnrollmentDialog";
+import { LoadMoreButton } from "@/components/ui/load-more-button";
+import { useLoadMore } from "@/hooks/useLoadMore";
+import { ResponsiveList, ResponsiveListColumn } from "@/components/ui/responsive-list";
 // import Availability from "@/components/student/AvailabilityFormat";
 
 const durationSchema = z.object({
@@ -301,6 +296,12 @@ const EnrollmentList = ({
     currentPage * rowsPerPage,
   );
 
+  const {
+    visibleItems: visibleEnrollments,
+    hasMore: hasMoreEnrollments,
+    loadMore: loadMoreEnrollments,
+  } = useLoadMore(filteredEnrollments);
+
   const calculateDuration = (hours: number, minutes: number) => {
     return parseFloat((hours + minutes / 60.0).toFixed(2));
   };
@@ -543,6 +544,210 @@ const EnrollmentList = ({
       .catch(() => toast.error("Failed to copy link"));
   };
 
+  const renderStatusToggle = (enrollment: Enrollment, size?: "sm") => (
+    <Button
+      variant="ghost"
+      size={size ?? "icon"}
+      onClick={() => {
+        const updatedEnrollment = { ...enrollment, summerPaused: !enrollment.paused };
+        handlePausePairingOverSummer(updatedEnrollment);
+      }}
+    >
+      {enrollment.paused ? (
+        <span className="px-3 py-1 inline-flex items-center rounded-full bg-red-100 text-red-800 border border-red-200">
+          <TimerOff size={14} className="mr-1" />
+          Paused
+        </span>
+      ) : (
+        <span className="px-3 py-1 inline-flex items-center rounded-full bg-connect-me-blue-1 text-connect-me-black border border-connect-me-blue-3">
+          <Timer size={14} className="mr-1" />
+          Ongoing
+        </span>
+      )}
+    </Button>
+  );
+
+  const renderActivityButton = (enrollment: Enrollment) => (
+    <Button variant="outline" size="sm" className="gap-2" asChild>
+      <Link href={`/dashboard/enrollments/${enrollment.id}/activity`}>
+        <Activity className="h-4 w-4" />
+        Activity
+      </Link>
+    </Button>
+  );
+
+  const columns: ResponsiveListColumn<Enrollment>[] = [
+    {
+      key: "student",
+      header: "Student",
+      cell: (enrollment) => `${enrollment.student?.firstName} ${enrollment.student?.lastName}`,
+      mobileCell: null,
+    },
+    {
+      key: "tutor",
+      header: "Tutor",
+      cell: (enrollment) => `${enrollment.tutor?.firstName} ${enrollment.tutor?.lastName}`,
+      mobileCell: null,
+    },
+    {
+      key: "availability",
+      header: "Availability",
+      cell: (enrollment) => (
+        <AvailabilityFormat availability={getEnrollmentAvailability(enrollment)} card={false} />
+      ),
+      cellClassName: "colspan-[40px]",
+    },
+    {
+      key: "summary",
+      header: "Summary",
+      cell: (enrollment) => enrollment.summary,
+      mobileLabel: "Summary",
+      mobileGroup: "details",
+    },
+    {
+      key: "startDate",
+      header: "Start Date",
+      cell: (enrollment) =>
+        formatDateUTC(enrollment.startDate, { includeTime: false, includeDate: true }),
+      mobileLabel: "Start Date",
+      mobileGroup: "details",
+    },
+    {
+      key: "meetingLink",
+      header: "Meeting Link",
+      cell: (enrollment) => {
+        const meeting = meetings.find((m) => String(m.id) === String(enrollment.meetingId));
+        if (!meeting) return "No Meeting Link";
+        return (
+          <button
+            type="button"
+            onClick={() => handleCopyMeetingLink(meeting.id)}
+            className="relative inline-flex items-center group cursor-pointer"
+          >
+            <span className="underline text-black-600 transition-opacity duration-150 group-hover:opacity-0">
+              {meeting.name}
+            </span>
+            <Copy
+              className="
+                absolute
+                left-1/2 -translate-x-1/2
+                w-4 h-4
+                text-gray-700
+                opacity-0
+                transition-opacity duration-150
+                group-hover:opacity-100
+                pointer-events-none
+              "
+            />
+          </button>
+        );
+      },
+      mobileLabel: "Meeting Link",
+      mobileGroup: "details",
+      mobileCell: (enrollment) => {
+        const meeting = meetings.find((m) => String(m.id) === String(enrollment.meetingId));
+        if (!meeting) return "No Meeting Link";
+        return (
+          <button
+            type="button"
+            onClick={() => handleCopyMeetingLink(meeting.id)}
+            className="underline text-black-600"
+          >
+            {meeting.name}
+          </button>
+        );
+      },
+    },
+    {
+      key: "duration",
+      header: "Duration",
+      cell: (enrollment) => `${formatSessionDuration(enrollment.duration)} hr(s)`,
+      mobileLabel: "Duration",
+      mobileGroup: "details",
+    },
+    {
+      key: "frequency",
+      header: "Frequency",
+      cell: (enrollment) => enrollment.frequency,
+      mobileLabel: "Frequency",
+      mobileGroup: "details",
+    },
+    {
+      key: "actions",
+      header: "Actions",
+      cell: (enrollment) => (
+        <>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => {
+              setSelectedEnrollment(enrollment);
+              setSelectedStudentId(enrollment.student?.id ?? "");
+              setSelectedTutorId(enrollment.tutor?.id ?? "");
+              setIsEditModalOpen(true);
+            }}
+          >
+            <Edit className="h-4 w-4" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => {
+              setSelectedEnrollment(enrollment);
+              setIsDeleteModalOpen(true);
+            }}
+          >
+            <Trash className="h-4 w-4" />
+          </Button>
+        </>
+      ),
+      mobileCell: null,
+    },
+    {
+      key: "status",
+      header: "Status",
+      cell: (enrollment) => renderStatusToggle(enrollment),
+      mobileCell: null,
+    },
+    {
+      key: "activity",
+      header: "Activity",
+      cell: (enrollment) => renderActivityButton(enrollment),
+      mobileCell: null,
+    },
+    {
+      key: "chat",
+      header: "Chat",
+      cell: (enrollment) => (
+        <Button
+          className="gap-2"
+          onClick={() => router.push(`/dashboard/enrollment/${enrollment.id}/chat`)}
+          variant="outline"
+        >
+          View Chat
+          <MessageCircleIcon />
+        </Button>
+      ),
+      mobileCell: null,
+    },
+  ];
+
+  const renderMobileEnrollmentFooter = (enrollment: Enrollment) => (
+    <div className="flex flex-wrap items-center gap-2 pt-1">
+      {renderStatusToggle(enrollment, "sm")}
+      {renderActivityButton(enrollment)}
+      <Button
+        className="gap-2"
+        size="sm"
+        onClick={() => router.push(`/dashboard/enrollment/${enrollment.id}/chat`)}
+        variant="outline"
+      >
+        <MessageCircleIcon className="h-4 w-4" />
+        View Chat
+      </Button>
+    </div>
+  );
+
   return (
     <>
       {" "}
@@ -630,163 +835,49 @@ const EnrollmentList = ({
               </Dialog>
             </div>
           </div>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                {[
-                  "Student",
-                  "Tutor",
-                  "Availability",
-                  "Summary",
-                  "Start Date",
-                  "Meeting Link",
-                  "Duration",
-                  "Frequency",
-                  "Actions",
-                  "Status",
-                  "Activity",
-                  "Chat",
-                ].map((header) => (
-                  <TableHead key={header}>{header}</TableHead>
-                ))}
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {paginatedEnrollments.map((enrollment) => (
-                <TableRow key={enrollment.id}>
-                  <TableCell>
-                    {enrollment.student?.firstName} {enrollment.student?.lastName}
-                  </TableCell>
-                  <TableCell>
-                    {enrollment.tutor?.firstName} {enrollment.tutor?.lastName}
-                  </TableCell>
-                  <TableCell className="colspan-[40px]">
-                    <AvailabilityFormat
-                      availability={getEnrollmentAvailability(enrollment)}
-                      card={false}
-                    />{" "}
-                  </TableCell>
-                  <TableCell>{enrollment.summary}</TableCell>
-                  <TableCell>
-                    {formatDateUTC(enrollment.startDate, {
-                      includeTime: false,
-                      includeDate: true,
-                    })}
-                    {/* {formatDateServer(enrollment.startDate, { includeTime: false, includeDate: true})} */}
-                  </TableCell>
-                  {/* <TableCell>
-                    {formatDateAdmin(enrollment.endDate, false, true)}
-                  </TableCell> */}
-                  <TableCell>
-                    {(() => {
-                      const meeting = meetings.find(
-                        (m) => String(m.id) === String(enrollment.meetingId),
-                      );
-
-                      if (!meeting) return "No Meeting Link";
-
-                      return (
-                        <button
-                          type="button"
-                          onClick={() => handleCopyMeetingLink(meeting.id)}
-                          className="relative inline-flex items-center group cursor-pointer"
-                        >
-                          {/* Text – left aligned, normal state */}
-                          <span className="underline text-black-600 transition-opacity duration-150 group-hover:opacity-0">
-                            {meeting.name}
-                          </span>
-
-                          {/* Icon – centered over the text, only visible on hover */}
-                          <Copy
-                            className="
-                              absolute
-                              left-1/2 -translate-x-1/2
-                              w-4 h-4
-                              text-gray-700
-                              opacity-0
-                              transition-opacity duration-150
-                              group-hover:opacity-100
-                              pointer-events-none
-                            "
-                          />
-                        </button>
-                      );
-                    })()}
-                  </TableCell>
-                  <TableCell>{formatSessionDuration(enrollment.duration)} hr(s)</TableCell>
-                  <TableCell>{enrollment.frequency}</TableCell>
-                  <TableCell>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => {
-                        setSelectedEnrollment(enrollment);
-                        setSelectedStudentId(enrollment.student?.id ?? "");
-                        setSelectedTutorId(enrollment.tutor?.id ?? "");
-                        setIsEditModalOpen(true);
-                      }}
-                    >
-                      <Edit className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => {
-                        setSelectedEnrollment(enrollment);
-                        setIsDeleteModalOpen(true);
-                      }}
-                    >
-                      <Trash className="h-4 w-4" />
-                    </Button>
-                  </TableCell>
-                  <TableCell>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => {
-                        const updatedEnrollment = {
-                          ...enrollment,
-                          summerPaused: !enrollment.paused,
-                        };
-                        handlePausePairingOverSummer(updatedEnrollment);
-                      }}
-                    >
-                      {enrollment.paused ? (
-                        <span className="px-3 py-1 inline-flex items-center rounded-full bg-red-100 text-red-800 border border-red-200">
-                          <TimerOff size={14} className="mr-1" />
-                          Paused
-                        </span>
-                      ) : (
-                        <span className="px-3 py-1 inline-flex items-center rounded-full bg-connect-me-blue-1 text-connect-me-black border border-connect-me-blue-3">
-                          <Timer size={14} className="mr-1" />
-                          Ongoing
-                        </span>
-                      )}
-                    </Button>
-                  </TableCell>
-                  <TableCell>
-                    <Button variant="outline" size="sm" className="gap-2" asChild>
-                      <Link href={`/dashboard/enrollments/${enrollment.id}/activity`}>
-                        <Activity className="h-4 w-4" />
-                        Activity
-                      </Link>
-                    </Button>
-                  </TableCell>
-                  <TableCell>
-                    <Button
-                      className="gap-2"
-                      onClick={() => router.push(`/dashboard/enrollment/${enrollment.id}/chat`)}
-                      variant="outline"
-                    >
-                      View Chat
-                      <MessageCircleIcon />
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-          <div className="flex justify-between mt-4">
+          <ResponsiveList
+            columns={columns}
+            rows={paginatedEnrollments}
+            mobileRows={visibleEnrollments}
+            rowKey={(enrollment) => enrollment.id}
+            mobileTitle={(enrollment) =>
+              `${enrollment.student?.firstName} ${enrollment.student?.lastName}`
+            }
+            mobileSubtitle={(enrollment) =>
+              `with ${enrollment.tutor?.firstName} ${enrollment.tutor?.lastName}`
+            }
+            mobileAction={(enrollment) => (
+              <div className="flex gap-1">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => {
+                    setSelectedEnrollment(enrollment);
+                    setSelectedStudentId(enrollment.student?.id ?? "");
+                    setSelectedTutorId(enrollment.tutor?.id ?? "");
+                    setIsEditModalOpen(true);
+                  }}
+                >
+                  <Edit className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => {
+                    setSelectedEnrollment(enrollment);
+                    setIsDeleteModalOpen(true);
+                  }}
+                >
+                  <Trash className="h-4 w-4" />
+                </Button>
+              </div>
+            )}
+            mobileCardFooter={(enrollment) => renderMobileEnrollmentFooter(enrollment)}
+            mobileFooter={
+              <LoadMoreButton hasMore={hasMoreEnrollments} onClick={loadMoreEnrollments} />
+            }
+          />
+          <div className="hidden md:flex justify-between mt-4">
             <span>{filteredEnrollments.length} row(s) total.</span>
             <div className="flex items-center space-x-2">
               <span>Rows per page</span>

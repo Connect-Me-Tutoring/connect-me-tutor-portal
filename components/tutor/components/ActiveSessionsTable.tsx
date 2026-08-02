@@ -64,6 +64,8 @@ import {
   DropdownMenuLabel,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { MobileCard } from "@/components/ui/mobile-card";
+import { LoadMoreButton } from "@/components/ui/load-more-button";
 
 interface SessionsTableProps {
   paginatedSessions: Session[];
@@ -100,6 +102,9 @@ interface SessionsTableProps {
 
 const ActiveSessionsTable = ({
   paginatedSessions,
+  visibleSessions,
+  hasMore,
+  loadMore,
   meetings,
   totalPages,
   setNextClassConfirmed,
@@ -138,51 +143,221 @@ const ActiveSessionsTable = ({
   };
   return (
     <>
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Mark Status</TableHead>
-            <TableHead>Date</TableHead>
-            <TableHead>Title</TableHead>
-            <TableHead>Student</TableHead>
-            <TableHead>Duration</TableHead>
-            <TableHead>Meeting</TableHead>
-            <TableHead>Session Exit Form</TableHead>
-            <TableHead>Actions</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {paginatedSessions.map((session: Session, index: number) => (
-            <TableRow key={index}>
-              <TableCell>
-                {session.status === "Active" ? (
-                  <span className="px-3 py-1 inline-flex items-center rounded-full bg-blue-100 text-blue-800 border border-blue-200">
-                    <Clock size={14} className="mr-1" />
-                    Active
-                  </span>
-                ) : session.status === "Complete" ? (
-                  <span className="px-3 py-1 inline-flex items-center rounded-full bg-green-100 text-green-800 border border-green-200">
-                    <CircleCheckBig size={14} className="mr-1" />
-                    Complete
-                  </span>
-                ) : session.status === "Cancelled" ? (
-                  <span className="px-3 py-1 inline-flex items-center rounded-full bg-red-100 text-red-800 border border-red-200">
-                    <CircleX size={14} className="mr-1" />
-                    Cancelled
-                  </span>
-                ) : (
-                  ""
-                )}
-              </TableCell>
-              <TableCell>{formatSessionDate(session.date)}</TableCell>
-              <TableCell className="font-medium">
+      <div className="hidden md:block w-full">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Mark Status</TableHead>
+              <TableHead>Date</TableHead>
+              <TableHead>Title</TableHead>
+              <TableHead>Student</TableHead>
+              <TableHead>Duration</TableHead>
+              <TableHead>Meeting</TableHead>
+              <TableHead>Session Exit Form</TableHead>
+              <TableHead>Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {paginatedSessions.map((session: Session, index: number) => (
+              <TableRow key={index}>
+                <TableCell>
+                  {session.status === "Active" ? (
+                    <span className="px-3 py-1 inline-flex items-center rounded-full bg-blue-100 text-blue-800 border border-blue-200">
+                      <Clock size={14} className="mr-1" />
+                      Active
+                    </span>
+                  ) : session.status === "Complete" ? (
+                    <span className="px-3 py-1 inline-flex items-center rounded-full bg-green-100 text-green-800 border border-green-200">
+                      <CircleCheckBig size={14} className="mr-1" />
+                      Complete
+                    </span>
+                  ) : session.status === "Cancelled" ? (
+                    <span className="px-3 py-1 inline-flex items-center rounded-full bg-red-100 text-red-800 border border-red-200">
+                      <CircleX size={14} className="mr-1" />
+                      Cancelled
+                    </span>
+                  ) : (
+                    ""
+                  )}
+                </TableCell>
+                <TableCell>{formatSessionDate(session.date)}</TableCell>
+                <TableCell className="font-medium">
+                  Tutoring Session with {session.student?.firstName} {session.student?.lastName}
+                </TableCell>
+                <TableCell>
+                  {session.student?.firstName} {session.student?.lastName}
+                </TableCell>
+                <TableCell>{formatSessionDuration(session.duration)}</TableCell>
+                <TableCell>
+                  {session?.meeting?.meetingId ? (
+                    <button
+                      onClick={() => (window.location.href = `/meeting/${session?.meeting?.id}`)}
+                      className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-connect-me-blue-2 transition-colors"
+                    >
+                      <Video className="h-4 w-4" />
+                      Meeting
+                    </button>
+                  ) : (
+                    <span className="text-sm text-muted-foreground/50">N/A</span>
+                  )}
+                </TableCell>
+                <TableCell>
+                  <SessionExitForm
+                    currSession={session}
+                    setNextClassConfirmed={setNextClassConfirmed}
+                    handleSessionComplete={markSessionComplete}
+                    handleStatusChange={handleStatusChange}
+                  />
+                </TableCell>
+                <TableCell className="flex content-center">
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="icon">
+                        <Ellipsis />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent>
+                      <DropdownMenuGroup>
+                        <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                        <EditSessionForm
+                          session={session}
+                          meetings={meetings}
+                          handleStatusChange={handleStatusChange}
+                          isDropdownItem
+                        />
+                        <DropdownMenuItem
+                          onClick={() =>
+                            (window.location.href = "https://forms.gle/AC4an7K6NSNumDwKA")
+                          }
+                        >
+                          <UserRoundPlus className="h-4 w-4 mr-2" />
+                          Request Substitute
+                        </DropdownMenuItem>
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <DropdownMenuItem
+                              onSelect={(e) => {
+                                e.preventDefault();
+                              }}
+                            >
+                              <CalendarX className="h-4 w-4 mr-2" />
+                              Cancel
+                            </DropdownMenuItem>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Cancel Session?</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                Are you sure you want to cancel this session with{" "}
+                                {session.student?.firstName} {session.student?.lastName} on{" "}
+                                {formatSessionDate(session.date)}? This action cannot be undone.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancel</AlertDialogCancel>
+                              <AlertDialogAction onClick={() => handleStatusChange(session)}>
+                                Confirm Cancellation
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      </DropdownMenuGroup>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+
+        <div className="mt-4 hidden md:flex justify-between items-center">
+          <span>{TC.filteredSessions.length} row(s) total.</span>
+          <div className="flex items-center space-x-2">
+            <span>Rows per page</span>
+            <Select
+              value={TC.rowsPerPageActiveSessions.toString()}
+              onValueChange={handleRowsPerPageChange}
+            >
+              <SelectTrigger className="w-[70px]">
+                <SelectValue placeholder={TC.rowsPerPageActiveSessions.toString()} />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="5">5</SelectItem>
+                <SelectItem value="10">10</SelectItem>
+                <SelectItem value="20">20</SelectItem>
+              </SelectContent>
+            </Select>
+            <span>
+              Page {TC.currentPageActiveSessions} of {totalPages}
+            </span>
+            <div className="flex space-x-1">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => handlePageChange(1)}
+                disabled={TC.currentPageActiveSessions === 1}
+              >
+                <ChevronsLeft className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => handlePageChange(TC.currentPageActiveSessions - 1)}
+                disabled={TC.currentPageActiveSessions === 1}
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => handlePageChange(TC.currentPageActiveSessions + 1)}
+                disabled={TC.currentPageActiveSessions === totalPages}
+              >
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => handlePageChange(totalPages)}
+                disabled={TC.currentPageActiveSessions === totalPages}
+              >
+                <ChevronsRight className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="md:hidden space-y-4">
+        {(visibleSessions ?? []).map((session: Session, index: number) => (
+          <MobileCard key={index}>
+            <div className="flex justify-between items-start gap-2">
+              <div className="font-medium text-sm">
                 Tutoring Session with {session.student?.firstName} {session.student?.lastName}
-              </TableCell>
-              <TableCell>
-                {session.student?.firstName} {session.student?.lastName}
-              </TableCell>
-              <TableCell>{formatSessionDuration(session.duration)}</TableCell>
-              <TableCell>
+              </div>
+              {session.status === "Active" ? (
+                <span className="px-3 py-1 inline-flex items-center rounded-full bg-blue-100 text-blue-800 border border-blue-200 whitespace-nowrap">
+                  <Clock size={14} className="mr-1" />
+                  Active
+                </span>
+              ) : session.status === "Complete" ? (
+                <span className="px-3 py-1 inline-flex items-center rounded-full bg-green-100 text-green-800 border border-green-200 whitespace-nowrap">
+                  <CircleCheckBig size={14} className="mr-1" />
+                  Complete
+                </span>
+              ) : session.status === "Cancelled" ? (
+                <span className="px-3 py-1 inline-flex items-center rounded-full bg-red-100 text-red-800 border border-red-200 whitespace-nowrap">
+                  <CircleX size={14} className="mr-1" />
+                  Cancelled
+                </span>
+              ) : (
+                ""
+              )}
+            </div>
+            <div className="text-sm text-muted-foreground">{formatSessionDate(session.date)}</div>
+            <div className="text-sm space-y-1">
+              <div>Duration: {formatSessionDuration(session.duration)}</div>
+              <div>
                 {session?.meeting?.meetingId ? (
                   <button
                     onClick={() => (window.location.href = `/meeting/${session?.meeting?.id}`)}
@@ -192,133 +367,75 @@ const ActiveSessionsTable = ({
                     Meeting
                   </button>
                 ) : (
-                  <span className="text-sm text-muted-foreground/50">N/A</span>
+                  <span className="text-sm text-muted-foreground/50">No meeting link</span>
                 )}
-              </TableCell>
-              <TableCell>
-                <SessionExitForm
-                  currSession={session}
-                  setNextClassConfirmed={setNextClassConfirmed}
-                  handleSessionComplete={markSessionComplete}
-                  handleStatusChange={handleStatusChange}
-                />
-              </TableCell>
-              <TableCell className="flex content-center">
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="icon">
-                      <Ellipsis />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent>
-                    <DropdownMenuGroup>
-                      <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                      <EditSessionForm
-                        session={session}
-                        meetings={meetings}
-                        handleStatusChange={handleStatusChange}
-                        isDropdownItem
-                      />
-                      <DropdownMenuItem
-                        onClick={() =>
-                          (window.location.href = "https://forms.gle/AC4an7K6NSNumDwKA")
-                        }
-                      >
-                        <UserRoundPlus className="h-4 w-4 mr-2" />
-                        Request Substitute
-                      </DropdownMenuItem>
-                      <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                          <DropdownMenuItem
-                            onSelect={(e) => {
-                              e.preventDefault();
-                            }}
-                          >
-                            <CalendarX className="h-4 w-4 mr-2" />
-                            Cancel
-                          </DropdownMenuItem>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent>
-                          <AlertDialogHeader>
-                            <AlertDialogTitle>Cancel Session?</AlertDialogTitle>
-                            <AlertDialogDescription>
-                              Are you sure you want to cancel this session with{" "}
-                              {session.student?.firstName} {session.student?.lastName} on{" "}
-                              {formatSessionDate(session.date)}? This action cannot be undone.
-                            </AlertDialogDescription>
-                          </AlertDialogHeader>
-                          <AlertDialogFooter>
-                            <AlertDialogCancel>Cancel</AlertDialogCancel>
-                            <AlertDialogAction onClick={() => handleStatusChange(session)}>
-                              Confirm Cancellation
-                            </AlertDialogAction>
-                          </AlertDialogFooter>
-                        </AlertDialogContent>
-                      </AlertDialog>
-                    </DropdownMenuGroup>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
-
-      <div className="mt-4 flex justify-between items-center">
-        <span>{TC.filteredSessions.length} row(s) total.</span>
-        <div className="flex items-center space-x-2">
-          <span>Rows per page</span>
-          <Select
-            value={TC.rowsPerPageActiveSessions.toString()}
-            onValueChange={handleRowsPerPageChange}
-          >
-            <SelectTrigger className="w-[70px]">
-              <SelectValue placeholder={TC.rowsPerPageActiveSessions.toString()} />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="5">5</SelectItem>
-              <SelectItem value="10">10</SelectItem>
-              <SelectItem value="20">20</SelectItem>
-            </SelectContent>
-          </Select>
-          <span>
-            Page {TC.currentPageActiveSessions} of {totalPages}
-          </span>
-          <div className="flex space-x-1">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => handlePageChange(1)}
-              disabled={TC.currentPageActiveSessions === 1}
-            >
-              <ChevronsLeft className="h-4 w-4" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => handlePageChange(TC.currentPageActiveSessions - 1)}
-              disabled={TC.currentPageActiveSessions === 1}
-            >
-              <ChevronLeft className="h-4 w-4" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => handlePageChange(TC.currentPageActiveSessions + 1)}
-              disabled={TC.currentPageActiveSessions === totalPages}
-            >
-              <ChevronRight className="h-4 w-4" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => handlePageChange(totalPages)}
-              disabled={TC.currentPageActiveSessions === totalPages}
-            >
-              <ChevronsRight className="h-4 w-4" />
-            </Button>
-          </div>
-        </div>
+              </div>
+            </div>
+            <div>
+              <SessionExitForm
+                currSession={session}
+                setNextClassConfirmed={setNextClassConfirmed}
+                handleSessionComplete={markSessionComplete}
+                handleStatusChange={handleStatusChange}
+              />
+            </div>
+            <div>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="icon">
+                    <Ellipsis />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent>
+                  <DropdownMenuGroup>
+                    <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                    <EditSessionForm
+                      session={session}
+                      meetings={meetings}
+                      handleStatusChange={handleStatusChange}
+                      isDropdownItem
+                    />
+                    <DropdownMenuItem
+                      onClick={() => (window.location.href = "https://forms.gle/AC4an7K6NSNumDwKA")}
+                    >
+                      <UserRoundPlus className="h-4 w-4 mr-2" />
+                      Request Substitute
+                    </DropdownMenuItem>
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <DropdownMenuItem
+                          onSelect={(e) => {
+                            e.preventDefault();
+                          }}
+                        >
+                          <CalendarX className="h-4 w-4 mr-2" />
+                          Cancel
+                        </DropdownMenuItem>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Cancel Session?</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            Are you sure you want to cancel this session with{" "}
+                            {session.student?.firstName} {session.student?.lastName} on{" "}
+                            {formatSessionDate(session.date)}? This action cannot be undone.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                          <AlertDialogAction onClick={() => handleStatusChange(session)}>
+                            Confirm Cancellation
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  </DropdownMenuGroup>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+          </MobileCard>
+        ))}
+        <LoadMoreButton hasMore={!!hasMore} onClick={() => loadMore?.()} />
       </div>
     </>
   );

@@ -29,14 +29,6 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import AvailabilityFormat from "@/components/student/AvailabilityFormat";
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import {
   Select,
   SelectContent,
   SelectItem,
@@ -68,6 +60,9 @@ import {
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { LoadMoreButton } from "@/components/ui/load-more-button";
+import { useLoadMore } from "@/hooks/useLoadMore";
+import { ResponsiveList, ResponsiveListColumn } from "@/components/ui/responsive-list";
 import toast, { Toaster } from "react-hot-toast";
 import { Combobox } from "@/components/ui/combobox";
 
@@ -185,6 +180,12 @@ const TutorList = ({ initialTutors }: any) => {
     (currentPage - 1) * rowsPerPage,
     currentPage * rowsPerPage,
   );
+
+  const {
+    visibleItems: visibleTutors,
+    hasMore: hasMoreTutors,
+    loadMore: loadMoreTutors,
+  } = useLoadMore(filteredTutors);
 
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>,
@@ -353,6 +354,121 @@ const TutorList = ({ initialTutors }: any) => {
     document.body.removeChild(link);
   };
 
+  const renderResendEmailAction = (tutor: Profile) => (
+    <AlertDialog>
+      <AlertDialogTrigger asChild>
+        <Button variant="ghost" size="icon">
+          <RefreshCw className="h-4 w-4" />
+        </Button>
+      </AlertDialogTrigger>
+
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle> Resend Confirmation Email for {tutor.firstName}</AlertDialogTitle>
+          <AlertDialogDescription>
+            Note: Will not resend confirmation email if the user has already signed in before
+          </AlertDialogDescription>
+        </AlertDialogHeader>{" "}
+        <AlertDialogFooter>
+          {" "}
+          <AlertDialogCancel>Cancel</AlertDialogCancel>
+          <AlertDialogAction
+            onClick={() => {
+              resendEmailConfirmation(tutor.email)
+                .then(() => {
+                  toast.success("Resent Email Confirmation");
+                })
+                .catch(() => {
+                  toast.error("Failed to resend email confirmation");
+                });
+            }}
+          >
+            Resend
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+  );
+
+  const columns: ResponsiveListColumn<Profile>[] = [
+    {
+      key: "status",
+      header: "Status",
+      cell: (tutor) => tutor.status,
+      mobileCell: null,
+    },
+    {
+      key: "startDate",
+      header: "Start Date",
+      cell: (tutor) => tutor.startDate,
+      mobileLabel: "Start Date",
+      mobileClassName: "text-sm text-muted-foreground",
+    },
+    {
+      key: "name",
+      header: "Tutor Name",
+      cell: (tutor) => `${tutor.firstName} ${tutor.lastName}`,
+      mobileCell: null,
+    },
+    {
+      key: "availability",
+      header: "Availability",
+      cell: (tutor) => <UserAvailabilities user={tutor} />,
+    },
+    {
+      key: "subjects",
+      header: "Subjects Teaching ",
+      cell: (tutor) => (
+        <>
+          {tutor.subjects_of_interest?.map((item, i) => (
+            <span key={i}>{item}</span>
+          ))}
+        </>
+      ),
+      cellClassName: "flex flex-col",
+      mobileCell: (tutor) =>
+        tutor.subjects_of_interest?.length > 0 && (
+          <>
+            <div className="font-medium">Subjects Teaching:</div>
+            <div className="flex flex-wrap gap-2 mt-1">
+              {tutor.subjects_of_interest.map((subject, i) => (
+                <span key={i} className="px-2 py-1 text-xs bg-muted rounded-md">
+                  {subject}
+                </span>
+              ))}
+            </div>
+          </>
+        ),
+    },
+    {
+      key: "email",
+      header: "Email",
+      cell: (tutor) => tutor.email,
+      mobileLabel: "Email",
+      mobileGroup: "contact",
+    },
+    {
+      key: "phoneNumber",
+      header: "Phone Number",
+      cell: (tutor) => tutor.phoneNumber,
+      mobileLabel: "Phone Number",
+      mobileGroup: "contact",
+    },
+    {
+      key: "gender",
+      header: "Gender",
+      cell: (tutor) => capitalizeFirstLetter(tutor.gender),
+      mobileLabel: "Gender",
+      mobileGroup: "contact",
+    },
+    {
+      key: "actions",
+      header: "Actions",
+      cell: (tutor) => renderResendEmailAction(tutor),
+      mobileCell: null,
+    },
+  ];
+
   return (
     <>
       {" "}
@@ -406,83 +522,17 @@ const TutorList = ({ initialTutors }: any) => {
           {/*Edit Page*/}
         </div>
       </div>
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Status</TableHead>
-            <TableHead>Start Date</TableHead>
-            <TableHead>Tutor Name</TableHead>
-            <TableHead>Availability</TableHead>
-            <TableHead>Subjects Teaching </TableHead>
-            <TableHead>Email</TableHead>
-            <TableHead>Phone Number</TableHead>
-            <TableHead>Gender</TableHead>
-            <TableHead>Actions</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {paginatedTutors.map((tutor, index) => (
-            <TableRow key={index}>
-              <TableCell>{tutor.status}</TableCell>
-              <TableCell>{tutor.startDate}</TableCell>
-              <TableCell>
-                {tutor.firstName} {tutor.lastName}
-              </TableCell>
-              <TableCell>
-                <UserAvailabilities user={tutor} />
-              </TableCell>
-              <TableCell className="flex flex-col">
-                {tutor.subjects_of_interest?.map((item, index) => (
-                  <span key={index}>{item}</span>
-                ))}
-              </TableCell>
-              <TableCell>{tutor.email}</TableCell>
-              <TableCell>{tutor.phoneNumber}</TableCell>
-              <TableCell>{capitalizeFirstLetter(tutor.gender)}</TableCell>
-              <TableCell>
-                <AlertDialog>
-                  <AlertDialogTrigger asChild>
-                    <Button variant="ghost" size="icon">
-                      <RefreshCw className="h-4 w-4" />
-                    </Button>
-                  </AlertDialogTrigger>
-
-                  <AlertDialogContent>
-                    <AlertDialogHeader>
-                      <AlertDialogTitle>
-                        {" "}
-                        Resend Confirmation Email for {tutor.firstName}
-                      </AlertDialogTitle>
-                      <AlertDialogDescription>
-                        Note: Will not resend confirmation email if the user has already signed in
-                        before
-                      </AlertDialogDescription>
-                    </AlertDialogHeader>{" "}
-                    <AlertDialogFooter>
-                      {" "}
-                      <AlertDialogCancel>Cancel</AlertDialogCancel>
-                      <AlertDialogAction
-                        onClick={() => {
-                          resendEmailConfirmation(tutor.email)
-                            .then(() => {
-                              toast.success("Resent Email Confirmation");
-                            })
-                            .catch(() => {
-                              toast.error("Failed to resend email confirmation");
-                            });
-                        }}
-                      >
-                        Resend
-                      </AlertDialogAction>
-                    </AlertDialogFooter>
-                  </AlertDialogContent>
-                </AlertDialog>
-              </TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
-      <div className="mt-4 flex justify-between items-center">
+      <ResponsiveList
+        columns={columns}
+        rows={paginatedTutors}
+        mobileRows={visibleTutors}
+        rowKey={(tutor, index) => index}
+        mobileTitle={(tutor) => `${tutor.firstName} ${tutor.lastName}`}
+        mobileSubtitle={(tutor) => tutor.status}
+        mobileAction={(tutor) => renderResendEmailAction(tutor)}
+        mobileFooter={<LoadMoreButton hasMore={hasMoreTutors} onClick={loadMoreTutors} />}
+      />
+      <div className="mt-4 hidden md:flex justify-between items-center">
         <span>{filteredTutors.length} row(s) total.</span>
         <div className="flex items-center space-x-2">
           <span>Rows per page</span>

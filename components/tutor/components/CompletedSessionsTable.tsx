@@ -44,9 +44,14 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useDashboardContext } from "@/lib/contexts/dashboardContext";
+import { MobileCard } from "@/components/ui/mobile-card";
+import { LoadMoreButton } from "@/components/ui/load-more-button";
 
 const CompletedSessionsTable = ({
   paginatedSessions,
+  visibleSessions,
+  hasMore,
+  loadMore,
   totalPages,
   handlePageChange,
   handleRowsPerPageChange,
@@ -57,151 +62,227 @@ const CompletedSessionsTable = ({
 
   return (
     <>
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Mark Status</TableHead>
-            <TableHead>Date</TableHead>
-            <TableHead>Title</TableHead>
-            <TableHead>Student</TableHead>
-            <TableHead>Duration</TableHead>
-            <TableHead>Meeting Notes</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {paginatedSessions.map((session: Session, index: number) => (
-            <TableRow key={index}>
-              <TableCell>
-                {session.status === "Complete" ? (
-                  <span className="px-3 py-1 inline-flex items-center rounded-full bg-green-100 text-green-800 border border-green-200">
-                    <CircleCheckBig size={14} className="mr-1" />
-                    Complete
-                  </span>
-                ) : session.status === "Cancelled" ? (
-                  <span className="px-3 py-1 inline-flex items-center rounded-full bg-red-100 text-red-800 border border-red-200">
-                    <CircleX size={14} className="mr-1" />
-                    Cancelled
-                  </span>
-                ) : (
-                  ""
-                )}
-              </TableCell>
-              <TableCell>{formatSessionDate(session.date)}</TableCell>
-              <TableCell className="font-medium">
-                Tutoring Session with {session.student?.firstName} {session.student?.lastName}
-              </TableCell>
-              <TableCell>
-                {session.student?.firstName} {session.student?.lastName}
-              </TableCell>
-              <TableCell>{formatSessionDuration(session.duration)}</TableCell>
-              <TableCell>
-                <div className="flex flex-col space-y-2">
-                  <Dialog open={isMeetingNotesOpen} onOpenChange={setIsMeetingNotesOpen}>
-                    <DialogTrigger asChild>
-                      <Button
-                        variant="ghost"
-                        onClick={() => {
-                          setIsMeetingNotesOpen(true);
-                          TC.setSelectedSession(session);
-                        }}
-                      >
-                        View Session Notes
-                      </Button>
-                    </DialogTrigger>
-                    <DialogContent>
-                      <DialogHeader>
-                        <DialogTitle>Meeting Notes</DialogTitle>
-                      </DialogHeader>
-                      <Textarea readOnly>{TC.selectedSession?.session_exit_form}</Textarea>
-                    </DialogContent>
-                  </Dialog>
-                </div>
-              </TableCell>
-              <TableCell>
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="icon">
-                      <Ellipsis />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent>
-                    <DropdownMenuGroup>
-                      <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                      <DropdownMenuItem
-                        onClick={() => {
-                          if (session.status === "Complete") {
-                            handleUndoSessionExitForm(session.id);
-                          } else {
-                            TC.setSelectedSession(session);
-                            TC.setIsSessionExitFormOpen(true);
-                          }
-                        }}
-                      >
-                        Undo
-                      </DropdownMenuItem>
-                    </DropdownMenuGroup>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </TableCell>
+      <div className="hidden md:block w-full">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Mark Status</TableHead>
+              <TableHead>Date</TableHead>
+              <TableHead>Title</TableHead>
+              <TableHead>Student</TableHead>
+              <TableHead>Duration</TableHead>
+              <TableHead>Meeting Notes</TableHead>
             </TableRow>
-          ))}
-        </TableBody>
-      </Table>
-      <div className="mt-4 flex justify-between items-center">
-        <span>{TC.filteredPastSessions.length} row(s) total.</span>
-        <div className="flex items-center space-x-2">
-          <span>Rows per page</span>
-          <Select
-            value={TC.rowsPerPagePastSessions.toString()}
-            onValueChange={handleRowsPerPageChange}
-          >
-            <SelectTrigger className="w-[70px]">
-              <SelectValue placeholder={TC.rowsPerPagePastSessions.toString()} />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="5">5</SelectItem>
-              <SelectItem value="10">10</SelectItem>
-              <SelectItem value="20">20</SelectItem>
-            </SelectContent>
-          </Select>
-          <span>
-            Page {TC.currentPagePastSessions} of {totalPages}
-          </span>
-          <div className="flex space-x-1">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => handlePageChange(1)}
-              disabled={TC.currentPagePastSessions === 1}
+          </TableHeader>
+          <TableBody>
+            {paginatedSessions.map((session: Session, index: number) => (
+              <TableRow key={index}>
+                <TableCell>
+                  {session.status === "Complete" ? (
+                    <span className="px-3 py-1 inline-flex items-center rounded-full bg-green-100 text-green-800 border border-green-200">
+                      <CircleCheckBig size={14} className="mr-1" />
+                      Complete
+                    </span>
+                  ) : session.status === "Cancelled" ? (
+                    <span className="px-3 py-1 inline-flex items-center rounded-full bg-red-100 text-red-800 border border-red-200">
+                      <CircleX size={14} className="mr-1" />
+                      Cancelled
+                    </span>
+                  ) : (
+                    ""
+                  )}
+                </TableCell>
+                <TableCell>{formatSessionDate(session.date)}</TableCell>
+                <TableCell className="font-medium">
+                  Tutoring Session with {session.student?.firstName} {session.student?.lastName}
+                </TableCell>
+                <TableCell>
+                  {session.student?.firstName} {session.student?.lastName}
+                </TableCell>
+                <TableCell>{formatSessionDuration(session.duration)}</TableCell>
+                <TableCell>
+                  <div className="flex flex-col space-y-2">
+                    <Dialog open={isMeetingNotesOpen} onOpenChange={setIsMeetingNotesOpen}>
+                      <DialogTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          onClick={() => {
+                            setIsMeetingNotesOpen(true);
+                            TC.setSelectedSession(session);
+                          }}
+                        >
+                          View Session Notes
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent>
+                        <DialogHeader>
+                          <DialogTitle>Meeting Notes</DialogTitle>
+                        </DialogHeader>
+                        <Textarea readOnly>{TC.selectedSession?.session_exit_form}</Textarea>
+                      </DialogContent>
+                    </Dialog>
+                  </div>
+                </TableCell>
+                <TableCell>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="icon">
+                        <Ellipsis />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent>
+                      <DropdownMenuGroup>
+                        <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                        <DropdownMenuItem
+                          onClick={() => {
+                            if (session.status === "Complete") {
+                              handleUndoSessionExitForm(session.id);
+                            } else {
+                              TC.setSelectedSession(session);
+                              TC.setIsSessionExitFormOpen(true);
+                            }
+                          }}
+                        >
+                          Undo
+                        </DropdownMenuItem>
+                      </DropdownMenuGroup>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+        <div className="mt-4 hidden md:flex justify-between items-center">
+          <span>{TC.filteredPastSessions.length} row(s) total.</span>
+          <div className="flex items-center space-x-2">
+            <span>Rows per page</span>
+            <Select
+              value={TC.rowsPerPagePastSessions.toString()}
+              onValueChange={handleRowsPerPageChange}
             >
-              <ChevronsLeft className="h-4 w-4" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => handlePageChange(TC.currentPagePastSessions - 1)}
-              disabled={TC.currentPagePastSessions === 1}
-            >
-              <ChevronLeft className="h-4 w-4" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => handlePageChange(TC.currentPagePastSessions + 1)}
-              disabled={TC.currentPagePastSessions === totalPages}
-            >
-              <ChevronRight className="h-4 w-4" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => handlePageChange(totalPages)}
-              disabled={TC.currentPagePastSessions === totalPages}
-            >
-              <ChevronsRight className="h-4 w-4" />
-            </Button>
+              <SelectTrigger className="w-[70px]">
+                <SelectValue placeholder={TC.rowsPerPagePastSessions.toString()} />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="5">5</SelectItem>
+                <SelectItem value="10">10</SelectItem>
+                <SelectItem value="20">20</SelectItem>
+              </SelectContent>
+            </Select>
+            <span>
+              Page {TC.currentPagePastSessions} of {totalPages}
+            </span>
+            <div className="flex space-x-1">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => handlePageChange(1)}
+                disabled={TC.currentPagePastSessions === 1}
+              >
+                <ChevronsLeft className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => handlePageChange(TC.currentPagePastSessions - 1)}
+                disabled={TC.currentPagePastSessions === 1}
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => handlePageChange(TC.currentPagePastSessions + 1)}
+                disabled={TC.currentPagePastSessions === totalPages}
+              >
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => handlePageChange(totalPages)}
+                disabled={TC.currentPagePastSessions === totalPages}
+              >
+                <ChevronsRight className="h-4 w-4" />
+              </Button>
+            </div>
           </div>
         </div>
+      </div>
+
+      <div className="md:hidden space-y-4">
+        {(visibleSessions ?? []).map((session: Session, index: number) => (
+          <MobileCard key={index}>
+            <div className="flex justify-between items-start gap-2">
+              <div className="font-medium text-sm">
+                Tutoring Session with {session.student?.firstName} {session.student?.lastName}
+              </div>
+              {session.status === "Complete" ? (
+                <span className="px-3 py-1 inline-flex items-center rounded-full bg-green-100 text-green-800 border border-green-200 whitespace-nowrap">
+                  <CircleCheckBig size={14} className="mr-1" />
+                  Complete
+                </span>
+              ) : session.status === "Cancelled" ? (
+                <span className="px-3 py-1 inline-flex items-center rounded-full bg-red-100 text-red-800 border border-red-200 whitespace-nowrap">
+                  <CircleX size={14} className="mr-1" />
+                  Cancelled
+                </span>
+              ) : (
+                ""
+              )}
+            </div>
+            <div className="text-sm text-muted-foreground">{formatSessionDate(session.date)}</div>
+            <div className="text-sm">Duration: {formatSessionDuration(session.duration)}</div>
+            <div className="flex flex-wrap items-center gap-1">
+              <Dialog open={isMeetingNotesOpen} onOpenChange={setIsMeetingNotesOpen}>
+                <DialogTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => {
+                      setIsMeetingNotesOpen(true);
+                      TC.setSelectedSession(session);
+                    }}
+                  >
+                    View Session Notes
+                  </Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Meeting Notes</DialogTitle>
+                  </DialogHeader>
+                  <Textarea readOnly>{TC.selectedSession?.session_exit_form}</Textarea>
+                </DialogContent>
+              </Dialog>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="icon">
+                    <Ellipsis />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent>
+                  <DropdownMenuGroup>
+                    <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                    <DropdownMenuItem
+                      onClick={() => {
+                        if (session.status === "Complete") {
+                          handleUndoSessionExitForm(session.id);
+                        } else {
+                          TC.setSelectedSession(session);
+                          TC.setIsSessionExitFormOpen(true);
+                        }
+                      }}
+                    >
+                      Undo
+                    </DropdownMenuItem>
+                  </DropdownMenuGroup>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+          </MobileCard>
+        ))}
+        <LoadMoreButton hasMore={!!hasMore} onClick={() => loadMore?.()} />
       </div>
     </>
   );
