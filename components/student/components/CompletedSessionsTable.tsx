@@ -78,123 +78,123 @@ const CompletedSessionsTable = ({
   return (
     <>
       <div className="hidden md:block w-full">
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Mark Status</TableHead>
-            <TableHead>Date</TableHead>
-            <TableHead>Title</TableHead>
-            <TableHead>Tutor</TableHead>
-            <TableHead>Meeting Notes</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {paginatedSessions.map((session: Session, index: number) => (
-            <TableRow key={index}>
-              <TableCell>
-                {session.status === "Complete" ? (
-                  <span className="px-3 py-1 inline-flex items-center rounded-full bg-green-100 text-green-800 border border-green-200">
-                    <CircleCheckBig size={14} className="mr-1" />
-                    Complete
-                  </span>
-                ) : session.status === "Cancelled" ? (
-                  <span className="px-3 py-1 inline-flex items-center rounded-full bg-red-100 text-red-800 border border-red-200">
-                    <CircleX size={14} className="mr-1" />
-                    Cancelled
-                  </span>
-                ) : (
-                  ""
-                )}
-              </TableCell>
-              <TableCell>{formatSessionDate(session.date)}</TableCell>
-              <TableCell className="font-medium">
-                Tutoring Session with {session.tutor?.firstName} {session.tutor?.lastName}
-              </TableCell>
-              <TableCell>
-                {session.tutor?.firstName} {session.tutor?.lastName}
-              </TableCell>
-
-              <TableCell>
-                <Dialog open={isMeetingNotesOpen} onOpenChange={setIsMeetingNotesOpen}>
-                  <DialogTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      onClick={() => {
-                        setIsMeetingNotesOpen(true);
-                        SC.setSelectedSession(session);
-                      }}
-                    >
-                      View Session Notes
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent>
-                    <DialogHeader>
-                      <DialogTitle>Meeting Notes</DialogTitle>
-                    </DialogHeader>
-                    <Textarea>{SC.selectedSession?.session_exit_form}</Textarea>
-                  </DialogContent>
-                </Dialog>
-              </TableCell>
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Mark Status</TableHead>
+              <TableHead>Date</TableHead>
+              <TableHead>Title</TableHead>
+              <TableHead>Tutor</TableHead>
+              <TableHead>Meeting Notes</TableHead>
             </TableRow>
-          ))}
-        </TableBody>
-      </Table>
+          </TableHeader>
+          <TableBody>
+            {paginatedSessions.map((session: Session, index: number) => (
+              <TableRow key={index}>
+                <TableCell>
+                  {session.status === "Complete" ? (
+                    <span className="px-3 py-1 inline-flex items-center rounded-full bg-green-100 text-green-800 border border-green-200">
+                      <CircleCheckBig size={14} className="mr-1" />
+                      Complete
+                    </span>
+                  ) : session.status === "Cancelled" ? (
+                    <span className="px-3 py-1 inline-flex items-center rounded-full bg-red-100 text-red-800 border border-red-200">
+                      <CircleX size={14} className="mr-1" />
+                      Cancelled
+                    </span>
+                  ) : (
+                    ""
+                  )}
+                </TableCell>
+                <TableCell>{formatSessionDate(session.date)}</TableCell>
+                <TableCell className="font-medium">
+                  Tutoring Session with {session.tutor?.firstName} {session.tutor?.lastName}
+                </TableCell>
+                <TableCell>
+                  {session.tutor?.firstName} {session.tutor?.lastName}
+                </TableCell>
 
-      <div className="mt-4 hidden md:flex justify-between items-center">
-        <span>{SC.filteredPastSessions.length} row(s) total.</span>
-        <div className="flex items-center space-x-2">
-          <span>Rows per page</span>
-          <Select
-            value={SC.rowsPerPagePastSessions.toString()}
-            onValueChange={handleRowsPerPageChange}
-          >
-            <SelectTrigger className="w-[70px]">
-              <SelectValue placeholder={SC.rowsPerPagePastSessions.toString()} />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="5">5</SelectItem>
-              <SelectItem value="10">10</SelectItem>
-              <SelectItem value="20">20</SelectItem>
-            </SelectContent>
-          </Select>
-          <span>
-            Page {SC.currentPagePastSessions} of {totalPages}
-          </span>
-          <div className="flex space-x-1">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => handlePageChange(1)}
-              disabled={SC.currentPagePastSessions === 1}
+                <TableCell>
+                  <Dialog open={isMeetingNotesOpen} onOpenChange={setIsMeetingNotesOpen}>
+                    <DialogTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        onClick={() => {
+                          setIsMeetingNotesOpen(true);
+                          SC.setSelectedSession(session);
+                        }}
+                      >
+                        View Session Notes
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent>
+                      <DialogHeader>
+                        <DialogTitle>Meeting Notes</DialogTitle>
+                      </DialogHeader>
+                      <Textarea>{SC.selectedSession?.session_exit_form}</Textarea>
+                    </DialogContent>
+                  </Dialog>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+
+        <div className="mt-4 hidden md:flex justify-between items-center">
+          <span>{SC.filteredPastSessions.length} row(s) total.</span>
+          <div className="flex items-center space-x-2">
+            <span>Rows per page</span>
+            <Select
+              value={SC.rowsPerPagePastSessions.toString()}
+              onValueChange={handleRowsPerPageChange}
             >
-              <ChevronsLeft className="h-4 w-4" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => handlePageChange(SC.currentPagePastSessions - 1)}
-              disabled={SC.currentPagePastSessions === 1}
-            >
-              <ChevronLeft className="h-4 w-4" />
-            </Button>
-            <Button
-              size="icon"
-              onClick={() => handlePageChange(SC.currentPagePastSessions + 1)}
-              disabled={SC.currentPagePastSessions === totalPages}
-            >
-              <ChevronRight className="h-4 w-4" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => handlePageChange(totalPages)}
-              disabled={SC.currentPagePastSessions === totalPages}
-            >
-              <ChevronsRight className="h-4 w-4" />
-            </Button>
+              <SelectTrigger className="w-[70px]">
+                <SelectValue placeholder={SC.rowsPerPagePastSessions.toString()} />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="5">5</SelectItem>
+                <SelectItem value="10">10</SelectItem>
+                <SelectItem value="20">20</SelectItem>
+              </SelectContent>
+            </Select>
+            <span>
+              Page {SC.currentPagePastSessions} of {totalPages}
+            </span>
+            <div className="flex space-x-1">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => handlePageChange(1)}
+                disabled={SC.currentPagePastSessions === 1}
+              >
+                <ChevronsLeft className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => handlePageChange(SC.currentPagePastSessions - 1)}
+                disabled={SC.currentPagePastSessions === 1}
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+              <Button
+                size="icon"
+                onClick={() => handlePageChange(SC.currentPagePastSessions + 1)}
+                disabled={SC.currentPagePastSessions === totalPages}
+              >
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => handlePageChange(totalPages)}
+                disabled={SC.currentPagePastSessions === totalPages}
+              >
+                <ChevronsRight className="h-4 w-4" />
+              </Button>
+            </div>
           </div>
         </div>
-      </div>
       </div>
 
       <div className="md:hidden space-y-4">

@@ -687,7 +687,9 @@ const EnrollmentList = ({
               `Tutor: ${enrollment.tutor?.firstName} ${enrollment.tutor?.lastName}`
             }
             mobileCardFooter={(enrollment) => renderMobileEnrollmentFooter(enrollment)}
-            mobileFooter={<LoadMoreButton hasMore={hasMoreEnrollments} onClick={loadMoreEnrollments} />}
+            mobileFooter={
+              <LoadMoreButton hasMore={hasMoreEnrollments} onClick={loadMoreEnrollments} />
+            }
           />
 
           {/* Pagination */}

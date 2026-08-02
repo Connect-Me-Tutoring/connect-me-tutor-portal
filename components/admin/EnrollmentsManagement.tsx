@@ -873,7 +873,9 @@ const EnrollmentList = ({
               </div>
             )}
             mobileCardFooter={(enrollment) => renderMobileEnrollmentFooter(enrollment)}
-            mobileFooter={<LoadMoreButton hasMore={hasMoreEnrollments} onClick={loadMoreEnrollments} />}
+            mobileFooter={
+              <LoadMoreButton hasMore={hasMoreEnrollments} onClick={loadMoreEnrollments} />
+            }
           />
           <div className="hidden md:flex justify-between mt-4">
             <span>{filteredEnrollments.length} row(s) total.</span>

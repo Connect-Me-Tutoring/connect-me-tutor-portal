@@ -144,106 +144,106 @@ const NotificationCenter = () => {
           </Select>
         </div>
         <div className="hidden md:block w-full">
-        <Table className="bg-white">
-          <TableHeader>
-            <TableRow>
-              <TableHead>Status</TableHead>
-              <TableHead>Created At</TableHead>
-              <TableHead>Summary</TableHead>
-              <TableHead>Previous Date</TableHead>
-              <TableHead>Suggested Date</TableHead>
-              <TableHead>Tutor Name</TableHead>
-              <TableHead>Student Name</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {paginatedNotifications.map((notification) => (
-              <TableRow key={notification.id}>
-                <TableCell>
-                  <Select
-                    value={notification.status}
-                    onValueChange={(value: "Active" | "Resolved") =>
-                      handleStatusChange(notification.id, value)
-                    }
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder={notification.status} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Active">Active</SelectItem>
-                      <SelectItem value="Resolved">Resolved</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </TableCell>
-                <TableCell>{formatDateAdmin(notification.createdAt)}</TableCell>
-                <TableCell>{notification.summary}</TableCell>
-                <TableCell>{formatDateAdmin(notification.previousDate)}</TableCell>
-                <TableCell>{formatDateAdmin(notification.suggestedDate)}</TableCell>
-                <TableCell>
-                  {notification.tutor?.firstName} {notification.tutor?.lastName}
-                </TableCell>
-                <TableCell>
-                  {notification.student?.firstName} {notification.student?.lastName}
-                </TableCell>
+          <Table className="bg-white">
+            <TableHeader>
+              <TableRow>
+                <TableHead>Status</TableHead>
+                <TableHead>Created At</TableHead>
+                <TableHead>Summary</TableHead>
+                <TableHead>Previous Date</TableHead>
+                <TableHead>Suggested Date</TableHead>
+                <TableHead>Tutor Name</TableHead>
+                <TableHead>Student Name</TableHead>
               </TableRow>
-            ))}
-          </TableBody>
-        </Table>
+            </TableHeader>
+            <TableBody>
+              {paginatedNotifications.map((notification) => (
+                <TableRow key={notification.id}>
+                  <TableCell>
+                    <Select
+                      value={notification.status}
+                      onValueChange={(value: "Active" | "Resolved") =>
+                        handleStatusChange(notification.id, value)
+                      }
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder={notification.status} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Active">Active</SelectItem>
+                        <SelectItem value="Resolved">Resolved</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </TableCell>
+                  <TableCell>{formatDateAdmin(notification.createdAt)}</TableCell>
+                  <TableCell>{notification.summary}</TableCell>
+                  <TableCell>{formatDateAdmin(notification.previousDate)}</TableCell>
+                  <TableCell>{formatDateAdmin(notification.suggestedDate)}</TableCell>
+                  <TableCell>
+                    {notification.tutor?.firstName} {notification.tutor?.lastName}
+                  </TableCell>
+                  <TableCell>
+                    {notification.student?.firstName} {notification.student?.lastName}
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
 
-        {/* Pagination Controls */}
-        <div className="mt-4 hidden md:flex justify-between items-center">
-          <span>{filteredNotifications.length} row(s) total.</span>
-          <div className="flex items-center space-x-2">
-            <span>Rows per page</span>
-            <Select value={rowsPerPage.toString()} onValueChange={handleRowsPerPageChange}>
-              <SelectTrigger className="w-[70px]">
-                <SelectValue placeholder={rowsPerPage.toString()} />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="10">10</SelectItem>
-                <SelectItem value="20">20</SelectItem>
-                <SelectItem value="50">50</SelectItem>
-              </SelectContent>
-            </Select>
-            <span>
-              Page {currentPage} of {totalPages}
-            </span>
-            <div className="flex space-x-1">
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => handlePageChange(1)}
-                disabled={currentPage === 1}
-              >
-                <ChevronsLeft className="h-4 w-4" />
-              </Button>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => handlePageChange(currentPage - 1)}
-                disabled={currentPage === 1}
-              >
-                <ChevronLeft className="h-4 w-4" />
-              </Button>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => handlePageChange(currentPage + 1)}
-                disabled={currentPage === totalPages}
-              >
-                <ChevronRight className="h-4 w-4" />
-              </Button>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => handlePageChange(totalPages)}
-                disabled={currentPage === totalPages}
-              >
-                <ChevronsRight className="h-4 w-4" />
-              </Button>
+          {/* Pagination Controls */}
+          <div className="mt-4 hidden md:flex justify-between items-center">
+            <span>{filteredNotifications.length} row(s) total.</span>
+            <div className="flex items-center space-x-2">
+              <span>Rows per page</span>
+              <Select value={rowsPerPage.toString()} onValueChange={handleRowsPerPageChange}>
+                <SelectTrigger className="w-[70px]">
+                  <SelectValue placeholder={rowsPerPage.toString()} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="10">10</SelectItem>
+                  <SelectItem value="20">20</SelectItem>
+                  <SelectItem value="50">50</SelectItem>
+                </SelectContent>
+              </Select>
+              <span>
+                Page {currentPage} of {totalPages}
+              </span>
+              <div className="flex space-x-1">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => handlePageChange(1)}
+                  disabled={currentPage === 1}
+                >
+                  <ChevronsLeft className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => handlePageChange(currentPage - 1)}
+                  disabled={currentPage === 1}
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => handlePageChange(currentPage + 1)}
+                  disabled={currentPage === totalPages}
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => handlePageChange(totalPages)}
+                  disabled={currentPage === totalPages}
+                >
+                  <ChevronsRight className="h-4 w-4" />
+                </Button>
+              </div>
             </div>
           </div>
-        </div>
         </div>
 
         <div className="md:hidden space-y-4">

@@ -1,5 +1,12 @@
 import { Key, ReactNode } from "react";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { MobileCard } from "@/components/ui/mobile-card";
 
 export interface ResponsiveListColumn<T> {
@@ -70,7 +77,9 @@ export function ResponsiveList<T>({
 
   return (
     <>
-      <div className={["hidden md:block w-full", desktopWrapperClassName].filter(Boolean).join(" ")}>
+      <div
+        className={["hidden md:block w-full", desktopWrapperClassName].filter(Boolean).join(" ")}
+      >
         <Table className={tableClassName}>
           <TableHeader>
             <TableRow>

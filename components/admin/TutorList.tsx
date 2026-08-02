@@ -585,7 +585,6 @@ const TutorList = ({ initialTutors }: any) => {
           </div>
         </div>
       </div>
-
       <Toaster />
     </>
   );

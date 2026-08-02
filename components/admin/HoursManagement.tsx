@@ -919,126 +919,126 @@ const HoursManager = () => {
           </div>
 
           <div className="hidden md:block w-full">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="sticky left-0 z-10 bg-white">Tutor Name</TableHead>
-                {allTimeView ? (
-                  <>
-                    <TableHead>All Sessions</TableHead>
-                    <TableHead>Biweekly Meetings</TableHead>
-                    <TableHead>Tutor Referral</TableHead>
-                    <TableHead>Sub Hotline</TableHead>
-                    <TableHead>Other</TableHead>
-                    <TableHead>All Time</TableHead>
-                  </>
-                ) : (
-                  <>
-                    {weeksInMonth.map((week) => (
-                      <TableHead key={week.toISOString()}>
-                        {format(week, "MMM d")} - {format(addDays(week, 6), "MMM d")}
-                      </TableHead>
-                    ))}
-                    <TableHead>Biweekly Meetings</TableHead>
-                    <TableHead>Tutor Referral</TableHead>
-                    <TableHead>Sub Hotline</TableHead>
-                    <TableHead>Other</TableHead>
-                    <TableHead>This Month</TableHead>
-                    <TableHead>All Time</TableHead>
-                  </>
-                )}
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {allTimeView ? (
-                ""
-              ) : (
-                <TableRow key={"total hours"}>
-                  <TableCell>Total</TableCell>
-                  {weeksInMonth.map((week) => {
-                    const hours = totalSessionHours[week.getTime().toString()]
-                      ? totalSessionHours[week.getTime().toString()] || ""
-                      : "";
-
-                    return <TableCell key={week.toString()}>{hours}</TableCell>;
-                  })}
-                  <TableCell>{totalEventHours["Biweekly Meeting"]}</TableCell>
-                  <TableCell>{totalEventHours["Tutor Referral"]}</TableCell>
-                  <TableCell>{totalEventHours["Sub Hotline"]}</TableCell>
-                  <TableCell>{totalEventHours["Other"]}</TableCell>
-                  <TableCell>{totalMonthlyHours}</TableCell>
-                  <TableCell>{totalHours}</TableCell>
-                </TableRow>
-              )}
-              {filteredTutors.map((tutor) => (
-                <TableRow key={tutor.id}>
-                  <TableCell className="sticky left-0 z-10 bg-white">
-                    {tutor.firstName} {tutor.lastName}
-                  </TableCell>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="sticky left-0 z-10 bg-white">Tutor Name</TableHead>
                   {allTimeView ? (
                     <>
-                      {" "}
-                      <TableCell>{allTimeSessionHours[tutor.id] || ""}</TableCell>
-                      <TableCell>
-                        {eventHoursData[tutor.id]
-                          ? eventHoursData[tutor.id]["Biweekly Meeting"] || ""
-                          : ""}
-                      </TableCell>
-                      <TableCell>
-                        {eventHoursData[tutor.id]
-                          ? eventHoursData[tutor.id]["Tutor Referral"] || ""
-                          : ""}
-                      </TableCell>
-                      <TableCell>
-                        {eventHoursData[tutor.id]
-                          ? eventHoursData[tutor.id]["Sub Hotline"] || ""
-                          : ""}
-                      </TableCell>
-                      <TableCell>
-                        {/* {calculateExtraHours(tutor.id).toFixed(2)}
-                         */}
-                        {eventHoursData[tutor.id] ? eventHoursData[tutor.id]["Other"] || "" : ""}
-                      </TableCell>
-                      <TableCell>{allTimeHours[tutor.id] || ""}</TableCell>
+                      <TableHead>All Sessions</TableHead>
+                      <TableHead>Biweekly Meetings</TableHead>
+                      <TableHead>Tutor Referral</TableHead>
+                      <TableHead>Sub Hotline</TableHead>
+                      <TableHead>Other</TableHead>
+                      <TableHead>All Time</TableHead>
                     </>
                   ) : (
                     <>
-                      {weeksInMonth.map((week) => {
-                        const hours = weeklySessionHours[tutor.id]
-                          ? weeklySessionHours[tutor.id][week.getTime().toString()] || ""
-                          : "";
-
-                        return <TableCell key={week.toString()}>{hours}</TableCell>;
-                      })}
-                      <TableCell>
-                        {eventHoursData[tutor.id]
-                          ? eventHoursData[tutor.id]["Biweekly Meetings"]
-                          : ""}
-                      </TableCell>
-                      <TableCell>
-                        {eventHoursData[tutor.id]
-                          ? eventHoursData[tutor.id]["Tutor Referral"] || ""
-                          : ""}
-                      </TableCell>
-                      <TableCell>
-                        {eventHoursData[tutor.id]
-                          ? eventHoursData[tutor.id]["Sub Hotline"] || ""
-                          : ""}
-                      </TableCell>
-
-                      <TableCell>
-                        {/* {calculateExtraHours(tutor.id).toFixed(2)}
-                         */}
-                        {eventHoursData[tutor.id] ? eventHoursData[tutor.id]["Other"] || "" : ""}
-                      </TableCell>
-                      <TableCell>{monthlyHours[tutor.id] || ""}</TableCell>
-                      <TableCell>{allTimeHours[tutor.id] || ""}</TableCell>
+                      {weeksInMonth.map((week) => (
+                        <TableHead key={week.toISOString()}>
+                          {format(week, "MMM d")} - {format(addDays(week, 6), "MMM d")}
+                        </TableHead>
+                      ))}
+                      <TableHead>Biweekly Meetings</TableHead>
+                      <TableHead>Tutor Referral</TableHead>
+                      <TableHead>Sub Hotline</TableHead>
+                      <TableHead>Other</TableHead>
+                      <TableHead>This Month</TableHead>
+                      <TableHead>All Time</TableHead>
                     </>
                   )}
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody>
+                {allTimeView ? (
+                  ""
+                ) : (
+                  <TableRow key={"total hours"}>
+                    <TableCell>Total</TableCell>
+                    {weeksInMonth.map((week) => {
+                      const hours = totalSessionHours[week.getTime().toString()]
+                        ? totalSessionHours[week.getTime().toString()] || ""
+                        : "";
+
+                      return <TableCell key={week.toString()}>{hours}</TableCell>;
+                    })}
+                    <TableCell>{totalEventHours["Biweekly Meeting"]}</TableCell>
+                    <TableCell>{totalEventHours["Tutor Referral"]}</TableCell>
+                    <TableCell>{totalEventHours["Sub Hotline"]}</TableCell>
+                    <TableCell>{totalEventHours["Other"]}</TableCell>
+                    <TableCell>{totalMonthlyHours}</TableCell>
+                    <TableCell>{totalHours}</TableCell>
+                  </TableRow>
+                )}
+                {filteredTutors.map((tutor) => (
+                  <TableRow key={tutor.id}>
+                    <TableCell className="sticky left-0 z-10 bg-white">
+                      {tutor.firstName} {tutor.lastName}
+                    </TableCell>
+                    {allTimeView ? (
+                      <>
+                        {" "}
+                        <TableCell>{allTimeSessionHours[tutor.id] || ""}</TableCell>
+                        <TableCell>
+                          {eventHoursData[tutor.id]
+                            ? eventHoursData[tutor.id]["Biweekly Meeting"] || ""
+                            : ""}
+                        </TableCell>
+                        <TableCell>
+                          {eventHoursData[tutor.id]
+                            ? eventHoursData[tutor.id]["Tutor Referral"] || ""
+                            : ""}
+                        </TableCell>
+                        <TableCell>
+                          {eventHoursData[tutor.id]
+                            ? eventHoursData[tutor.id]["Sub Hotline"] || ""
+                            : ""}
+                        </TableCell>
+                        <TableCell>
+                          {/* {calculateExtraHours(tutor.id).toFixed(2)}
+                           */}
+                          {eventHoursData[tutor.id] ? eventHoursData[tutor.id]["Other"] || "" : ""}
+                        </TableCell>
+                        <TableCell>{allTimeHours[tutor.id] || ""}</TableCell>
+                      </>
+                    ) : (
+                      <>
+                        {weeksInMonth.map((week) => {
+                          const hours = weeklySessionHours[tutor.id]
+                            ? weeklySessionHours[tutor.id][week.getTime().toString()] || ""
+                            : "";
+
+                          return <TableCell key={week.toString()}>{hours}</TableCell>;
+                        })}
+                        <TableCell>
+                          {eventHoursData[tutor.id]
+                            ? eventHoursData[tutor.id]["Biweekly Meetings"]
+                            : ""}
+                        </TableCell>
+                        <TableCell>
+                          {eventHoursData[tutor.id]
+                            ? eventHoursData[tutor.id]["Tutor Referral"] || ""
+                            : ""}
+                        </TableCell>
+                        <TableCell>
+                          {eventHoursData[tutor.id]
+                            ? eventHoursData[tutor.id]["Sub Hotline"] || ""
+                            : ""}
+                        </TableCell>
+
+                        <TableCell>
+                          {/* {calculateExtraHours(tutor.id).toFixed(2)}
+                           */}
+                          {eventHoursData[tutor.id] ? eventHoursData[tutor.id]["Other"] || "" : ""}
+                        </TableCell>
+                        <TableCell>{monthlyHours[tutor.id] || ""}</TableCell>
+                        <TableCell>{allTimeHours[tutor.id] || ""}</TableCell>
+                      </>
+                    )}
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
           </div>
 
           <div className="md:hidden space-y-4">
