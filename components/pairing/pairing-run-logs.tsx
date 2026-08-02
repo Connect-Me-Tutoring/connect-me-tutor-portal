@@ -22,6 +22,7 @@ import { normalizePairingWorkflowPreviewPayload } from "@/lib/pairing/normalizeP
 import { to12Hour } from "@/lib/utils";
 import { Waypoints } from "lucide-react";
 import { PairingCommitteeGraphDialog } from "./pairing-committee-graph";
+import { MobileCard } from "@/components/ui/mobile-card";
 
 type StoredPairingRun = {
   runId: string;
@@ -383,7 +384,7 @@ export function PairingRunLogsPage() {
             </div>
           </CardHeader>
           <CardContent>
-            <div className="rounded-md border overflow-x-auto">
+            <div className="hidden md:block rounded-md border overflow-x-auto">
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -458,6 +459,70 @@ export function PairingRunLogsPage() {
                 </TableBody>
               </Table>
             </div>
+
+            <div className="md:hidden space-y-4">
+              {visiblePreviews.length === 0 ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  No proposed matches in this filter.
+                </div>
+              ) : (
+                visiblePreviews.map((p) => {
+                  const key = previewKey(p);
+                  const checked = selectedKeys.has(key);
+                  return (
+                    <MobileCard key={key}>
+                      <div className="flex items-start gap-3">
+                        <Checkbox
+                          checked={checked}
+                          onCheckedChange={(v) => toggleKey(key, v === true)}
+                          aria-label={`Select match ${p.student_name} / ${p.tutor_name}`}
+                        />
+                        <div className="text-sm">
+                          <div className="font-medium">{p.student_name}</div>
+                          <div className="text-muted-foreground">with {p.tutor_name}</div>
+                        </div>
+                      </div>
+                      <div className="text-sm">
+                        Similarity:{" "}
+                        {typeof p.similarity === "number" ? p.similarity.toFixed(2) : "—"}
+                      </div>
+                      <div className="text-sm">
+                        <div className="font-medium mb-1">Subject overlap</div>
+                        <div className="flex flex-wrap gap-1">
+                          {p.overlapping_subjects.length === 0 ? (
+                            <span className="text-xs text-muted-foreground">None</span>
+                          ) : (
+                            p.overlapping_subjects.map((s) => (
+                              <Badge key={s} variant="secondary" className="text-xs">
+                                {s}
+                              </Badge>
+                            ))
+                          )}
+                        </div>
+                      </div>
+                      <div className="text-sm">
+                        <div className="font-medium mb-1">Time overlap</div>
+                        <div className="flex flex-col gap-1">
+                          {p.overlapping_slots.length === 0 ? (
+                            <span className="text-xs text-muted-foreground">None</span>
+                          ) : (
+                            p.overlapping_slots.map((slot, i) => (
+                              <Badge
+                                key={`${slot.day}-${slot.startTime}-${i}`}
+                                variant="outline"
+                                className="text-xs w-fit"
+                              >
+                                {slot.day}: {to12Hour(slot.startTime)} – {to12Hour(slot.endTime)}
+                              </Badge>
+                            ))
+                          )}
+                        </div>
+                      </div>
+                    </MobileCard>
+                  );
+                })
+              )}
+            </div>
           </CardContent>
         </Card>
       )}
@@ -467,7 +532,7 @@ export function PairingRunLogsPage() {
           <CardTitle>Logs for this run only ({run.preview.logs.length})</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="rounded-md border">
+          <div className="hidden md:block rounded-md border">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -500,6 +565,27 @@ export function PairingRunLogsPage() {
                 )}
               </TableBody>
             </Table>
+          </div>
+
+          <div className="md:hidden space-y-4">
+            {run.preview.logs.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">
+                No logs captured in this run.
+              </div>
+            ) : (
+              run.preview.logs.map((log, index) => (
+                <MobileCard key={`${log.type}-${index}`}>
+                  <div className="flex justify-between items-start gap-2">
+                    <div className="text-sm font-mono text-muted-foreground">Step {index + 1}</div>
+                    <Badge variant={log.error ? "destructive" : "outline"}>
+                      {log.error ? "error" : "ok"}
+                    </Badge>
+                  </div>
+                  <div className="text-sm">{log.type}</div>
+                  <div className="text-sm">{log.message}</div>
+                </MobileCard>
+              ))
+            )}
           </div>
         </CardContent>
       </Card>

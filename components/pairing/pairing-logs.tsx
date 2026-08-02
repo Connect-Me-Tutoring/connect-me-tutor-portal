@@ -37,6 +37,7 @@ import {
 } from "@/lib/pairing/mapDisplayLogs";
 import { to12Hour } from "@/lib/utils";
 import { PairingCommitteeGraphDialog } from "./pairing-committee-graph";
+import { MobileCard } from "@/components/ui/mobile-card";
 
 type StoredPairingRun = {
   runId: string;
@@ -526,7 +527,7 @@ export function PairingLogsTable() {
             </div>
           </CardHeader>
           <CardContent>
-            <div className="rounded-md border overflow-x-auto">
+            <div className="hidden md:block rounded-md border overflow-x-auto">
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -587,6 +588,60 @@ export function PairingLogsTable() {
                   })}
                 </TableBody>
               </Table>
+            </div>
+
+            <div className="md:hidden space-y-4">
+              {previewRun.preview.matchPreviews.map((p) => {
+                const key = previewKey(p);
+                return (
+                  <MobileCard key={key}>
+                    <div className="flex items-start gap-3">
+                      <Checkbox
+                        checked={selectedKeys.has(key)}
+                        disabled={Boolean(previewRun.appliedAt)}
+                        onCheckedChange={(v) => togglePreviewKey(key, v === true)}
+                        aria-label={`Select ${p.student_name}`}
+                      />
+                      <div className="text-sm">
+                        <div className="font-medium">{p.student_name}</div>
+                        <div className="text-muted-foreground">with {p.tutor_name}</div>
+                      </div>
+                    </div>
+                    <div className="text-sm">
+                      <div className="font-medium mb-1">Subjects</div>
+                      <div className="flex flex-wrap gap-1">
+                        {p.overlapping_subjects.length === 0 ? (
+                          <span className="text-xs text-muted-foreground">None</span>
+                        ) : (
+                          p.overlapping_subjects.map((s) => (
+                            <Badge key={s} variant="secondary" className="text-xs">
+                              {s}
+                            </Badge>
+                          ))
+                        )}
+                      </div>
+                    </div>
+                    <div className="text-sm">
+                      <div className="font-medium mb-1">Times</div>
+                      <div className="flex flex-col gap-1">
+                        {p.overlapping_slots.length === 0 ? (
+                          <span className="text-xs text-muted-foreground">None</span>
+                        ) : (
+                          p.overlapping_slots.map((slot, i) => (
+                            <Badge
+                              key={`${slot.day}-${slot.startTime}-${i}`}
+                              variant="outline"
+                              className="text-xs w-fit"
+                            >
+                              {slot.day}: {to12Hour(slot.startTime)} – {to12Hour(slot.endTime)}
+                            </Badge>
+                          ))
+                        )}
+                      </div>
+                    </div>
+                  </MobileCard>
+                );
+              })}
             </div>
           </CardContent>
         </Card>
@@ -747,7 +802,7 @@ export function PairingLogsTable() {
               <CardTitle>{`Pairing Activity Logs (${filteredLogs.length} events)`}</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="rounded-md border">
+              <div className="hidden md:block rounded-md border">
                 <Table>
                   <TableHeader>
                     <TableRow>
@@ -811,6 +866,47 @@ export function PairingLogsTable() {
                     )}
                   </TableBody>
                 </Table>
+              </div>
+
+              <div className="md:hidden space-y-4">
+                {loading ? (
+                  <div className="text-center py-8">
+                    <div className="animate-spin h-6 w-6 border-2 border-primary border-t-transparent rounded-full mx-auto mb-2"></div>
+                    Loading...
+                  </div>
+                ) : filteredLogs.length === 0 ? (
+                  <div className="text-center py-8 text-muted-foreground">
+                    {logs.length === 0
+                      ? "No pairing logs found"
+                      : "No logs match the current filters"}
+                  </div>
+                ) : (
+                  filteredLogs.map((log) => (
+                    <MobileCard key={log.id}>
+                      <div className="flex justify-between items-start gap-2">
+                        <div className="flex items-center gap-2 text-sm">
+                          {getTypeIcon(log.type)}
+                          <span className="capitalize">{log.type.replace(/-/g, " ")}</span>
+                        </div>
+                        <Badge className={getStatusColor(log.status)}>{log.status}</Badge>
+                      </div>
+                      <div className="text-sm font-mono text-muted-foreground">
+                        {log.created_at ? new Date(log.created_at).toLocaleString() : "-"}
+                      </div>
+                      {log.profile && (
+                        <div className="text-sm">
+                          <span className="font-medium">
+                            {log.profile.firstName} {log.profile.lastName}
+                          </span>{" "}
+                          <Badge variant="outline" className="text-xs">
+                            {log.profile.role}
+                          </Badge>
+                        </div>
+                      )}
+                      <div className="text-sm">{log.message}</div>
+                    </MobileCard>
+                  ))
+                )}
               </div>
             </CardContent>
           </Card>

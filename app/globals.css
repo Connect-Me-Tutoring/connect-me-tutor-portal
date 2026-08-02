@@ -87,4 +87,10 @@
   body {
     @apply bg-background text-foreground;
   }
+
+  @media (max-width: 767px) {
+    html {
+      font-size: calc(16px * var(--app-scale-factor));
+    }
+  }
 }
