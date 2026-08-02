@@ -15,14 +15,6 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import AvailabilityFormat from "@/components/student/AvailabilityFormat";
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import {
   Select,
   SelectContent,
   SelectItem,
@@ -37,6 +29,7 @@ import DeletePairingForm from "./components/DeletePairingForm";
 import { useProfile } from "@/lib/contexts/profileContext";
 import { LoadMoreButton } from "@/components/ui/load-more-button";
 import { useLoadMore } from "@/hooks/useLoadMore";
+import { ResponsiveList, ResponsiveListColumn } from "@/components/ui/responsive-list";
 
 const StudentList = ({ initialStudents }: any) => {
   const supabase = createClient();
@@ -86,6 +79,78 @@ const StudentList = ({ initialStudents }: any) => {
     loadMore: loadMoreStudents,
   } = useLoadMore(filteredStudents);
 
+  const columns: ResponsiveListColumn<Profile>[] = [
+    {
+      key: "startDate",
+      header: "Start Date",
+      cell: (student) => student.startDate,
+      mobileLabel: "Start Date",
+      mobileClassName: "text-sm text-muted-foreground",
+    },
+    {
+      key: "name",
+      header: "Student Name",
+      cell: (student) => `${student.firstName} ${student.lastName}`,
+      mobileCell: null,
+    },
+    {
+      key: "availability",
+      header: "Availability",
+      cell: (student) => <UserAvailabilities user={student} />,
+    },
+    {
+      key: "subjects",
+      header: "Subjects",
+      cell: (student) => (
+        <div className="flex flex-col">
+          {student.subjects_of_interest?.map((subject, i) => (
+            <span key={i}>{subject}</span>
+          ))}
+        </div>
+      ),
+      mobileCell: (student) =>
+        student.subjects_of_interest?.length > 0 && (
+          <>
+            <div className="font-medium">Subjects:</div>
+            <div className="flex flex-wrap gap-2 mt-1">
+              {student.subjects_of_interest.map((subject, i) => (
+                <span key={i} className="px-2 py-1 text-xs bg-muted rounded-md">
+                  {subject}
+                </span>
+              ))}
+            </div>
+          </>
+        ),
+    },
+    {
+      key: "email",
+      header: "Student Email",
+      cell: (student) => student.email,
+      mobileLabel: "Email",
+      mobileGroup: "contact",
+    },
+    {
+      key: "parentEmail",
+      header: "Parent Email",
+      cell: (student) => student.parentEmail,
+      mobileLabel: "Parent Email",
+      mobileGroup: "contact",
+    },
+    {
+      key: "parentPhone",
+      header: "Parent Phone",
+      cell: (student) => student.parentPhone,
+      mobileLabel: "Parent Phone",
+      mobileGroup: "contact",
+    },
+    {
+      key: "actions",
+      header: "Actions",
+      cell: (student) => <DeletePairingForm student={student} tutor={profile} />,
+      mobileCell: null,
+    },
+  ];
+
   return (
     <div className="w-full space-y-4">
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
@@ -98,84 +163,17 @@ const StudentList = ({ initialStudents }: any) => {
         />
       </div>
 
-      <div className="hidden md:block w-full">
-        <div className="w-full overflow-x-auto rounded-lg border">
-          <Table className="min-w-[1100px]">
-            <TableHeader>
-              <TableRow>
-                <TableHead>Start Date</TableHead>
-                <TableHead>Student Name</TableHead>
-                <TableHead>Availability</TableHead>
-                <TableHead>Subjects</TableHead>
-                <TableHead>Student Email</TableHead>
-                <TableHead>Parent Email</TableHead>
-                <TableHead>Parent Phone</TableHead>
-                <TableHead>Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {paginatedStudents.map((student, index) => (
-                <TableRow key={index}>
-                  <TableCell>{student.startDate}</TableCell>
-                  <TableCell>
-                    {student.firstName} {student.lastName}
-                  </TableCell>
-                  <TableCell>
-                    <UserAvailabilities user={student} />
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex flex-col">
-                      {student.subjects_of_interest?.map((subject, i) => (
-                        <span key={i}>{subject}</span>
-                      ))}
-                    </div>
-                  </TableCell>
-                  <TableCell>{student.email}</TableCell>
-                  <TableCell>{student.parentEmail}</TableCell>
-                  <TableCell>{student.parentPhone}</TableCell>
-                  <TableCell>
-                    <DeletePairingForm student={student} tutor={profile} />
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
-      </div>
-      <div className="md:hidden space-y-4">
-        {visibleStudents.map((student, index) => (
-          <div key={index} className="bg-white rounded-xl shadow p-4 space-y-3 border">
-            <div className="flex justify-between items-start">
-              <div className="font-semibold text-base">
-                {student.firstName} {student.lastName}
-              </div>
-              <DeletePairingForm student={student} tutor={profile} />
-            </div>
-            <div className="text-sm text-muted-foreground">Start Date: {student.startDate}</div>
-            <div>
-              <UserAvailabilities user={student} />
-            </div>
-            <div className="text-sm">
-              <div>Email: {student.email}</div>
-              <div>Parent Email: {student.parentEmail}</div>
-              <div>Parent Phone: {student.parentPhone}</div>
-            </div>
-            {student.subjects_of_interest?.length > 0 && (
-              <div className="text-sm">
-                <div className="font-medium">Subjects:</div>
-                <div className="flex flex-wrap gap-2 mt-1">
-                  {student.subjects_of_interest.map((subject, i) => (
-                    <span key={i} className="px-2 py-1 text-xs bg-muted rounded-md">
-                      {subject}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-        ))}
-        <LoadMoreButton hasMore={hasMoreStudents} onClick={loadMoreStudents} />
-      </div>
+      <ResponsiveList
+        columns={columns}
+        rows={paginatedStudents}
+        mobileRows={visibleStudents}
+        rowKey={(student, index) => index}
+        tableClassName="min-w-[1100px]"
+        desktopWrapperClassName="overflow-x-auto rounded-lg border"
+        mobileTitle={(student) => `${student.firstName} ${student.lastName}`}
+        mobileAction={(student) => <DeletePairingForm student={student} tutor={profile} />}
+        mobileFooter={<LoadMoreButton hasMore={hasMoreStudents} onClick={loadMoreStudents} />}
+      />
       <div className="hidden md:flex justify-between mt-4">
         <span>{filteredStudents.length} row(s) total.</span>
 

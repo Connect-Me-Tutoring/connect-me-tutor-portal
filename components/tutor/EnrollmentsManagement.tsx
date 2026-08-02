@@ -16,14 +16,6 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import {
   Select,
   SelectContent,
   SelectItem,
@@ -52,6 +44,7 @@ import EnrollmentFormDialog from "@/components/shared/enrollment/EnrollmentFormD
 import DeleteEnrollmentDialog from "@/components/shared/enrollment/DeleteEnrollmentDialog";
 import { LoadMoreButton } from "@/components/ui/load-more-button";
 import { useLoadMore } from "@/hooks/useLoadMore";
+import { ResponsiveList, ResponsiveListColumn } from "@/components/ui/responsive-list";
 // import Availability from "@/components/student/AvailabilityFormat";
 
 const DAYS_OF_WEEK = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
@@ -424,6 +417,166 @@ const EnrollmentList = ({
       .catch(() => toast.error("Failed to copy link"));
   };
 
+  const renderCopyLinkButton = (enrollment: Enrollment, mobile?: boolean) => (
+    <button
+      type="button"
+      onClick={() => handleCopyMeetingLink(enrollment.meetingId)}
+      className={
+        mobile
+          ? "relative inline-flex items-center group cursor-pointer px-3 py-1 text-sm border border-gray-300 rounded-md hover:bg-gray-50"
+          : "relative inline-flex items-center group cursor-pointer"
+      }
+    >
+      <span className="underline text-black transition-opacity duration-150 group-hover:opacity-0">
+        Copy Link
+      </span>
+      <Copy
+        className="
+          absolute
+          left-1/2 -translate-x-1/2
+          w-4 h-4
+          text-gray-700
+          opacity-0
+          transition-opacity duration-150
+          group-hover:opacity-100
+          pointer-events-none
+        "
+      />
+    </button>
+  );
+
+  const columns: ResponsiveListColumn<Enrollment>[] = [
+    {
+      key: "student",
+      header: "Student",
+      cell: (enrollment) => `${enrollment.student?.firstName} ${enrollment.student?.lastName}`,
+      cellClassName: "whitespace-nowrap",
+      mobileCell: null,
+    },
+    {
+      key: "tutor",
+      header: "Tutor",
+      cell: (enrollment) => `${enrollment.tutor?.firstName} ${enrollment.tutor?.lastName}`,
+      cellClassName: "whitespace-nowrap",
+      mobileCell: null,
+    },
+    {
+      key: "availability",
+      header: "Availability",
+      cell: (enrollment) => (
+        <AvailabilityFormat availability={getEnrollmentAvailability(enrollment)} card={false} />
+      ),
+      cellClassName: "min-w-[180px]",
+      mobileCell: (enrollment) => (
+        <AvailabilityFormat availability={getEnrollmentAvailability(enrollment)} card />
+      ),
+    },
+    {
+      key: "summary",
+      header: "Summary",
+      cell: () => null,
+      showInTable: false,
+      mobileLabel: "Summary",
+    },
+    {
+      key: "startDate",
+      header: "Start Date",
+      cell: (enrollment) =>
+        formatDateUTC(enrollment.startDate, { includeTime: false, includeDate: true }),
+      cellClassName: "whitespace-nowrap",
+      mobileLabel: "Start Date",
+    },
+    {
+      key: "status",
+      header: "Status",
+      cell: (enrollment) => (enrollment.paused ? "Paused" : "Ongoing"),
+      cellClassName: "whitespace-nowrap",
+      mobileLabel: "Status",
+    },
+    {
+      key: "meetingLink",
+      header: "Meeting Link",
+      cell: (enrollment) => renderCopyLinkButton(enrollment),
+      cellClassName: "whitespace-nowrap",
+      mobileCell: null,
+    },
+    {
+      key: "actions",
+      header: "Actions",
+      cell: (enrollment) => (
+        <div className="flex gap-2">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => {
+              setSelectedEnrollment(enrollment);
+              setSelectedStudentId(enrollment.student?.id ?? "");
+              setSelectedTutorId(enrollment.tutor?.id ?? profile.id);
+              setIsEditModalOpen(true);
+            }}
+          >
+            <Edit className="h-4 w-4" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => {
+              setSelectedEnrollment(enrollment);
+              setIsDeleteModalOpen(true);
+            }}
+          >
+            <Trash className="h-4 w-4" />
+          </Button>
+        </div>
+      ),
+      mobileCell: null,
+    },
+    {
+      key: "chat",
+      header: "Chat",
+      cell: (enrollment) => (
+        <Button
+          variant="outline"
+          onClick={() => router.push(`/dashboard/enrollment/${enrollment.id}/chat`)}
+        >
+          Chat
+        </Button>
+      ),
+      mobileCell: null,
+    },
+  ];
+
+  const renderMobileEnrollmentFooter = (enrollment: Enrollment) => (
+    <div className="flex gap-2 flex-wrap">
+      {renderCopyLinkButton(enrollment, true)}
+      <Button
+        size="sm"
+        variant="outline"
+        onClick={() => {
+          setSelectedEnrollment(enrollment);
+          setSelectedStudentId(enrollment.student?.id ?? "");
+          setSelectedTutorId(enrollment.tutor?.id ?? profile.id);
+          setIsEditModalOpen(true);
+        }}
+      >
+        Edit
+      </Button>
+      <Button
+        size="sm"
+        variant="destructive"
+        onClick={() => {
+          setSelectedEnrollment(enrollment);
+          setIsDeleteModalOpen(true);
+        }}
+      >
+        Delete
+      </Button>
+      <Button size="sm" onClick={() => router.push(`/dashboard/enrollment/${enrollment.id}/chat`)}>
+        Chat
+      </Button>
+    </div>
+  );
+
   return (
     <>
       <div className="flex space-x-6">
@@ -520,211 +673,22 @@ const EnrollmentList = ({
             </div>
           </div>
 
-          {/* table made for desktop viewers above md wide*/}
-          <div className="hidden md:block w-full">
-            <div className="w-full overflow-x-auto rounded-lg border">
-              <Table className="min-w-[1100px]">
-                <TableHeader>
-                  <TableRow>
-                    {[
-                      "Student",
-                      "Tutor",
-                      "Availability",
-                      "Start Date",
-                      "Meeting Link",
-                      "Actions",
-                      "Status",
-                      "Chat",
-                    ].map((header) => (
-                      <TableHead key={header} className="whitespace-nowrap">
-                        {header}
-                      </TableHead>
-                    ))}
-                  </TableRow>
-                </TableHeader>
-
-                <TableBody>
-                  {paginatedEnrollments.map((enrollment) => (
-                    <TableRow key={enrollment.id}>
-                      <TableCell className="whitespace-nowrap">
-                        {enrollment.student?.firstName} {enrollment.student?.lastName}
-                      </TableCell>
-
-                      <TableCell className="whitespace-nowrap">
-                        {enrollment.tutor?.firstName} {enrollment.tutor?.lastName}
-                      </TableCell>
-
-                      <TableCell className="min-w-[180px]">
-                        <AvailabilityFormat
-                          availability={getEnrollmentAvailability(enrollment)}
-                          card={false}
-                        />
-                      </TableCell>
-
-                      <TableCell className="whitespace-nowrap">
-                        {formatDateUTC(enrollment.startDate, {
-                          includeTime: false,
-                          includeDate: true,
-                        })}
-                      </TableCell>
-
-                      <TableCell className="whitespace-nowrap">
-                        <button
-                          type="button"
-                          onClick={() => handleCopyMeetingLink(enrollment.meetingId)}
-                          className="relative inline-flex items-center group cursor-pointer"
-                        >
-                          <span className="underline text-black transition-opacity duration-150 group-hover:opacity-0">
-                            Copy Link
-                          </span>
-
-                          <Copy
-                            className="
-                              absolute
-                              left-1/2 -translate-x-1/2
-                              w-4 h-4
-                              text-gray-700
-                              opacity-0
-                              transition-opacity duration-150
-                              group-hover:opacity-100
-                              pointer-events-none
-                            "
-                          />
-                        </button>
-                      </TableCell>
-
-                      <TableCell className="whitespace-nowrap">
-                        <div className="flex gap-2">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => {
-                              setSelectedEnrollment(enrollment);
-                              setSelectedStudentId(enrollment.student?.id ?? "");
-                              setSelectedTutorId(enrollment.tutor?.id ?? profile.id);
-                              setIsEditModalOpen(true);
-                            }}
-                          >
-                            <Edit className="h-4 w-4" />
-                          </Button>
-
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => {
-                              setSelectedEnrollment(enrollment);
-                              setIsDeleteModalOpen(true);
-                            }}
-                          >
-                            <Trash className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </TableCell>
-
-                      <TableCell className="whitespace-nowrap">
-                        {enrollment.paused ? "Paused" : "Ongoing"}
-                      </TableCell>
-
-                      <TableCell className="whitespace-nowrap">
-                        <Button
-                          variant="outline"
-                          onClick={() => router.push(`/dashboard/enrollment/${enrollment.id}/chat`)}
-                        >
-                          Chat
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          </div>
-
-          {/* mobile cards for those screens that are smaller than md wide*/}
-          <div className="md:hidden space-y-4">
-            {visibleEnrollments.map((enrollment) => (
-              <div key={enrollment.id} className="bg-white rounded-xl shadow p-4 space-y-3 border">
-                <div className="font-semibold text-lg">
-                  {enrollment.student?.firstName} {enrollment.student?.lastName}
-                </div>
-
-                <div className="text-sm text-gray-500">
-                  Tutor: {enrollment.tutor?.firstName} {enrollment.tutor?.lastName}
-                </div>
-
-                <AvailabilityFormat availability={getEnrollmentAvailability(enrollment)} card />
-
-                <div className="text-sm">Summary: {enrollment.summary}</div>
-
-                <div className="text-sm">
-                  Start Date:{" "}
-                  {formatDateUTC(enrollment.startDate, {
-                    includeTime: false,
-                    includeDate: true,
-                  })}
-                </div>
-
-                <div className="text-sm">Status: {enrollment.paused ? "Paused" : "Ongoing"}</div>
-
-                <div className="flex gap-2 flex-wrap">
-                  <button
-                    type="button"
-                    onClick={() => handleCopyMeetingLink(enrollment.meetingId)}
-                    className="relative inline-flex items-center group cursor-pointer px-3 py-1 text-sm border border-gray-300 rounded-md hover:bg-gray-50"
-                  >
-                    <span className="underline text-black transition-opacity duration-150 group-hover:opacity-0">
-                      Copy Link
-                    </span>
-
-                    <Copy
-                      className="
-                        absolute
-                        left-1/2 -translate-x-1/2
-                        w-4 h-4
-                        text-gray-700
-                        opacity-0
-                        transition-opacity duration-150
-                        group-hover:opacity-100
-                        pointer-events-none
-                      "
-                    />
-                  </button>
-
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => {
-                      setSelectedEnrollment(enrollment);
-                      setSelectedStudentId(enrollment.student?.id ?? "");
-                      setSelectedTutorId(enrollment.tutor?.id ?? profile.id);
-                      setIsEditModalOpen(true);
-                    }}
-                  >
-                    Edit
-                  </Button>
-
-                  <Button
-                    size="sm"
-                    variant="destructive"
-                    onClick={() => {
-                      setSelectedEnrollment(enrollment);
-                      setIsDeleteModalOpen(true);
-                    }}
-                  >
-                    Delete
-                  </Button>
-
-                  <Button
-                    size="sm"
-                    onClick={() => router.push(`/dashboard/enrollment/${enrollment.id}/chat`)}
-                  >
-                    Chat
-                  </Button>
-                </div>
-              </div>
-            ))}
-            <LoadMoreButton hasMore={hasMoreEnrollments} onClick={loadMoreEnrollments} />
-          </div>
+          <ResponsiveList
+            columns={columns}
+            rows={paginatedEnrollments}
+            mobileRows={visibleEnrollments}
+            rowKey={(enrollment) => enrollment.id}
+            tableClassName="min-w-[1100px]"
+            desktopWrapperClassName="overflow-x-auto rounded-lg border"
+            mobileTitle={(enrollment) =>
+              `${enrollment.student?.firstName} ${enrollment.student?.lastName}`
+            }
+            mobileSubtitle={(enrollment) =>
+              `Tutor: ${enrollment.tutor?.firstName} ${enrollment.tutor?.lastName}`
+            }
+            mobileCardFooter={(enrollment) => renderMobileEnrollmentFooter(enrollment)}
+            mobileFooter={<LoadMoreButton hasMore={hasMoreEnrollments} onClick={loadMoreEnrollments} />}
+          />
 
           {/* Pagination */}
           <div className="hidden md:flex justify-between mt-4">

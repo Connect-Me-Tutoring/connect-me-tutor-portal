@@ -29,14 +29,6 @@ import AvailabilityFormat from "@/components/student/AvailabilityFormat";
 import { Combobox } from "@/components/ui/combobox";
 import { ScrollArea } from "@/components/ui/scrollarea";
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import {
   Select,
   SelectContent,
   SelectItem,
@@ -65,9 +57,9 @@ import {
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { MobileCard } from "@/components/ui/mobile-card";
 import { LoadMoreButton } from "@/components/ui/load-more-button";
 import { useLoadMore } from "@/hooks/useLoadMore";
+import { ResponsiveList, ResponsiveListColumn } from "@/components/ui/responsive-list";
 import toast, { Toaster } from "react-hot-toast";
 import { set } from "date-fns";
 import { AlertDialogCancel } from "@radix-ui/react-alert-dialog";
@@ -509,6 +501,128 @@ const StudentList = ({ initialStudents }: any) =>
       link.remove();
     };
 
+    const renderResendEmailAction = (student: Profile) => (
+      <AlertDialog>
+        <AlertDialogTrigger asChild>
+          <Button variant="ghost" size="icon">
+            <RefreshCcw className="h-4 w-4" />
+          </Button>
+        </AlertDialogTrigger>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Resend Email Confirmation for {student.firstName}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {" "}
+              Note: Will not resend confirmation email if the user has already signed in before
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() =>
+                resendEmailConfirmation(student.email)
+                  .then(() => toast.success("Resent Email Confirmation"))
+                  .catch(() => toast.error("Failed to resend email"))
+              }
+            >
+              Resend
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    );
+
+    const columns: ResponsiveListColumn<Profile>[] = [
+      {
+        key: "studentNumber",
+        header: "Student #",
+        cell: (student) => student.studentNumber,
+        mobileCell: null,
+      },
+      {
+        key: "status",
+        header: "Status",
+        cell: (student) => student.status,
+        mobileCell: null,
+      },
+      {
+        key: "startDate",
+        header: "Start Date",
+        cell: (student) => student.startDate,
+        mobileLabel: "Start Date",
+        mobileClassName: "text-sm text-muted-foreground",
+      },
+      {
+        key: "name",
+        header: "Student Name",
+        cell: (student) => `${student.firstName} ${student.lastName}`,
+        mobileCell: null,
+      },
+      {
+        key: "grade",
+        header: "Grade Level",
+        cell: (student) => student.grade,
+        mobileLabel: "Grade Level",
+      },
+      {
+        key: "availability",
+        header: "Availability",
+        cell: (student) => <UserAvailabilities user={student} />,
+      },
+      {
+        key: "subjects",
+        header: "Subjects Learning",
+        cell: (student) => (
+          <>
+            {student.subjects_of_interest?.map((item, i) => (
+              <span key={i}>{item}</span>
+            ))}
+          </>
+        ),
+        cellClassName: "flex flex-col",
+        mobileCell: (student) =>
+          student.subjects_of_interest?.length > 0 && (
+            <>
+              <div className="font-medium">Subjects Learning:</div>
+              <div className="flex flex-wrap gap-2 mt-1">
+                {student.subjects_of_interest.map((subject, i) => (
+                  <span key={i} className="px-2 py-1 text-xs bg-muted rounded-md">
+                    {subject}
+                  </span>
+                ))}
+              </div>
+            </>
+          ),
+      },
+      {
+        key: "email",
+        header: "Email",
+        cell: (student) => student.email,
+        mobileLabel: "Email",
+        mobileGroup: "contact",
+      },
+      {
+        key: "parentEmail",
+        header: "Parent Email",
+        cell: (student) => student.parentEmail || "",
+        mobileLabel: "Parent Email",
+        mobileGroup: "contact",
+      },
+      {
+        key: "parentPhone",
+        header: "Parent Phone",
+        cell: (student) => student.parentPhone,
+        mobileLabel: "Parent Phone",
+        mobileGroup: "contact",
+      },
+      {
+        key: "actions",
+        header: "Actions",
+        cell: (student) => renderResendEmailAction(student),
+        mobileCell: null,
+      },
+    ];
+
     return (
       <>
         <div className="flex justify-between items-center mb-4">
@@ -560,81 +674,20 @@ const StudentList = ({ initialStudents }: any) =>
           </div>
         </div>
 
-        <div className="hidden md:block w-full">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Student #</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>Start Date</TableHead>
-              <TableHead>Student Name</TableHead>
-              <TableHead>Grade Level</TableHead>
-              <TableHead>Availability</TableHead>
-              <TableHead>Subjects Learning</TableHead>
-              <TableHead>Email</TableHead>
-              <TableHead>Parent Email</TableHead>
-              <TableHead>Parent Phone</TableHead>
-              <TableHead>Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {paginatedStudents.map((student, index) => (
-              <TableRow key={index}>
-                <TableCell>{student.studentNumber}</TableCell>
-                <TableCell>{student.status}</TableCell>
-                <TableCell>{student.startDate}</TableCell>
-                <TableCell>
-                  {student.firstName} {student.lastName}
-                </TableCell>
-                <TableCell>{student.grade}</TableCell>
-                <TableCell>
-                  <UserAvailabilities user={student} />
-                </TableCell>
-                <TableCell className="flex flex-col">
-                  {student.subjects_of_interest?.map((item, index) => (
-                    <span key={index}>{item}</span>
-                  ))}
-                </TableCell>
-                <TableCell>{student.email}</TableCell>
-                <TableCell>{student.parentEmail || ""}</TableCell>
-                <TableCell>{student.parentPhone}</TableCell>
-                <TableCell>
-                  <AlertDialog>
-                    <AlertDialogTrigger asChild>
-                      <Button variant="ghost" size="icon">
-                        <RefreshCcw className="h-4 w-4" />
-                      </Button>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent>
-                      <AlertDialogHeader>
-                        <AlertDialogTitle>
-                          Resend Email Confirmation for {student.firstName}
-                        </AlertDialogTitle>
-                        <AlertDialogDescription>
-                          {" "}
-                          Note: Will not resend confirmation email if the user has already signed in
-                          before
-                        </AlertDialogDescription>
-                      </AlertDialogHeader>
-                      <AlertDialogFooter>
-                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                        <AlertDialogAction
-                          onClick={() =>
-                            resendEmailConfirmation(student.email)
-                              .then(() => toast.success("Resent Email Confirmation"))
-                              .catch(() => toast.error("Failed to resend email"))
-                          }
-                        >
-                          Resend
-                        </AlertDialogAction>
-                      </AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
+        <ResponsiveList
+          columns={columns}
+          rows={paginatedStudents}
+          mobileRows={visibleStudents}
+          rowKey={(student, index) => index}
+          mobileTitle={(student) => `${student.firstName} ${student.lastName}`}
+          mobileSubtitle={(student) => (
+            <>
+              #{student.studentNumber} &middot; {student.status}
+            </>
+          )}
+          mobileAction={(student) => renderResendEmailAction(student)}
+          mobileFooter={<LoadMoreButton hasMore={hasMoreStudents} onClick={loadMoreStudents} />}
+        />
 
         <div className="mt-4 hidden md:flex justify-between items-center">
           <span>{filteredStudents.length} row(s) total.</span>
@@ -688,78 +741,6 @@ const StudentList = ({ initialStudents }: any) =>
               </Button>
             </div>
           </div>
-        </div>
-        </div>
-
-        <div className="md:hidden space-y-4">
-          {visibleStudents.map((student, index) => (
-            <MobileCard key={index}>
-              <div className="flex justify-between items-start gap-2">
-                <div>
-                  <div className="font-semibold text-base">
-                    {student.firstName} {student.lastName}
-                  </div>
-                  <div className="text-sm text-muted-foreground">
-                    #{student.studentNumber} &middot; {student.status}
-                  </div>
-                </div>
-                <AlertDialog>
-                  <AlertDialogTrigger asChild>
-                    <Button variant="ghost" size="icon">
-                      <RefreshCcw className="h-4 w-4" />
-                    </Button>
-                  </AlertDialogTrigger>
-                  <AlertDialogContent>
-                    <AlertDialogHeader>
-                      <AlertDialogTitle>
-                        Resend Email Confirmation for {student.firstName}
-                      </AlertDialogTitle>
-                      <AlertDialogDescription>
-                        {" "}
-                        Note: Will not resend confirmation email if the user has already signed in
-                        before
-                      </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                      <AlertDialogCancel>Cancel</AlertDialogCancel>
-                      <AlertDialogAction
-                        onClick={() =>
-                          resendEmailConfirmation(student.email)
-                            .then(() => toast.success("Resent Email Confirmation"))
-                            .catch(() => toast.error("Failed to resend email"))
-                        }
-                      >
-                        Resend
-                      </AlertDialogAction>
-                    </AlertDialogFooter>
-                  </AlertDialogContent>
-                </AlertDialog>
-              </div>
-              <div className="text-sm text-muted-foreground">Start Date: {student.startDate}</div>
-              <div className="text-sm">Grade Level: {student.grade}</div>
-              <div>
-                <UserAvailabilities user={student} />
-              </div>
-              <div className="text-sm space-y-1">
-                <div>Email: {student.email}</div>
-                <div>Parent Email: {student.parentEmail || ""}</div>
-                <div>Parent Phone: {student.parentPhone}</div>
-              </div>
-              {student.subjects_of_interest?.length > 0 && (
-                <div className="text-sm">
-                  <div className="font-medium">Subjects Learning:</div>
-                  <div className="flex flex-wrap gap-2 mt-1">
-                    {student.subjects_of_interest.map((subject, i) => (
-                      <span key={i} className="px-2 py-1 text-xs bg-muted rounded-md">
-                        {subject}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </MobileCard>
-          ))}
-          <LoadMoreButton hasMore={hasMoreStudents} onClick={loadMoreStudents} />
         </div>
 
         <Toaster />
