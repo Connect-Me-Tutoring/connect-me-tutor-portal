@@ -21,24 +21,65 @@ const gradeFolders = new Set([
   "Algebra 1",
 ]);
 
-const isWorksheetFile = (file: FileObject) => file.name.toLowerCase().endsWith(".pdf");
+// Reading worksheets keep their grade in the file name ("Fifth_Grade - Wonder Worksheet.docx")
+// rather than in a subfolder, so map that prefix onto the same labels the grade folders use.
+const fileNameGrades: Record<string, string> = {
+  kindergarten: "Kindergarten",
+  first: "1st Grade",
+  second: "2nd Grade",
+  third: "3rd Grade",
+  fourth: "4th Grade",
+  fifth: "5th Grade",
+  sixth: "6th Grade",
+  seventh: "7th Grade",
+  eighth: "8th Grade",
+};
+
+const gradeFromFileName = (name: string) =>
+  fileNameGrades[
+    name
+      .split(" - ")[0]
+      .replace(/_grade$/i, "")
+      .trim()
+      .toLowerCase()
+  ];
+
+const isWorksheetFile = (file: FileObject) => /\.(pdf|docx?)$/i.test(file.name);
 
 const isHiddenStorageItem = (file: FileObject) => file.name === ".emptyFolderPlaceholder";
+
+const pageSize = 100;
 
 const Worksheets = async () => {
   const supabase = await createClient();
 
-  const listWorksheets = async (prefix = "", depth = 0): Promise<WorksheetResource[]> => {
-    const { data, error } = await supabase.storage.from("worksheets").list(prefix, {
-      limit: 200,
-      sortBy: { column: "name", order: "asc" },
-    });
+  // Storage caps each list call, so page through a folder until it runs out of entries.
+  const listFolder = async (prefix: string): Promise<FileObject[] | null> => {
+    const files: FileObject[] = [];
 
-    if (error) {
-      console.error("Failed to load worksheets:", error);
-      await logError(error, { prefix }, "worksheets_load_error");
-      return [];
+    for (let offset = 0; ; offset += pageSize) {
+      const { data, error } = await supabase.storage.from("worksheets").list(prefix, {
+        limit: pageSize,
+        offset,
+        sortBy: { column: "name", order: "asc" },
+      });
+
+      if (error) {
+        console.error("Failed to load worksheets:", error);
+        await logError(error, { prefix }, "worksheets_load_error");
+        return null;
+      }
+
+      files.push(...(data ?? []));
+
+      if ((data?.length ?? 0) < pageSize) return files;
     }
+  };
+
+  const listWorksheets = async (prefix = "", depth = 0): Promise<WorksheetResource[]> => {
+    const data = await listFolder(prefix);
+
+    if (!data) return [];
 
     const resources = await Promise.all(
       (data ?? [])
@@ -53,8 +94,11 @@ const Worksheets = async () => {
 
             const isGradeFirst = gradeFolders.has(firstFolder);
             const category = isGradeFirst ? "Math" : firstFolder;
-            const collection =
-              !isGradeFirst && gradeFolders.has(secondFolder) ? secondFolder : firstFolder;
+            const collection = isGradeFirst
+              ? firstFolder
+              : gradeFolders.has(secondFolder)
+                ? secondFolder
+                : (gradeFromFileName(file.name) ?? firstFolder);
 
             return Promise.resolve([
               {
