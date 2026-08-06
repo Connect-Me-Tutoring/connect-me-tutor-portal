@@ -217,6 +217,9 @@ const MeetingPage = (props: ParamsProps) => {
                 <Copy className="h-4 w-4" />
                 Copy Meeting Link
               </Button>
+              <label>
+                Sessions may be recorded
+              </label>
             </div>
           ) : (
             <div className="text-center py-8">
