@@ -1,7 +1,30 @@
-import { Availability } from "@/types";
+import { Availability, Session } from "@/types";
 import { type ClassValue, clsx } from "clsx";
 import { yearsToDays } from "date-fns";
 import { twMerge } from "tailwind-merge";
+
+
+export const getCompletedSessionsCount = (
+  sessions: Session[],
+  startDate?: string,
+  endDate?: string
+): number => {
+  if (!sessions || sessions.length === 0) return 0;
+
+  const start = startDate ? new Date(startDate).getTime() : null;
+  const end = endDate ? new Date(endDate).getTime() : null;
+
+  return sessions.filter((session) => {
+    if (session?.status !== "Complete") return false;
+
+    if (start && end && session.date) {
+      const sessionTime = new Date(session.date).getTime();
+      return sessionTime >= start && sessionTime <= end;
+    }
+
+    return true;
+  }).length;
+};
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
