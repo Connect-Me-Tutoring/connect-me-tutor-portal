@@ -613,6 +613,41 @@ export async function getSessions(start: string, end: string): Promise<Session[]
   }
 }
 
+/**
+ * Number of sessions marked "Complete" between `startDate` and `endDate` (inclusive ISO
+ * timestamps). Counts in the database with `head: true` so no rows come back over the wire.
+ *
+ * The `!inner` joins mirror the student/tutor filter `getAllSessions` applies when it builds
+ * the schedule, so this count can never exceed the session count shown next to it.
+ */
+export async function getCompletedSessionsCount(
+  startDate: string,
+  endDate: string,
+): Promise<number> {
+  await requireAdmin();
+  const supabase = await createClient();
+
+  try {
+    const { count, error } = await supabase
+      .from(Table.Sessions)
+      .select("id, student:Profiles!student_id!inner(id), tutor:Profiles!tutor_id!inner(id)", {
+        count: "exact",
+        head: true,
+      })
+      .eq("status", "Complete")
+      .gte("date", startDate)
+      .lte("date", endDate);
+
+    if (error) throw error;
+
+    return count ?? 0;
+  } catch (error) {
+    console.error("Error counting completed sessions: ", error);
+    await logError(error, { startDate, endDate }, "session_error");
+    throw error;
+  }
+}
+
 export async function getAllSessionsServer(
   startDate?: string,
   endDate?: string,

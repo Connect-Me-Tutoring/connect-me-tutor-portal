@@ -69,6 +69,7 @@ import {
 } from "@/lib/actions/admin.actions";
 import {
   addStandaloneSession,
+  getCompletedSessionsCount,
   removeSessionServer,
   updateSession,
 } from "@/lib/actions/session/server.actions";
@@ -235,15 +236,24 @@ const Schedule = () => {
         queryKey: ["meetings"],
         queryFn: () => getMeetings(),
       },
+      {
+        // counted in the database rather than derived from `sessions` so the number stays
+        // right even if the session fetch above is ever capped. Keyed under "sessions" so
+        // the existing broad invalidations refresh it too.
+        queryKey: ["sessions", "completed", queryStart, queryEnd],
+        queryFn: () => getCompletedSessionsCount(queryStart, queryEnd),
+      },
     ],
   });
 
-  const [sessionsResult, studentsResult, tutorsResult, meetingsResult] = query;
+  const [sessionsResult, studentsResult, tutorsResult, meetingsResult, completedSessionsResult] =
+    query;
 
   const sessions = sessionsResult.data || [];
   const students = studentsResult.data || [];
   const tutors = tutorsResult.data || [];
   const meetings = meetingsResult.data || [];
+  const completedSessions = completedSessionsResult.data ?? 0;
 
   let isLoading = sessionsResult.isLoading;
 
@@ -490,7 +500,9 @@ const Schedule = () => {
       await updateSession(updatedSession);
       toast.success("Session updated successfully");
       setIsModalOpen(false);
-      fetchSessions(queryStart, queryEnd);
+      // the old call refetched into a discarded promise, so changing a status here never
+      // repainted the grid or the counts. Invalidate instead, like the remove flow does.
+      queryClient.invalidateQueries({ queryKey: ["sessions"] });
     } catch (error) {
       console.error("Failed to update session:", error);
       toast.error("Failed to update session");
@@ -580,11 +592,12 @@ const Schedule = () => {
   const sessionStats = useMemo(
     () => ({
       totalSessions: sessions.length,
+      completedSessions,
       tutorsInvolved: new Set(sessions.map((s) => s?.tutor?.id)).size,
       studentsThisWeek: new Set(sessions.map((s) => s?.student?.id)).size,
       totalStudents: students.length,
     }),
-    [sessions, students],
+    [sessions, students, completedSessions],
   );
 
   const SessionCard = ({ session }: { session: Session }) => (
@@ -868,6 +881,10 @@ const Schedule = () => {
             <span>
               <span className="font-medium text-gray-700">{sessionStats.totalSessions}</span>{" "}
               sessions
+            </span>
+            <span>
+              <span className="font-medium text-gray-700">{sessionStats.completedSessions}</span>{" "}
+              completed
             </span>
             <span>
               <span className="font-medium text-gray-700">{sessionStats.tutorsInvolved}</span>{" "}
