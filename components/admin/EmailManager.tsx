@@ -37,7 +37,7 @@ const mockEmails = [
     status: "Scheduled",
   },
   {
-    id: "3",
+    id: "4",
     sendDate: new Date(Date.now() - 172800000).toISOString(), // 2 days ago
     recipient: "admin@example.com",
     subject: "Weekly Report",
@@ -101,8 +101,8 @@ const EmailManager = () => {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {emails.map((email) => (
-                <TableRow key={email.id}>
+              {emails.map((email, index) => (
+                <TableRow key={`${email.id}-${index}`}>
                   <TableCell>
                     {new Date(email.sendDate).toLocaleString()}
                   </TableCell>

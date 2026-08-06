@@ -29,6 +29,7 @@ import {
   ChevronsRight,
   ChevronLeft,
   ChevronRight,
+  Download,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -62,7 +63,7 @@ import { getEvents } from "@/lib/actions/event.server.actions";
 import { deleteUser } from "@/lib/actions/auth.server.actions";
 import { addUser } from "@/lib/actions/auth.actions";
 import { getTutorSessions } from "@/lib/actions/tutor.actions";
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
+import { createClient } from "@/lib/supabase/client";
 import { Profile, Session, Event } from "@/types";
 import {
   Dialog,
@@ -79,12 +80,13 @@ import { Combobox } from "@/components/ui/combobox";
 import AddTutorForm from "./components/AddTutorForm";
 import DeleteTutorForm from "./components/DeleteTutorForm";
 import EditTutorForm from "./components/EditTutorForm";
+import ManageTutorSessions from "./components/ManageTutorSessionForm";
 import { Turret_Road } from "next/font/google";
 import { capitalizeFirstLetter } from "@/lib/utils";
 import { UserAvailabilities } from "../ui/UserAvailabilities";
 
 const TutorList = ({ initialTutors }: any) => {
-  const supabase = createClientComponentClient();
+  const supabase = createClient();
   const [tutors, setTutors] = useState<Profile[]>(initialTutors);
   const [filteredTutors, setFilteredTutors] =
     useState<Profile[]>(initialTutors);
@@ -354,6 +356,31 @@ const TutorList = ({ initialTutors }: any) => {
     }
   };
 
+  const handleExportCSV = () => {
+    const headers = ["First Name", "Last Name", "Email"];
+    const csvData = filteredTutors.map((tutor) => [
+      tutor.firstName,
+      tutor.lastName,
+      tutor.email,
+    ]);
+
+    const csvContent = [
+      headers.join(","),
+      ...csvData.map((row) =>
+        row.map((cell) => `"${(cell || "").replace(/"/g, '""')}"`).join(",")
+      ),
+    ].join("\n");
+
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+    link.setAttribute("download", "tutors_export.csv");
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   return (
     <>
       {" "}
@@ -366,6 +393,9 @@ const TutorList = ({ initialTutors }: any) => {
             value={filterValue}
             onChange={(e) => setFilterValue(e.target.value)}
           />
+          <Button variant="outline" onClick={handleExportCSV}>
+            <Download className="mr-2 h-4 w-4" /> Export CSV
+          </Button>
           {/*Add Tutor*/}
           <AddTutorForm
             newTutor={newTutor}
@@ -400,6 +430,7 @@ const TutorList = ({ initialTutors }: any) => {
             handleComplexFieldsForEdit={handleComplexFieldsForEdit}
             handleTimeZoneForEdit={handleTimeZoneForEdit}
           />
+          <ManageTutorSessions tutors={tutors} />
           {/*Edit Page*/}
         </div>
       </div>

@@ -5,10 +5,6 @@ import { Input } from "@/components/ui/input";
 import ActiveSessionsTable from "./components/ActiveSessionsTable";
 import CurrentSessionsTable from "./components/CurrentSessionsTable";
 import CompletedSessionsTable from "./components/CompletedSessionsTable";
-import {
-  createClientComponentClient,
-  User,
-} from "@supabase/auth-helpers-nextjs";
 import { getProfile } from "@/lib/actions/user.actions";
 import { updateSession, getMeetings } from "@/lib/actions/admin.actions";
 import {
@@ -16,7 +12,10 @@ import {
   recordSessionExitForm,
 } from "@/lib/actions/tutor.actions";
 import { getAllSessions } from "@/lib/actions/session.actions";
-import { rescheduleSession } from "@/lib/actions/session.server.actions";
+import {
+  rescheduleSession,
+  cancelSession,
+} from "@/lib/actions/session.server.actions";
 import { Session, Profile, Meeting } from "@/types";
 import toast from "react-hot-toast";
 import {
@@ -102,7 +101,7 @@ const StudentDashboard = () => {
           .includes(SC.filterValueActiveSessions.toLowerCase()),
     );
     SC.setFilteredSessions(filtered);
-    SC.setCurrentPage(1);
+    SC.setCurrentPageActiveSessions(1);
   }, [SC.filterValueActiveSessions, SC.sessions]);
 
   useEffect(() => {
@@ -116,18 +115,32 @@ const StudentDashboard = () => {
           .includes(SC.filterValuePastSessions.toLowerCase()),
     );
     SC.setFilteredPastSessions(filtered);
-    SC.setCurrentPage(1);
+    SC.setCurrentPagePastSessions(1);
   }, [SC.filterValuePastSessions, SC.sessions]);
 
-  const totalPages = Math.ceil(SC.filteredSessions.length / SC.rowsPerPage);
+  const totalActiveSessionsPages = Math.ceil(
+    SC.filteredSessions.length / SC.rowsPerPageActiveSessions,
+  );
+  const totalPastSessionsPages = Math.ceil(
+    SC.filteredPastSessions.length / SC.rowsPerPagePastSessions,
+  );
 
-  const handlePageChange = (newPage: number) => {
-    SC.setCurrentPage(newPage);
+  const handleActiveSessionsPageChange = (newPage: number) => {
+    SC.setCurrentPageActiveSessions(newPage);
   };
 
-  const handleRowsPerPageChange = (value: string) => {
-    SC.setRowsPerPage(parseInt(value));
-    SC.setCurrentPage(1);
+  const handleActiveSessionsRowsPerPageChange = (value: string) => {
+    SC.setRowsPerPageActiveSessions(parseInt(value));
+    SC.setCurrentPageActiveSessions(1);
+  };
+
+  const handlePastSessionsPageChange = (newPage: number) => {
+    SC.setCurrentPagePastSessions(newPage);
+  };
+
+  const handlePastSessionsRowsPerPageChange = (value: string) => {
+    SC.setRowsPerPagePastSessions(parseInt(value));
+    SC.setCurrentPagePastSessions(1);
   };
 
   const handleReschedule = async (
@@ -171,7 +184,13 @@ const StudentDashboard = () => {
 
   const handleStatusChange = async (updatedSession: Session) => {
     try {
-      await updateSession(updatedSession);
+      // Cancellations go through the consolidated server action, which updates
+      // the session and notifies the tutor in one round trip.
+      if (updatedSession.status === "Cancelled") {
+        await cancelSession(updatedSession, "student");
+      } else {
+        await updateSession(updatedSession);
+      }
       SC.setCurrentSessions(
         SC.currentSessions.map((e: Session) =>
           e.id === updatedSession.id ? updatedSession : e,
@@ -182,6 +201,7 @@ const StudentDashboard = () => {
           e.id === updatedSession.id ? updatedSession : e,
         ),
       );
+
       toast.success("Session updated successfully");
     } catch (error) {
       console.error("Failed to update session:", error);
@@ -251,13 +271,13 @@ const StudentDashboard = () => {
   };
 
   const paginatedSessions = SC.filteredSessions.slice(
-    (SC.currentPage - 1) * SC.rowsPerPage,
-    SC.currentPage * SC.rowsPerPage,
+    (SC.currentPageActiveSessions - 1) * SC.rowsPerPageActiveSessions,
+    SC.currentPageActiveSessions * SC.rowsPerPageActiveSessions,
   );
 
   const paginatedPastSessions = SC.filteredPastSessions.slice(
-    (SC.currentPage - 1) * SC.rowsPerPage,
-    SC.currentPage * SC.rowsPerPage,
+    (SC.currentPagePastSessions - 1) * SC.rowsPerPagePastSessions,
+    SC.currentPagePastSessions * SC.rowsPerPagePastSessions,
   );
 
   const handleInputChange = (e: {
@@ -296,7 +316,7 @@ const StudentDashboard = () => {
         <div className="flex space-x-6">
           <div className="flex-grow bg-white rounded-lg shadow p-6">
             <Suspense fallback={<SkeletonTable />}>
-              <CurrentSessionsTable />
+              <CurrentSessionsTable handleStatusChange={handleStatusChange} />
             </Suspense>
           </div>
         </div>
@@ -323,12 +343,12 @@ const StudentDashboard = () => {
               <ActiveSessionsTable
                 paginatedSessions={paginatedSessions}
                 filteredSessions={SC.filteredSessions}
-                totalPages={totalPages}
+                totalPages={totalActiveSessionsPages}
                 handleStatusChange={handleStatusChange}
                 handleReschedule={handleReschedule}
                 handleSessionComplete={handleSessionComplete}
-                handlePageChange={handlePageChange}
-                handleRowsPerPageChange={handleRowsPerPageChange}
+                handlePageChange={handleActiveSessionsPageChange}
+                handleRowsPerPageChange={handleActiveSessionsRowsPerPageChange}
                 handleInputChange={handleInputChange}
               />
             </Suspense>
@@ -358,21 +378,12 @@ const StudentDashboard = () => {
               {" "}
               <CompletedSessionsTable
                 paginatedSessions={paginatedPastSessions}
-                // filteredSessions={SC.filteredPastSessions}
-                // currentPage={currentPage}
-                totalPages={totalPages}
-                // rowsPerPage={rowsPerPage.toString()}
-                // selectedSession={selectedSession}
-                // setSelectedSession={setSelectedSession}
-                handlePageChange={handlePageChange}
-                handleRowsPerPageChange={handleRowsPerPageChange}
+                totalPages={totalPastSessionsPages}
+                handlePageChange={handlePastSessionsPageChange}
+                handleRowsPerPageChange={handlePastSessionsRowsPerPageChange}
               />
             </Suspense>
           </div>
-
-          {/* <div className="w-80">
-            {/* <TutorCalendar sessions={sessions} /> */}
-          {/* </div>  */}
         </div>
       </div>
     </>

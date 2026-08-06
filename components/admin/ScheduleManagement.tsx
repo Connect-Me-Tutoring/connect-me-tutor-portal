@@ -63,13 +63,15 @@ import {
   updateSession,
   getMeetings,
   getAllProfiles,
-  removeSession,
   getMeeting,
 
   // checkMeetingsAvailability,
   // isMeetingAvailable,
 } from "@/lib/actions/admin.actions";
-import { addStandaloneSession } from "@/lib/actions/session.server.actions";
+import {
+  addStandaloneSession,
+  removeSessionServer,
+} from "@/lib/actions/session.server.actions";
 import { addHours, areIntervalsOverlapping } from "date-fns";
 
 import { getAllSessions } from "@/lib/actions/session.actions";
@@ -466,7 +468,7 @@ const Schedule = () => {
     sessionsByDay.get(format(day, "yyyy-MM-dd")) || [];
 
   const removeSessionMutation = useMutation({
-    mutationFn: (sessionId: string) => removeSession(sessionId),
+    mutationFn: (sessionId: string) => removeSessionServer(sessionId),
     onMutate: async (sessionId: string) => {
       await queryClient.cancelQueries({ queryKey: ["sessions"] });
       const prevSessions = queryClient.getQueryData<Session[]>([
@@ -1364,7 +1366,11 @@ const Schedule = () => {
                 })()}
                 <div className="flex flex-col gap-3">
                   <Link
-                    href={`/dashboard/session/${selectedSession.id}/participation`}
+                    href={`/dashboard/session/${selectedSession.id}/participation${
+                      selectedSession.enrollmentId
+                        ? `?enrollmentId=${selectedSession.enrollmentId}`
+                        : ""
+                    }`}
                     className="w-full"
                   >
                     <Button variant="outline" className="w-full">

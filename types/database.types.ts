@@ -14,6 +14,41 @@ export type Database = {
   };
   public: {
     Tables: {
+      chat_room_notification_preferences: {
+        Row: {
+          created_at: string;
+          email_muted: boolean;
+          id: string;
+          profile_id: string;
+          room_id: string;
+          updated_at: string;
+        };
+        Insert: {
+          created_at?: string;
+          email_muted?: boolean;
+          id?: string;
+          profile_id: string;
+          room_id: string;
+          updated_at?: string;
+        };
+        Update: {
+          created_at?: string;
+          email_muted?: boolean;
+          id?: string;
+          profile_id?: string;
+          room_id?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "chat_room_notification_preferences_profile_id_fkey";
+            columns: ["profile_id"];
+            isOneToOne: false;
+            referencedRelation: "Profiles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       conversation_participant: {
         Row: {
           conversation_id: string;
@@ -145,6 +180,13 @@ export type Database = {
           tutor_id?: string | null;
         };
         Relationships: [
+          {
+            foreignKeyName: "Enrollments_meetingId_fkey";
+            columns: ["meetingId"];
+            isOneToOne: false;
+            referencedRelation: "Meetings";
+            referencedColumns: ["id"];
+          },
           {
             foreignKeyName: "Enrollments_pairing_id_fkey";
             columns: ["pairing_id"];
@@ -367,6 +409,7 @@ export type Database = {
         Row: {
           created_at: string;
           id: string;
+          rejected_at: string | null;
           similarity: number | null;
           student_id: string;
           tutor_id: string;
@@ -375,6 +418,7 @@ export type Database = {
         Insert: {
           created_at?: string;
           id?: string;
+          rejected_at?: string | null;
           similarity?: number | null;
           student_id: string;
           tutor_id: string;
@@ -383,6 +427,7 @@ export type Database = {
         Update: {
           created_at?: string;
           id?: string;
+          rejected_at?: string | null;
           similarity?: number | null;
           student_id?: string;
           tutor_id?: string;
@@ -393,7 +438,9 @@ export type Database = {
       pairing_requests: {
         Row: {
           created_at: string;
+          exclude_rejected_tutors: boolean;
           id: string;
+          in_queue: boolean;
           notes: string | null;
           priority: number;
           status: string;
@@ -402,7 +449,9 @@ export type Database = {
         };
         Insert: {
           created_at?: string;
+          exclude_rejected_tutors?: boolean;
           id?: string;
+          in_queue?: boolean;
           notes?: string | null;
           priority: number;
           status?: string;
@@ -411,7 +460,9 @@ export type Database = {
         };
         Update: {
           created_at?: string;
+          exclude_rejected_tutors?: boolean;
           id?: string;
+          in_queue?: boolean;
           notes?: string | null;
           priority?: number;
           status?: string;
@@ -592,6 +643,7 @@ export type Database = {
           id: string;
           is_first_session: boolean;
           is_question_or_concern: boolean;
+          is_standalone: boolean;
           meeting_id: string | null;
           session_exit_form: string | null;
           status: Database["public"]["Enums"]["session_status"] | null;
@@ -607,6 +659,7 @@ export type Database = {
           id?: string;
           is_first_session?: boolean;
           is_question_or_concern?: boolean;
+          is_standalone?: boolean;
           meeting_id?: string | null;
           session_exit_form?: string | null;
           status?: Database["public"]["Enums"]["session_status"] | null;
@@ -622,6 +675,7 @@ export type Database = {
           id?: string;
           is_first_session?: boolean;
           is_question_or_concern?: boolean;
+          is_standalone?: boolean;
           meeting_id?: string | null;
           session_exit_form?: string | null;
           status?: Database["public"]["Enums"]["session_status"] | null;
@@ -754,6 +808,47 @@ export type Database = {
           },
         ];
       };
+      weekly_meeting_schedules: {
+        Row: {
+          created_at: string;
+          day_of_week: Database["public"]["Enums"]["day_of_week"];
+          description: string;
+          end_time: string;
+          id: string;
+          meeting_id: string | null;
+          start_time: string;
+          title: string;
+        };
+        Insert: {
+          created_at?: string;
+          day_of_week: Database["public"]["Enums"]["day_of_week"];
+          description?: string;
+          end_time: string;
+          id?: string;
+          meeting_id?: string | null;
+          start_time: string;
+          title?: string;
+        };
+        Update: {
+          created_at?: string;
+          day_of_week?: Database["public"]["Enums"]["day_of_week"];
+          description?: string;
+          end_time?: string;
+          id?: string;
+          meeting_id?: string | null;
+          start_time?: string;
+          title?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "meeting_schedules_meeting_id_fkey";
+            columns: ["meeting_id"];
+            isOneToOne: false;
+            referencedRelation: "Meetings";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       zoom_participant_events: {
         Row: {
           action: string;
@@ -850,7 +945,11 @@ export type Database = {
         Returns: number;
       };
       get_best_match: {
-        Args: { request_id: string; request_type: string };
+        Args: {
+          p_exclude_tutor_ids?: string[];
+          request_id: string;
+          request_type: string;
+        };
         Returns: {
           match_profile: Json;
           pairing_request_id: string;
@@ -978,6 +1077,7 @@ export type Database = {
           student_id: string;
           tutor: Json;
           tutor_id: string;
+          tutor_status: string | null;
         }[];
       };
       get_pairing_requests_with_profiles: {
@@ -1069,6 +1169,7 @@ export type Database = {
           tutor_id: string;
         }[];
       };
+      get_user_by_email: { Args: { email: string }; Returns: Json };
       get_user_enrollments: {
         Args: { input_user_id: string };
         Returns: {
@@ -1140,6 +1241,10 @@ export type Database = {
       normalize_availability:
         | { Args: { avail: Json; tz: string }; Returns: Json }
         | { Args: { avail: Json[]; tz: string }; Returns: Json };
+      pairing_subject_priority_alignment: {
+        Args: { candidate_subjects: string[]; requestor_subjects: string[] };
+        Returns: number;
+      };
     };
     Enums: {
       day_of_the_week:
@@ -1150,6 +1255,14 @@ export type Database = {
         | "thursday"
         | "friday"
         | "saturday";
+      day_of_week:
+        | "Sunday"
+        | "Monday"
+        | "Tuesday"
+        | "Wednesday"
+        | "Thursday"
+        | "Friday"
+        | "Saturday";
       event_type:
         | "Sub Hotline"
         | "Tutor Referral"
@@ -1165,7 +1278,8 @@ export type Database = {
         | "Cancelled"
         | "Rescheduled"
         | "Sub-Request"
-        | "Expired";
+        | "Expired"
+        | "Standalone";
       timezone: "EST" | "CST" | "PST" | "MST" | "MT" | "Other";
     };
     CompositeTypes: {
@@ -1306,6 +1420,15 @@ export const Constants = {
         "friday",
         "saturday",
       ],
+      day_of_week: [
+        "Sunday",
+        "Monday",
+        "Tuesday",
+        "Wednesday",
+        "Thursday",
+        "Friday",
+        "Saturday",
+      ],
       event_type: [
         "Sub Hotline",
         "Tutor Referral",
@@ -1323,6 +1446,7 @@ export const Constants = {
         "Rescheduled",
         "Sub-Request",
         "Expired",
+        "Standalone",
       ],
       timezone: ["EST", "CST", "PST", "MST", "MT", "Other"],
     },

@@ -33,7 +33,7 @@ export const StudentRescheduleNotificationEmail = ({
       <Body style={main}>
         <Container style={container}>
           <Section style={section}>
-            <Heading style={h1}>Session Rescheduled</Heading>
+            <Heading style={h1}>Tutor Session Rescheduled</Heading>
             <Text style={text}>Hi {studentName},</Text>
             <Text style={text}>
               This is a notification that your tutor, {tutorName}, has rescheduled your upcoming session.
@@ -51,7 +51,7 @@ export const StudentRescheduleNotificationEmail = ({
               If you have any questions or if this time does not work for you, please reach out to your tutor.
             </Text>
             <Text style={text}>
-              Best,<br />
+              Best,<br /><br />
               The Connect Me Free Tutoring & Mentoring Team
             </Text>
           </Section>
@@ -93,3 +93,11 @@ const text = {
 };
 
 export default StudentRescheduleNotificationEmail;
+
+StudentRescheduleNotificationEmail.PreviewProps = {
+  studentName: "Alice",
+  tutorName: "Bob",
+  newDate: "May 20, 2026",
+  newTime: "3:00 PM",
+  meetingLink: "https://zoom.us/test",
+};

@@ -2,7 +2,7 @@
 
 import { Enrollment, Meeting, Profile } from "@/types";
 import { SharedPairing } from "@/types/pairing";
-import { createClient } from "@/lib/supabase/server";
+import { createAdminClient, createClient } from "@/lib/supabase/server";
 import axios from "axios";
 import { getProfile } from "./user.actions";
 import { createServerClient } from "../supabase/server";
@@ -13,9 +13,16 @@ import { PairingLogSchemaType } from "../pairing/types";
 import { getSupabase } from "../supabase-server/serverClient";
 import { getOverlappingAvailabilites } from "./enrollment.actions";
 import { formatDateAdmin, to12Hour } from "../utils";
+import {
+  requireAdmin,
+  requireEnrollmentAccess,
+  requireSelfOrAdmin,
+} from "./authz.server";
+import { getPairingRejectionCooldown } from "../pairing/rejection-config";
 
 export const getPairingFromEnrollmentId = async (enrollmentId: string) => {
   try {
+    await requireEnrollmentAccess(enrollmentId);
     const supabase = await createClient();
     const { data, error } = await supabase
       .from("Enrollments")
@@ -32,6 +39,7 @@ export const getPairingFromEnrollmentId = async (enrollmentId: string) => {
 
 export async function getAccountPairings(userId: string) {
   try {
+    await requireSelfOrAdmin(userId);
     const supabase = await createClient();
     const { data, error } = await supabase.rpc(
       "get_user_pairings_with_profiles",
@@ -54,6 +62,7 @@ export async function getAccountPairings(userId: string) {
 
 export const deleteAllPairingRequests = async () => {
   try {
+    await requireAdmin();
     if (
       !process.env.NEXT_PUBLIC_SUPABASE_URL ||
       !process.env.SUPABASE_SERVICE_ROLE_KEY ||
@@ -104,7 +113,46 @@ export const deleteAllPairingRequests = async () => {
   }
 };
 
+/**
+ * Tutors to exclude from matching: rejected this student while cooldown applies.
+ * Uses PAIRING_REJECTION_COOLDOWN_DAYS (never / -1 = always exclude; N = days since rejection).
+ */
+export const getRejectedTutorIdsForStudent = async (
+  studentProfileId: string,
+): Promise<string[]> => {
+  const supabase = await createClient();
+  const cooldown = getPairingRejectionCooldown();
+
+  const { data, error } = await supabase
+    .from("pairing_matches")
+    .select("tutor_id, rejected_at, created_at")
+    .eq("student_id", studentProfileId)
+    .eq("tutor_status", "rejected");
+
+  if (error) {
+    console.error("getRejectedTutorIdsForStudent error", error);
+    return [];
+  }
+  if (!data?.length) return [];
+
+  if (cooldown === "never") {
+    return data.map((row) => row.tutor_id as string);
+  }
+
+  const cutoffMs = Date.now() - cooldown * 24 * 60 * 60 * 1000;
+  return data
+    .filter((row) => {
+      const raw =
+        (row as { rejected_at?: string | null; created_at?: string })
+          .rejected_at ?? (row as { created_at?: string }).created_at;
+      if (!raw) return true;
+      return new Date(raw).getTime() >= cutoffMs;
+    })
+    .map((row) => row.tutor_id as string);
+};
+
 export const resetPairingQueues = async () => {
+  await requireAdmin();
   if (
     !process.env.NEXT_PUBLIC_SUPABASE_URL ||
     !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
@@ -122,6 +170,103 @@ export const resetPairingQueues = async () => {
   if (error) {
     console.error("Error deleting rows:", error);
   } else {
+  }
+};
+
+export const deletePairingServer = async (
+  tutorId: string,
+  studentId: string,
+) => {
+  try {
+    const adminSupabase = await createAdminClient();
+
+    const user = await getUserFromAction();
+    if (!user) throw new Error("Unauthorized");
+
+    const { data: requestorProfile, error: requestorProfileError } =
+      await adminSupabase
+        .from("Profiles")
+        .select("id, role")
+        .eq("user_id", user.id)
+        .single();
+
+    if (requestorProfileError) throw requestorProfileError;
+    if (requestorProfile.role !== "Admin" && requestorProfile.id !== tutorId) {
+      throw new Error("Forbidden");
+    }
+
+    const { data: pairings, error: pairingsError } = await adminSupabase
+      .from("Pairings")
+      .select("id")
+      .eq("tutor_id", tutorId)
+      .eq("student_id", studentId);
+
+    if (pairingsError) throw pairingsError;
+
+    const pairingIds = (pairings || [])
+      .map((pairing: any) => pairing.id)
+      .filter(Boolean);
+
+    const enrollmentIds = new Set<string>();
+
+    const { data: matchingEnrollments, error: matchingEnrollmentsError } =
+      await adminSupabase
+        .from("Enrollments")
+        .select("id")
+        .eq("tutor_id", tutorId)
+        .eq("student_id", studentId);
+
+    if (matchingEnrollmentsError) throw matchingEnrollmentsError;
+    matchingEnrollments?.forEach((enrollment: any) => {
+      if (enrollment.id) enrollmentIds.add(enrollment.id);
+    });
+
+    if (pairingIds.length > 0) {
+      const { data: pairingEnrollments, error: pairingEnrollmentsError } =
+        await adminSupabase
+          .from("Enrollments")
+          .select("id")
+          .in("pairing_id", pairingIds);
+
+      if (pairingEnrollmentsError) throw pairingEnrollmentsError;
+      pairingEnrollments?.forEach((enrollment: any) => {
+        if (enrollment.id) enrollmentIds.add(enrollment.id);
+      });
+    }
+
+    const enrollmentIdList = Array.from(enrollmentIds);
+
+    if (enrollmentIdList.length > 0) {
+      const now = new Date().toISOString();
+      const { error: deleteSessionsError } = await adminSupabase
+        .from("Sessions")
+        .delete()
+        .in("enrollment_id", enrollmentIdList)
+        .neq("status", "Complete")
+        .gte("date", now);
+
+      if (deleteSessionsError) throw deleteSessionsError;
+
+      const { error: deleteEnrollmentsError } = await adminSupabase
+        .from("Enrollments")
+        .delete()
+        .in("id", enrollmentIdList);
+
+      if (deleteEnrollmentsError) throw deleteEnrollmentsError;
+    }
+
+    const { error: deletePairingError } = await adminSupabase
+      .from("Pairings")
+      .delete()
+      .eq("tutor_id", tutorId)
+      .eq("student_id", studentId);
+
+    if (deletePairingError) throw deletePairingError;
+
+    return { success: true };
+  } catch (error) {
+    console.error("Failed to delete pairing:", error);
+    throw error;
   }
 };
 
