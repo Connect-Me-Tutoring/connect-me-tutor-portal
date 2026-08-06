@@ -5,15 +5,20 @@ import { Input } from "@/components/ui/input";
 import ActiveSessionsTable from "./components/ActiveSessionsTable";
 import CurrentSessionsTable from "./components/CurrentSessionsTable";
 import CompletedSessionsTable from "./components/CompletedSessionsTable";
-import { getProfile } from "@/lib/actions/user/actions";
-import { getMeetings } from "@/lib/actions/admin.actions";
-import { getTutorSessions, recordSessionExitForm } from "@/lib/actions/tutor/actions";
-import { getAllSessions } from "@/lib/actions/session/client.actions";
 import {
-  rescheduleSession,
-  cancelSession,
-  updateSession,
-} from "@/lib/actions/session/server.actions";
+  createClientComponentClient,
+  User,
+} from "@supabase/auth-helpers-nextjs";
+import { getProfile } from "@/lib/actions/user.actions";
+import { updateSession}
+from "@/lib/actions/session.actions";
+import { getMeetings } from "@/lib/actions/meeting.actions";
+import {
+  getTutorSessions,
+  recordSessionExitForm,
+} from "@/lib/actions/tutor.actions";
+import { getAllSessions } from "@/lib/actions/session.actions";
+import { rescheduleSession } from "@/lib/actions/session.server.actions";
 import { Session, Profile, Meeting } from "@/types";
 import toast from "react-hot-toast";
 import {
@@ -28,11 +33,10 @@ import {
 } from "date-fns";
 import { SelectSeparator } from "@radix-ui/react-select";
 import { Description } from "@radix-ui/react-dialog";
-import { getStudentSessions } from "@/lib/actions/student/actions";
+import { getStudentSessions } from "@/lib/actions/student.actions";
 import { useProfile } from "@/lib/contexts/profileContext";
 import SkeletonTable, { Skeleton } from "../ui/skeleton";
 import { useDashboardContext } from "@/lib/contexts/dashboardContext";
-import { useLoadMore } from "@/hooks/useLoadMore";
 
 const StudentDashboard = () => {
   const SC = useDashboardContext();
@@ -44,7 +48,9 @@ const StudentDashboard = () => {
       if (!SC.profile) return;
     } catch (error) {
       console.error("Error fetching user data:", error);
-      SC.setError(error instanceof Error ? error.message : "An unknown error occurred");
+      SC.setError(
+        error instanceof Error ? error.message : "An unknown error occurred",
+      );
     } finally {
       SC.setLoading(false);
     }
@@ -64,9 +70,15 @@ const StudentDashboard = () => {
   const fetchDaySessionsFromSchedule = (session: Session) => {
     if (SC.selectedSessionDate) {
       try {
-        const startDateSearch = addHours(parseISO(SC.selectedSessionDate), -12).toISOString();
+        const startDateSearch = addHours(
+          parseISO(SC.selectedSessionDate),
+          -12,
+        ).toISOString();
 
-        const endDateSearch = addHours(parseISO(SC.selectedSessionDate), 12).toISOString();
+        const endDateSearch = addHours(
+          parseISO(SC.selectedSessionDate),
+          12,
+        ).toISOString();
         getAllSessions(startDateSearch, endDateSearch)
           .then((data) => {
             SC.setAllSessions(data);
@@ -92,7 +104,7 @@ const StudentDashboard = () => {
           .includes(SC.filterValueActiveSessions.toLowerCase()),
     );
     SC.setFilteredSessions(filtered);
-    SC.setCurrentPageActiveSessions(1);
+    SC.setCurrentPage(1);
   }, [SC.filterValueActiveSessions, SC.sessions]);
 
   useEffect(() => {
@@ -101,52 +113,52 @@ const StudentDashboard = () => {
         session.student?.firstName
           .toLowerCase()
           .includes(SC.filterValuePastSessions.toLowerCase()) ||
-        session.student?.lastName.toLowerCase().includes(SC.filterValuePastSessions.toLowerCase()),
+        session.student?.lastName
+          .toLowerCase()
+          .includes(SC.filterValuePastSessions.toLowerCase()),
     );
     SC.setFilteredPastSessions(filtered);
-    SC.setCurrentPagePastSessions(1);
+    SC.setCurrentPage(1);
   }, [SC.filterValuePastSessions, SC.sessions]);
 
-  const totalActiveSessionsPages = Math.ceil(
-    SC.filteredSessions.length / SC.rowsPerPageActiveSessions,
-  );
-  const totalPastSessionsPages = Math.ceil(
-    SC.filteredPastSessions.length / SC.rowsPerPagePastSessions,
-  );
+  const totalPages = Math.ceil(SC.filteredSessions.length / SC.rowsPerPage);
 
-  const handleActiveSessionsPageChange = (newPage: number) => {
-    SC.setCurrentPageActiveSessions(newPage);
+  const handlePageChange = (newPage: number) => {
+    SC.setCurrentPage(newPage);
   };
 
-  const handleActiveSessionsRowsPerPageChange = (value: string) => {
-    SC.setRowsPerPageActiveSessions(parseInt(value));
-    SC.setCurrentPageActiveSessions(1);
+  const handleRowsPerPageChange = (value: string) => {
+    SC.setRowsPerPage(parseInt(value));
+    SC.setCurrentPage(1);
   };
 
-  const handlePastSessionsPageChange = (newPage: number) => {
-    SC.setCurrentPagePastSessions(newPage);
-  };
-
-  const handlePastSessionsRowsPerPageChange = (value: string) => {
-    SC.setRowsPerPagePastSessions(parseInt(value));
-    SC.setCurrentPagePastSessions(1);
-  };
-
-  const handleReschedule = async (sessionId: string, newDate: string, meetingId: string) => {
+  const handleReschedule = async (
+    sessionId: string,
+    newDate: string,
+    meetingId: string,
+  ) => {
     try {
       if (!SC.profile || !SC.profile.id) {
         console.error("No profile found cannot reschedule");
         return;
       }
 
-      const updatedSession = await rescheduleSession(sessionId, newDate, meetingId);
+      const updatedSession = await rescheduleSession(
+        sessionId,
+        newDate,
+        meetingId,
+      );
 
       if (updatedSession) {
         SC.setCurrentSessions(
-          SC.currentSessions.map((e: Session) => (e.id === updatedSession.id ? updatedSession : e)),
+          SC.currentSessions.map((e: Session) =>
+            e.id === updatedSession.id ? updatedSession : e,
+          ),
         );
         SC.setSessions(
-          SC.sessions.map((e: Session) => (e.id === updatedSession.id ? updatedSession : e)),
+          SC.sessions.map((e: Session) =>
+            e.id === updatedSession.id ? updatedSession : e,
+          ),
         );
       }
       getUserData();
@@ -161,20 +173,17 @@ const StudentDashboard = () => {
 
   const handleStatusChange = async (updatedSession: Session) => {
     try {
-      // Cancellations go through the consolidated server action, which updates
-      // the session and notifies the tutor in one round trip.
-      if (updatedSession.status === "Cancelled") {
-        await cancelSession(updatedSession, "student");
-      } else {
-        await updateSession(updatedSession);
-      }
+      await updateSession(updatedSession);
       SC.setCurrentSessions(
-        SC.currentSessions.map((e: Session) => (e.id === updatedSession.id ? updatedSession : e)),
+        SC.currentSessions.map((e: Session) =>
+          e.id === updatedSession.id ? updatedSession : e,
+        ),
       );
       SC.setSessions(
-        SC.sessions.map((e: Session) => (e.id === updatedSession.id ? updatedSession : e)),
+        SC.sessions.map((e: Session) =>
+          e.id === updatedSession.id ? updatedSession : e,
+        ),
       );
-
       toast.success("Session updated successfully");
     } catch (error) {
       console.error("Failed to update session:", error);
@@ -195,10 +204,14 @@ const StudentDashboard = () => {
       updatedSession.isFirstSession = isFirstSession;
       await updateSession(updatedSession);
       SC.setCurrentSessions(
-        SC.currentSessions.map((e: Session) => (e.id === updatedSession.id ? updatedSession : e)),
+        SC.currentSessions.map((e: Session) =>
+          e.id === updatedSession.id ? updatedSession : e,
+        ),
       );
       SC.setSessions(
-        SC.sessions.map((e: Session) => (e.id === updatedSession.id ? updatedSession : e)),
+        SC.sessions.map((e: Session) =>
+          e.id === updatedSession.id ? updatedSession : e,
+        ),
       );
       toast.success("Session Marked Complete");
       SC.setIsSessionExitFormOpen(false);
@@ -208,21 +221,24 @@ const StudentDashboard = () => {
       //API Call to update operation logs
 
       if (isQuestionOrConcern) {
-        const response = await fetch("/api/session-exit-form/questions-concerns", {
-          headers: {
-            "Content-Type": "application/json",
+        const response = await fetch(
+          "/api/session-exit-form/questions-concerns",
+          {
+            headers: {
+              "Content-Type": "application/json",
+            },
+            method: "POST",
+            body: JSON.stringify({
+              tutorFirstName: updatedSession.tutor?.firstName,
+              tutorLastName: updatedSession.tutor?.lastName,
+              studentFirstName: updatedSession.student?.firstName,
+              studentLastName: updatedSession.student?.lastName,
+              formContent: notes,
+              tutorEmail: updatedSession.tutor?.email,
+              studentEmail: updatedSession.student?.email,
+            }),
           },
-          method: "POST",
-          body: JSON.stringify({
-            tutorFirstName: updatedSession.tutor?.firstName,
-            tutorLastName: updatedSession.tutor?.lastName,
-            studentFirstName: updatedSession.student?.firstName,
-            studentLastName: updatedSession.student?.lastName,
-            formContent: notes,
-            tutorEmail: updatedSession.tutor?.email,
-            studentEmail: updatedSession.student?.email,
-          }),
-        });
+        );
         const data = await response.json();
 
         if (!data.success) {
@@ -237,28 +253,18 @@ const StudentDashboard = () => {
   };
 
   const paginatedSessions = SC.filteredSessions.slice(
-    (SC.currentPageActiveSessions - 1) * SC.rowsPerPageActiveSessions,
-    SC.currentPageActiveSessions * SC.rowsPerPageActiveSessions,
+    (SC.currentPage - 1) * SC.rowsPerPage,
+    SC.currentPage * SC.rowsPerPage,
   );
 
   const paginatedPastSessions = SC.filteredPastSessions.slice(
-    (SC.currentPagePastSessions - 1) * SC.rowsPerPagePastSessions,
-    SC.currentPagePastSessions * SC.rowsPerPagePastSessions,
+    (SC.currentPage - 1) * SC.rowsPerPage,
+    SC.currentPage * SC.rowsPerPage,
   );
 
-  const {
-    visibleItems: visibleActiveSessions,
-    hasMore: hasMoreActiveSessions,
-    loadMore: loadMoreActiveSessions,
-  } = useLoadMore(SC.filteredSessions);
-
-  const {
-    visibleItems: visiblePastSessions,
-    hasMore: hasMorePastSessions,
-    loadMore: loadMorePastSessions,
-  } = useLoadMore(SC.filteredPastSessions);
-
-  const handleInputChange = (e: { target: { name: string; value: string } }) => {
+  const handleInputChange = (e: {
+    target: { name: string; value: string };
+  }) => {
     const { name, value } = e.target;
 
     // Helper function to handle nested updates
@@ -279,7 +285,9 @@ const StudentDashboard = () => {
     };
 
     if (SC.selectedSession) {
-      SC.setSelectedSession((prevState) => handleNestedChange({ ...prevState }, name, value));
+      SC.setSelectedSession((prevState) =>
+        handleNestedChange({ ...prevState }, name, value),
+      );
     }
   };
 
@@ -290,7 +298,7 @@ const StudentDashboard = () => {
         <div className="flex space-x-6">
           <div className="flex-grow bg-white rounded-lg shadow p-6">
             <Suspense fallback={<SkeletonTable />}>
-              <CurrentSessionsTable handleStatusChange={handleStatusChange} />
+              <CurrentSessionsTable />
             </Suspense>
           </div>
         </div>
@@ -307,7 +315,9 @@ const StudentDashboard = () => {
                   placeholder="Filter sessions..."
                   className="w-64"
                   value={SC.filterValueActiveSessions}
-                  onChange={(e) => SC.setFilterValueActiveSessions(e.target.value)}
+                  onChange={(e) =>
+                    SC.setFilterValueActiveSessions(e.target.value)
+                  }
                 />
               </div>
             </div>
@@ -315,15 +325,12 @@ const StudentDashboard = () => {
               <ActiveSessionsTable
                 paginatedSessions={paginatedSessions}
                 filteredSessions={SC.filteredSessions}
-                visibleSessions={visibleActiveSessions}
-                hasMore={hasMoreActiveSessions}
-                loadMore={loadMoreActiveSessions}
-                totalPages={totalActiveSessionsPages}
+                totalPages={totalPages}
                 handleStatusChange={handleStatusChange}
                 handleReschedule={handleReschedule}
                 handleSessionComplete={handleSessionComplete}
-                handlePageChange={handleActiveSessionsPageChange}
-                handleRowsPerPageChange={handleActiveSessionsRowsPerPageChange}
+                handlePageChange={handlePageChange}
+                handleRowsPerPageChange={handleRowsPerPageChange}
                 handleInputChange={handleInputChange}
               />
             </Suspense>
@@ -342,7 +349,9 @@ const StudentDashboard = () => {
                   placeholder="Filter sessions..."
                   className="w-64"
                   value={SC.filterValuePastSessions}
-                  onChange={(e) => SC.setFilterValuePastSessions(e.target.value)}
+                  onChange={(e) =>
+                    SC.setFilterValuePastSessions(e.target.value)
+                  }
                 />
               </div>
             </div>
@@ -351,15 +360,21 @@ const StudentDashboard = () => {
               {" "}
               <CompletedSessionsTable
                 paginatedSessions={paginatedPastSessions}
-                visibleSessions={visiblePastSessions}
-                hasMore={hasMorePastSessions}
-                loadMore={loadMorePastSessions}
-                totalPages={totalPastSessionsPages}
-                handlePageChange={handlePastSessionsPageChange}
-                handleRowsPerPageChange={handlePastSessionsRowsPerPageChange}
+                // filteredSessions={SC.filteredPastSessions}
+                // currentPage={currentPage}
+                totalPages={totalPages}
+                // rowsPerPage={rowsPerPage.toString()}
+                // selectedSession={selectedSession}
+                // setSelectedSession={setSelectedSession}
+                handlePageChange={handlePageChange}
+                handleRowsPerPageChange={handleRowsPerPageChange}
               />
             </Suspense>
           </div>
+
+          {/* <div className="w-80">
+            {/* <TutorCalendar sessions={sessions} /> */}
+          {/* </div>  */}
         </div>
       </div>
     </>

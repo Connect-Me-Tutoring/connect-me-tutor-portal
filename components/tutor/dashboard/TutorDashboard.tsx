@@ -4,24 +4,20 @@ import { Input } from "@/components/ui/input";
 import ActiveSessionsTable from "../components/ActiveSessionsTable";
 import CurrentSessionsTable from "../components/CurrentSessionsTable";
 import CompletedSessionsTable from "../components/CompletedSessionsTable";
-import { updateSession } from "@/lib/actions/session/server.actions";
-import { undoCancelSession } from "@/lib/actions/tutor/actions";
-import { rescheduleSession, cancelSession } from "@/lib/actions/session/server.actions";
+import { updateSession } from "@/lib/actions/session.actions";
+import { undoCancelSession } from "@/lib/actions/tutor.actions";
+import { rescheduleSession } from "@/lib/actions/session.server.actions";
 import { Session, Profile, Meeting } from "@/types";
 import toast from "react-hot-toast";
 import { useDashboardContext } from "@/lib/contexts/dashboardContext";
-import { undoSessionExitForm } from "@/lib/actions/tutor/actions";
-import {
-  getSessionTimePassed,
-  sendStudentSEFFeedbackEmail,
-} from "@/lib/actions/session/client.actions";
+import { undoSessionExitForm } from "@/lib/actions/tutor.actions";
+import { getSessionTimePassed } from "@/lib/actions/session.actions";
 import {
   sendSessionRescheduleEmail,
   updateScheduledEmailBeforeSessions,
-} from "@/lib/actions/email/server.actions";
+} from "@/lib/actions/email.server.actions";
 import { StudentAnnouncementsRoomId } from "@/constants/chat";
 import { format } from "date-fns";
-import { useLoadMore } from "@/hooks/useLoadMore";
 
 const TutorDashboard = () => {
   const TC = useDashboardContext();
@@ -37,7 +33,7 @@ const TutorDashboard = () => {
           .includes(TC.filterValueActiveSessions.toLowerCase()),
     );
     TC.setFilteredSessions(filtered);
-    TC.setCurrentPageActiveSessions(1);
+    TC.setCurrentPage(1);
   }, [TC.filterValueActiveSessions, TC.sessions]);
 
   useEffect(() => {
@@ -46,53 +42,53 @@ const TutorDashboard = () => {
         session.student?.firstName
           .toLowerCase()
           .includes(TC.filterValuePastSessions.toLowerCase()) ||
-        session.student?.lastName.toLowerCase().includes(TC.filterValuePastSessions.toLowerCase()),
+        session.student?.lastName
+          .toLowerCase()
+          .includes(TC.filterValuePastSessions.toLowerCase()),
     );
     TC.setFilteredPastSessions(filtered);
-    TC.setCurrentPagePastSessions(1);
+    TC.setCurrentPage(1);
   }, [TC.filterValuePastSessions, TC.sessions, TC.pastSessions]);
 
-  const totalActiveSessionsPages = Math.ceil(
-    TC.filteredSessions.length / TC.rowsPerPageActiveSessions,
-  );
-  const totalPastSessionsPages = Math.ceil(
-    TC.filteredPastSessions.length / TC.rowsPerPagePastSessions,
-  );
+  const totalPages = Math.ceil(TC.filteredSessions.length / TC.rowsPerPage);
 
-  const handleActiveSessionsPageChange = (newPage: number) => {
-    TC.setCurrentPageActiveSessions(newPage);
+  const handlePageChange = (newPage: number) => {
+    TC.setCurrentPage(newPage);
   };
 
-  const handleActiveSessionsRowsPerPageChange = (value: string) => {
-    TC.setRowsPerPageActiveSessions(parseInt(value));
-    TC.setCurrentPageActiveSessions(1);
+  const handleRowsPerPageChange = (value: string) => {
+    TC.setRowsPerPage(parseInt(value));
+    TC.setCurrentPage(1);
   };
 
-  const handlePastSessionsPageChange = (newPage: number) => {
-    TC.setCurrentPagePastSessions(newPage);
-  };
-
-  const handlePastSessionsRowsPerPageChange = (value: string) => {
-    TC.setRowsPerPagePastSessions(parseInt(value));
-    TC.setCurrentPagePastSessions(1);
-  };
-
-  const handleReschedule = async (sessionId: string, newDate: string, meetingId: string) => {
+  const handleReschedule = async (
+    sessionId: string,
+    newDate: string,
+    meetingId: string,
+  ) => {
     try {
       if (!TC.profile || !TC.profile.id) {
         console.error("No profile found cannot reschedule");
         return;
       }
 
-      const updatedSession = await rescheduleSession(sessionId, newDate, meetingId);
+      const updatedSession = await rescheduleSession(
+        sessionId,
+        newDate,
+        meetingId,
+      );
       console.log("Updated session:", updatedSession);
 
       if (updatedSession) {
         TC.setCurrentSessions(
-          TC.currentSessions.map((e: Session) => (e.id === updatedSession.id ? updatedSession : e)),
+          TC.currentSessions.map((e: Session) =>
+            e.id === updatedSession.id ? updatedSession : e,
+          ),
         );
         TC.setSessions(
-          TC.sessions.map((e: Session) => (e.id === updatedSession.id ? updatedSession : e)),
+          TC.sessions.map((e: Session) =>
+            e.id === updatedSession.id ? updatedSession : e,
+          ),
         );
 
         const formattedDate = format(new Date(newDate), "MMMM d, yyyy");
@@ -122,18 +118,17 @@ const TutorDashboard = () => {
 
   const handleStatusChange = async (updatedSession: Session) => {
     try {
-      if (updatedSession.status === "Cancelled") {
-        await cancelSession(updatedSession, "tutor");
-      } else {
-        await updateSession(updatedSession);
-      }
+      await updateSession(updatedSession);
       TC.setCurrentSessions(
-        TC.currentSessions.map((e: Session) => (e.id === updatedSession.id ? updatedSession : e)),
+        TC.currentSessions.map((e: Session) =>
+          e.id === updatedSession.id ? updatedSession : e,
+        ),
       );
       TC.setSessions(
-        TC.sessions.map((e: Session) => (e.id === updatedSession.id ? updatedSession : e)),
+        TC.sessions.map((e: Session) =>
+          e.id === updatedSession.id ? updatedSession : e,
+        ),
       );
-
       toast.success("Session updated successfully");
     } catch (error) {
       console.error("Failed to update session:", error);
@@ -146,7 +141,6 @@ const TutorDashboard = () => {
     notes: string,
     isQuestionOrConcern: boolean,
     isFirstSession: boolean,
-    category?: string,
   ) => {
     try {
       const updatedSession = session;
@@ -154,13 +148,16 @@ const TutorDashboard = () => {
       updatedSession.status = "Complete";
       updatedSession.isQuestionOrConcern = isQuestionOrConcern;
       updatedSession.isFirstSession = isFirstSession;
-      await sendStudentSEFFeedbackEmail(session);
       await updateSession(updatedSession);
       TC.setCurrentSessions(
-        TC.currentSessions.map((e: Session) => (e.id === updatedSession.id ? updatedSession : e)),
+        TC.currentSessions.map((e: Session) =>
+          e.id === updatedSession.id ? updatedSession : e,
+        ),
       );
       TC.setSessions(
-        TC.sessions.map((e: Session) => (e.id === updatedSession.id ? updatedSession : e)),
+        TC.sessions.map((e: Session) =>
+          e.id === updatedSession.id ? updatedSession : e,
+        ),
       );
       toast.success("Session Marked Complete");
       TC.setIsSessionExitFormOpen(false);
@@ -170,22 +167,24 @@ const TutorDashboard = () => {
       //API Call to update operation logs
 
       if (isQuestionOrConcern) {
-        const response = await fetch("/api/session-exit-form/questions-concerns", {
-          headers: {
-            "Content-Type": "application/json",
+        const response = await fetch(
+          "/api/session-exit-form/questions-concerns",
+          {
+            headers: {
+              "Content-Type": "application/json",
+            },
+            method: "POST",
+            body: JSON.stringify({
+              tutorFirstName: session.tutor?.firstName,
+              tutorLastName: session.tutor?.lastName,
+              studentFirstName: session.student?.firstName,
+              studentLastName: session.student?.lastName,
+              formContent: notes,
+              tutorEmail: session.tutor?.email,
+              studentEmail: session.student?.email,
+            }),
           },
-          method: "POST",
-          body: JSON.stringify({
-            tutorFirstName: session.tutor?.firstName,
-            tutorLastName: session.tutor?.lastName,
-            studentFirstName: session.student?.firstName,
-            studentLastName: session.student?.lastName,
-            formContent: notes,
-            tutorEmail: session.tutor?.email,
-            studentEmail: session.student?.email,
-            category,
-          }),
-        });
+        );
         const data = await response.json();
 
         if (!data.success) {
@@ -210,10 +209,15 @@ const TutorDashboard = () => {
       const session = await undoSessionExitForm(sessionId);
       if (!session) return;
 
-      TC.setSessions((prev) => prev.map((s) => (s.id === sessionId ? session : s)));
+      TC.setSessions((prev) =>
+        prev.map((s) => (s.id === sessionId ? session : s)),
+      );
 
       TC.setPastSessions((prev) => prev.filter((s) => s.id !== sessionId));
-      TC.setCurrentSessions((prev) => [session, ...prev.filter((s) => s.id !== sessionId)]);
+      TC.setCurrentSessions((prev) => [
+        session,
+        ...prev.filter((s) => s.id !== sessionId),
+      ]);
 
       toast.success("Session exit form undone");
     } catch (error) {
@@ -232,10 +236,14 @@ const TutorDashboard = () => {
     try {
       await undoCancelSession(sessionId, "Active");
       TC.setCurrentSessions(
-        TC.currentSessions.map((s) => (s.id === sessionId ? { ...s, status: "Active" } : s)),
+        TC.currentSessions.map((s) =>
+          s.id === sessionId ? { ...s, status: "Active" } : s,
+        ),
       );
       TC.setPastSessions(TC.pastSessions.filter((s) => s.id !== sessionId));
-      TC.setFilteredPastSessions(TC.filteredPastSessions.filter((s) => s.id !== sessionId));
+      TC.setFilteredPastSessions(
+        TC.filteredPastSessions.filter((s) => s.id !== sessionId),
+      );
       toast.success("Session cancellation undone");
     } catch (error) {
       console.error("Failed to undo session cancellation", error);
@@ -244,28 +252,18 @@ const TutorDashboard = () => {
   };
 
   const paginatedSessions = TC.filteredSessions.slice(
-    (TC.currentPageActiveSessions - 1) * TC.rowsPerPageActiveSessions,
-    TC.currentPageActiveSessions * TC.rowsPerPageActiveSessions,
+    (TC.currentPage - 1) * TC.rowsPerPage,
+    TC.currentPage * TC.rowsPerPage,
   );
 
   const paginatedPastSessions = TC.filteredPastSessions.slice(
-    (TC.currentPagePastSessions - 1) * TC.rowsPerPagePastSessions,
-    TC.currentPagePastSessions * TC.rowsPerPagePastSessions,
+    (TC.currentPage - 1) * TC.rowsPerPage,
+    TC.currentPage * TC.rowsPerPage,
   );
 
-  const {
-    visibleItems: visibleActiveSessions,
-    hasMore: hasMoreActiveSessions,
-    loadMore: loadMoreActiveSessions,
-  } = useLoadMore(TC.filteredSessions);
-
-  const {
-    visibleItems: visiblePastSessions,
-    hasMore: hasMorePastSessions,
-    loadMore: loadMorePastSessions,
-  } = useLoadMore(TC.filteredPastSessions);
-
-  const handleInputChange = (e: { target: { name: string; value: string } }) => {
+  const handleInputChange = (e: {
+    target: { name: string; value: string };
+  }) => {
     const { name, value } = e.target;
 
     // Helper function to handle nested updates
@@ -286,7 +284,9 @@ const TutorDashboard = () => {
     };
 
     if (TC.selectedSession) {
-      TC.setSelectedSession((prevState) => handleNestedChange({ ...prevState }, name, value));
+      TC.setSelectedSession((prevState) =>
+        handleNestedChange({ ...prevState }, name, value),
+      );
     }
   };
 
@@ -298,13 +298,13 @@ const TutorDashboard = () => {
           <div className="flex-grow bg-white rounded-lg shadow p-6">
             <CurrentSessionsTable
               meetings={TC.meetings}
-              totalPages={totalActiveSessionsPages}
+              totalPages={totalPages}
               handleStatusChange={handleStatusChange}
               handleReschedule={handleReschedule}
               handleSessionComplete={handleSessionComplete}
               handleUndoCancel={handleUndoCancel}
-              handlePageChange={handleActiveSessionsPageChange}
-              handleRowsPerPageChange={handleActiveSessionsRowsPerPageChange}
+              handlePageChange={handlePageChange}
+              handleRowsPerPageChange={handleRowsPerPageChange}
               handleInputChange={handleInputChange}
             />
           </div>
@@ -322,23 +322,22 @@ const TutorDashboard = () => {
                   placeholder="Filter sessions..."
                   className="w-64"
                   value={TC.filterValueActiveSessions}
-                  onChange={(e) => TC.setFilterValueActiveSessions(e.target.value)}
+                  onChange={(e) =>
+                    TC.setFilterValueActiveSessions(e.target.value)
+                  }
                 />
               </div>
             </div>
 
             <ActiveSessionsTable
               paginatedSessions={paginatedSessions}
-              visibleSessions={visibleActiveSessions}
-              hasMore={hasMoreActiveSessions}
-              loadMore={loadMoreActiveSessions}
               meetings={TC.meetings}
-              totalPages={totalActiveSessionsPages}
+              totalPages={totalPages}
               handleStatusChange={handleStatusChange}
               handleReschedule={handleReschedule}
               handleSessionComplete={handleSessionComplete}
-              handlePageChange={handleActiveSessionsPageChange}
-              handleRowsPerPageChange={handleActiveSessionsRowsPerPageChange}
+              handlePageChange={handlePageChange}
+              handleRowsPerPageChange={handleRowsPerPageChange}
               handleInputChange={handleInputChange}
             />
           </div>
@@ -356,19 +355,18 @@ const TutorDashboard = () => {
                   placeholder="Filter sessions..."
                   className="w-64"
                   value={TC.filterValuePastSessions}
-                  onChange={(e) => TC.setFilterValuePastSessions(e.target.value)}
+                  onChange={(e) =>
+                    TC.setFilterValuePastSessions(e.target.value)
+                  }
                 />
               </div>
             </div>
 
             <CompletedSessionsTable
               paginatedSessions={paginatedPastSessions}
-              visibleSessions={visiblePastSessions}
-              hasMore={hasMorePastSessions}
-              loadMore={loadMorePastSessions}
-              totalPages={totalPastSessionsPages}
-              handlePageChange={handlePastSessionsPageChange}
-              handleRowsPerPageChange={handlePastSessionsRowsPerPageChange}
+              totalPages={totalPages}
+              handlePageChange={handlePageChange}
+              handleRowsPerPageChange={handleRowsPerPageChange}
               handleUndoSessionExitForm={handleUndoSessionExitForm}
             />
           </div>

@@ -16,21 +16,28 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { getProfile } from "@/lib/actions/user/actions";
-import { getAllNotifications, updateNotification } from "@/lib/actions/admin.actions";
+import { getProfile } from "@/lib/actions/user.actions";
+import {
+  getAllNotifications,
+  updateNotification,
+} from "@/lib/actions/notification.actions";
 import { formatDate, formatDateAdmin } from "@/lib/utils";
 import { Notification } from "@/types";
-import { ChevronsLeft, ChevronLeft, ChevronRight, ChevronsRight } from "lucide-react";
+import {
+  ChevronsLeft,
+  ChevronLeft,
+  ChevronRight,
+  ChevronsRight,
+} from "lucide-react";
 import { Input } from "@/components/ui/input";
 import toast from "react-hot-toast";
 import { Skeleton } from "@/components/ui/skeleton";
-import { MobileCard } from "@/components/ui/mobile-card";
-import { LoadMoreButton } from "@/components/ui/load-more-button";
-import { useLoadMore } from "@/hooks/useLoadMore";
 
 const NotificationCenter = () => {
   const [notifications, setNotifications] = useState<Notification[]>([]);
-  const [filteredNotifications, setFilteredNotifications] = useState<Notification[]>([]);
+  const [filteredNotifications, setFilteredNotifications] = useState<
+    Notification[]
+  >([]);
   const [filterValue, setFilterValue] = useState("Active");
   const [searchValue, setSearchValue] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
@@ -65,12 +72,14 @@ const NotificationCenter = () => {
     let filtered = notifications;
 
     if (filterValue !== "All") {
-      filtered = filtered.filter((notification) => notification.status === filterValue);
+      filtered = filtered.filter(
+        (notification) => notification.status === filterValue
+      );
     }
 
     if (searchValue) {
       filtered = filtered.filter((notification) =>
-        notification.summary.toLowerCase().includes(searchValue.toLowerCase()),
+        notification.summary.toLowerCase().includes(searchValue.toLowerCase())
       );
     }
 
@@ -80,16 +89,10 @@ const NotificationCenter = () => {
 
   const paginatedNotifications = filteredNotifications.slice(
     (currentPage - 1) * rowsPerPage,
-    currentPage * rowsPerPage,
+    currentPage * rowsPerPage
   );
 
   const totalPages = Math.ceil(filteredNotifications.length / rowsPerPage);
-
-  const {
-    visibleItems: visibleNotifications,
-    hasMore: hasMoreNotifications,
-    loadMore: loadMoreNotifications,
-  } = useLoadMore(filteredNotifications);
 
   const handlePageChange = (newPage: number) => {
     setCurrentPage(newPage);
@@ -100,13 +103,18 @@ const NotificationCenter = () => {
     setCurrentPage(1);
   };
 
-  const handleStatusChange = async (notificationId: string, value: "Active" | "Resolved") => {
+  const handleStatusChange = async (
+    notificationId: string,
+    value: "Active" | "Resolved"
+  ) => {
     try {
       await updateNotification(notificationId, value);
       setNotifications((prev) =>
         prev.map((notification) =>
-          notification.id === notificationId ? { ...notification, status: value } : notification,
-        ),
+          notification.id === notificationId
+            ? { ...notification, status: value }
+            : notification
+        )
       );
       toast.success("Notification status updated");
     } catch (error) {
@@ -143,145 +151,113 @@ const NotificationCenter = () => {
             </SelectContent>
           </Select>
         </div>
-        <div className="hidden md:block w-full">
-          <Table className="bg-white">
-            <TableHeader>
-              <TableRow>
-                <TableHead>Status</TableHead>
-                <TableHead>Created At</TableHead>
-                <TableHead>Summary</TableHead>
-                <TableHead>Previous Date</TableHead>
-                <TableHead>Suggested Date</TableHead>
-                <TableHead>Tutor Name</TableHead>
-                <TableHead>Student Name</TableHead>
+        <Table className="bg-white">
+          <TableHeader>
+            <TableRow>
+              <TableHead>Status</TableHead>
+              <TableHead>Created At</TableHead>
+              <TableHead>Summary</TableHead>
+              <TableHead>Previous Date</TableHead>
+              <TableHead>Suggested Date</TableHead>
+              <TableHead>Tutor Name</TableHead>
+              <TableHead>Student Name</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {paginatedNotifications.map((notification) => (
+              <TableRow key={notification.id}>
+                <TableCell>
+                  <Select
+                    value={notification.status}
+                    onValueChange={(value: "Active" | "Resolved") =>
+                      handleStatusChange(notification.id, value)
+                    }
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder={notification.status} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Active">Active</SelectItem>
+                      <SelectItem value="Resolved">Resolved</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </TableCell>
+                <TableCell>{formatDateAdmin(notification.createdAt)}</TableCell>
+                <TableCell>{notification.summary}</TableCell>
+                <TableCell>
+                  {formatDateAdmin(notification.previousDate)}
+                </TableCell>
+                <TableCell>
+                  {formatDateAdmin(notification.suggestedDate)}
+                </TableCell>
+                <TableCell>
+                  {notification.tutor?.firstName} {notification.tutor?.lastName}
+                </TableCell>
+                <TableCell>
+                  {notification.student?.firstName}{" "}
+                  {notification.student?.lastName}
+                </TableCell>
               </TableRow>
-            </TableHeader>
-            <TableBody>
-              {paginatedNotifications.map((notification) => (
-                <TableRow key={notification.id}>
-                  <TableCell>
-                    <Select
-                      value={notification.status}
-                      onValueChange={(value: "Active" | "Resolved") =>
-                        handleStatusChange(notification.id, value)
-                      }
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder={notification.status} />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="Active">Active</SelectItem>
-                        <SelectItem value="Resolved">Resolved</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </TableCell>
-                  <TableCell>{formatDateAdmin(notification.createdAt)}</TableCell>
-                  <TableCell>{notification.summary}</TableCell>
-                  <TableCell>{formatDateAdmin(notification.previousDate)}</TableCell>
-                  <TableCell>{formatDateAdmin(notification.suggestedDate)}</TableCell>
-                  <TableCell>
-                    {notification.tutor?.firstName} {notification.tutor?.lastName}
-                  </TableCell>
-                  <TableCell>
-                    {notification.student?.firstName} {notification.student?.lastName}
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+            ))}
+          </TableBody>
+        </Table>
 
-          {/* Pagination Controls */}
-          <div className="mt-4 hidden md:flex justify-between items-center">
-            <span>{filteredNotifications.length} row(s) total.</span>
-            <div className="flex items-center space-x-2">
-              <span>Rows per page</span>
-              <Select value={rowsPerPage.toString()} onValueChange={handleRowsPerPageChange}>
-                <SelectTrigger className="w-[70px]">
-                  <SelectValue placeholder={rowsPerPage.toString()} />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="10">10</SelectItem>
-                  <SelectItem value="20">20</SelectItem>
-                  <SelectItem value="50">50</SelectItem>
-                </SelectContent>
-              </Select>
-              <span>
-                Page {currentPage} of {totalPages}
-              </span>
-              <div className="flex space-x-1">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => handlePageChange(1)}
-                  disabled={currentPage === 1}
-                >
-                  <ChevronsLeft className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => handlePageChange(currentPage - 1)}
-                  disabled={currentPage === 1}
-                >
-                  <ChevronLeft className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => handlePageChange(currentPage + 1)}
-                  disabled={currentPage === totalPages}
-                >
-                  <ChevronRight className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => handlePageChange(totalPages)}
-                  disabled={currentPage === totalPages}
-                >
-                  <ChevronsRight className="h-4 w-4" />
-                </Button>
-              </div>
+        {/* Pagination Controls */}
+        <div className="mt-4 flex justify-between items-center">
+          <span>{filteredNotifications.length} row(s) total.</span>
+          <div className="flex items-center space-x-2">
+            <span>Rows per page</span>
+            <Select
+              value={rowsPerPage.toString()}
+              onValueChange={handleRowsPerPageChange}
+            >
+              <SelectTrigger className="w-[70px]">
+                <SelectValue placeholder={rowsPerPage.toString()} />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="10">10</SelectItem>
+                <SelectItem value="20">20</SelectItem>
+                <SelectItem value="50">50</SelectItem>
+              </SelectContent>
+            </Select>
+            <span>
+              Page {currentPage} of {totalPages}
+            </span>
+            <div className="flex space-x-1">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => handlePageChange(1)}
+                disabled={currentPage === 1}
+              >
+                <ChevronsLeft className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => handlePageChange(currentPage - 1)}
+                disabled={currentPage === 1}
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => handlePageChange(currentPage + 1)}
+                disabled={currentPage === totalPages}
+              >
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => handlePageChange(totalPages)}
+                disabled={currentPage === totalPages}
+              >
+                <ChevronsRight className="h-4 w-4" />
+              </Button>
             </div>
           </div>
-        </div>
-
-        <div className="md:hidden space-y-4">
-          {visibleNotifications.map((notification) => (
-            <MobileCard key={notification.id}>
-              <div className="flex justify-between items-start gap-2">
-                <div className="text-sm text-muted-foreground">
-                  {formatDateAdmin(notification.createdAt)}
-                </div>
-                <Select
-                  value={notification.status}
-                  onValueChange={(value: "Active" | "Resolved") =>
-                    handleStatusChange(notification.id, value)
-                  }
-                >
-                  <SelectTrigger className="w-[120px]">
-                    <SelectValue placeholder={notification.status} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Active">Active</SelectItem>
-                    <SelectItem value="Resolved">Resolved</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="text-sm">{notification.summary}</div>
-              <div className="text-sm space-y-1">
-                <div>Previous Date: {formatDateAdmin(notification.previousDate)}</div>
-                <div>Suggested Date: {formatDateAdmin(notification.suggestedDate)}</div>
-                <div>
-                  Tutor: {notification.tutor?.firstName} {notification.tutor?.lastName}
-                </div>
-                <div>
-                  Student: {notification.student?.firstName} {notification.student?.lastName}
-                </div>
-              </div>
-            </MobileCard>
-          ))}
-          <LoadMoreButton hasMore={hasMoreNotifications} onClick={loadMoreNotifications} />
         </div>
       </div>
     </main>

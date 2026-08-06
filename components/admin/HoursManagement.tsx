@@ -10,7 +10,6 @@ import {
   startOfWeek,
   addDays,
   getMonth,
-  subDays,
 } from "date-fns";
 import {
   Table,
@@ -40,19 +39,18 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
-  getAllProfiles,
+  getAllProfiles} from "@/lib/actions/profile.server.actions"
+import {
   getEventsWithTutorMonth,
   createEvent,
-  createEventsBatch,
   removeEvent,
-} from "@/lib/actions/admin.actions";
-import { getEvents } from "@/lib/actions/event/client.actions";
-import { getTutorSessions } from "@/lib/actions/tutor/actions";
+} from "@/lib/actions/event.server.actions";
+import { getEvents } from "@/lib/actions/event.client.actions";
+import { getTutorSessions } from "@/lib/actions/tutor.actions";
 import { Profile, Session, Event } from "@/types";
 import { toast, Toaster } from "react-hot-toast";
 import { Combobox } from "../ui/combobox";
 import { Combobox2 } from "../ui/combobox2";
-import { Checkbox } from "@/components/ui/checkbox";
 import {
   getAllEventHoursBatch,
   getAllEventHoursBatchWithType,
@@ -67,14 +65,11 @@ import {
   getTotalHours,
   getTotalHoursRange,
   getTotalSessionHoursRange,
-} from "@/lib/actions/hours/actions";
+} from "@/lib/actions/hours.actions";
 import { resourceLimits } from "worker_threads";
 import { number } from "zod";
-import { Loader2, ChevronDown } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { useEvents } from "@/hooks/events";
-import { MobileCard } from "@/components/ui/mobile-card";
-import { LoadMoreButton } from "@/components/ui/load-more-button";
-import { useLoadMore } from "@/hooks/useLoadMore";
 
 const HoursManager = () => {
   const [tutors, setTutors] = useState<Profile[]>([]);
@@ -83,7 +78,9 @@ const HoursManager = () => {
     [key: string]: Session[];
   }>({});
   const [eventsData, setEventsData] = useState<{ [key: string]: Event[] }>({});
-  const [allTimeHours, setAllTimeHours] = useState<{ [key: string]: number }>({});
+  const [allTimeHours, setAllTimeHours] = useState<{ [key: string]: number }>(
+    {}
+  );
   const [allTimeSessionHours, setAllTimeSessionHours] = useState<{
     [key: string]: number;
   }>({});
@@ -96,7 +93,9 @@ const HoursManager = () => {
     [key: string]: { [key: string]: number };
   }>({});
 
-  const [monthlyHours, setMonthlyHours] = useState<{ [key: string]: number }>({});
+  const [monthlyHours, setMonthlyHours] = useState<{ [key: string]: number }>(
+    {}
+  );
   const [totalSessionHours, setTotalSessionHours] = useState<{
     [key: string]: number;
   }>({});
@@ -110,25 +109,20 @@ const HoursManager = () => {
 
   const [isAddEventModalOpen, setIsAddEventModalOpen] = useState(false);
   const [isRemoveEventModalOpen, setIsRemoveEventModalOpen] = useState(false);
-  const [selectedTutorForEvent, setSelectedTutorForEvent] = useState<string | null>(null);
+  const [selectedTutorForEvent, setSelectedTutorForEvent] = useState<
+    string | null
+  >(null);
   const [newEvent, setNewEvent] = useState<Partial<Event>>({});
   const [eventsToRemove, setEventsToRemove] = useState<Event[]>([]);
-  const [selectedEventToRemove, setSelectedEventToRemove] = useState<string | null>(null);
+  const [selectedEventToRemove, setSelectedEventToRemove] = useState<
+    string | null
+  >(null);
   const [filterValue, setFilterValue] = useState<string>("");
   const [filteredTutors, setFilteredTutors] = useState<Profile[]>([]);
   const [eventType, setEventType] = useState("");
   const [allTimeView, setAllTimeView] = useState(false);
   const [loading, setLoading] = useState(false);
   const [reportLoading, setReportLoading] = useState(false);
-
-  // sub hours multi-select state
-  const [isSubHoursModalOpen, setIsSubHoursModalOpen] = useState(false);
-  const [selectedSubTutors, setSelectedSubTutors] = useState<string[]>([]);
-  const [subHoursDate, setSubHoursDate] = useState(format(subDays(new Date(), 1), "yyyy-MM-dd")); // defaults yesterday
-  const [subHoursAmount, setSubHoursAmount] = useState<number>(1);
-  const [subHoursSummary, setSubHoursSummary] = useState("");
-  const [subHoursFilter, setSubHoursFilter] = useState("");
-  const [showSelectedList, setShowSelectedList] = useState(false); // toggle selected tutors dropdown
 
   useEffect(() => {
     fetchTutors();
@@ -207,11 +201,14 @@ const HoursManager = () => {
       getTutorSessions(
         tutor.id,
         startOfMonth(selectedDate).toISOString(),
-        endOfMonth(selectedDate).toISOString(),
-      ),
+        endOfMonth(selectedDate).toISOString()
+      )
     );
     const eventsPromises = tutors.map((tutor) =>
-      getEventsWithTutorMonth(tutor?.id, startOfMonth(selectedDate).toISOString()),
+      getEventsWithTutorMonth(
+        tutor?.id,
+        startOfMonth(selectedDate).toISOString()
+      )
     );
 
     try {
@@ -270,7 +267,7 @@ const HoursManager = () => {
 
   const calculateAllTimeHoursBatch = async () => {
     try {
-      const data = (await getAllHoursBatch()) as unknown as { [key: string]: number };
+      const data: { [key: string]: number } = await getAllHoursBatch();
       setAllTimeHours(data);
     } catch (error) {
       toast.error("Unable to set all time hours");
@@ -290,10 +287,11 @@ const HoursManager = () => {
       const firstDay = startOfWeek(startOfMonth(selectedDate));
       const lastDay = endOfWeek(endOfMonth(selectedDate));
 
-      const data = (await getEventHoursRangeBatch(
-        firstDay.toISOString(),
-        lastDay.toISOString(),
-      )) as unknown as { [key: string]: { [key: string]: number } };
+      const data: { [key: string]: { [key: string]: number } } =
+        await getEventHoursRangeBatch(
+          firstDay.toISOString(),
+          lastDay.toISOString()
+        );
       setEventHoursData(data);
     } catch (error) {
       toast.error("Unable to get event hours");
@@ -309,14 +307,15 @@ const HoursManager = () => {
   };
 
   const calculateWeeklyHoursForMonth = async () => {
-    const monthlySessionHours: { [key: string]: { [key: string]: number } } = {};
+    const monthlySessionHours: { [key: string]: { [key: string]: number } } =
+      {};
 
     const weekPromises = weeksInMonth.map(async (week) => {
       const nextWeek = addDays(week, 7);
-      const data = (await getSessionHoursRangeBatch(
+      const data: { [key: string]: number } = await getSessionHoursRangeBatch(
         week.toISOString(),
-        nextWeek.toISOString(),
-      )) as unknown as { [key: string]: number };
+        nextWeek.toISOString()
+      );
       return {
         weekKey: week.getTime().toString(),
         data: data,
@@ -340,10 +339,10 @@ const HoursManager = () => {
       const firstDay = startOfWeek(startOfMonth(selectedDate));
       const lastDay = endOfWeek(endOfMonth(selectedDate));
 
-      const data = (await getHoursRangeBatch(
+      const data: { [key: string]: number } = await getHoursRangeBatch(
         firstDay.toISOString(),
-        lastDay.toISOString(),
-      )) as unknown as { [key: string]: number };
+        lastDay.toISOString()
+      );
       setMonthlyHours(data);
     } catch (error) {
       toast.error("Error fetching monthly hours");
@@ -352,9 +351,8 @@ const HoursManager = () => {
 
   const calculateAllTimeEventHours = async () => {
     try {
-      const data = (await getAllEventHoursBatch()) as unknown as {
-        [key: string]: { [key: string]: number };
-      };
+      const data: { [key: string]: { [key: string]: number } } =
+        await getAllEventHoursBatch();
       setEventHoursData(data);
     } catch (error) {
       toast.error("Error fetching All Time Event Hours");
@@ -366,7 +364,10 @@ const HoursManager = () => {
       const firstDay = startOfWeek(startOfMonth(selectedDate));
       const lastDay = endOfWeek(endOfMonth(selectedDate));
 
-      const data: number = await getTotalHoursRange(firstDay.toISOString(), lastDay.toISOString());
+      const data: number = await getTotalHoursRange(
+        firstDay.toISOString(),
+        lastDay.toISOString()
+      );
       setTotalMonthlyHours(data);
     } catch (error) {
       toast.error("Error fetching total monthly hours");
@@ -384,7 +385,7 @@ const HoursManager = () => {
 
   const calculateAllTimeSessionHours = async () => {
     try {
-      const data = (await getAllSessionHoursBatch()) as unknown as { [key: string]: number };
+      const data: { [key: string]: number } = await getAllSessionHoursBatch();
       setAllTimeSessionHours(data);
     } catch (error) {
       toast.error("Error fetching All Time Session Hours");
@@ -412,7 +413,7 @@ const HoursManager = () => {
 
         const data: number = await getTotalSessionHoursRange(
           week.toISOString(),
-          nextWeek.toISOString(),
+          nextWeek.toISOString()
         );
         return {
           weekKey: week.getTime().toString(),
@@ -438,10 +439,10 @@ const HoursManager = () => {
     try {
       const firstDay = startOfWeek(startOfMonth(selectedDate));
       const lastDay = endOfWeek(endOfMonth(selectedDate));
-      const data = (await getTotalEventHoursRange(
+      const data: { [key: string]: number } = await getTotalEventHoursRange(
         firstDay.toISOString(),
-        lastDay.toISOString(),
-      )) as unknown as { [key: string]: number };
+        lastDay.toISOString()
+      );
 
       setTotalEventHours(data);
     } catch (error) {
@@ -463,7 +464,9 @@ const HoursManager = () => {
   };
 
   const calculateExtraHours = (tutorId: string) => {
-    return eventsData[tutorId]?.reduce((total, event) => total + event.hours, 0) || 0;
+    return (
+      eventsData[tutorId]?.reduce((total, event) => total + event.hours, 0) || 0
+    );
   };
 
   // const calculateMonthHours = (tutorId: string) => {
@@ -487,7 +490,13 @@ const HoursManager = () => {
   });
 
   const handleAddEvent = async () => {
-    if (newEvent.tutorId && newEvent.date && newEvent.hours && newEvent.summary && newEvent.type) {
+    if (
+      newEvent.tutorId &&
+      newEvent.date &&
+      newEvent.hours &&
+      newEvent.summary &&
+      newEvent.type
+    ) {
       try {
         await createEvent(newEvent as Event);
         toast.success("Event added successfully.");
@@ -508,7 +517,8 @@ const HoursManager = () => {
     if (selectedEventToRemove) {
       try {
         const res = await removeEvent(selectedEventToRemove);
-        if (res) toast.success("Event removed successfully. Refresh to view update.");
+        if (res)
+          toast.success("Event removed successfully. Refresh to view update.");
         else toast.error("Unable to remove event");
         setIsRemoveEventModalOpen(false);
         setSelectedEventToRemove(null);
@@ -525,47 +535,6 @@ const HoursManager = () => {
   const handleEditEvent = async () => {
     try {
     } catch (error) {}
-  };
-
-  // bulk add sub hotline hours to selected tutors
-  const handleAddSubHours = async () => {
-    if (selectedSubTutors.length === 0) {
-      toast.error("Select at least one tutor");
-      return;
-    }
-    if (!subHoursDate || !subHoursAmount) {
-      toast.error("Fill in date and hours");
-      return;
-    }
-    try {
-      const events: Event[] = selectedSubTutors.map((tutorId) => ({
-        id: "",
-        createdAt: "",
-        tutorId,
-        date: subHoursDate,
-        hours: subHoursAmount,
-        type: "Sub Hotline",
-        summary: subHoursSummary || "sub hours",
-      }));
-      await createEventsBatch(events);
-      toast.success(`Added sub hours to ${selectedSubTutors.length} tutor(s)`);
-      setIsSubHoursModalOpen(false);
-      setSelectedSubTutors([]);
-      setSubHoursSummary("");
-      setSubHoursAmount(1);
-      setSubHoursDate(format(subDays(new Date(), 1), "yyyy-MM-dd")); // reset to yesterday
-      fetchSessionsAndEvents();
-    } catch (error) {
-      console.error("Failed to add sub hours:", error);
-      toast.error("Failed to add sub hours");
-    }
-  };
-
-  // toggle tutor in multi-select list
-  const toggleSubTutor = (tutorId: string) => {
-    setSelectedSubTutors((prev) =>
-      prev.includes(tutorId) ? prev.filter((id) => id !== tutorId) : [...prev, tutorId],
-    );
   };
 
   const handleFetchEvents = async (value: string) => {
@@ -633,12 +602,6 @@ const HoursManager = () => {
     }
   };
 
-  const {
-    visibleItems: visibleTutors,
-    hasMore: hasMoreTutors,
-    loadMore: loadMoreTutors,
-  } = useLoadMore(filteredTutors);
-
   return (
     <main className="p-8">
       <div>
@@ -657,7 +620,11 @@ const HoursManager = () => {
               />
               <div className="flex space-x-4">
                 <Select
-                  value={allTimeView ? "All Time" : selectedDate?.toISOString() || "placeholder"}
+                  value={
+                    allTimeView
+                      ? "All Time"
+                      : selectedDate?.toISOString() || "placeholder"
+                  }
                   onValueChange={(value) => {
                     if (value === "All Time") {
                       setAllTimeView(true);
@@ -676,18 +643,21 @@ const HoursManager = () => {
                       All Time
                     </SelectItem>
                     {monthYearOptions.map((date) => (
-                      <SelectItem key={date.toISOString()} value={date.toISOString()}>
+                      <SelectItem
+                        key={date.toISOString()}
+                        value={date.toISOString()}
+                      >
                         {format(date, "MMMM yyyy")}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
-                <Dialog open={isAddEventModalOpen} onOpenChange={setIsAddEventModalOpen}>
+                <Dialog
+                  open={isAddEventModalOpen}
+                  onOpenChange={setIsAddEventModalOpen}
+                >
                   <DialogTrigger asChild>
-                    <Button
-                      className="bg-connect-me-blue-2"
-                      onClick={() => setIsAddEventModalOpen(true)}
-                    >
+                    <Button className = "bg-connect-me-blue-2" onClick={() => setIsAddEventModalOpen(true)}>
                       Add Event
                     </Button>
                   </DialogTrigger>
@@ -703,32 +673,42 @@ const HoursManager = () => {
                           label: `${tutor.firstName} ${tutor.lastName} - ${tutor.email}`,
                         }))}
                       category="tutor"
-                      onValueChange={(value) => setNewEvent({ ...newEvent, tutorId: value })}
+                      onValueChange={(value) =>
+                        setNewEvent({ ...newEvent, tutorId: value })
+                      }
                     />
                     <Select
                       value={eventType}
                       onValueChange={(value) => {
                         setEventType(value);
-                        setNewEvent({ ...newEvent, type: value as Event["type"] });
+                        setNewEvent({ ...newEvent, type: value });
                       }}
                     >
                       <SelectTrigger className="">
                         <SelectValue placeholder={"Select Type"} />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="Tutor Referral">Tutor Referral</SelectItem>
+                        <SelectItem value="Tutor Referral">
+                          Tutor Referral
+                        </SelectItem>
                         <SelectItem value="Sub Hotline">Sub Hotline</SelectItem>
                         <SelectItem value="Additional Tutoring Hours">
                           Additional Tutoring Hours
                         </SelectItem>
-                        <SelectItem value="School Tutoring">School Tutoring</SelectItem>
-                        <SelectItem value="Biweekly Meeting">Biweekly Meeting</SelectItem>
+                        <SelectItem value="School Tutoring">
+                          School Tutoring
+                        </SelectItem>
+                        <SelectItem value="Biweekly Meeting">
+                          Biweekly Meeting
+                        </SelectItem>
                         <SelectItem value="Other">Other</SelectItem>
                       </SelectContent>
                     </Select>
                     <Input
                       type="date"
-                      onChange={(e) => setNewEvent({ ...newEvent, date: e.target.value })}
+                      onChange={(e) =>
+                        setNewEvent({ ...newEvent, date: e.target.value })
+                      }
                       placeholder="Date"
                     />
                     <Input
@@ -744,20 +724,20 @@ const HoursManager = () => {
 
                     <Input
                       type="text"
-                      onChange={(e) => setNewEvent({ ...newEvent, summary: e.target.value })}
+                      onChange={(e) =>
+                        setNewEvent({ ...newEvent, summary: e.target.value })
+                      }
                       placeholder="Summary"
                     />
-                    <Button className="bg-connect-me-blue-2" onClick={handleAddEvent}>
-                      Add Event
-                    </Button>
+                    <Button className = "bg-connect-me-blue-2" onClick={handleAddEvent}>Add Event</Button>
                   </DialogContent>
                 </Dialog>
-                <Dialog open={isRemoveEventModalOpen} onOpenChange={setIsRemoveEventModalOpen}>
+                <Dialog
+                  open={isRemoveEventModalOpen}
+                  onOpenChange={setIsRemoveEventModalOpen}
+                >
                   <DialogTrigger asChild>
-                    <Button
-                      className="bg-connect-me-blue-3"
-                      onClick={() => setIsRemoveEventModalOpen(true)}
-                    >
+                    <Button className = "bg-connect-me-blue-3" onClick={() => setIsRemoveEventModalOpen(true)}>
                       Remove Event
                     </Button>
                   </DialogTrigger>
@@ -776,7 +756,11 @@ const HoursManager = () => {
                       onValueChange={(value) => handleFetchEvents(value)}
                     />
                     {eventsToRemove && (
-                      <Select onValueChange={(value) => setSelectedEventToRemove(value)}>
+                      <Select
+                        onValueChange={(value) =>
+                          setSelectedEventToRemove(value)
+                        }
+                      >
                         <SelectTrigger>
                           <SelectValue placeholder="Select Event to Remove" />
                         </SelectTrigger>
@@ -785,349 +769,171 @@ const HoursManager = () => {
                             <SelectItem key={event.id} value={event.id}>
                               <div className="flex justify-between w-full">
                                 <span>
-                                  {format(parseISO(event.date), "yyyy-MM-dd")} - {event.summary}
+                                  {format(parseISO(event.date), "yyyy-MM-dd")} -{" "}
+                                  {event.summary}
                                 </span>
-                                <span className="font-semibold ml-2">{event.hours} hrs</span>
+                                <span className="font-semibold ml-2">
+                                  {event.hours} hrs
+                                </span>
                               </div>
                             </SelectItem>
                           ))}
                         </SelectContent>
                       </Select>
                     )}
-                    <Button className="bg-connect-me-3" onClick={handleRemoveEvent}>
-                      Remove Event
-                    </Button>
-                  </DialogContent>
-                </Dialog>
-
-                <Dialog open={isSubHoursModalOpen} onOpenChange={setIsSubHoursModalOpen}>
-                  <DialogTrigger asChild>
-                    <Button
-                      className="bg-connect-me-blue-2"
-                      onClick={() => setIsSubHoursModalOpen(true)}
-                    >
-                      Add Sub Hours
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent className="max-h-[80vh] flex flex-col">
-                    <DialogHeader>
-                      <DialogTitle>Add Sub Hours</DialogTitle>
-                    </DialogHeader>
-                    {/* date defaults to yesterday, still editable */}
-                    <Input
-                      type="date"
-                      value={subHoursDate}
-                      onChange={(e) => setSubHoursDate(e.target.value)}
-                    />
-                    <Input
-                      type="number"
-                      value={subHoursAmount}
-                      onChange={(e) => setSubHoursAmount(parseFloat(e.target.value))}
-                      placeholder="Hours"
-                    />
-                    <Input
-                      type="text"
-                      value={subHoursSummary}
-                      onChange={(e) => setSubHoursSummary(e.target.value)}
-                      placeholder="Summary (optional)"
-                    />
-                    {/* multi-select tutor list w/ filter */}
-                    <Input
-                      type="text"
-                      placeholder="Filter tutors..."
-                      value={subHoursFilter}
-                      onChange={(e) => setSubHoursFilter(e.target.value)}
-                    />
-                    <div className="overflow-y-auto max-h-[300px] border rounded-md p-2 space-y-1">
-                      {tutors
-                        .filter((t) => {
-                          const q = subHoursFilter.toLowerCase();
-                          if (!q) return true;
-                          return (
-                            (t.firstName?.toLowerCase() || "").includes(q) ||
-                            (t.lastName?.toLowerCase() || "").includes(q) ||
-                            (t.email?.toLowerCase() || "").includes(q)
-                          );
-                        })
-                        .map((tutor) => (
-                          <label
-                            key={tutor.id}
-                            className="flex items-center gap-2 px-2 py-1 rounded hover:bg-gray-50 cursor-pointer text-sm"
-                          >
-                            <Checkbox
-                              checked={selectedSubTutors.includes(tutor.id)}
-                              onCheckedChange={() => toggleSubTutor(tutor.id)}
-                            />
-                            {tutor.firstName} {tutor.lastName}
-                            <span className="text-gray-400 ml-auto text-xs">{tutor.email}</span>
-                          </label>
-                        ))}
-                    </div>
-                    <div className="flex items-center justify-between">
-                      {/* selected count w/ expandable list */}
-                      <button
-                        type="button"
-                        className="flex items-center gap-1 text-sm text-gray-500 hover:text-gray-700"
-                        onClick={() => setShowSelectedList((v) => !v)}
-                      >
-                        {selectedSubTutors.length} selected
-                        <ChevronDown
-                          className={`h-4 w-4 transition-transform ${showSelectedList ? "rotate-180" : ""}`}
-                        />
-                      </button>
-                      <Button className="bg-connect-me-blue-2" onClick={handleAddSubHours}>
-                        Add Hours
-                      </Button>
-                    </div>
-                    {/* dropdown showing who's selected */}
-                    {showSelectedList && selectedSubTutors.length > 0 && (
-                      <div className="border rounded-md p-2 space-y-1 max-h-[150px] overflow-y-auto bg-gray-50 text-sm">
-                        {tutors
-                          .filter((t) => selectedSubTutors.includes(t.id))
-                          .map((t) => (
-                            <div
-                              key={t.id}
-                              className="flex items-center justify-between px-2 py-0.5"
-                            >
-                              <span>
-                                {t.firstName} {t.lastName}
-                              </span>
-                              <button
-                                type="button"
-                                className="text-xs text-red-400 hover:text-red-600"
-                                onClick={() => toggleSubTutor(t.id)}
-                              >
-                                remove
-                              </button>
-                            </div>
-                          ))}
-                      </div>
-                    )}
+                    <Button className = "bg-connect-me-3" onClick={handleRemoveEvent}>Remove Event</Button>
                   </DialogContent>
                 </Dialog>
 
                 <Button
                   disabled={reportLoading}
                   onClick={handleDownloadHoursReport}
-                  className="bg-connect-me-blue-4"
+                  className = "bg-connect-me-blue-4"
                 >
                   Download Report
-                  {reportLoading ? <Loader2 className="h-4 w-4 animate-spin ml-2" /> : ""}
+                  {reportLoading ? (
+                    <Loader2 className="h-4 w-4 animate-spin ml-2" />
+                  ) : (
+                    ""
+                  )}
                 </Button>
               </div>
             </div>
           </div>
 
-          <div className="hidden md:block w-full">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="sticky left-0 z-10 bg-white">Tutor Name</TableHead>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="sticky left-0 z-10 bg-white">
+                  Tutor Name
+                </TableHead>
+                {allTimeView ? (
+                  <>
+                    <TableHead>All Sessions</TableHead>
+                    <TableHead>Biweekly Meetings</TableHead>
+                    <TableHead>Tutor Referral</TableHead>
+                    <TableHead>Sub Hotline</TableHead>
+                    <TableHead>Other</TableHead>
+                    <TableHead>All Time</TableHead>
+                  </>
+                ) : (
+                  <>
+                    {weeksInMonth.map((week) => (
+                      <TableHead key={week.toISOString()}>
+                        {format(week, "MMM d")} -{" "}
+                        {format(addDays(week, 6), "MMM d")}
+                      </TableHead>
+                    ))}
+                    <TableHead>Biweekly Meetings</TableHead>
+                    <TableHead>Tutor Referral</TableHead>
+                    <TableHead>Sub Hotline</TableHead>
+                    <TableHead>Other</TableHead>
+                    <TableHead>This Month</TableHead>
+                    <TableHead>All Time</TableHead>
+                  </>
+                )}
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {allTimeView ? (
+                ""
+              ) : (
+                <TableRow key={"total hours"}>
+                  <TableCell>Total</TableCell>
+                  {weeksInMonth.map((week) => {
+                    const hours = totalSessionHours[week.getTime().toString()]
+                      ? totalSessionHours[week.getTime().toString()] || ""
+                      : "";
+
+                    return <TableCell key={week.toString()}>{hours}</TableCell>;
+                  })}
+                  <TableCell>{totalEventHours["Biweekly Meeting"]}</TableCell>
+                  <TableCell>{totalEventHours["Tutor Referral"]}</TableCell>
+                  <TableCell>{totalEventHours["Sub Hotline"]}</TableCell>
+                  <TableCell>{totalEventHours["Other"]}</TableCell>
+                  <TableCell>{totalMonthlyHours}</TableCell>
+                  <TableCell>{totalHours}</TableCell>
+                </TableRow>
+              )}
+              {filteredTutors.map((tutor) => (
+                <TableRow key={tutor.id}>
+                  <TableCell className="sticky left-0 z-10 bg-white">
+                    {tutor.firstName} {tutor.lastName}
+                  </TableCell>
                   {allTimeView ? (
                     <>
-                      <TableHead>All Sessions</TableHead>
-                      <TableHead>Biweekly Meetings</TableHead>
-                      <TableHead>Tutor Referral</TableHead>
-                      <TableHead>Sub Hotline</TableHead>
-                      <TableHead>Other</TableHead>
-                      <TableHead>All Time</TableHead>
+                      {" "}
+                      <TableCell>
+                        {allTimeSessionHours[tutor.id] || ""}
+                      </TableCell>
+                      <TableCell>
+                        {eventHoursData[tutor.id]
+                          ? eventHoursData[tutor.id]["Biweekly Meeting"] || ""
+                          : ""}
+                      </TableCell>
+                      <TableCell>
+                        {eventHoursData[tutor.id]
+                          ? eventHoursData[tutor.id]["Tutor Referral"] || ""
+                          : ""}
+                      </TableCell>
+                      <TableCell>
+                        {eventHoursData[tutor.id]
+                          ? eventHoursData[tutor.id]["Sub Hotline"] || ""
+                          : ""}
+                      </TableCell>
+                      <TableCell>
+                        {/* {calculateExtraHours(tutor.id).toFixed(2)}
+                         */}
+                        {eventHoursData[tutor.id]
+                          ? eventHoursData[tutor.id]["Other"] || ""
+                          : ""}
+                      </TableCell>
+                      <TableCell>{allTimeHours[tutor.id] || ""}</TableCell>
                     </>
                   ) : (
                     <>
-                      {weeksInMonth.map((week) => (
-                        <TableHead key={week.toISOString()}>
-                          {format(week, "MMM d")} - {format(addDays(week, 6), "MMM d")}
-                        </TableHead>
-                      ))}
-                      <TableHead>Biweekly Meetings</TableHead>
-                      <TableHead>Tutor Referral</TableHead>
-                      <TableHead>Sub Hotline</TableHead>
-                      <TableHead>Other</TableHead>
-                      <TableHead>This Month</TableHead>
-                      <TableHead>All Time</TableHead>
+                      {weeksInMonth.map((week) => {
+                        const hours = weeklySessionHours[tutor.id]
+                          ? weeklySessionHours[tutor.id][
+                              week.getTime().toString()
+                            ] || ""
+                          : "";
+
+                        return (
+                          <TableCell key={week.toString()}>{hours}</TableCell>
+                        );
+                      })}
+                      <TableCell>
+                        {eventHoursData[tutor.id]
+                          ? eventHoursData[tutor.id]["Biweekly Meetings"]
+                          : ""}
+                      </TableCell>
+                      <TableCell>
+                        {eventHoursData[tutor.id]
+                          ? eventHoursData[tutor.id]["Tutor Referral"] || ""
+                          : ""}
+                      </TableCell>
+                      <TableCell>
+                        {eventHoursData[tutor.id]
+                          ? eventHoursData[tutor.id]["Sub Hotline"] || ""
+                          : ""}
+                      </TableCell>
+
+                      <TableCell>
+                        {/* {calculateExtraHours(tutor.id).toFixed(2)}
+                         */}
+                        {eventHoursData[tutor.id]
+                          ? eventHoursData[tutor.id]["Other"] || ""
+                          : ""}
+                      </TableCell>
+                      <TableCell>{monthlyHours[tutor.id] || ""}</TableCell>
+                      <TableCell>{allTimeHours[tutor.id] || ""}</TableCell>
                     </>
                   )}
                 </TableRow>
-              </TableHeader>
-              <TableBody>
-                {allTimeView ? (
-                  ""
-                ) : (
-                  <TableRow key={"total hours"}>
-                    <TableCell>Total</TableCell>
-                    {weeksInMonth.map((week) => {
-                      const hours = totalSessionHours[week.getTime().toString()]
-                        ? totalSessionHours[week.getTime().toString()] || ""
-                        : "";
-
-                      return <TableCell key={week.toString()}>{hours}</TableCell>;
-                    })}
-                    <TableCell>{totalEventHours["Biweekly Meeting"]}</TableCell>
-                    <TableCell>{totalEventHours["Tutor Referral"]}</TableCell>
-                    <TableCell>{totalEventHours["Sub Hotline"]}</TableCell>
-                    <TableCell>{totalEventHours["Other"]}</TableCell>
-                    <TableCell>{totalMonthlyHours}</TableCell>
-                    <TableCell>{totalHours}</TableCell>
-                  </TableRow>
-                )}
-                {filteredTutors.map((tutor) => (
-                  <TableRow key={tutor.id}>
-                    <TableCell className="sticky left-0 z-10 bg-white">
-                      {tutor.firstName} {tutor.lastName}
-                    </TableCell>
-                    {allTimeView ? (
-                      <>
-                        {" "}
-                        <TableCell>{allTimeSessionHours[tutor.id] || ""}</TableCell>
-                        <TableCell>
-                          {eventHoursData[tutor.id]
-                            ? eventHoursData[tutor.id]["Biweekly Meeting"] || ""
-                            : ""}
-                        </TableCell>
-                        <TableCell>
-                          {eventHoursData[tutor.id]
-                            ? eventHoursData[tutor.id]["Tutor Referral"] || ""
-                            : ""}
-                        </TableCell>
-                        <TableCell>
-                          {eventHoursData[tutor.id]
-                            ? eventHoursData[tutor.id]["Sub Hotline"] || ""
-                            : ""}
-                        </TableCell>
-                        <TableCell>
-                          {/* {calculateExtraHours(tutor.id).toFixed(2)}
-                           */}
-                          {eventHoursData[tutor.id] ? eventHoursData[tutor.id]["Other"] || "" : ""}
-                        </TableCell>
-                        <TableCell>{allTimeHours[tutor.id] || ""}</TableCell>
-                      </>
-                    ) : (
-                      <>
-                        {weeksInMonth.map((week) => {
-                          const hours = weeklySessionHours[tutor.id]
-                            ? weeklySessionHours[tutor.id][week.getTime().toString()] || ""
-                            : "";
-
-                          return <TableCell key={week.toString()}>{hours}</TableCell>;
-                        })}
-                        <TableCell>
-                          {eventHoursData[tutor.id]
-                            ? eventHoursData[tutor.id]["Biweekly Meetings"]
-                            : ""}
-                        </TableCell>
-                        <TableCell>
-                          {eventHoursData[tutor.id]
-                            ? eventHoursData[tutor.id]["Tutor Referral"] || ""
-                            : ""}
-                        </TableCell>
-                        <TableCell>
-                          {eventHoursData[tutor.id]
-                            ? eventHoursData[tutor.id]["Sub Hotline"] || ""
-                            : ""}
-                        </TableCell>
-
-                        <TableCell>
-                          {/* {calculateExtraHours(tutor.id).toFixed(2)}
-                           */}
-                          {eventHoursData[tutor.id] ? eventHoursData[tutor.id]["Other"] || "" : ""}
-                        </TableCell>
-                        <TableCell>{monthlyHours[tutor.id] || ""}</TableCell>
-                        <TableCell>{allTimeHours[tutor.id] || ""}</TableCell>
-                      </>
-                    )}
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
-
-          <div className="md:hidden space-y-4">
-            {!allTimeView && (
-              <MobileCard className="bg-muted/50">
-                <div className="font-semibold text-base">Totals</div>
-                <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm">
-                  <div>Biweekly Meetings</div>
-                  <div>{totalEventHours["Biweekly Meeting"] || ""}</div>
-                  <div>Tutor Referral</div>
-                  <div>{totalEventHours["Tutor Referral"] || ""}</div>
-                  <div>Sub Hotline</div>
-                  <div>{totalEventHours["Sub Hotline"] || ""}</div>
-                  <div>Other</div>
-                  <div>{totalEventHours["Other"] || ""}</div>
-                  <div>This Month</div>
-                  <div>{totalMonthlyHours}</div>
-                  <div>All Time</div>
-                  <div>{totalHours}</div>
-                </div>
-                <div className="flex gap-2 overflow-x-auto pt-1">
-                  {weeksInMonth.map((week) => (
-                    <span
-                      key={week.toISOString()}
-                      className="shrink-0 text-xs bg-white border rounded-md px-2 py-1 whitespace-nowrap"
-                    >
-                      {format(week, "MMM d")}-{format(addDays(week, 6), "MMM d")}:{" "}
-                      {totalSessionHours[week.getTime().toString()] || 0}h
-                    </span>
-                  ))}
-                </div>
-              </MobileCard>
-            )}
-
-            {visibleTutors.map((tutor) => (
-              <MobileCard key={tutor.id}>
-                <div className="font-semibold text-base">
-                  {tutor.firstName} {tutor.lastName}
-                </div>
-                <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm">
-                  {allTimeView ? (
-                    <>
-                      <div>All Sessions</div>
-                      <div>{allTimeSessionHours[tutor.id] || ""}</div>
-                      <div>Biweekly Meetings</div>
-                      <div>{eventHoursData[tutor.id]?.["Biweekly Meeting"] || ""}</div>
-                      <div>Tutor Referral</div>
-                      <div>{eventHoursData[tutor.id]?.["Tutor Referral"] || ""}</div>
-                      <div>Sub Hotline</div>
-                      <div>{eventHoursData[tutor.id]?.["Sub Hotline"] || ""}</div>
-                      <div>Other</div>
-                      <div>{eventHoursData[tutor.id]?.["Other"] || ""}</div>
-                      <div>All Time</div>
-                      <div>{allTimeHours[tutor.id] || ""}</div>
-                    </>
-                  ) : (
-                    <>
-                      <div>Biweekly Meetings</div>
-                      <div>{eventHoursData[tutor.id]?.["Biweekly Meetings"] || ""}</div>
-                      <div>Tutor Referral</div>
-                      <div>{eventHoursData[tutor.id]?.["Tutor Referral"] || ""}</div>
-                      <div>Sub Hotline</div>
-                      <div>{eventHoursData[tutor.id]?.["Sub Hotline"] || ""}</div>
-                      <div>Other</div>
-                      <div>{eventHoursData[tutor.id]?.["Other"] || ""}</div>
-                      <div>This Month</div>
-                      <div>{monthlyHours[tutor.id] || ""}</div>
-                      <div>All Time</div>
-                      <div>{allTimeHours[tutor.id] || ""}</div>
-                    </>
-                  )}
-                </div>
-                {!allTimeView && (
-                  <div className="flex gap-2 overflow-x-auto pt-1">
-                    {weeksInMonth.map((week) => (
-                      <span
-                        key={week.toISOString()}
-                        className="shrink-0 text-xs bg-muted rounded-md px-2 py-1 whitespace-nowrap"
-                      >
-                        {format(week, "MMM d")}-{format(addDays(week, 6), "MMM d")}:{" "}
-                        {weeklySessionHours[tutor.id]?.[week.getTime().toString()] || 0}h
-                      </span>
-                    ))}
-                  </div>
-                )}
-              </MobileCard>
-            ))}
-            <LoadMoreButton hasMore={hasMoreTutors} onClick={loadMoreTutors} />
-          </div>
+              ))}
+            </TableBody>
+          </Table>
         </div>
       </div>
       <Toaster />
