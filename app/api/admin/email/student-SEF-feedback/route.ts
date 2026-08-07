@@ -27,7 +27,7 @@ export async function POST(request: Request) {
     await getResend().emails.send({
       from: "Connect Me Free Tutoring & Mentoring <notifications@connectmego.app>",
       to: studentEmail,
-      cc: [process.env.DEV_EMAIL!, process.env.OPERATIONS_EMAIL!],
+      cc: [process.env.OPERATIONS_EMAIL!],
       subject: "Please provide feedback for your recent session",
       react: FeedbackEmail({ studentName }),
     });
