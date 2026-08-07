@@ -154,8 +154,12 @@ const TutorDashboard = () => {
       updatedSession.status = "Complete";
       updatedSession.isQuestionOrConcern = isQuestionOrConcern;
       updatedSession.isFirstSession = isFirstSession;
-      await sendStudentSEFFeedbackEmail(session);
       await updateSession(updatedSession);
+      try {
+        await sendStudentSEFFeedbackEmail(session);
+      } catch (error) {
+        console.error("Failed to send student SEF feedback email:", error);
+      }
       TC.setCurrentSessions(
         TC.currentSessions.map((e: Session) => (e.id === updatedSession.id ? updatedSession : e)),
       );

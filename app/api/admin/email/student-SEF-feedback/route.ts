@@ -25,9 +25,7 @@ export async function POST(request: Request) {
     }
 
     await getResend().emails.send({
-      from:
-        process.env.NEXT_PUBLIC_ADMIN_EMAILS?.split(",")[1]?.trim() ||
-        "Connect Me Tutoring <noreply@connectmego.org>",
+      from: "Connect Me Free Tutoring & Mentoring <notifications@connectmego.app>",
       to: studentEmail,
       cc: [process.env.DEV_EMAIL!, process.env.OPERATIONS_EMAIL!],
       subject: "Please provide feedback for your recent session",
