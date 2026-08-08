@@ -238,7 +238,6 @@ Options:
   const { data, error } = await resend.emails.send({
     from: DEFAULT_FROM,
     to: [to],
-    cc: [process.env.DEV_EMAIL!],
     subject,
     html,
   });
