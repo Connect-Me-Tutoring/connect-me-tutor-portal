@@ -42,7 +42,14 @@ export default function TutorProbationEmail({
       </div>
 
       {/* Main Content */}
-      <div style={{ padding: "24px", border: "1px solid #e0e0e0", borderTop: "none", borderRadius: "0 0 8px 8px" }}>
+      <div
+        style={{
+          padding: "24px",
+          border: "1px solid #e0e0e0",
+          borderTop: "none",
+          borderRadius: "0 0 8px 8px",
+        }}
+      >
         {/* Warning Banner */}
         <div
           style={{
@@ -81,7 +88,8 @@ export default function TutorProbationEmail({
             margin: "0 0 20px 0",
           }}
         >
-          This email serves as formal notification that your membership with Connect Me Tutoring has been placed on probationary status.
+          This email serves as formal notification that your membership with Connect Me Tutoring has
+          been placed on probationary status.
         </div>
 
         <div
@@ -101,7 +109,10 @@ export default function TutorProbationEmail({
               margin: "0",
             }}
           >
-            At Connect Me, we maintain high professional standards for our volunteers, and your recent activity has not met these requirements. Specifically, you have <strong>{reason}</strong>. As a result, your continued involvement with the organization is now under formal review.
+            At Connect Me, we maintain high professional standards for our volunteers, and your
+            recent activity has not met these requirements. Specifically, you have{" "}
+            <strong>{reason}</strong>. As a result, your continued involvement with the organization
+            is now under formal review.
           </div>
         </div>
 
@@ -133,7 +144,9 @@ export default function TutorProbationEmail({
               margin: "0 0 16px 0",
             }}
           >
-            To return to good standing, you are expected to fulfill the following obligations in the monitoring window of <strong>{monitoringWindowDays} days</strong>, effective immediately upon this email:
+            To return to good standing, you are expected to fulfill the following obligations in the
+            monitoring window of <strong>{monitoringWindowDays} days</strong>, effective immediately
+            upon this email:
           </div>
           <ul
             style={{
@@ -144,9 +157,7 @@ export default function TutorProbationEmail({
               lineHeight: "1.8",
             }}
           >
-            <li style={{ marginBottom: "8px" }}>
-              Attend all mandatory bi-weekly meetings.
-            </li>
+            <li style={{ marginBottom: "8px" }}>Attend all mandatory bi-weekly meetings.</li>
             <li style={{ marginBottom: "8px" }}>
               Respond to Discord messages from leadership members within 12 hours.
             </li>
@@ -168,7 +179,10 @@ export default function TutorProbationEmail({
             margin: "0 0 24px 0",
           }}
         >
-          Please understand that this period is your final opportunity to demonstrate the commitment and professionalism required of our members. Failure to comply with these guidelines, or any further violations of organization policy, will result in the immediate termination of your membership.
+          Please understand that this period is your final opportunity to demonstrate the commitment
+          and professionalism required of our members. Failure to comply with these guidelines, or
+          any further violations of organization policy, will result in the immediate termination of
+          your membership.
         </div>
 
         {/* Action Required Box */}
@@ -198,7 +212,10 @@ export default function TutorProbationEmail({
               margin: "0 0 8px 0",
             }}
           >
-            You must <strong>"reply all"</strong> directly to this email within <strong>{replyWithinHours} hours</strong> to confirm your continued participation in Connect Me. Failure to respond within this timeframe will result in the termination of your membership.
+            You must <strong>"reply all"</strong> directly to this email within{" "}
+            <strong>{replyWithinHours} hours</strong> to confirm your continued participation in
+            Connect Me. Failure to respond within this timeframe will result in the termination of
+            your membership.
           </div>
           <div
             style={{
@@ -207,7 +224,8 @@ export default function TutorProbationEmail({
               margin: "0",
             }}
           >
-            If you have any questions regarding your probationary status, please <strong>"reply all"</strong> to this thread.
+            If you have any questions regarding your probationary status, please{" "}
+            <strong>"reply all"</strong> to this thread.
           </div>
         </div>
 
@@ -256,7 +274,9 @@ export default function TutorProbationEmail({
 
   if (isPreview) {
     return (
-      <div style={{ fontFamily: "Arial, sans-serif", backgroundColor: "#f8f9fa", padding: "20px 0" }}>
+      <div
+        style={{ fontFamily: "Arial, sans-serif", backgroundColor: "#f8f9fa", padding: "20px 0" }}
+      >
         <EmailContent />
       </div>
     );
