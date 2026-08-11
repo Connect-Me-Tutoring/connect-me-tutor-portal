@@ -56,7 +56,7 @@ export default function PolicyQuiz() {
   const [selectedAnswer, setSelectedAnswer] = useState<number | null>(null);
   // For multi-select questions
   const [selectedMulti, setSelectedMulti] = useState<Set<number>>(new Set());
-  const [phase, setPhase] = useState<Phase>("complete");
+  const [phase, setPhase] = useState<Phase>("answering");
   const [wasCorrect, setWasCorrect] = useState(false);
   const [totalAttempts, setTotalAttempts] = useState(0);
   const [correctCount, setCorrectCount] = useState(0);
