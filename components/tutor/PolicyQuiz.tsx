@@ -16,7 +16,8 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { policyQuizQuestions, type QuizQuestion } from "@/constants/policy-quiz";
-import { submitQuizCompletion } from "@/lib/actions/orientation/server.actions";
+// TODO: wire up backend when ready
+// import { submitQuizCompletion } from "@/lib/actions/orientation/server.actions";
 import {
   CheckCircle2,
   XCircle,
@@ -179,7 +180,8 @@ export default function PolicyQuiz() {
     async (skipQuestions = false) => {
       setIsSubmitting(true);
       try {
-        await submitQuizCompletion({
+        // TODO: call submitQuizCompletion server action when backend is ready
+        console.log("Quiz completed:", {
           totalQuestions: total,
           totalAttempts: totalAttempts,
           retries: totalAttempts - total,

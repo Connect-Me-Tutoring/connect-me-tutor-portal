@@ -4,10 +4,10 @@ export interface QuizQuestion {
   options: string[];
   /** Indices of the correct answer(s). Single-select questions have one element. */
   correctIndices: number[];
-  explanation: string;
-  category: "policy" | "faq" | "protocol";
   /** When true, the question uses checkboxes and requires all correct answers. */
   multiSelect?: boolean;
+  explanation: string;
+  category: "policy" | "faq" | "protocol";
 }
 
 export const policyQuizQuestions: QuizQuestion[] = [
@@ -62,9 +62,9 @@ export const policyQuizQuestions: QuizQuestion[] = [
       "1 Week",
       "Before the next biweekly meeting",
     ],
-    correctIndices: [0],
+    correctIndices: [1],
     explanation:
-      "You must complete the SEF within 24 hours of your tutoring session. Late submissions may result in unlogged hours.",
+      "You must complete the SEF within 48 hours (2 days) of your tutoring session. Late submissions may result in unlogged hours.",
     category: "policy",
   },
   {
@@ -117,9 +117,9 @@ export const policyQuizQuestions: QuizQuestion[] = [
     id: "substitute-requests",
     question: "How many substitute requests may a tutor submit each month?",
     options: ["Unlimited", "1", "2", "3"],
-    correctIndices: [2],
+    correctIndices: [1],
     explanation:
-      "Tutors may submit up to 2 substitute requests per month. Plan ahead so you can attend your scheduled sessions.",
+      "Tutors may submit up to 1 substitute request per month. Plan ahead so you can attend your scheduled sessions.",
     category: "policy",
   },
   {
