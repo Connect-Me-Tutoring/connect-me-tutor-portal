@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useCallback, useMemo, useEffect } from "react";
+import React, { useState, useCallback, useEffect } from "react";
 import {
   Card,
   CardContent,
@@ -12,8 +12,11 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { policyQuizQuestions, type QuizQuestion } from "@/constants/policy-quiz";
+import { submitQuizCompletion } from "@/lib/actions/orientation/server.actions";
 import {
   CheckCircle2,
   XCircle,
@@ -22,7 +25,10 @@ import {
   ChevronRight,
   Sparkles,
   BookOpen,
+  MessageSquare,
+  Loader2,
 } from "lucide-react";
+import toast from "react-hot-toast";
 
 /* ------------------------------------------------------------------ */
 /*  Utility: Fisher-Yates shuffle                                      */
@@ -39,13 +45,16 @@ function shuffle<T>(arr: T[]): T[] {
 /* ------------------------------------------------------------------ */
 /*  Component                                                          */
 /* ------------------------------------------------------------------ */
-type Phase = "answering" | "feedback" | "complete";
+type Phase = "answering" | "feedback" | "questions" | "complete";
 
 export default function PolicyQuiz() {
   /* ---- state ---- */
   const [queue, setQueue] = useState<QuizQuestion[]>(policyQuizQuestions);
   const [completed, setCompleted] = useState<Set<string>>(new Set());
+  // For single-select: stores the selected index. For multi-select: unused (see selectedMulti).
   const [selectedAnswer, setSelectedAnswer] = useState<number | null>(null);
+  // For multi-select questions
+  const [selectedMulti, setSelectedMulti] = useState<Set<number>>(new Set());
   const [phase, setPhase] = useState<Phase>("answering");
   const [wasCorrect, setWasCorrect] = useState(false);
   const [totalAttempts, setTotalAttempts] = useState(0);
@@ -53,6 +62,8 @@ export default function PolicyQuiz() {
   const [slideDir, setSlideDir] = useState<"in" | "out" | "idle">("idle");
   const [shake, setShake] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const [questionsText, setQuestionsText] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const total = policyQuizQuestions.length;
   const current = queue[0] ?? null;
@@ -71,12 +82,47 @@ export default function PolicyQuiz() {
     return () => clearTimeout(t);
   }, [current?.id]);
 
+  /* ---- helpers ---- */
+  const hasSelection = current?.multiSelect
+    ? selectedMulti.size > 0
+    : selectedAnswer !== null;
+
+  const toggleMultiOption = useCallback(
+    (idx: number) => {
+      if (phase !== "answering") return;
+      setSelectedMulti((prev) => {
+        const next = new Set(prev);
+        if (next.has(idx)) {
+          next.delete(idx);
+        } else {
+          next.add(idx);
+        }
+        return next;
+      });
+    },
+    [phase],
+  );
+
   /* ---- handlers ---- */
   const handleCheck = useCallback(() => {
-    if (selectedAnswer === null || !current) return;
+    if (!current) return;
+
+    let correct: boolean;
+
+    if (current.multiSelect) {
+      // Multi-select: compare selected set vs correctIndices set
+      if (selectedMulti.size === 0) return;
+      const correctSet = new Set(current.correctIndices);
+      correct =
+        selectedMulti.size === correctSet.size &&
+        [...selectedMulti].every((i) => correctSet.has(i));
+    } else {
+      // Single-select
+      if (selectedAnswer === null) return;
+      correct = current.correctIndices.includes(selectedAnswer);
+    }
 
     setTotalAttempts((a) => a + 1);
-    const correct = selectedAnswer === current.correctIndex;
     setWasCorrect(correct);
 
     if (correct) {
@@ -87,7 +133,7 @@ export default function PolicyQuiz() {
     }
 
     setPhase("feedback");
-  }, [selectedAnswer, current]);
+  }, [selectedAnswer, selectedMulti, current]);
 
   const handleNext = useCallback(() => {
     if (!current) return;
@@ -99,36 +145,153 @@ export default function PolicyQuiz() {
       if (wasCorrect) {
         // Pop from front, add to completed
         setCompleted((prev) => new Set(prev).add(current.id));
-        setQueue((prev) => prev.slice(1));
+        setQueue((prev) => {
+          const next = prev.slice(1);
+          // If this was the last question, transition to questions phase
+          if (next.length === 0) {
+            setPhase("questions");
+          } else {
+            setPhase("answering");
+          }
+          return next;
+        });
       } else {
         // Move to a random position in the back half of the queue
         setQueue((prev) => {
           const rest = prev.slice(1);
           if (rest.length === 0) return [current];
           const minPos = Math.max(1, Math.floor(rest.length / 2));
-          const insertAt = minPos + Math.floor(Math.random() * (rest.length - minPos + 1));
+          const insertAt =
+            minPos + Math.floor(Math.random() * (rest.length - minPos + 1));
           const next = [...rest];
           next.splice(insertAt, 0, current);
           return next;
         });
+        setPhase("answering");
       }
 
       setSelectedAnswer(null);
-      setPhase("answering");
+      setSelectedMulti(new Set());
     }, 250);
   }, [current, wasCorrect]);
+
+  const handleSubmitQuiz = useCallback(
+    async (skipQuestions = false) => {
+      setIsSubmitting(true);
+      try {
+        await submitQuizCompletion({
+          totalQuestions: total,
+          totalAttempts: totalAttempts,
+          retries: totalAttempts - total,
+          questionsText: skipQuestions ? null : questionsText,
+        });
+        toast.success("Quiz submitted successfully!");
+        setPhase("complete");
+      } catch (err) {
+        console.error("Failed to submit quiz:", err);
+        toast.error("Failed to submit quiz. Please try again.");
+      } finally {
+        setIsSubmitting(false);
+      }
+    },
+    [total, totalAttempts, questionsText],
+  );
 
   const handleRestart = useCallback(() => {
     setQueue(shuffle(policyQuizQuestions));
     setCompleted(new Set());
     setSelectedAnswer(null);
+    setSelectedMulti(new Set());
     setPhase("answering");
     setTotalAttempts(0);
     setCorrectCount(0);
+    setQuestionsText("");
   }, []);
 
+  /* ---- "Any Questions?" card ---- */
+  if (phase === "questions") {
+    return (
+      <main className="relative min-h-screen p-8 backdrop-blur-sm">
+        <div className="mx-auto max-w-2xl">
+          <div className="mb-8">
+            <h1 className="mb-1 text-3xl font-bold">Almost Done!</h1>
+            <p className="text-sm text-muted-foreground">
+              You&apos;ve answered all the questions correctly. One last thing before we finish.
+            </p>
+          </div>
+
+          {/* full progress bar */}
+          <div className="mb-6">
+            <div className="mb-2 flex items-center justify-between text-sm">
+              <span className="font-medium text-green-600">
+                {total} of {total} mastered ✓
+              </span>
+            </div>
+            <div className="h-3 overflow-hidden rounded-full bg-gray-100">
+              <div
+                className="h-full rounded-full bg-gradient-to-r from-green-400 to-green-500 transition-all duration-500 ease-out"
+                style={{ width: "100%" }}
+              />
+            </div>
+          </div>
+
+          <Card className="overflow-hidden border bg-white shadow-md">
+            <CardHeader className="border-b bg-gray-50/80 pb-4">
+              <div className="flex items-center gap-2">
+                <MessageSquare className="h-5 w-5 text-connect-me-blue-3" />
+                <CardTitle className="text-lg">Do you have any questions?</CardTitle>
+              </div>
+              <CardDescription className="mt-2">
+                If you have any questions about policies, your role, or anything else, write them
+                below and our Operations team will get back to you.
+              </CardDescription>
+            </CardHeader>
+
+            <CardContent className="p-6">
+              <Textarea
+                placeholder="Type your questions here... (optional)"
+                value={questionsText}
+                onChange={(e) => setQuestionsText(e.target.value)}
+                rows={5}
+                className="resize-none"
+                disabled={isSubmitting}
+              />
+            </CardContent>
+
+            <CardFooter className="flex flex-col gap-3 border-t bg-white px-6 py-4">
+              <Button
+                onClick={() => handleSubmitQuiz(false)}
+                disabled={isSubmitting}
+                className="w-full gap-2 bg-connect-me-blue-3 hover:bg-connect-me-blue-4"
+              >
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Submitting...
+                  </>
+                ) : (
+                  <>
+                    Submit & Finish
+                    <ChevronRight className="h-4 w-4" />
+                  </>
+                )}
+              </Button>
+              <button
+                onClick={() => handleSubmitQuiz(true)}
+                disabled={isSubmitting}
+                className="text-sm text-muted-foreground underline hover:text-foreground"
+              >
+                Skip — I don&apos;t have any questions
+              </button>
+            </CardFooter>
+          </Card>
+        </div>
+      </main>
+    );
+  }
+
   /* ---- completion screen ---- */
-  if (queue.length === 0 || phase === "complete") {
+  if (phase === "complete") {
     const retries = totalAttempts - total;
     return (
       <main className="relative min-h-screen p-8 backdrop-blur-sm">
@@ -196,6 +359,8 @@ export default function PolicyQuiz() {
   }
 
   /* ---- quiz card ---- */
+  if (!current || !mounted) return null;
+
   const questionNumber = total - queue.length + 1;
 
   return (
@@ -239,59 +404,110 @@ export default function PolicyQuiz() {
           <Card className="overflow-hidden border bg-white shadow-md">
             <CardHeader className="border-b bg-gray-50/80 pb-4">
               <div className="flex items-center justify-between">
-                <Badge
-                  variant="secondary"
-                  className={
-                    current.category === "policy"
-                      ? "bg-connect-me-blue-1 text-connect-me-blue-5"
-                      : "bg-amber-100 text-amber-800"
-                  }
-                >
-                  {current.category === "policy" ? "Policy" : "FAQ"}
-                </Badge>
+                <div className="flex items-center gap-2">
+                  <Badge
+                    variant="secondary"
+                    className={
+                      current.category === "policy"
+                        ? "bg-connect-me-blue-1 text-connect-me-blue-5"
+                        : current.category === "protocol"
+                          ? "bg-red-100 text-red-800"
+                          : "bg-amber-100 text-amber-800"
+                    }
+                  >
+                    {current.category === "policy"
+                      ? "Policy"
+                      : current.category === "protocol"
+                        ? "Protocol"
+                        : "FAQ"}
+                  </Badge>
+                  {current.multiSelect && (
+                    <Badge variant="outline" className="text-xs">
+                      Select all that apply
+                    </Badge>
+                  )}
+                </div>
                 <span className="text-sm text-muted-foreground">Question {questionNumber}</span>
               </div>
               <CardTitle className="mt-3 text-lg leading-relaxed">{current.question}</CardTitle>
             </CardHeader>
 
             <CardContent className="p-6">
-              <RadioGroup
-                value={selectedAnswer !== null ? selectedAnswer.toString() : ""}
-                onValueChange={(v) => {
-                  if (phase === "answering") setSelectedAnswer(Number(v));
-                }}
-                className="space-y-3"
-              >
-                {current.options.map((option, idx) => {
-                  let optionStyle = "";
-                  if (phase === "feedback") {
-                    if (idx === current.correctIndex) {
-                      optionStyle = "border-green-300 bg-green-50 ring-1 ring-green-300";
-                    } else if (idx === selectedAnswer && !wasCorrect) {
-                      optionStyle = "border-red-300 bg-red-50 ring-1 ring-red-300";
+              {current.multiSelect ? (
+                /* ---- multi-select: checkboxes ---- */
+                <div className="space-y-3">
+                  {current.options.map((option, idx) => {
+                    let optionStyle = "";
+                    if (phase === "feedback") {
+                      if (current.correctIndices.includes(idx)) {
+                        optionStyle = "border-green-300 bg-green-50 ring-1 ring-green-300";
+                      } else if (selectedMulti.has(idx) && !wasCorrect) {
+                        optionStyle = "border-red-300 bg-red-50 ring-1 ring-red-300";
+                      }
+                    } else if (selectedMulti.has(idx)) {
+                      optionStyle =
+                        "border-connect-me-blue-2 bg-blue-50/50 ring-1 ring-connect-me-blue-2";
                     }
-                  } else if (selectedAnswer === idx) {
-                    optionStyle =
-                      "border-connect-me-blue-2 bg-blue-50/50 ring-1 ring-connect-me-blue-2";
-                  }
 
-                  return (
-                    <Label
-                      key={idx}
-                      htmlFor={`option-${idx}`}
-                      className={`flex cursor-pointer items-start gap-3 rounded-lg border p-4 transition-all hover:bg-gray-50 ${optionStyle}`}
-                    >
-                      <RadioGroupItem
-                        value={idx.toString()}
-                        id={`option-${idx}`}
-                        disabled={phase === "feedback"}
-                        className="mt-0.5"
-                      />
-                      <span className="text-sm leading-relaxed">{option}</span>
-                    </Label>
-                  );
-                })}
-              </RadioGroup>
+                    return (
+                      <Label
+                        key={idx}
+                        htmlFor={`option-multi-${idx}`}
+                        className={`flex cursor-pointer items-start gap-3 rounded-lg border p-4 transition-all hover:bg-gray-50 ${optionStyle}`}
+                        onClick={() => toggleMultiOption(idx)}
+                      >
+                        <Checkbox
+                          id={`option-multi-${idx}`}
+                          checked={selectedMulti.has(idx)}
+                          disabled={phase === "feedback"}
+                          className="mt-0.5"
+                          onCheckedChange={() => toggleMultiOption(idx)}
+                        />
+                        <span className="text-sm leading-relaxed">{option}</span>
+                      </Label>
+                    );
+                  })}
+                </div>
+              ) : (
+                /* ---- single-select: radio buttons ---- */
+                <RadioGroup
+                  value={selectedAnswer !== null ? selectedAnswer.toString() : ""}
+                  onValueChange={(v) => {
+                    if (phase === "answering") setSelectedAnswer(Number(v));
+                  }}
+                  className="space-y-3"
+                >
+                  {current.options.map((option, idx) => {
+                    let optionStyle = "";
+                    if (phase === "feedback") {
+                      if (current.correctIndices.includes(idx)) {
+                        optionStyle = "border-green-300 bg-green-50 ring-1 ring-green-300";
+                      } else if (idx === selectedAnswer && !wasCorrect) {
+                        optionStyle = "border-red-300 bg-red-50 ring-1 ring-red-300";
+                      }
+                    } else if (selectedAnswer === idx) {
+                      optionStyle =
+                        "border-connect-me-blue-2 bg-blue-50/50 ring-1 ring-connect-me-blue-2";
+                    }
+
+                    return (
+                      <Label
+                        key={idx}
+                        htmlFor={`option-${idx}`}
+                        className={`flex cursor-pointer items-start gap-3 rounded-lg border p-4 transition-all hover:bg-gray-50 ${optionStyle}`}
+                      >
+                        <RadioGroupItem
+                          value={idx.toString()}
+                          id={`option-${idx}`}
+                          disabled={phase === "feedback"}
+                          className="mt-0.5"
+                        />
+                        <span className="text-sm leading-relaxed">{option}</span>
+                      </Label>
+                    );
+                  })}
+                </RadioGroup>
+              )}
             </CardContent>
 
             {/* feedback banner */}
@@ -321,7 +537,7 @@ export default function PolicyQuiz() {
               {phase === "answering" ? (
                 <Button
                   onClick={handleCheck}
-                  disabled={selectedAnswer === null}
+                  disabled={!hasSelection}
                   className="w-full gap-2 bg-connect-me-blue-3 hover:bg-connect-me-blue-4"
                 >
                   Check Answer
