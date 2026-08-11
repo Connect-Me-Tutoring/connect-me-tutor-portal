@@ -56,7 +56,7 @@ export default function PolicyQuiz() {
   const [selectedAnswer, setSelectedAnswer] = useState<number | null>(null);
   // For multi-select questions
   const [selectedMulti, setSelectedMulti] = useState<Set<number>>(new Set());
-  const [phase, setPhase] = useState<Phase>("answering");
+  const [phase, setPhase] = useState<Phase>("complete");
   const [wasCorrect, setWasCorrect] = useState(false);
   const [totalAttempts, setTotalAttempts] = useState(0);
   const [correctCount, setCorrectCount] = useState(0);
@@ -306,7 +306,7 @@ export default function PolicyQuiz() {
                   <Trophy className="h-12 w-12 text-yellow-300" />
                 </div>
               </div>
-              <h1 className="mb-2 text-3xl font-bold">Quiz Complete!</h1>
+              <h1 className="mb-2 text-3xl font-bold">Wahoo! Quiz Completed</h1>
               <p className="text-lg text-blue-100">
                 You&apos;ve mastered all the policies &amp; FAQs
               </p>
@@ -329,7 +329,7 @@ export default function PolicyQuiz() {
                 </div>
               </div>
 
-              {retries === 0 ? (
+              {retries <= 0 ? (
                 <div className="flex items-center gap-3 rounded-lg border border-green-200 bg-green-50 p-4">
                   <Sparkles className="h-5 w-5 flex-shrink-0 text-green-600" />
                   <p className="text-sm text-green-800">
@@ -346,9 +346,42 @@ export default function PolicyQuiz() {
                   </p>
                 </div>
               )}
+
+              <div className="flex items-start gap-3 rounded-lg border border-gray-200 bg-gray-50 p-4">
+                <BookOpen className="mt-0.5 h-5 w-5 flex-shrink-0 text-gray-500" />
+                <p className="text-sm text-gray-600">
+                  Don&apos;t worry if you can&apos;t memorize everything right away — you can
+                  always refer to the{" "}
+                  <strong className="text-gray-800">Tutor Manual</strong> and reach out to the{" "}
+                  <strong className="text-gray-800">leadership team</strong> if you have any
+                  questions.
+                </p>
+              </div>
+
+              <div className="rounded-xl border-2 border-connect-me-blue-2 bg-gradient-to-r from-connect-me-blue-1/40 to-blue-50 p-5">
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="text-xl">🎉</span>
+                  <p className="text-base font-bold text-connect-me-blue-5">
+                    Portal Access Unlocked
+                  </p>
+                </div>
+                <p className="text-sm text-connect-me-blue-5/80">
+                  You&apos;ve completed the orientation quiz and now have full access to the
+                  Tutor Portal — including your students, sessions, resources, and chat.
+                </p>
+              </div>
             </CardContent>
 
-            <CardFooter className="border-t bg-gray-50 px-8 py-4">
+            <CardFooter className="flex flex-col gap-3 border-t bg-gray-50 px-8 py-4">
+              <Button
+                asChild
+                className="w-full gap-2 bg-connect-me-blue-3 hover:bg-connect-me-blue-4"
+              >
+                <a href="/dashboard">
+                  Go to Dashboard
+                  <ChevronRight className="h-4 w-4" />
+                </a>
+              </Button>
               <Button variant="outline" onClick={handleRestart} className="w-full gap-2">
                 <RotateCcw className="h-4 w-4" />
                 Retake Quiz
@@ -395,13 +428,12 @@ export default function PolicyQuiz() {
 
         {/* question card */}
         <div
-          className={`transition-all duration-300 ${
-            slideDir === "in"
+          className={`transition-all duration-300 ${slideDir === "in"
               ? "animate-[slideIn_0.35s_ease-out]"
               : slideDir === "out"
                 ? "animate-[slideOut_0.25s_ease-in_forwards]"
                 : ""
-          } ${shake ? "animate-[shake_0.4s_ease-in-out]" : ""}`}
+            } ${shake ? "animate-[shake_0.4s_ease-in-out]" : ""}`}
         >
           <Card className="overflow-hidden border bg-white shadow-md">
             <CardHeader className="border-b bg-gray-50/80 pb-4">
@@ -547,11 +579,10 @@ export default function PolicyQuiz() {
               ) : (
                 <Button
                   onClick={handleNext}
-                  className={`w-full gap-2 ${
-                    wasCorrect
+                  className={`w-full gap-2 ${wasCorrect
                       ? "bg-green-600 hover:bg-green-700"
                       : "bg-connect-me-blue-3 hover:bg-connect-me-blue-4"
-                  }`}
+                    }`}
                 >
                   {queue.length <= 1 && wasCorrect ? "Finish" : "Next"}
                   <ChevronRight className="h-4 w-4" />
