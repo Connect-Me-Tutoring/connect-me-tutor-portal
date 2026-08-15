@@ -565,6 +565,7 @@ export type Database = {
           tutor_ids: string[] | null;
           tutoring_hours: number | null;
           user_id: string | null;
+          orientation_completed_at: string | null;
         };
         Insert: {
           age?: string | null;
@@ -594,6 +595,7 @@ export type Database = {
           tutor_ids?: string[] | null;
           tutoring_hours?: number | null;
           user_id?: string | null;
+          orientation_completed_at?: string | null;
         };
         Update: {
           age?: string | null;
@@ -623,6 +625,7 @@ export type Database = {
           tutor_ids?: string[] | null;
           tutoring_hours?: number | null;
           user_id?: string | null;
+          orientation_completed_at?: string | null;
         };
         Relationships: [
           {

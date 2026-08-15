@@ -32,7 +32,8 @@ const ACTIVE_PROFILE_SELECT = `
   languages_spoken,
   age,
   grade,
-  gender
+  gender,
+  orientation_completed_at
 `;
 
 async function fetchActiveProfile(userId: string): Promise<Profile | null> {
