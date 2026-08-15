@@ -66,7 +66,7 @@ const sessionExitFormDeadline = (currSession: Session) => {
   const daysUntilDeadline = differenceInDays(deadlineDate, new Date());
 
   let urgencyClass = "";
-  let deadlineText = "";
+  let deadlineText = ""; //
 
   if (isToday(deadlineDate) || daysUntilDeadline === 0) {
     urgencyClass = "bg-red-500 text-white hover:bg-red-600 border-red-500";

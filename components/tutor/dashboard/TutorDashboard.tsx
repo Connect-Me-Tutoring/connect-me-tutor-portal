@@ -21,6 +21,7 @@ import {
 } from "@/lib/actions/email/server.actions";
 import { StudentAnnouncementsRoomId } from "@/constants/chat";
 import { format } from "date-fns";
+import { useLoadMore } from "@/hooks/useLoadMore";
 
 const TutorDashboard = () => {
   const TC = useDashboardContext();
@@ -153,8 +154,12 @@ const TutorDashboard = () => {
       updatedSession.status = "Complete";
       updatedSession.isQuestionOrConcern = isQuestionOrConcern;
       updatedSession.isFirstSession = isFirstSession;
-      await sendStudentSEFFeedbackEmail(session);
       await updateSession(updatedSession);
+      try {
+        await sendStudentSEFFeedbackEmail(session);
+      } catch (error) {
+        console.error("Failed to send student SEF feedback email:", error);
+      }
       TC.setCurrentSessions(
         TC.currentSessions.map((e: Session) => (e.id === updatedSession.id ? updatedSession : e)),
       );
@@ -252,6 +257,18 @@ const TutorDashboard = () => {
     TC.currentPagePastSessions * TC.rowsPerPagePastSessions,
   );
 
+  const {
+    visibleItems: visibleActiveSessions,
+    hasMore: hasMoreActiveSessions,
+    loadMore: loadMoreActiveSessions,
+  } = useLoadMore(TC.filteredSessions);
+
+  const {
+    visibleItems: visiblePastSessions,
+    hasMore: hasMorePastSessions,
+    loadMore: loadMorePastSessions,
+  } = useLoadMore(TC.filteredPastSessions);
+
   const handleInputChange = (e: { target: { name: string; value: string } }) => {
     const { name, value } = e.target;
 
@@ -316,6 +333,9 @@ const TutorDashboard = () => {
 
             <ActiveSessionsTable
               paginatedSessions={paginatedSessions}
+              visibleSessions={visibleActiveSessions}
+              hasMore={hasMoreActiveSessions}
+              loadMore={loadMoreActiveSessions}
               meetings={TC.meetings}
               totalPages={totalActiveSessionsPages}
               handleStatusChange={handleStatusChange}
@@ -347,6 +367,9 @@ const TutorDashboard = () => {
 
             <CompletedSessionsTable
               paginatedSessions={paginatedPastSessions}
+              visibleSessions={visiblePastSessions}
+              hasMore={hasMorePastSessions}
+              loadMore={loadMorePastSessions}
               totalPages={totalPastSessionsPages}
               handlePageChange={handlePastSessionsPageChange}
               handleRowsPerPageChange={handlePastSessionsRowsPerPageChange}
