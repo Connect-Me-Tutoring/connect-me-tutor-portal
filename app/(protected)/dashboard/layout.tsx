@@ -18,6 +18,11 @@ export default async function Layout({ children }: { children: React.ReactNode }
   if (!user) redirect("/");
 
   const profile = await cachedGetProfile(user.id);
+
+  if (profile?.role === "Tutor" && !profile.orientationCompletedAt) {
+    redirect("/orientation/quiz");
+  }
+
   const userProfiles = profile?.userId ? getUserProfiles(profile.userId) : Promise.resolve([]);
 
   return (
