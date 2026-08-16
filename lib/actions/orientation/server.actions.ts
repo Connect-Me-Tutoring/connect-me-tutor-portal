@@ -20,8 +20,7 @@ export async function submitQuizCompletion(payload: SubmitQuizPayload) {
   const { profile } = await requireAuthenticatedProfile();
   const supabase = await createClient();
 
-  const tutorName =
-    `${profile.firstName ?? ""} ${profile.lastName ?? ""}`.trim() || "A tutor";
+  const tutorName = `${profile.firstName ?? ""} ${profile.lastName ?? ""}`.trim() || "A tutor";
 
   // Mark orientation as completed in Supabase Profiles table
   const { error: updateError } = await supabase
@@ -35,15 +34,10 @@ export async function submitQuizCompletion(payload: SubmitQuizPayload) {
     console.error("Failed to update profile orientation status:", updateError);
   }
 
-  const hasQuestions =
-    payload.questionsText && payload.questionsText.trim().length > 0;
+  const hasQuestions = payload.questionsText && payload.questionsText.trim().length > 0;
 
   if (hasQuestions) {
-    await sendDiscordWebhook(
-      tutorName,
-      payload.questionsText!.trim(),
-      payload,
-    );
+    await sendDiscordWebhook(tutorName, payload.questionsText!.trim(), payload);
   }
 
   console.log(
@@ -53,16 +47,10 @@ export async function submitQuizCompletion(payload: SubmitQuizPayload) {
   return { success: true };
 }
 
-async function sendDiscordWebhook(
-  tutorName: string,
-  question: string,
-  stats: SubmitQuizPayload,
-) {
+async function sendDiscordWebhook(tutorName: string, question: string, stats: SubmitQuizPayload) {
   const webhookUrl = process.env.ORIENTATION_QUESTION_WEBHOOK;
   if (!webhookUrl) {
-    console.warn(
-      "ORIENTATION_QUESTION_WEBHOOK not set — skipping Discord notification",
-    );
+    console.warn("ORIENTATION_QUESTION_WEBHOOK not set — skipping Discord notification");
     return;
   }
 

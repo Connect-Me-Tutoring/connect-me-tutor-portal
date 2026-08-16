@@ -38,8 +38,7 @@ export const policyQuizQuestions: QuizQuestion[] = [
   },
   {
     id: "sef-purpose",
-    question:
-      "The Session Exit Form (SEF) must be completed after every tutoring session to:",
+    question: "The Session Exit Form (SEF) must be completed after every tutoring session to:",
     options: [
       "Receive volunteer hours",
       "Request a substitute",
@@ -56,12 +55,7 @@ export const policyQuizQuestions: QuizQuestion[] = [
     id: "sef-deadline",
     question:
       "How long after a tutoring session does a tutor have to complete the Session Exit Form (SEF)?",
-    options: [
-      "24 hours",
-      "2 Days",
-      "1 Week",
-      "Before the next biweekly meeting",
-    ],
+    options: ["24 hours", "2 Days", "1 Week", "Before the next biweekly meeting"],
     correctIndices: [1],
     explanation:
       "You must complete the SEF within 48 hours (2 days) of your tutoring session. Late submissions may result in unlogged hours.",
@@ -84,8 +78,7 @@ export const policyQuizQuestions: QuizQuestion[] = [
   },
   {
     id: "find-resources",
-    question:
-      "Where can tutors find important documents and resources?",
+    question: "Where can tutors find important documents and resources?",
     options: [
       "Tutor Documents channel on Discord",
       "Parent email threads",
@@ -100,14 +93,8 @@ export const policyQuizQuestions: QuizQuestion[] = [
   },
   {
     id: "welcome-message",
-    question:
-      "After being paired with a student, what must a tutor send before the first session?",
-    options: [
-      "A tutoring contract",
-      "A progress report",
-      "A welcome message",
-      "A lesson plan",
-    ],
+    question: "After being paired with a student, what must a tutor send before the first session?",
+    options: ["A tutoring contract", "A progress report", "A welcome message", "A lesson plan"],
     correctIndices: [2],
     explanation:
       "Before your first session, you should send a welcome message to introduce yourself and set expectations with the student and their parent/guardian.",
@@ -154,8 +141,7 @@ export const policyQuizQuestions: QuizQuestion[] = [
   },
   {
     id: "protocol-after-call",
-    question:
-      "After calling the parent, what is the next step in the 4-Step Protocol?",
+    question: "After calling the parent, what is the next step in the 4-Step Protocol?",
     options: [
       "Email the parent",
       "Send a text message to the parent",
@@ -199,14 +185,8 @@ export const policyQuizQuestions: QuizQuestion[] = [
   },
   {
     id: "protocol-no-response-days",
-    question:
-      "If the parent still has not responded after several days, who should you contact?",
-    options: [
-      "Director of Admissions",
-      "Tutor Onboarder",
-      "Ghosts Manager",
-      "Another tutor",
-    ],
+    question: "If the parent still has not responded after several days, who should you contact?",
+    options: ["Director of Admissions", "Tutor Onboarder", "Ghosts Manager", "Another tutor"],
     correctIndices: [2],
     explanation:
       "Step 4 of the 4-Step Protocol: if all prior contact attempts fail, reach out to the Ghosts Manager who handles ongoing no-show situations.",
@@ -214,8 +194,7 @@ export const policyQuizQuestions: QuizQuestion[] = [
   },
   {
     id: "stop-tutoring-actions",
-    question:
-      "Select all actions that should be taken if you can no longer tutor a student.",
+    question: "Select all actions that should be taken if you can no longer tutor a student.",
     options: [
       "Inform the parent professionally",
       "Delete the enrollment with the student on the portal",
@@ -255,8 +234,7 @@ export const policyQuizQuestions: QuizQuestion[] = [
   },
   {
     id: "excused-if-not-tutoring",
-    question:
-      "True or False: You are excused from biweekly meetings if not tutoring a student.",
+    question: "True or False: You are excused from biweekly meetings if not tutoring a student.",
     options: ["True", "False"],
     correctIndices: [1],
     explanation:

@@ -11,11 +11,7 @@ export const metadata = {
 
 export const dynamic = "force-dynamic";
 
-export default async function OrientationLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default async function OrientationLayout({ children }: { children: React.ReactNode }) {
   // Ensure user is logged in
   const user = await cachedGetUser().catch(() => {
     redirect("/");
@@ -23,7 +19,9 @@ export default async function OrientationLayout({
   if (!user) redirect("/");
 
   return (
-    <div className={`min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50 ${inter.className}`}>
+    <div
+      className={`min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50 ${inter.className}`}
+    >
       {children}
     </div>
   );

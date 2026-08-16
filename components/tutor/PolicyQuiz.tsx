@@ -83,9 +83,7 @@ export default function PolicyQuiz() {
   }, [current?.id]);
 
   /* ---- helpers ---- */
-  const hasSelection = current?.multiSelect
-    ? selectedMulti.size > 0
-    : selectedAnswer !== null;
+  const hasSelection = current?.multiSelect ? selectedMulti.size > 0 : selectedAnswer !== null;
 
   const toggleMultiOption = useCallback(
     (idx: number) => {
@@ -161,8 +159,7 @@ export default function PolicyQuiz() {
           const rest = prev.slice(1);
           if (rest.length === 0) return [current];
           const minPos = Math.max(1, Math.floor(rest.length / 2));
-          const insertAt =
-            minPos + Math.floor(Math.random() * (rest.length - minPos + 1));
+          const insertAt = minPos + Math.floor(Math.random() * (rest.length - minPos + 1));
           const next = [...rest];
           next.splice(insertAt, 0, current);
           return next;
@@ -348,10 +345,9 @@ export default function PolicyQuiz() {
               <div className="flex items-start gap-3 rounded-lg border border-gray-200 bg-gray-50 p-4">
                 <BookOpen className="mt-0.5 h-5 w-5 flex-shrink-0 text-gray-500" />
                 <p className="text-sm text-gray-600">
-                  Don&apos;t worry if you can&apos;t memorize everything right away — you can
-                  always refer to the{" "}
-                  <strong className="text-gray-800">Tutor Manual</strong> and reach out to the{" "}
-                  <strong className="text-gray-800">leadership team</strong> if you have any
+                  Don&apos;t worry if you can&apos;t memorize everything right away — you can always
+                  refer to the <strong className="text-gray-800">Tutor Manual</strong> and reach out
+                  to the <strong className="text-gray-800">leadership team</strong> if you have any
                   questions.
                 </p>
               </div>
@@ -364,8 +360,8 @@ export default function PolicyQuiz() {
                   </p>
                 </div>
                 <p className="text-sm text-connect-me-blue-5/80">
-                  You&apos;ve completed the orientation quiz and now have full access to the
-                  Tutor Portal — including your students, sessions, resources, and chat.
+                  You&apos;ve completed the orientation quiz and now have full access to the Tutor
+                  Portal — including your students, sessions, resources, and chat.
                 </p>
               </div>
             </CardContent>
@@ -426,12 +422,13 @@ export default function PolicyQuiz() {
 
         {/* question card */}
         <div
-          className={`transition-all duration-300 ${slideDir === "in"
+          className={`transition-all duration-300 ${
+            slideDir === "in"
               ? "animate-[slideIn_0.35s_ease-out]"
               : slideDir === "out"
                 ? "animate-[slideOut_0.25s_ease-in_forwards]"
                 : ""
-            } ${shake ? "animate-[shake_0.4s_ease-in-out]" : ""}`}
+          } ${shake ? "animate-[shake_0.4s_ease-in-out]" : ""}`}
         >
           <Card className="overflow-hidden border bg-white shadow-md">
             <CardHeader className="border-b bg-gray-50/80 pb-4">
@@ -577,10 +574,11 @@ export default function PolicyQuiz() {
               ) : (
                 <Button
                   onClick={handleNext}
-                  className={`w-full gap-2 ${wasCorrect
+                  className={`w-full gap-2 ${
+                    wasCorrect
                       ? "bg-green-600 hover:bg-green-700"
                       : "bg-connect-me-blue-3 hover:bg-connect-me-blue-4"
-                    }`}
+                  }`}
                 >
                   {queue.length <= 1 && wasCorrect ? "Finish" : "Next"}
                   <ChevronRight className="h-4 w-4" />
