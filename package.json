@@ -67,7 +67,6 @@
     "dompurify": "^3.4.11",
     "exceljs": "^4.4.0",
     "googleapis": "^173.0.0",
-    "http-proxy-middleware": "^4.2.0",
     "ioredis": "^5.6.1",
     "jsonwebtoken": "^9.0.2",
     "jsrsasign": ">=11.1.1",
