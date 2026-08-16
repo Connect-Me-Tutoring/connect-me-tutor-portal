@@ -2,7 +2,7 @@ import { Inter } from "next/font/google";
 
 import { redirect } from "next/navigation";
 
-import { cachedGetUser } from "@/lib/actions/user/server.actions";
+import { cachedGetUser } from "@/lib/actions/user/actions";
 import { cachedGetProfile } from "@/lib/actions/cache";
 import { getStudentSessions } from "@/lib/actions/session/server.actions";
 import { endOfWeek, startOfWeek } from "date-fns";

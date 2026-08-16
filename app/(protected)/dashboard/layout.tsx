@@ -1,4 +1,4 @@
-import { cachedGetUser } from "@/lib/actions/user/server.actions";
+import { cachedGetUser } from "@/lib/actions/user/actions";
 import DashboardLayout from "@/components/dashboard/dashboard-layout";
 import DashboardProviders from "./dashboardprovider";
 import { getUserProfiles } from "@/lib/actions/profile/server.actions";

@@ -4,7 +4,7 @@ import {
   getAllEventDetailsForTutor,
 } from "@/lib/actions/hours/server.actions";
 import { cachedGetProfile } from "@/lib/actions/cache";
-import { cachedGetUser } from "@/lib/actions/user/server.actions";
+import { cachedGetUser } from "@/lib/actions/user/actions";
 import { Calendar } from "lucide-react";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";

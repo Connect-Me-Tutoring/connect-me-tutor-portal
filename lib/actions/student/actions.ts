@@ -1,7 +1,7 @@
 // lib/student.actions.ts
 import { supabase } from "@/lib/supabase/client";
 import { Profile, Session } from "@/types";
-import { getProfileWithProfileId } from "../user/actions";
+import { getProfileWithProfileId } from "../user/client.actions";
 import { getMeeting } from "../admin.actions";
 import { Table } from "../../supabase/tables";
 import { tableToInterfaceSessions } from "@/lib/utils/type-utils";

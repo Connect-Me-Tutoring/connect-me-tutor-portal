@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import ActiveSessionsTable from "./components/ActiveSessionsTable";
 import CurrentSessionsTable from "./components/CurrentSessionsTable";
 import CompletedSessionsTable from "./components/CompletedSessionsTable";
-import { getProfile } from "@/lib/actions/user/actions";
+import { getProfile } from "@/lib/actions/user/client.actions";
 import { getMeetings } from "@/lib/actions/admin.actions";
 import { getTutorSessions, recordSessionExitForm } from "@/lib/actions/tutor/actions";
 import { getAllSessions } from "@/lib/actions/session/client.actions";

@@ -13,14 +13,6 @@ export async function getUserFromAction() {
   return user;
 }
 
-export const getUser = async () => {
-  const supabase = await createClient();
-  const { data } = await supabase.auth.getUser();
-  return data.user;
-};
-
-export const cachedGetUser = cache(getUser);
-
 export const getProfileRole = async (userId: string): Promise<string | null> => {
   const supabase = await createClient();
   const { data } = await supabase

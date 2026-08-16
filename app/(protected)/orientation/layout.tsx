@@ -1,5 +1,5 @@
 import { Inter } from "next/font/google";
-import { cachedGetUser } from "@/lib/actions/user/server.actions";
+import { cachedGetUser } from "@/lib/actions/user/actions";
 import { redirect } from "next/navigation";
 
 const inter = Inter({ subsets: ["latin"] });
