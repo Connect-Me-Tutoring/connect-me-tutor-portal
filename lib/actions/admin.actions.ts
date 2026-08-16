@@ -9,7 +9,7 @@ import {
   sendScheduledEmailsBeforeSessions,
   updateScheduledEmailBeforeSessions,
 } from "./email/server.actions";
-import { getProfileWithProfileId, getProfileByEmail } from "./user/actions";
+import { getProfileWithProfileId, getProfileByEmail } from "./user/client.actions";
 import {
   addDays,
   format,

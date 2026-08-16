@@ -176,7 +176,8 @@ export const getProfileFromUserSettings = async (userId: string): Promise<Profil
           status,
           student_number,
           settings_id,
-          languages_spoken
+          languages_spoken,
+          orientation_completed_at
         )
       `,
       )

@@ -2,7 +2,7 @@ import { Session } from "@/types";
 import { toast } from "react-hot-toast";
 import { Client } from "@upstash/qstash";
 import { Profile } from "@/types";
-import { getProfileWithProfileId } from "../user/actions";
+import { getProfileWithProfileId } from "../user/client.actions";
 
 /**
  * Sends requests to an API endpoint to schedule reminder emails for a list of sessions.

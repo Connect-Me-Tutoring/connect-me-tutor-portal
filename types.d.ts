@@ -23,6 +23,7 @@ export interface Profile {
   studentNumber: string | null;
   settingsId: string;
   languages_spoken: string[];
+  orientationCompletedAt?: string | null;
 }
 
 export interface Session {
