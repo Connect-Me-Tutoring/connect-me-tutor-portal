@@ -10,7 +10,9 @@ type Props = {
 
 export default function AnalyticsCard({ title, subtitle, actions, children, className }: Props) {
   return (
-    <section className={`rounded-lg border bg-white p-4 shadow-sm min-h-[200px] flex flex-col ${className ?? ""}`}>
+    <section
+      className={`rounded-lg border bg-white p-4 shadow-sm min-h-[200px] flex flex-col ${className ?? ""}`}
+    >
       <header className="flex items-start justify-between gap-4">
         <div>
           <h3 className="text-sm font-medium text-slate-900">{title}</h3>
@@ -20,7 +22,11 @@ export default function AnalyticsCard({ title, subtitle, actions, children, clas
       </header>
 
       <div className="mt-4 flex-1 overflow-hidden">
-        {children ?? <div className="h-full w-full flex items-center justify-center text-sm text-slate-400">No data</div>}
+        {children ?? (
+          <div className="h-full w-full flex items-center justify-center text-sm text-slate-400">
+            No data
+          </div>
+        )}
       </div>
     </section>
   );

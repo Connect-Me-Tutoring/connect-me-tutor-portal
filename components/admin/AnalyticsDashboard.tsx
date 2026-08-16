@@ -46,12 +46,20 @@ const AnalyticsDashboard = () => {
   return (
     <div className="p-6">
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2 mb-6">
-        <AnalyticsCard title="Tutor Attendance (preview)" subtitle="Placeholder" className="border-black">
-          <div className="h-24 w-full flex items-center justify-center text-slate-400">Placeholder chart</div>
+        <AnalyticsCard
+          title="Tutor Attendance (preview)"
+          subtitle="Placeholder"
+          className="border-black"
+        >
+          <div className="h-24 w-full flex items-center justify-center text-slate-400">
+            Placeholder chart
+          </div>
         </AnalyticsCard>
 
         <AnalyticsCard title="Cancellation Reasons (preview)" subtitle="Placeholder">
-          <div className="h-24 w-full flex items-center justify-center text-slate-400">Placeholder chart</div>
+          <div className="h-24 w-full flex items-center justify-center text-slate-400">
+            Placeholder chart
+          </div>
         </AnalyticsCard>
       </div>
 
