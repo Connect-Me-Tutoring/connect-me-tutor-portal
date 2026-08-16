@@ -19,7 +19,8 @@ export default async function Layout({ children }: { children: React.ReactNode }
 
   const profile = await cachedGetProfile(user.id);
 
-  if (profile?.role === "Tutor" && !profile.orientationCompletedAt) {
+  const orientationQuizEnabled = process.env.ORIENTATION_QUIZ_ENABLED === "true";
+  if (orientationQuizEnabled && profile?.role === "Tutor" && !profile.orientationCompletedAt) {
     redirect("/orientation/quiz");
   }
 
