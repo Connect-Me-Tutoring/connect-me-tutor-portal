@@ -553,6 +553,7 @@ export type Database = {
           id: string;
           languages_spoken: string[] | null;
           last_name: string;
+          orientation_completed_at: string | null;
           parent_email: string | null;
           parent_name: string | null;
           parent_phone: string | null;
@@ -582,6 +583,7 @@ export type Database = {
           id?: string;
           languages_spoken?: string[] | null;
           last_name: string;
+          orientation_completed_at?: string | null;
           parent_email?: string | null;
           parent_name?: string | null;
           parent_phone?: string | null;
@@ -611,6 +613,7 @@ export type Database = {
           id?: string;
           languages_spoken?: string[] | null;
           last_name?: string;
+          orientation_completed_at?: string | null;
           parent_email?: string | null;
           parent_name?: string | null;
           parent_phone?: string | null;
@@ -1129,6 +1132,14 @@ export type Database = {
           student_id: string;
           tutor: Json;
           tutor_id: string;
+        }[];
+      };
+      get_session_completion_stats: {
+        Args: never;
+        Returns: {
+          pct_completed: number;
+          total_completed: number;
+          total_resolved: number;
         }[];
       };
       get_session_hours_by_student: {

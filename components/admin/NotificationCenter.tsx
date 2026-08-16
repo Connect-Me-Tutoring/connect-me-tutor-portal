@@ -16,7 +16,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { getProfile } from "@/lib/actions/user/actions";
+import { getProfile } from "@/lib/actions/user/client.actions";
 import { getAllNotifications, updateNotification } from "@/lib/actions/admin.actions";
 import { formatDate, formatDateAdmin } from "@/lib/utils";
 import { Notification } from "@/types";

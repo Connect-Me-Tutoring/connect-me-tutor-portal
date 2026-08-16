@@ -27,7 +27,7 @@ import {
   Languages,
 } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { updateProfile } from "@/lib/actions/user/actions";
+import { updateProfile } from "@/lib/actions/user/client.actions";
 import { updateProfileDetails } from "@/lib/actions/profile/client.actions";
 import { createClient } from "@/lib/supabase/client";
 import { useFetchProfile } from "@/hooks/auth";

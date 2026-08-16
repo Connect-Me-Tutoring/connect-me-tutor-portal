@@ -1,4 +1,4 @@
-import { cachedGetUser } from "@/lib/actions/user/server.actions";
+import { cachedGetUser } from "@/lib/actions/user/actions";
 import DashboardLayout from "@/components/dashboard/dashboard-layout";
 import DashboardProviders from "./dashboardprovider";
 import { getUserProfiles } from "@/lib/actions/profile/server.actions";
@@ -18,6 +18,12 @@ export default async function Layout({ children }: { children: React.ReactNode }
   if (!user) redirect("/");
 
   const profile = await cachedGetProfile(user.id);
+
+  const orientationQuizEnabled = process.env.ORIENTATION_QUIZ_ENABLED === "true";
+  if (orientationQuizEnabled && profile?.role === "Tutor" && !profile.orientationCompletedAt) {
+    redirect("/orientation/quiz");
+  }
+
   const userProfiles = profile?.userId ? getUserProfiles(profile.userId) : Promise.resolve([]);
 
   return (

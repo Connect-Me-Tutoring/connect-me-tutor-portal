@@ -77,7 +77,7 @@ import { addHours, areIntervalsOverlapping } from "date-fns";
 
 import { getAllSessions } from "@/lib/actions/session/client.actions";
 import { addSessions } from "@/lib/actions/session/client.actions";
-import { getProfileWithProfileId } from "@/lib/actions/user/actions";
+import { getProfileWithProfileId } from "@/lib/actions/user/client.actions";
 import { toast, Toaster } from "react-hot-toast";
 import { Session, Enrollment, Meeting, Profile } from "@/types";
 import { getSessionTimespan } from "@/lib/utils";

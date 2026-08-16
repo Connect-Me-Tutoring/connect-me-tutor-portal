@@ -8,7 +8,7 @@ import { cachedGetProfile } from "@/lib/actions/cache";
 import { redirect } from "next/navigation";
 import { fetchUserAdminConversation } from "@/lib/actions/chat/server.actions";
 import Link from "next/link";
-import { cachedGetUser } from "@/lib/actions/user/server.actions";
+import { cachedGetUser } from "@/lib/actions/user/actions";
 
 export default async function ChatPage() {
   const user = await cachedGetUser();

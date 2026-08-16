@@ -2,169 +2,258 @@ export interface QuizQuestion {
   id: string;
   question: string;
   options: string[];
-  correctIndex: number;
+  /** Indices of the correct answer(s). Single-select questions have one element. */
+  correctIndices: number[];
+  /** When true, the question uses checkboxes and requires all correct answers. */
+  multiSelect?: boolean;
   explanation: string;
-  category: "policy" | "faq";
+  category: "policy" | "faq" | "protocol";
 }
 
 export const policyQuizQuestions: QuizQuestion[] = [
   {
-    id: "attendance-policy",
-    question: "What should you do if you cannot attend a scheduled tutoring session?",
-    options: [
-      "Simply don't show up — the student will understand",
-      "Notify your student at least 24 hours in advance and reschedule",
-      "Send a text to the student 5 minutes before the session",
-      "Ask another tutor to cover for you without telling anyone",
-    ],
-    correctIndex: 1,
-    explanation:
-      "You must notify both your student and the Connect Me team at least 24 hours in advance. Consistent no-shows can result in removal from the program.",
-    category: "policy",
-  },
-  {
-    id: "session-frequency",
-    question: "How often are tutoring sessions typically held with a student?",
-    options: ["Once a month", "Every day", "Once a week", "Twice a week, always"],
-    correctIndex: 2,
-    explanation:
-      "Sessions are generally held once a week. The specific day and time are set when you are paired with your student based on overlapping availability.",
-    category: "faq",
-  },
-  {
-    id: "session-duration",
-    question: "What is the standard length of a tutoring session?",
-    options: ["30 minutes", "1 hour", "2 hours", "As long as you want"],
-    correctIndex: 1,
-    explanation:
-      "Each tutoring session is 1 hour long by default. Session duration is configured per enrollment and may vary for certain programs.",
-    category: "policy",
-  },
-  {
-    id: "first-session",
-    question: "What should you prioritize during your first session with a new student?",
-    options: [
-      "Jump straight into a lesson plan you prepared",
-      "Build rapport, learn about the student's interests, and assess their needs",
-      "Give them a diagnostic test immediately",
-      "Let the student lead the entire session",
-    ],
-    correctIndex: 1,
-    explanation:
-      "Your first session is about building a connection with your student. Get to know them, learn their interests, and gently assess where they are academically so you can plan future sessions effectively.",
-    category: "policy",
-  },
-  {
-    id: "zoom-sessions",
-    question: "Where do tutoring sessions take place?",
-    options: [
-      "In-person at a local library",
-      "Over a Connect Me Zoom link provided in the portal",
-      "On any video call platform of your choice",
-      "Via phone call only",
-    ],
-    correctIndex: 1,
-    explanation:
-      "All sessions happen over Zoom using the meeting link assigned to your enrollment in the tutor portal. Do not use personal Zoom accounts or other platforms.",
-    category: "faq",
-  },
-  {
-    id: "session-exit-form",
-    question: "What must you complete after every tutoring session?",
-    options: [
-      "Nothing — just log off",
-      "A session exit form in the portal summarizing what you covered",
-      "An email to the admin team",
-      "A formal written report submitted by mail",
-    ],
-    correctIndex: 1,
-    explanation:
-      "After every session, you must fill out the session exit form in the portal. This helps the Connect Me team track progress, log hours, and flag any concerns.",
-    category: "policy",
-  },
-  {
-    id: "reschedule-process",
-    question: "If you need to reschedule a session, what is the correct process?",
-    options: [
-      "Just pick a new time and show up then",
-      "Use the reschedule feature in the tutor portal to propose a new time",
-      "Text the student's parent directly",
-      "Cancel the session and wait for next week",
-    ],
-    correctIndex: 1,
-    explanation:
-      "Use the reschedule feature in the portal. This notifies the student (and their parent/guardian) and keeps the admin team informed. Avoid informal rescheduling outside the system.",
-    category: "policy",
-  },
-  {
-    id: "student-concerns",
+    id: "min-sessions-hours",
     question:
-      "What should you do if your student shares something concerning (e.g., safety issues at home)?",
-    options: [
-      "Keep it to yourself — it's private",
-      "Post about it on social media to raise awareness",
-      "Report it to the Connect Me team immediately",
-      "Try to solve the problem yourself",
-    ],
-    correctIndex: 2,
+      "How many tutoring sessions with a student must be completed in order to receive hours?",
+    options: ["5", "8", "10", "15"],
+    correctIndices: [2],
     explanation:
-      "If a student discloses anything concerning, report it to the Connect Me team right away. You are not expected to handle these situations alone — the team has protocols to support the student appropriately.",
+      "You must complete at least 10 tutoring sessions with a student before your volunteer hours for that pairing are counted.",
     category: "policy",
   },
   {
-    id: "communication-channels",
-    question: "What is the primary way to communicate with your student between sessions?",
+    id: "drop-student-consequence",
+    question:
+      "If a tutor drops a student before completing the minimum session requirement without a valid reason, what may happen?",
     options: [
-      "Personal phone number",
-      "Instagram DMs",
-      "The built-in chat feature in the tutor portal",
-      "Your personal email",
+      "The tutor may not receive those volunteer hours",
+      "The tutor will automatically be removed from Connect Me",
+      "The tutor must attend additional meetings",
+      "The tutor cannot tutor again",
     ],
-    correctIndex: 2,
+    correctIndices: [0],
     explanation:
-      "Use the portal's built-in chat to communicate with your student. This keeps all communication documented and accessible to the admin team if needed.",
-    category: "faq",
-  },
-  {
-    id: "tutor-resources",
-    question: "Where can you find lesson plans and worksheets for your sessions?",
-    options: [
-      "You must create all materials from scratch",
-      "The Resources page in the tutor portal has curated links and materials",
-      "Ask the student to bring their own materials",
-      "Search randomly on the internet during the session",
-    ],
-    correctIndex: 1,
-    explanation:
-      "The Resources page in the portal provides curated educational resources organized by subject and grade level — including Khan Academy exercises, reading comprehension worksheets, science labs, and more.",
-    category: "faq",
-  },
-  {
-    id: "volunteer-hours",
-    question: "How are your volunteer/tutoring hours tracked?",
-    options: [
-      "You self-report hours in a separate spreadsheet",
-      "Hours are automatically tracked through session completion and exit forms in the portal",
-      "You email the admin team each week with your hours",
-      "Hours are not tracked",
-    ],
-    correctIndex: 1,
-    explanation:
-      "Your hours are tracked through the portal when you complete sessions and submit exit forms. You can view your accumulated hours on the My Hours page.",
-    category: "faq",
-  },
-  {
-    id: "unpair-process",
-    question: "What should you do if you feel your pairing with a student isn't working out?",
-    options: [
-      "Stop showing up until they reassign you",
-      "Tell the student you don't want to tutor them anymore",
-      "Reach out to the Connect Me team to discuss the situation and explore options",
-      "Switch students with another tutor on your own",
-    ],
-    correctIndex: 2,
-    explanation:
-      "Communicate with the Connect Me team. They can mediate, provide tips, or re-pair you with a different student if needed. Never ghost a student or handle re-pairing informally.",
+      "If you drop a student before completing the required minimum sessions without a valid reason, you may not receive the volunteer hours from those sessions.",
     category: "policy",
+  },
+  {
+    id: "sef-purpose",
+    question: "The Session Exit Form (SEF) must be completed after every tutoring session to:",
+    options: [
+      "Receive volunteer hours",
+      "Request a substitute",
+      "Contact Admissions",
+      "Document session attendance",
+    ],
+    correctIndices: [0, 3],
+    explanation:
+      "The SEF serves two purposes: it documents your session attendance and is required for you to receive your volunteer hours.",
+    category: "policy",
+    multiSelect: true,
+  },
+  {
+    id: "sef-deadline",
+    question:
+      "How long after a tutoring session does a tutor have to complete the Session Exit Form (SEF)?",
+    options: ["24 hours", "2 Days", "1 Week", "Before the next biweekly meeting"],
+    correctIndices: [1],
+    explanation:
+      "You must complete the SEF within 48 hours (2 days) of your tutoring session. Late submissions may result in unlogged hours.",
+    category: "policy",
+  },
+  {
+    id: "biweekly-absence",
+    question:
+      "If you cannot attend a biweekly meeting, when should you submit the excused absence form?",
+    options: [
+      "At least 24 hours before the meeting",
+      "At least 12 hours before the meeting",
+      "Within 24 hours after the meeting",
+      "Anytime before the next biweekly meeting",
+    ],
+    correctIndices: [0],
+    explanation:
+      "The excused absence form must be submitted at least 24 hours before the biweekly meeting you will miss.",
+    category: "policy",
+  },
+  {
+    id: "find-resources",
+    question: "Where can tutors find important documents and resources?",
+    options: [
+      "Tutor Documents channel on Discord",
+      "Parent email threads",
+      "Resources tab on the Tutor Portal",
+      "Tutor FAQ",
+    ],
+    correctIndices: [0, 2, 3],
+    explanation:
+      "Important documents and resources can be found on the Tutor Documents channel on Discord, the Resources tab in the Tutor Portal, and the Tutor FAQ. Parent email threads are not a source for tutor documents.",
+    category: "faq",
+    multiSelect: true,
+  },
+  {
+    id: "welcome-message",
+    question: "After being paired with a student, what must a tutor send before the first session?",
+    options: ["A tutoring contract", "A progress report", "A welcome message", "A lesson plan"],
+    correctIndices: [2],
+    explanation:
+      "Before your first session, you should send a welcome message to introduce yourself and set expectations with the student and their parent/guardian.",
+    category: "policy",
+  },
+  {
+    id: "substitute-requests",
+    question: "How many substitute requests may a tutor submit each month?",
+    options: ["Unlimited", "1", "2", "3"],
+    correctIndices: [1],
+    explanation:
+      "Tutors may submit up to 1 substitute request per month. Plan ahead so you can attend your scheduled sessions.",
+    category: "policy",
+  },
+  {
+    id: "four-step-order",
+    question:
+      "What is the correct order of the 4-Step Protocol when a student does not attend a session?",
+    options: [
+      "Contact Admissions/Ghosts Manager → Text → Email → Call",
+      "Call → Email → Text → Contact Admissions/Ghosts Manager",
+      "Call → Text → Email → Contact Admissions/Ghosts Manager",
+      "Contact Admissions/Ghosts Manager → Call → Text → Email",
+    ],
+    correctIndices: [2],
+    explanation:
+      "The 4-Step Protocol is: (1) Call the parent, (2) Text the parent, (3) Email the parent, (4) Contact the Ghosts Manager. Always start with a direct call.",
+    category: "protocol",
+  },
+  {
+    id: "protocol-first-call",
+    question:
+      "A student has not joined the Zoom session. According to the 4-Step Protocol, when should you first call the parent?",
+    options: [
+      "Immediately when the session starts",
+      "After 5 minutes",
+      "After 10 minutes",
+      "After 15 minutes",
+    ],
+    correctIndices: [1],
+    explanation:
+      "If the student hasn't joined after 5 minutes, initiate Step 1 of the 4-Step Protocol by calling the parent/guardian.",
+    category: "protocol",
+  },
+  {
+    id: "protocol-after-call",
+    question: "After calling the parent, what is the next step in the 4-Step Protocol?",
+    options: [
+      "Email the parent",
+      "Send a text message to the parent",
+      "Contact the Ghosts Manager",
+      "Complete the SEF",
+    ],
+    correctIndices: [1],
+    explanation:
+      "After calling (Step 1), the next step is to send a text message to the parent (Step 2). The protocol order is Call → Text → Email → Contact Ghosts Manager.",
+    category: "protocol",
+  },
+  {
+    id: "protocol-fifteen-min",
+    question:
+      "You have called and texted the parent. Fifteen minutes have passed and the student has still not joined. What should you do?",
+    options: [
+      "Continue waiting",
+      "Contact Admissions immediately",
+      "Leave the Zoom and complete the SEF",
+      "Cancel future sessions",
+    ],
+    correctIndices: [2],
+    explanation:
+      "After 15 minutes with no response, leave the Zoom session and complete the Session Exit Form to document the no-show. Continue with email (Step 3) and contacting the Ghosts Manager (Step 4) as needed.",
+    category: "protocol",
+  },
+  {
+    id: "protocol-no-response-one-day",
+    question:
+      "If the parent has not responded to your call or text after one day, what should you do?",
+    options: [
+      "Report the student as a ghost",
+      "Email the parent",
+      "Contact admissions",
+      "Remove the student from the portal",
+    ],
+    correctIndices: [1],
+    explanation:
+      "If there's no response after one day, move to Step 3 of the 4-Step Protocol: email the parent. Escalate to the Ghosts Manager only after email attempts are also unanswered.",
+    category: "protocol",
+  },
+  {
+    id: "protocol-no-response-days",
+    question: "If the parent still has not responded after several days, who should you contact?",
+    options: ["Director of Admissions", "Tutor Onboarder", "Ghosts Manager", "Another tutor"],
+    correctIndices: [2],
+    explanation:
+      "Step 4 of the 4-Step Protocol: if all prior contact attempts fail, reach out to the Ghosts Manager who handles ongoing no-show situations.",
+    category: "protocol",
+  },
+  {
+    id: "stop-tutoring-actions",
+    question: "Select all actions that should be taken if you can no longer tutor a student.",
+    options: [
+      "Inform the parent professionally",
+      "Delete the enrollment with the student on the portal",
+      "Complete the New Tutor Request Form",
+      "Stop attending sessions immediately",
+    ],
+    correctIndices: [0, 2],
+    explanation:
+      "If you can no longer tutor a student, you must inform the parent professionally and complete the New Tutor Request Form so the student can be re-paired. Do not stop attending sessions without notice or delete enrollments yourself.",
+    category: "policy",
+    multiSelect: true,
+  },
+  {
+    id: "max-pause-duration",
+    question:
+      "If you need to take a break from tutoring, what is the maximum amount of time you may pause tutoring while remaining in Connect Me?",
+    options: ["1 month", "2 months", "3 months", "6 months"],
+    correctIndices: [2],
+    explanation:
+      "You may pause tutoring for up to 3 months and still remain in Connect Me. Longer absences may require re-onboarding.",
+    category: "policy",
+  },
+  {
+    id: "international-tutor-meetings",
+    question:
+      "An international tutor cannot reasonably attend the standard biweekly meeting time. What should they do?",
+    options: [
+      "Submit an excused absence form before every meeting",
+      "Contact the Director of Operations to receive an alternative attendance method",
+      "Contact the Ghosts Manager",
+      "Skip the meetings without penalty",
+    ],
+    correctIndices: [1],
+    explanation:
+      "International tutors who cannot attend the standard meeting time should contact the Director of Operations to arrange an alternative attendance method.",
+    category: "faq",
+  },
+  {
+    id: "excused-if-not-tutoring",
+    question: "True or False: You are excused from biweekly meetings if not tutoring a student.",
+    options: ["True", "False"],
+    correctIndices: [1],
+    explanation:
+      "False. You are still required to attend biweekly meetings even if you are not currently paired with a student. These meetings cover important updates and training.",
+    category: "policy",
+  },
+  {
+    id: "change-meeting-times",
+    question:
+      "How do you change your meeting times with a student, or add another session per week?",
+    options: [
+      'Use the "My Students" tab to update the student\'s schedule',
+      "Use the Dashboard tab to reschedule all future sessions",
+      "Submit a request through the Chats feature for an administrator to update the schedule",
+      'Use the "My Enrollments" tab to edit the session time or create a new enrollment',
+    ],
+    correctIndices: [3],
+    explanation:
+      'Use the "My Enrollments" tab on the portal to edit the session time for an existing enrollment or create a new enrollment if you need an additional session per week.',
+    category: "faq",
   },
 ];

@@ -4,7 +4,7 @@ import React, { use, useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
-import { logoutUser } from "@/lib/actions/user/actions";
+import { logoutUser } from "@/lib/actions/user/client.actions";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useProfile } from "@/lib/contexts/profileContext";
 import {
