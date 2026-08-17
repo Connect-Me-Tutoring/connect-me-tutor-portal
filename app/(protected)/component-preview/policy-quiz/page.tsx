@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { cachedGetUser } from "@/lib/actions/user/server.actions";
+import { cachedGetUser } from "@/lib/actions/user/actions";
 import { cachedGetProfile } from "@/lib/actions/cache";
 import PolicyQuiz from "@/components/tutor/PolicyQuiz";
 

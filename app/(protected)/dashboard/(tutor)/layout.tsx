@@ -2,7 +2,7 @@ import { Inter } from "next/font/google";
 
 import { redirect } from "next/navigation";
 
-import { getSessionUserProfile } from "@/lib/actions/user/actions";
+import { getSessionUserProfile } from "@/lib/actions/user/client.actions";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata = {

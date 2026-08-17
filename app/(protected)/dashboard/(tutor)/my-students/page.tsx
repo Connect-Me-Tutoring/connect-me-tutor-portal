@@ -3,7 +3,7 @@ import { PageLoader } from "@/components/ui/page-loader";
 import SkeletonTable from "@/components/ui/skeleton";
 
 import { cachedGetProfile, cachedGetTutorStudents } from "@/lib/actions/cache";
-import { cachedGetUser } from "@/lib/actions/user/server.actions";
+import { cachedGetUser } from "@/lib/actions/user/actions";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
 

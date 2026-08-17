@@ -28,6 +28,7 @@ export const tableToInterfaceProfiles = (data: any) => {
       status: data.status,
       studentNumber: data.student_number,
       settingsId: data.settings_id,
+      orientationCompletedAt: data.orientation_completed_at,
     };
     return userProfile;
   } catch (error) {

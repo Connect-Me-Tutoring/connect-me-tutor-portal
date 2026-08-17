@@ -4,7 +4,7 @@ import { Enrollment, Meeting, Profile } from "@/types";
 import { SharedPairing } from "@/types/pairing";
 import { createAdminClient, createClient } from "@/lib/supabase/server";
 import axios from "axios";
-import { getProfile } from "../user/actions";
+import { getProfile } from "../user/client.actions";
 import { createServerClient } from "../../supabase/server";
 import { getUserFromAction } from "../user/server.actions";
 import { IncomingPairingMatch } from "./client.actions";

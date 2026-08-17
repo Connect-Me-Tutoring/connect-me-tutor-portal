@@ -3,7 +3,7 @@ import { createAdminClient, createClient } from "../supabase/server";
 import { Person } from "@/types/enrollment";
 import { PairingLogSchemaType } from "./types";
 import { PairingRequestNotificationEmailProps } from "@/types/email";
-import { getProfileWithProfileId } from "../actions/user/actions";
+import { getProfileWithProfileId } from "../actions/user/client.actions";
 import { sendPairingRequestEmail } from "../actions/email/server.actions";
 import { getRejectedTutorIdsForStudent } from "../actions/pairing/server.actions";
 import { Profile } from "@/types";

@@ -1,4 +1,4 @@
-"use server";
+import "server-only";
 import { createServerClient as makeServerClient } from "@supabase/ssr";
 import { createClient as createAdmin } from "@supabase/supabase-js";
 import { cookies } from "next/headers";
