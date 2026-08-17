@@ -12,6 +12,11 @@ export async function GET(req: NextRequest) {
   if (!isCronRequestAuthorized(req)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+
+  if (process.env.ENABLE_CLEANUP_SCHEDULE !== "TRUE") {
+    return NextResponse.json({ message: "Cleanup schedule disabled" }, { status: 200 });
+  }
+
   const results = {
     cancelUnsubmittedSEF: {
       success: false,
