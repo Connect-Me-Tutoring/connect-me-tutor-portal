@@ -14,7 +14,7 @@ export async function GET(req: NextRequest) {
   }
 
   if (process.env.ENABLE_CLEANUP_SCHEDULE !== "TRUE") {
-    return NextResponse.json({ status: 300 });
+    return NextResponse.json({ message: "Cleanup schedule disabled" }, { status: 200 });
   }
 
   const results = {
