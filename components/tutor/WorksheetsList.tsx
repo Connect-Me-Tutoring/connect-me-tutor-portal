@@ -5,17 +5,29 @@ import type { WorksheetResource } from "@/app/(protected)/dashboard/(tutor)/work
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/lib/supabase/client";
-import { Download, ExternalLink, FileText, FolderOpen, Search } from "lucide-react";
+import { ChevronLeft, Download, ExternalLink, FileText, FolderOpen, Search } from "lucide-react";
 
 const allCategories = "All categories";
 const allCollections = "All grades";
 
-const gradeOrder = ["4th Grade", "5th Grade", "6th Grade", "7th Grade", "8th Grade", "Algebra 1"];
+const gradeOrder = [
+  "Kindergarten",
+  "1st Grade",
+  "2nd Grade",
+  "3rd Grade",
+  "4th Grade",
+  "5th Grade",
+  "6th Grade",
+  "7th Grade",
+  "8th Grade",
+  "Algebra 1",
+];
 
 const cleanTitle = (name: string) =>
   name
-    .replace(/\.pdf$/i, "")
+    .replace(/\.(pdf|docx?)$/i, "")
     .replace(/^\d+\.\s*/, "")
+    .replace(/^[A-Za-z]+(_Grade)? - /, "")
     .replace(/\s+/g, " ")
     .trim();
 
@@ -24,10 +36,55 @@ const getCollectionSortIndex = (collection: string) => {
   return index === -1 ? gradeOrder.length : index;
 };
 
+const PickerScreen = ({
+  title,
+  options,
+  onSelect,
+  onBack,
+}: {
+  title: string;
+  options: { name: string; count: number }[];
+  onSelect: (name: string) => void;
+  onBack?: () => void;
+}) => (
+  <section className="mx-auto flex w-full max-w-6xl flex-col gap-6">
+    <div className="flex flex-col gap-2">
+      {onBack ? (
+        <button
+          type="button"
+          onClick={onBack}
+          className="flex w-fit items-center gap-1 text-base text-gray-500 transition-colors hover:text-gray-900"
+        >
+          <ChevronLeft className="h-4 w-4" />
+          Back
+        </button>
+      ) : null}
+      <h1 className="text-4xl font-semibold tracking-tight text-gray-900">{title}</h1>
+    </div>
+
+    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      {options.map((option) => (
+        <button
+          key={option.name}
+          type="button"
+          onClick={() => onSelect(option.name)}
+          className="flex items-center justify-between gap-3 rounded-lg border bg-white p-5 text-left transition-colors hover:border-gray-900 hover:bg-gray-50"
+        >
+          <span className="flex min-w-0 items-center gap-3">
+            <FolderOpen className="h-6 w-6 shrink-0 text-gray-500" />
+            <span className="truncate text-lg font-medium text-gray-900">{option.name}</span>
+          </span>
+          <span className="shrink-0 text-base text-gray-500">{option.count}</span>
+        </button>
+      ))}
+    </div>
+  </section>
+);
+
 const WorksheetsList = ({ worksheets }: { worksheets: WorksheetResource[] }) => {
   const [searchQuery, setSearchQuery] = useState("");
-  const [activeCategory, setActiveCategory] = useState(allCategories);
-  const [activeCollection, setActiveCollection] = useState(allCollections);
+  const [activeCategory, setActiveCategory] = useState<string | null>(null);
+  const [activeCollection, setActiveCollection] = useState<string | null>(null);
 
   const categories = useMemo(() => {
     const counts = new Map<string, number>();
@@ -108,6 +165,22 @@ const WorksheetsList = ({ worksheets }: { worksheets: WorksheetResource[] }) => 
     download.click();
     URL.revokeObjectURL(url);
   };
+
+  // Step through subject then grade on the way in; the sidebar takes over once a grade is picked.
+  if (!activeCategory) {
+    return <PickerScreen title="Worksheets" options={categories} onSelect={setActiveCategory} />;
+  }
+
+  if (!activeCollection) {
+    return (
+      <PickerScreen
+        title={activeCategory}
+        options={[{ name: allCollections, count: categoryWorksheets.length }, ...collections]}
+        onSelect={setActiveCollection}
+        onBack={() => setActiveCategory(null)}
+      />
+    );
+  }
 
   return (
     <section className="mx-auto flex w-full max-w-6xl flex-col gap-6">
