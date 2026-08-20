@@ -64,7 +64,7 @@ const SessionCompletionChart = () => {
           "get_period_session_completion_stats",
           {
             p_granularity: g,
-          }
+          },
         );
         if (error) throw error;
         const rows: PeriodStat[] = data ?? [];
@@ -86,7 +86,7 @@ const SessionCompletionChart = () => {
         setIsRefreshing(false);
       }
     },
-    []
+    [],
   );
 
   useEffect(() => {
@@ -108,7 +108,7 @@ const SessionCompletionChart = () => {
         ...(long ? { year: "numeric" } : {}),
       });
     },
-    [granularity]
+    [granularity],
   );
 
   // Filtering is client-side: one fetch per granularity, then filter in memory
@@ -121,14 +121,14 @@ const SessionCompletionChart = () => {
         if (rangeEnd && k > rangeEnd) return false;
         return true;
       }),
-    [data, rangeStart, rangeEnd, granularity]
+    [data, rangeStart, rangeEnd, granularity],
   );
 
   // Recharts reads every series off the same row objects, so the active value
   // and its trend get folded in here rather than passed as separate arrays.
   const chartData = useMemo(() => {
     const values = filtered.map((d) =>
-      metric === "completed" ? d.total_completed : d.pct_completed
+      metric === "completed" ? d.total_completed : d.pct_completed,
     );
     const trend =
       showTrendline && values.length >= 2 ? linearTrend(values) : null;
@@ -152,13 +152,7 @@ const SessionCompletionChart = () => {
   const axisTitle =
     metric === "completed" ? "Sessions completed" : "% completed";
 
-  const renderTooltip = ({
-    active,
-    payload,
-  }: {
-    active?: boolean;
-    payload?: any[];
-  }) => {
+  const renderTooltip = ({ active, payload }: any) => {
     if (!active || !payload?.length) return null;
     const row = payload[0].payload as PeriodStat & { value: number };
     return (
@@ -169,8 +163,8 @@ const SessionCompletionChart = () => {
             : formatPeriod(row.period, true)}
         </div>
         <div className="text-gray-600">
-          {row.total_completed.toLocaleString()} completed (
-          {row.pct_completed}%)
+          {row.total_completed.toLocaleString()} completed ({row.pct_completed}
+          %)
         </div>
         <div className="text-gray-500">
           {row.total_resolved.toLocaleString()} resolved
@@ -181,7 +175,7 @@ const SessionCompletionChart = () => {
 
   return (
     <div>
-      <div className="mb-3 flex items-center justify-end">
+      <div className="flex items-center justify-end mb-3">
         <button
           onClick={() => fetchStats(granularity, true)}
           disabled={isRefreshing}
@@ -192,13 +186,13 @@ const SessionCompletionChart = () => {
       </div>
 
       {/* Granularity + metric toggles */}
-      <div className="mb-3 flex flex-wrap items-center gap-4">
+      <div className="flex flex-wrap items-center gap-4 mb-3">
         <div className="flex items-center gap-1">
           <button
             onClick={() => setGranularity("month")}
-            className={`rounded border px-3 py-1 text-xs ${
+            className={`text-xs px-3 py-1 rounded border ${
               granularity === "month"
-                ? "border-gray-800 bg-gray-800 text-white"
+                ? "bg-gray-800 text-white border-gray-800"
                 : "text-gray-600"
             }`}
           >
@@ -206,9 +200,9 @@ const SessionCompletionChart = () => {
           </button>
           <button
             onClick={() => setGranularity("week")}
-            className={`rounded border px-3 py-1 text-xs ${
+            className={`text-xs px-3 py-1 rounded border ${
               granularity === "week"
-                ? "border-gray-800 bg-gray-800 text-white"
+                ? "bg-gray-800 text-white border-gray-800"
                 : "text-gray-600"
             }`}
           >
@@ -219,9 +213,9 @@ const SessionCompletionChart = () => {
         <div className="flex items-center gap-1">
           <button
             onClick={() => setMetric("completed")}
-            className={`rounded border px-3 py-1 text-xs ${
+            className={`text-xs px-3 py-1 rounded border ${
               metric === "completed"
-                ? "border-blue-600 bg-blue-600 text-white"
+                ? "bg-blue-600 text-white border-blue-600"
                 : "text-gray-600"
             }`}
           >
@@ -229,9 +223,9 @@ const SessionCompletionChart = () => {
           </button>
           <button
             onClick={() => setMetric("pct")}
-            className={`rounded border px-3 py-1 text-xs ${
+            className={`text-xs px-3 py-1 rounded border ${
               metric === "pct"
-                ? "border-blue-600 bg-blue-600 text-white"
+                ? "bg-blue-600 text-white border-blue-600"
                 : "text-gray-600"
             }`}
           >
@@ -241,147 +235,8 @@ const SessionCompletionChart = () => {
       </div>
 
       {/* Range + display options */}
-      <div className="mb-4 flex flex-wrap items-center gap-4 text-sm">
+      <div className="flex flex-wrap items-center gap-4 mb-4 text-sm">
         <label className="flex items-center gap-2">
           <span className="text-gray-500">From</span>
           <input
             type={granularity === "month" ? "month" : "date"}
-            value={rangeStart}
-            max={rangeEnd || undefined}
-            onChange={(e) => setRangeStart(e.target.value)}
-            className="rounded border px-2 py-1 text-sm"
-          />
-        </label>
-        <label className="flex items-center gap-2">
-          <span className="text-gray-500">To</span>
-          <input
-            type={granularity === "month" ? "month" : "date"}
-            value={rangeEnd}
-            min={rangeStart || undefined}
-            onChange={(e) => setRangeEnd(e.target.value)}
-            className="rounded border px-2 py-1 text-sm"
-          />
-        </label>
-        <button
-          onClick={resetRange}
-          className="text-xs text-blue-600 hover:underline"
-        >
-          Reset range
-        </button>
-
-        <label className="ml-auto flex items-center gap-2">
-          <input
-            type="checkbox"
-            checked={showTrendline}
-            onChange={(e) => setShowTrendline(e.target.checked)}
-          />
-          <span className="text-gray-600">Trendline</span>
-        </label>
-        <label className="flex items-center gap-2">
-          <input
-            type="checkbox"
-            checked={showTable}
-            onChange={(e) => setShowTable(e.target.checked)}
-          />
-          <span className="text-gray-600">Show data table</span>
-        </label>
-      </div>
-
-      {chartData.length === 0 ? (
-        <div className="py-8 text-center text-sm text-gray-500">
-          No {granularity === "week" ? "weeks" : "months"} in the selected
-          range.
-        </div>
-      ) : (
-        <div style={{ width: "100%", height: 320 }}>
-          <ResponsiveContainer width="100%" height="100%">
-            <ComposedChart
-              data={chartData}
-              margin={{ top: 8, right: 16, bottom: 8, left: 8 }}
-            >
-              <CartesianGrid strokeDasharray="3 3" vertical={false} />
-              <XAxis
-                dataKey="label"
-                tick={{ fontSize: 11 }}
-                interval={granularity === "week" ? "preserveStartEnd" : 0}
-                angle={-45}
-                textAnchor="end"
-                height={56}
-              />
-              <YAxis
-                tick={{ fontSize: 11 }}
-                domain={metric === "pct" ? [0, 100] : [0, "auto"]}
-                tickFormatter={(v) =>
-                  metric === "pct" ? `${v}%` : v.toLocaleString()
-                }
-                label={{
-                  value: axisTitle,
-                  angle: -90,
-                  position: "insideLeft",
-                  style: { fontSize: 11, fill: "#6b7280" },
-                }}
-              />
-              <Tooltip
-                content={renderTooltip}
-                cursor={{ fill: "rgba(0,0,0,0.04)" }}
-              />
-              <Bar
-                dataKey="value"
-                fill="#2a78d6"
-                radius={[4, 4, 0, 0]}
-                maxBarSize={28}
-              />
-              {showTrendline && (
-                <Line
-                  type="linear"
-                  dataKey="trend"
-                  stroke="#ea580c"
-                  strokeWidth={2}
-                  strokeDasharray="6 4"
-                  dot={false}
-                  activeDot={false}
-                  isAnimationActive={false}
-                />
-              )}
-            </ComposedChart>
-          </ResponsiveContainer>
-        </div>
-      )}
-
-      {showTable && chartData.length > 0 && (
-        <div className="mt-4 overflow-auto" style={{ maxHeight: 400 }}>
-          <table className="w-full border-collapse text-sm">
-            <thead>
-              <tr className="border-b text-left text-gray-500">
-                <th className="py-2 pr-4 font-medium">
-                  {granularity === "week" ? "Week of" : "Month"}
-                </th>
-                <th className="py-2 pr-4 font-medium">Completed</th>
-                <th className="py-2 pr-4 font-medium">Resolved</th>
-                <th className="py-2 font-medium">% completed</th>
-              </tr>
-            </thead>
-            <tbody>
-              {chartData.map((d) => (
-                <tr key={d.period} className="border-b last:border-0">
-                  <td className="py-2 pr-4">
-                    {formatPeriod(d.period, true)}
-                  </td>
-                  <td className="py-2 pr-4">
-                    {d.total_completed.toLocaleString()}
-                  </td>
-                  <td className="py-2 pr-4">
-                    {d.total_resolved.toLocaleString()}
-                  </td>
-                  <td className="py-2">{d.pct_completed}%</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
-    </div>
-  );
-};
-
-export default SessionCompletionChart;
