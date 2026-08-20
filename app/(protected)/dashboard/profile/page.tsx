@@ -3,6 +3,7 @@
 import type React from "react";
 
 import { useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -51,6 +52,7 @@ interface ProfileUpdateFormProps {
 const DAYS_OF_WEEK = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
 
 export default function ProfileUpdateForm() {
+  const t = useTranslations("profileSessions");
   const { profile: initialData } = useFetchProfile();
   const [availability, setAvailability] = useState<
     { day: string; startTime: string; endTime: string }[]
@@ -140,17 +142,17 @@ export default function ProfileUpdateForm() {
       const result = await updateProfileDetails(profileData);
 
       if (result.success) {
-        setMessage({ type: "success", text: "Profile updated successfully!" });
+        setMessage({ type: "success", text: t("profilePage.messages.updateSuccess") });
       } else {
         setMessage({
           type: "error",
-          text: result.error || "Failed to update profile",
+          text: result.error || t("profilePage.messages.updateError"),
         });
       }
     } catch (error) {
       setMessage({
         type: "error",
-        text: error instanceof Error ? error.message : "An unexpected error occurred",
+        text: error instanceof Error ? error.message : t("profilePage.messages.unexpectedError"),
       });
     } finally {
       setIsLoading(false);
@@ -164,11 +166,10 @@ export default function ProfileUpdateForm() {
         <div className="mb-8 text-center">
           <div className="flex items-center justify-center gap-2 mb-4">
             <User className="h-8 w-8 text-blue-600" />
-            <h1 className="text-4xl font-bold text-gray-900">Update Your Profile</h1>
+            <h1 className="text-4xl font-bold text-gray-900">{t("profilePage.header.title")}</h1>
           </div>
           <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-            Keep your profile information up to date to help others connect with you more
-            effectively
+            {t("profilePage.header.description")}
           </p>
         </div>
 
@@ -179,10 +180,10 @@ export default function ProfileUpdateForm() {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Calendar className="h-5 w-5 text-blue-600" />
-                  Availability Schedule
+                  {t("profilePage.availability.cardTitle")}
                 </CardTitle>
                 <CardDescription>
-                  Set your available days and times for meetings or sessions
+                  {t("profilePage.availability.cardDescription")}
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -192,7 +193,9 @@ export default function ProfileUpdateForm() {
                     className="flex flex-col sm:flex-row gap-2 p-4 border rounded-lg bg-gray-50"
                   >
                     <div className="flex-1">
-                      <Label className="text-xs text-gray-500">Day</Label>
+                      <Label className="text-xs text-gray-500">
+                        {t("profilePage.availability.dayLabel")}
+                      </Label>
                       <Select
                         value={slot.day}
                         onValueChange={(value) => updateAvailabilitySlot(index, "day", value)}
@@ -203,14 +206,16 @@ export default function ProfileUpdateForm() {
                         <SelectContent>
                           {DAYS_OF_WEEK.map((day) => (
                             <SelectItem key={day} value={day}>
-                              {day}
+                              {t(`days.${day}`)}
                             </SelectItem>
                           ))}
                         </SelectContent>
                       </Select>
                     </div>
                     <div className="flex-1">
-                      <Label className="text-xs text-gray-500">Start Time</Label>
+                      <Label className="text-xs text-gray-500">
+                        {t("profilePage.availability.startTimeLabel")}
+                      </Label>
                       <Input
                         type="time"
                         value={slot.startTime}
@@ -218,7 +223,9 @@ export default function ProfileUpdateForm() {
                       />
                     </div>
                     <div className="flex-1">
-                      <Label className="text-xs text-gray-500">End Time</Label>
+                      <Label className="text-xs text-gray-500">
+                        {t("profilePage.availability.endTimeLabel")}
+                      </Label>
                       <Input
                         type="time"
                         value={slot.endTime}
@@ -245,7 +252,7 @@ export default function ProfileUpdateForm() {
                   className="w-full bg-transparent"
                 >
                   <Plus className="h-4 w-4 mr-2" />
-                  Add Time Slot
+                  {t("profilePage.availability.addSlot")}
                 </Button>
               </CardContent>
             </Card>
@@ -257,18 +264,15 @@ export default function ProfileUpdateForm() {
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <BookOpen className="h-5 w-5 text-green-600" />
-                    Subjects of Interest
+                    {t("profilePage.subjects.cardTitle")}
                   </CardTitle>
-                  <CardDescription>
-                    {`Add topics and subjects you're passionate about or
-                    knowledgeable in`}
-                  </CardDescription>
+                  <CardDescription>{t("profilePage.subjects.cardDescription")}</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="flex gap-2">
                     <Input
                       type="text"
-                      placeholder="e.g., Mathematics, Physics, Literature"
+                      placeholder={t("profilePage.subjects.placeholder")}
                       value={newSubject}
                       onChange={(e) => setNewSubject(e.target.value)}
                       onKeyPress={(e) => e.key === "Enter" && (e.preventDefault(), addSubject())}
@@ -305,15 +309,15 @@ export default function ProfileUpdateForm() {
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <Languages className="h-5 w-5 text-purple-600" />
-                    Languages Spoken
+                    {t("profilePage.languages.cardTitle")}
                   </CardTitle>
-                  <CardDescription>List the languages you can communicate in</CardDescription>
+                  <CardDescription>{t("profilePage.languages.cardDescription")}</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="flex gap-2">
                     <Input
                       type="text"
-                      placeholder="e.g., English, Spanish, French"
+                      placeholder={t("profilePage.languages.placeholder")}
                       value={newLanguage}
                       onChange={(e) => setNewLanguage(e.target.value)}
                       onKeyPress={(e) => e.key === "Enter" && (e.preventDefault(), addLanguage())}
@@ -368,12 +372,12 @@ export default function ProfileUpdateForm() {
               {isLoading ? (
                 <>
                   <Clock className="h-5 w-5 mr-2 animate-spin" />
-                  Updating Profile...
+                  {t("profilePage.submit.updating")}
                 </>
               ) : (
                 <>
                   <CheckCircle className="h-5 w-5 mr-2" />
-                  Update Profile
+                  {t("profilePage.submit.update")}
                 </>
               )}
             </Button>

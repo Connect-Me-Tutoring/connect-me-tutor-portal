@@ -9,8 +9,10 @@ import { redirect } from "next/navigation";
 import { fetchUserAdminConversation } from "@/lib/actions/chat/server.actions";
 import Link from "next/link";
 import { cachedGetUser } from "@/lib/actions/user/server.actions";
+import { getTranslations } from "next-intl/server";
 
 export default async function ChatPage() {
+  const t = await getTranslations("chat.adminConversationCard");
   const user = await cachedGetUser();
   const userId = user?.id;
   if (!userId) redirect("/");
@@ -43,10 +45,10 @@ export default async function ChatPage() {
                 </div>
                 <div>
                   <CardTitle className="text-xl font-semibold text-foreground">
-                    Admin Conversation
+                    {t("title")}
                   </CardTitle>
                   <CardDescription className="text-muted-foreground">
-                    Connect with administrators for support and guidance
+                    {t("description")}
                   </CardDescription>
                 </div>
               </div>
@@ -56,11 +58,11 @@ export default async function ChatPage() {
               <div className="flex items-center gap-4 mb-6">
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
                   <Users className="h-4 w-4" />
-                  <span>Students & Tutors</span>
+                  <span>{t("studentsAndTutors")}</span>
                 </div>
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
                   <MessageSquare className="h-4 w-4" />
-                  <span>Real-time Support</span>
+                  <span>{t("realTimeSupport")}</span>
                 </div>
               </div>
 
@@ -68,7 +70,7 @@ export default async function ChatPage() {
                 href={`/dashboard/chats/${adminConversationID}`}
                 className="w-full p-4 rounded-lg  bg-primary hover:bg-primary/90 text-primary-foreground font-medium py-2.5 transition-colors"
               >
-                Access Admin Conversation
+                {t("accessCta")}
               </Link>
             </CardContent>
           </Card>

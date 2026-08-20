@@ -8,6 +8,7 @@ import * as z from "zod";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
+import { useTranslations } from "next-intl";
 import { createClient } from "@/lib/supabase/client";
 
 import { Button } from "@/components/ui/button";
@@ -23,17 +24,6 @@ import {
 import { Input } from "@/components/ui/input";
 import { setDefaultAutoSelectFamily } from "net";
 
-const emailSchema = z.object({
-  email: z.string().email({
-    message: "Please enter a valid email address.",
-  }),
-});
-
-const tokenSchema = z.object({
-  email: z.string().email(),
-  token: z.string().min(6, { message: "Token must be 6 digits" }).max(6),
-});
-
 export default function ForgotPasswordPage() {
   const [resetPassword, setResetPassword] = useState<boolean>(false);
   const [isEmailSent, setIsEmailSent] = useState<boolean>(false);
@@ -42,6 +32,19 @@ export default function ForgotPasswordPage() {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   const supabase = createClient();
+  const t = useTranslations("auth.forgotPassword");
+  const tCommon = useTranslations("auth.common");
+
+  const emailSchema = z.object({
+    email: z.string().email({
+      message: tCommon("errors.invalidEmail"),
+    }),
+  });
+
+  const tokenSchema = z.object({
+    email: z.string().email(),
+    token: z.string().min(6, { message: t("errors.tokenLength") }).max(6),
+  });
 
   const sendResetPassword = async () => {
     try {
@@ -56,10 +59,10 @@ export default function ForgotPasswordPage() {
         throw new Error();
       }
 
-      toast.success("Password reset email sent successfully");
+      toast.success(tCommon("toasts.resetEmailSent"));
     } catch (error) {
       console.error("Unable to reset password");
-      toast.error(`Unable to send reset password link ${error}`);
+      toast.error(`${tCommon("toasts.resetEmailError")} ${error}`);
     }
   };
   const emailForm = useForm<z.infer<typeof emailSchema>>({
@@ -92,7 +95,7 @@ export default function ForgotPasswordPage() {
         throw error;
       }
 
-      toast.success("6-digit code sent to your email");
+      toast.success(t("toasts.otpSent"));
       setIsEmailSent(true);
       emailForm.reset();
 
@@ -126,7 +129,7 @@ export default function ForgotPasswordPage() {
         router.push("/set-password"); // Redirect to dashboard or home
         router.refresh(); // Refresh server components
       } else {
-        toast.error("Failed to verify OTP. Please try again.");
+        toast.error(tCommon("toasts.otpVerifyFailed"));
       }
     } catch (error) {
       console.error("Error verifying OTP:", error);
@@ -151,7 +154,7 @@ export default function ForgotPasswordPage() {
               {!isEmailSent ? (
                 <>
                   <div className="flex flex-col gap-3">
-                    <h1 className="text-2xl text-center font-bold">Forgot Password</h1>
+                    <h1 className="text-2xl text-center font-bold">{t("title")}</h1>
                     <p className="text-sm text-gray-600"></p>
                   </div>
                   <Form {...emailForm}>
@@ -164,12 +167,9 @@ export default function ForgotPasswordPage() {
                         name="email"
                         render={({ field }) => (
                           <FormItem>
-                            <FormDescription>
-                              No worries! Just enter the email associated with your account to reset
-                              your password
-                            </FormDescription>
+                            <FormDescription>{t("description")}</FormDescription>
                             <FormControl>
-                              <Input placeholder="youremail@example.com" {...field} />
+                              <Input placeholder={tCommon("emailPlaceholder")} {...field} />
                             </FormControl>
 
                             <FormMessage />
@@ -178,7 +178,7 @@ export default function ForgotPasswordPage() {
                       />
 
                       <Button type="submit" className="w-full bg-blue-400">
-                        Reset Password
+                        {tCommon("resetPassword")}
                       </Button>
                     </form>
                     <Toaster />
@@ -187,9 +187,9 @@ export default function ForgotPasswordPage() {
               ) : (
                 <>
                   <div className="flex flex-col gap-3 text-center">
-                    <h1 className="text-xl sm:text-2xl font-bold">Enter Verification Code</h1>
+                    <h1 className="text-xl sm:text-2xl font-bold">{t("verifyTitle")}</h1>
                     <p className="text-sm text-gray-600">
-                      A verification code has been sent to {emailForReset}. Please enter it below.
+                      {t("verifyDescription", { email: emailForReset })}
                     </p>
                   </div>
                   <Form {...tokenForm} key="otp-form">
@@ -202,11 +202,11 @@ export default function ForgotPasswordPage() {
                         name="token"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>One-Time Password</FormLabel>
+                            <FormLabel>{t("otpLabel")}</FormLabel>
                             <FormControl>
                               <Input
                                 type="text"
-                                placeholder="Enter your 6-digit code"
+                                placeholder={t("otpPlaceholder")}
                                 maxLength={6}
                                 {...field}
                               />
@@ -220,7 +220,7 @@ export default function ForgotPasswordPage() {
                         className="w-full bg-green-500 hover:bg-green-600 text-white"
                         disabled={isLoading}
                       >
-                        {isLoading ? "Verifying..." : "Verify code"}
+                        {isLoading ? tCommon("verifying") : t("verifyCode")}
                       </Button>
                     </form>
                   </Form>
@@ -233,7 +233,7 @@ export default function ForgotPasswordPage() {
                     }}
                     disabled={isLoading}
                   >
-                    Use a different email?
+                    {tCommon("useDifferentEmail")}
                   </Button>
                 </>
               )}

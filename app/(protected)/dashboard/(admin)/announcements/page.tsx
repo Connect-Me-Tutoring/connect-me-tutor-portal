@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { ChatRoom } from "@/components/chat/chat-room";
 import {
   Select,
@@ -17,6 +18,7 @@ import { useEffect, useState } from "react";
 type AnnouncementsRooms = "tutors" | "students" | "all";
 
 export default function AnnouncementsPage() {
+  const t = useTranslations("adminOps.announcements");
   const [currentRoom, setCurrentRoom] = useState<AnnouncementsRooms>("tutors");
   const { profile } = useFetchProfile();
   const [roomID, setRoomID] = useState<string>(TutorAnnouncementRoomId);
@@ -29,7 +31,7 @@ export default function AnnouncementsPage() {
   useEffect(() => {
     setRoomID(currentRoom === "students" ? StudentAnnouncementsRoomId : TutorAnnouncementRoomId);
   }, [currentRoom]);
-  if (!profile || !roomID) return <>Loading...</>;
+  if (!profile || !roomID) return <>{t("loading")}</>;
   // const { supabase: supabaseConfig } = config;
 
   return (
@@ -41,14 +43,14 @@ export default function AnnouncementsPage() {
             onValueChange={(value) => setCurrentRoom(value as AnnouncementsRooms)}
           >
             <SelectTrigger className="">
-              <SelectValue placeholder="Announcements Room" />
+              <SelectValue placeholder={t("roomPlaceholder")} />
             </SelectTrigger>
             <SelectContent>
               <SelectGroup>
-                <SelectLabel>Announcement Rooms</SelectLabel>
-                <SelectItem value="all">All</SelectItem>
-                <SelectItem value="tutors">Tutors</SelectItem>
-                <SelectItem value="students">Students</SelectItem>
+                <SelectLabel>{t("roomGroupLabel")}</SelectLabel>
+                <SelectItem value="all">{t("rooms.all")}</SelectItem>
+                <SelectItem value="tutors">{t("rooms.tutors")}</SelectItem>
+                <SelectItem value="students">{t("rooms.students")}</SelectItem>
               </SelectGroup>
             </SelectContent>
           </Select>
@@ -58,7 +60,13 @@ export default function AnnouncementsPage() {
       <div className="h-full pb-5 ">
         <ChatRoom
           type="announcements"
-          roomName={`${currentRoom === "tutors" ? "Tutor" : currentRoom === "students" ? "Student" : "Announcements"}`}
+          roomName={
+            currentRoom === "tutors"
+              ? t("roomNames.tutor")
+              : currentRoom === "students"
+                ? t("roomNames.student")
+                : t("roomNames.all")
+          }
           roomId={roomID}
         />
       </div>

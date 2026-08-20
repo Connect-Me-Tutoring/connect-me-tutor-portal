@@ -1,5 +1,6 @@
 "use client";
 import React, { useState, useEffect } from "react";
+import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import {
   Table,
@@ -38,6 +39,7 @@ interface Resource {
 }
 
 const ResourceList = () => {
+  const t = useTranslations("tutorPages.resources");
   const [filteredResources, setFilteredResources] = useState(tutorResources);
   const [currentPage, setCurrentPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(10);
@@ -81,13 +83,13 @@ const ResourceList = () => {
         <div className="flex gap-4"></div>
       </div>
 
-      <h1 className="text-3xl font-bold mb-6">Tutor Resources</h1>
+      <h1 className="text-3xl font-bold mb-6">{t("heading")}</h1>
       <div className="flex flex-col lg:flex-row gap-6">
         <div className="flex-grow bg-white rounded-lg shadow p-6">
           <div className="flex justify-between items-center mb-4">
             <input
               type="text"
-              placeholder="Filter resources..."
+              placeholder={t("filterPlaceholder")}
               className="w-64 border p-2 rounded"
               value={filterValue}
               onChange={(e) => setFilterValue(e.target.value)}
@@ -98,11 +100,11 @@ const ResourceList = () => {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Title</TableHead>
-                  <TableHead>Description</TableHead>
-                  <TableHead>Link</TableHead>
-                  <TableHead>Type</TableHead>
-                  <TableHead>Subject</TableHead>
+                  <TableHead>{t("columns.title")}</TableHead>
+                  <TableHead>{t("columns.description")}</TableHead>
+                  <TableHead>{t("columns.link")}</TableHead>
+                  <TableHead>{t("columns.type")}</TableHead>
+                  <TableHead>{t("columns.subject")}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -115,7 +117,7 @@ const ResourceList = () => {
                         variant="outline"
                         onClick={() => window.open(resource.link, "_blank")}
                       >
-                        Open Resource
+                        {t("openResource")}
                       </Button>
                     </TableCell>
                     <TableCell>{resource.type}</TableCell>
@@ -126,9 +128,9 @@ const ResourceList = () => {
             </Table>
 
             <div className="mt-4 hidden md:flex justify-between items-center">
-              <span>{filteredResources.length} resource(s) total.</span>
+              <span>{t("resourceTotal", { count: filteredResources.length })}</span>
               <div className="flex items-center space-x-2">
-                <span>Rows per page</span>
+                <span>{t("rowsPerPage")}</span>
                 <Select value={rowsPerPage.toString()} onValueChange={handleRowsPerPageChange}>
                   <SelectTrigger className="w-[70px]">
                     <SelectValue placeholder={rowsPerPage.toString()} />
@@ -139,9 +141,7 @@ const ResourceList = () => {
                     <SelectItem value="50">50</SelectItem>
                   </SelectContent>
                 </Select>
-                <span>
-                  Page {currentPage} of {totalPages}
-                </span>
+                <span>{t("pageOf", { current: currentPage, total: totalPages })}</span>
                 <div className="flex space-x-1">
                   <Button
                     variant="ghost"
@@ -186,15 +186,15 @@ const ResourceList = () => {
                 <div className="font-semibold text-base">{resource.title}</div>
                 <div className="text-sm text-muted-foreground">{resource.description}</div>
                 <div className="text-sm space-y-1">
-                  <div>Type: {resource.type}</div>
-                  <div>Subject: {resource.subject}</div>
+                  <div>{t("mobileType", { type: resource.type })}</div>
+                  <div>{t("mobileSubject", { subject: resource.subject })}</div>
                 </div>
                 <Button
                   variant="outline"
                   className="w-full"
                   onClick={() => window.open(resource.link, "_blank")}
                 >
-                  Open Resource
+                  {t("openResource")}
                 </Button>
               </MobileCard>
             ))}
@@ -206,15 +206,12 @@ const ResourceList = () => {
           {" "}
           <Card className="w-[300px] aspect-square flex flex-col justify-between">
             <CardHeader>
-              <CardTitle>Tutor Handbook</CardTitle>
-              <CardDescription>Read before your first tutoring session!</CardDescription>
+              <CardTitle>{t("handbook.title")}</CardTitle>
+              <CardDescription>{t("handbook.description")}</CardDescription>
             </CardHeader>
 
             <CardContent>
-              <p className="mb-4">
-                This handbook covers the expectations, policy, attendance, and other necessary
-                information for the tutors
-              </p>
+              <p className="mb-4">{t("handbook.body")}</p>
             </CardContent>
 
             <CardFooter>
@@ -227,18 +224,18 @@ const ResourceList = () => {
                   )
                 }
               >
-                Open Tutor Handbook
+                {t("handbook.button")}
               </Button>
             </CardFooter>
           </Card>
           <Card className="w-[300px] aspect-square flex flex-col justify-between">
             <CardHeader>
-              <CardTitle>Tutor Manual</CardTitle>
-              <CardDescription>Manual that tutors can refer to</CardDescription>
+              <CardTitle>{t("manual.title")}</CardTitle>
+              <CardDescription>{t("manual.description")}</CardDescription>
             </CardHeader>
 
             <CardContent>
-              <p className="mb-4">This manual contains helpful information for tutors.</p>
+              <p className="mb-4">{t("manual.body")}</p>
             </CardContent>
 
             <CardFooter>
@@ -251,18 +248,18 @@ const ResourceList = () => {
                   )
                 }
               >
-                Open Tutor Manual
+                {t("manual.button")}
               </Button>
             </CardFooter>
           </Card>
           <Card className="w-[300px] aspect-square flex flex-col justify-between">
             <CardHeader>
-              <CardTitle>Tutor FAQs</CardTitle>
-              <CardDescription>Frequently asked questions for tutors.</CardDescription>
+              <CardTitle>{t("faqs.title")}</CardTitle>
+              <CardDescription>{t("faqs.description")}</CardDescription>
             </CardHeader>
 
             <CardContent>
-              <p className="mb-4">Find answers to common questions asked by tutors.</p>
+              <p className="mb-4">{t("faqs.body")}</p>
             </CardContent>
 
             <CardFooter>
@@ -275,7 +272,7 @@ const ResourceList = () => {
                   )
                 }
               >
-                Open Tutor FAQs
+                {t("faqs.button")}
               </Button>
             </CardFooter>
           </Card>

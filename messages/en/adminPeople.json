@@ -1,0 +1,357 @@
+{
+  "pages": {
+    "allStudents": {
+      "heading": "All Students"
+    },
+    "allTutors": {
+      "heading": "All Tutors"
+    }
+  },
+  "studentList": {
+    "filterPlaceholder": "Filter students...",
+    "exportCsv": "Export CSV",
+    "csvHeaders": {
+      "firstName": "First Name",
+      "lastName": "Last Name",
+      "email": "Email"
+    },
+    "table": {
+      "studentNumber": "Student #",
+      "status": "Status",
+      "startDate": "Start Date",
+      "name": "Student Name",
+      "grade": "Grade Level",
+      "availability": "Availability",
+      "subjectsLearning": "Subjects Learning",
+      "email": "Email",
+      "parentEmail": "Parent Email",
+      "parentPhone": "Parent Phone",
+      "actions": "Actions"
+    },
+    "mobileSubjectsLearningLabel": "Subjects Learning:",
+    "resendEmail": {
+      "title": "Resend Email Confirmation for {name}",
+      "description": "Note: Will not resend confirmation email if the user has already signed in before",
+      "cancel": "Cancel",
+      "confirm": "Resend"
+    },
+    "pagination": {
+      "rowsTotal": "{count} row(s) total.",
+      "rowsPerPage": "Rows per page",
+      "page": "Page {current} of {total}"
+    },
+    "toasts": {
+      "addSuccess": "Successfully added student.",
+      "addErrorEmail": "Failed to add student. Please check the email address and ensure it is valid and unique.",
+      "addErrorRequired": "Failed to add student. Required field error: {message}",
+      "addErrorGeneric": "Failed to add student: {message}",
+      "addErrorGenericFallback": "Please try again",
+      "deleteSuccess": "Student deleted successfully",
+      "deleteError": "Failed to delete student",
+      "deactivateSuccess": "Student deactivated successfully",
+      "deactivateError": "Failed to deactivate student",
+      "editSuccess": "Tutor Edited Successfully",
+      "editError": "Failed to edit tutor",
+      "reactivateSuccess": "Student reactivated successfully",
+      "reactivateError": "Failed to deactivate student",
+      "resendSuccess": "Resent Email Confirmation",
+      "resendError": "Failed to resend email"
+    }
+  },
+  "tutorList": {
+    "filterPlaceholder": "Filter tutors...",
+    "exportCsv": "Export CSV",
+    "csvHeaders": {
+      "firstName": "First Name",
+      "lastName": "Last Name",
+      "email": "Email"
+    },
+    "table": {
+      "status": "Status",
+      "startDate": "Start Date",
+      "name": "Tutor Name",
+      "availability": "Availability",
+      "subjectsTeaching": "Subjects Teaching",
+      "email": "Email",
+      "phoneNumber": "Phone Number",
+      "gender": "Gender",
+      "actions": "Actions"
+    },
+    "mobileSubjectsTeachingLabel": "Subjects Teaching:",
+    "resendEmail": {
+      "title": "Resend Confirmation Email for {name}",
+      "description": "Note: Will not resend confirmation email if the user has already signed in before",
+      "cancel": "Cancel",
+      "confirm": "Resend"
+    },
+    "pagination": {
+      "rowsTotal": "{count} row(s) total.",
+      "rowsPerPage": "Rows per page",
+      "page": "Page {current} of {total}"
+    },
+    "toasts": {
+      "addSuccess": "Successfully added tutor.",
+      "addErrorEmail": "Failed to add tutor. Please check the email address and ensure it is valid and unique.",
+      "addErrorRequired": "Failed to add tutor. Required field error: {message}",
+      "addErrorGeneric": "Failed to add tutor: {message}",
+      "addErrorGenericFallback": "Please try again",
+      "resendSuccess": "Resent Email Confirmation",
+      "resendError": "Failed to resend email confirmation",
+      "deleteSuccess": "Tutor deleted successfully",
+      "deleteError": "Failed to delete Tutor",
+      "deactivateSuccess": "Tutor deactivated successfully",
+      "deactivateError": "Failed to deactivate tutor",
+      "editSuccess": "Tutor Edited Successfully",
+      "editError": "Failed to edit tutor"
+    }
+  },
+  "forms": {
+    "common": {
+      "firstName": {
+        "label": "First Name",
+        "placeholder": "Enter first name"
+      },
+      "lastName": {
+        "label": "Last Name",
+        "placeholder": "Enter last name"
+      },
+      "age": {
+        "label": "Age",
+        "placeholder": "Age"
+      },
+      "grade": {
+        "label": "Grade",
+        "placeholder": "Select grade"
+      },
+      "grades": {
+        "kindergarten": "Kindergarten",
+        "grade1": "1st Grade",
+        "grade2": "2nd Grade",
+        "grade3": "3rd Grade",
+        "grade4": "4th Grade",
+        "grade5": "5th Grade",
+        "grade6": "6th Grade",
+        "grade7": "7th Grade",
+        "grade8": "8th Grade",
+        "grade9": "9th Grade",
+        "grade10": "10th Grade",
+        "grade11": "11th Grade",
+        "grade12": "12th Grade"
+      },
+      "gender": {
+        "label": "Gender",
+        "placeholder": "Select gender",
+        "male": "Male",
+        "female": "Female",
+        "other": "Other"
+      },
+      "email": {
+        "label": "Email"
+      },
+      "phoneNumber": {
+        "label": "Phone Number",
+        "placeholder": "(555) 123-4567"
+      },
+      "startDate": {
+        "label": "Start Date"
+      },
+      "timeZone": {
+        "label": "Time Zone"
+      },
+      "status": {
+        "label": "Status",
+        "placeholder": "Select status",
+        "active": "Active",
+        "inactive": "Inactive"
+      },
+      "cancel": "Cancel",
+      "confirmDeletion": "Confirm Deletion",
+      "basicInfo": "Basic Info",
+      "extendedProfile": "Extended Profile",
+      "availability": "Availability",
+      "availabilitySchedule": "Availability Schedule",
+      "addTimeSlot": "Add Time Slot",
+      "noAvailabilitySlots": "No availability slots added yet",
+      "clickAddTimeSlot": "Click \"Add Time Slot\" to get started",
+      "day": "Day",
+      "start": "Start",
+      "end": "End",
+      "to": "to",
+      "subjectsOfInterest": "Subjects of Interest",
+      "subjectsPlaceholderLong": "e.g., Mathematics, Physics, Chemistry",
+      "subjectsPlaceholderShort": "e.g., Mathematics, Physics",
+      "languagesSpoken": "Languages Spoken",
+      "languagesPlaceholderLong": "e.g., English, Spanish, French",
+      "languagesPlaceholderShort": "e.g., English, Spanish",
+      "days": {
+        "monday": "Monday",
+        "tuesday": "Tuesday",
+        "wednesday": "Wednesday",
+        "thursday": "Thursday",
+        "friday": "Friday",
+        "saturday": "Saturday",
+        "sunday": "Sunday"
+      }
+    },
+    "addStudent": {
+      "trigger": "Add Student",
+      "dialogTitle": "Add New Student",
+      "tabs": {
+        "basicVertical": "Basic Information (vertical)",
+        "basic": "Basic Information",
+        "extended": "Extended Profile"
+      },
+      "studentNumber": {
+        "label": "Student #",
+        "placeholder": "Enter student number"
+      },
+      "studentEmail": {
+        "label": "Student Email",
+        "placeholderVertical": "Enter Student Email",
+        "placeholder": "student@example.com"
+      },
+      "personalInformation": "Personal Information (Required)",
+      "parentInformation": "Parent/Guardian Information (Required)",
+      "parentName": {
+        "label": "Parent/Guardian Name",
+        "placeholder": "Enter parent/guardian name"
+      },
+      "parentPhone": {
+        "label": "Phone Number",
+        "placeholder": "(555) 123-4567"
+      },
+      "parentEmail": {
+        "label": "Email Address",
+        "placeholder": "parent@example.com"
+      },
+      "cancel": "Cancel",
+      "submit": "Add Student",
+      "submitting": "Adding...",
+      "validation": {
+        "prefix": "Cannot add student. All Basic Form fields are required. Missing fields: {fields}",
+        "firstName": "First Name",
+        "lastName": "Last Name",
+        "age": "Age",
+        "grade": "Grade",
+        "gender": "Gender",
+        "studentEmail": "Student Email",
+        "startDate": "Start Date",
+        "parentName": "Parent/Guardian Name",
+        "parentPhone": "Parent Phone Number",
+        "parentEmail": "Parent Email Address",
+        "timeZone": "Time Zone",
+        "studentNumber": "Student Number"
+      }
+    },
+    "addTutor": {
+      "trigger": "Add Tutor",
+      "dialogTitle": "Add New Tutor",
+      "tabs": {
+        "basic": "Basic Info",
+        "extended": "Extended Profile"
+      },
+      "genderSectionTitle": "Gender",
+      "submit": "Add Tutor",
+      "submitting": "Adding Tutor...",
+      "validation": {
+        "prefix": "Cannot add tutor. All Basic Form fields are required. Missing fields: {fields}",
+        "firstName": "First Name",
+        "lastName": "Last Name",
+        "email": "Email",
+        "phoneNumber": "Phone Number",
+        "startDate": "Start Date",
+        "timeZone": "Time Zone"
+      }
+    },
+    "editStudent": {
+      "trigger": "Edit Student",
+      "dialogTitleSelect": "Select a Student to Edit",
+      "studentLabel": "Student",
+      "selectToEdit": "Select Student to edit",
+      "dialogTitleEdit": "Edit Student",
+      "tabs": {
+        "basic": "Basic Info",
+        "extended": "Extended Profile"
+      },
+      "studentNumber": "Student #",
+      "parentName": "Parent Name",
+      "parentPhone": "Parent Phone",
+      "parentEmail": "Parent Email",
+      "finish": "Finish editing student"
+    },
+    "editTutor": {
+      "trigger": "Edit Tutor",
+      "dialogTitleSelect": "Select a Tutor to Edit",
+      "tutorLabel": "Tutor",
+      "selectToEdit": "Select Tutor to edit",
+      "dialogTitleEdit": "Edit Tutor",
+      "tabs": {
+        "basic": "Basic Info",
+        "extended": "Extended Profile"
+      },
+      "statusSectionTitle": "Status",
+      "genderSectionTitle": "Gender",
+      "finish": "Finish editing tutor"
+    },
+    "deleteStudent": {
+      "trigger": "Delete Student",
+      "dialogTitle": "Select a Student to Delete",
+      "studentLabel": "Student",
+      "confirm": "Confirm Deletion"
+    },
+    "deleteTutor": {
+      "trigger": "Delete Tutor",
+      "dialogTitle": "Select a Tutor to Delete",
+      "tutorLabel": "Tutor",
+      "confirm": "Confirm Deletion"
+    },
+    "manageTutorSessions": {
+      "trigger": "Manage Sessions",
+      "dialogTitle": "Manage Tutor Sessions",
+      "table": {
+        "date": "Date",
+        "student": "Student",
+        "status": "Status"
+      },
+      "noSessions": "No sessions found.",
+      "selectedCount": "{count} selected",
+      "markCancelled": "Mark Cancelled",
+      "markComplete": "Mark Complete",
+      "statusCancelled": "Cancelled",
+      "statusComplete": "Complete",
+      "toasts": {
+        "loadError": "Failed to load sessions",
+        "updateSuccess": "Marked {count} session(s) as {status}",
+        "updateError": "Failed to update sessions"
+      }
+    },
+    "condensedProfile": {
+      "studentTitle": "Student Profile Details",
+      "tutorTitle": "Tutor Profile Details",
+      "day": "Day",
+      "start": "Start",
+      "end": "End"
+    }
+  },
+  "timezoneSelector": {
+    "hawaiian": "Hawaiian Standard Time (UTC-10)",
+    "alaskan": "Alaskan Time (UTC-9)",
+    "pacific": "Pacific Time (UTC-8)",
+    "mountain": "Mountain Time (UTC-7)",
+    "central": "Central Time (UTC-6)",
+    "eastern": "Eastern Time (UTC-5)",
+    "puertoRican": "Puerto Rican Time (UTC-4)",
+    "gmt": "Greenwich Mean Time (UTC)",
+    "centralEuropean": "Central European Time (UTC+1)",
+    "easternEuropean": "Eastern European Time (UTC+2)",
+    "easternEuropeanSummer": "Eastern European Summer Time (UTC+3)",
+    "moscow": "Moscow Standard Time (UTC+4)",
+    "pakistan": "Pakistan Standard Time (UTC+5)",
+    "indian": "Indian Standard Time (UTC+5:30)",
+    "bangladesh": "Bangladesh Standard Time (UTC+6)",
+    "indochina": "Indochina Time (UTC+7)",
+    "china": "China Standard Time (UTC+8)",
+    "japan": "Japan Standard Time (UTC+9)",
+    "australianEastern": "Australian Eastern Standard Time (UTC+10)"
+  }
+}

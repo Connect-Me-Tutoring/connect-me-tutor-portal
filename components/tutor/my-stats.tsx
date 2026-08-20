@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 import { getTutorSessions } from "@/lib/actions/tutor/actions";
 import { getEvents } from "@/lib/actions/event/server.actions";
 import { getProfile } from "@/lib/actions/user/actions";
@@ -41,6 +42,7 @@ const Stats = ({
   enrollmentDetails: EnrollmentDetails[];
   eventDetails: { [key: string]: EventDetails[] };
 }) => {
+  const t = useTranslations("tutorPages.myStats");
   const [activeTab, setActiveTab] = useState("cards");
   const [expandedSections, setExpandedSections] = useState(new Set(["TUTORING"]));
 
@@ -55,8 +57,8 @@ const Stats = ({
   };
 
   const tabs = [
-    { id: "cards", label: "Card Layout" },
-    { id: "unified", label: "Unified Table" },
+    { id: "cards", label: t("tabs.cardLayout") },
+    { id: "unified", label: t("tabs.unifiedTable") },
   ];
 
   const totalSessionHours = Object.values(enrollmentDetails)
@@ -93,18 +95,18 @@ const Stats = ({
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Category</TableHead>
-                <TableHead>Type</TableHead>
-                <TableHead>Description</TableHead>
-                <TableHead>Date</TableHead>
-                <TableHead>Hours</TableHead>
+                <TableHead>{t("unifiedTable.category")}</TableHead>
+                <TableHead>{t("unifiedTable.type")}</TableHead>
+                <TableHead>{t("unifiedTable.description")}</TableHead>
+                <TableHead>{t("unifiedTable.date")}</TableHead>
+                <TableHead>{t("unifiedTable.hours")}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {Object.values(enrollmentDetails).map((student) => (
                 <TableRow key={student.studentId}>
-                  <TableCell>Sessions</TableCell>
-                  <TableCell>Tutoring</TableCell>
+                  <TableCell>{t("unifiedTable.categorySessions")}</TableCell>
+                  <TableCell>{t("unifiedTable.typeTutoring")}</TableCell>
                   <TableCell>{student.firstName + " " + student.lastName}</TableCell>
                   <TableCell>-</TableCell>
                   <TableCell>{student.hours}</TableCell>
@@ -113,7 +115,7 @@ const Stats = ({
               {Object.entries(eventDetails).map(([eventType, events]) =>
                 events.map((event) => (
                   <TableRow key={`event-${event.eventId}`}>
-                    <TableCell>Events</TableCell>
+                    <TableCell>{t("unifiedTable.categoryEvents")}</TableCell>
                     <TableCell>{eventType}</TableCell>
                     <TableCell>{event.summary}</TableCell>
                     <TableCell>{event.date}</TableCell>
@@ -124,7 +126,7 @@ const Stats = ({
             </TableBody>
             <TableFooter>
               <TableRow>
-                <TableCell colSpan={4}>Total</TableCell>
+                <TableCell colSpan={4}>{t("unifiedTable.total")}</TableCell>
                 <TableCell>{totalAllHours}</TableCell>
               </TableRow>
             </TableFooter>
@@ -136,20 +138,20 @@ const Stats = ({
         <div className="space-y-6">
           <Card>
             <CardHeader>
-              <CardTitle>Hours Summary</CardTitle>
+              <CardTitle>{t("cards.hoursSummary")}</CardTitle>
             </CardHeader>
             <div className="grid grid-cols-3 gap-4 text-center">
               <div>
                 <div className="text-2xl font-bold text-[#1e40af]">{totalSessionHours}</div>
-                <div className="text-sm text-gray-600">Session Hours</div>
+                <div className="text-sm text-gray-600">{t("cards.sessionHours")}</div>
               </div>
               <div>
                 <div className="text-2xl font-bold text-[#1e40af]">{totalEventHours}</div>
-                <div className="text-sm text-gray-600">Event Hours</div>
+                <div className="text-sm text-gray-600">{t("cards.eventHours")}</div>
               </div>
               <div>
                 <div className="text-2xl font-bold text-[#1e40af]">{totalAllHours}</div>
-                <div className="text-sm text-gray-600">Total Hours</div>
+                <div className="text-sm text-gray-600">{t("cards.totalHours")}</div>
               </div>
             </div>
             <CardFooter></CardFooter>
@@ -158,14 +160,14 @@ const Stats = ({
           <div className="gap-y-6">
             <Card>
               <CardHeader>
-                <CardTitle className="text-lg">Students</CardTitle>
+                <CardTitle className="text-lg">{t("cards.students")}</CardTitle>
               </CardHeader>
               <Card className="m-4">
                 <Table>
                   <TableHeader>
                     <TableRow className="bg-gray-50">
-                      <TableHead>Student</TableHead>
-                      <TableHead>Hours</TableHead>
+                      <TableHead>{t("cards.studentColumn")}</TableHead>
+                      <TableHead>{t("cards.hoursColumn")}</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -184,7 +186,7 @@ const Stats = ({
 
             <Card className="my-6">
               <CardHeader>
-                <CardTitle className="text-lg">Events</CardTitle>
+                <CardTitle className="text-lg">{t("cards.events")}</CardTitle>
               </CardHeader>
               {Object.entries(eventDetails).map(([eventType, events]) => (
                 <Card key={eventType} className="m-4">
@@ -194,8 +196,8 @@ const Stats = ({
                   <Table>
                     <TableHeader>
                       <TableRow className="bg-gray-50">
-                        <TableHead>Summary</TableHead>
-                        <TableHead>Hours</TableHead>
+                        <TableHead>{t("cards.summaryColumn")}</TableHead>
+                        <TableHead>{t("cards.hoursColumn")}</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>

@@ -10,6 +10,7 @@ import { Suspense } from "react";
 import { Calendar } from "lucide-react";
 import SkeletonTable from "@/components/ui/skeleton";
 import { redirect } from "next/navigation";
+import { getTranslations } from "next-intl/server";
 
 const fetchUserProfile = async () => {
   const user = await cachedGetUser();
@@ -48,9 +49,10 @@ async function MyEnrollmentsData() {
 }
 
 export default async function MyEnrollmentsPage() {
+  const t = await getTranslations("tutorPages.myEnrollments");
   return (
     <main className="p-8">
-      <h1 className="text-3xl font-bold mb-6">Enrollments</h1>
+      <h1 className="text-3xl font-bold mb-6">{t("heading")}</h1>
       <Suspense fallback={<SkeletonTable />}>
         <MyEnrollmentsData />
       </Suspense>

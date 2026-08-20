@@ -8,6 +8,53 @@ interface Profile {
   lastName: string;
 }
 
+// Pre-translated copy for the report. This component is rendered outside the
+// Next.js request/render tree (invoked from an API route via @react-pdf/renderer),
+// so it can't call useTranslations/getTranslations itself. HoursManagement.tsx
+// resolves these strings with next-intl and sends them along in the request body.
+// The *Template fields use %TOKEN% placeholders (not ICU {}) that get filled in
+// below once values (name, hours, percentages, page numbers) are computed here.
+interface HoursReportLabels {
+  table: {
+    tutorName: string;
+    allSessions: string;
+    biweeklyMeetings: string;
+    tutorReferral: string;
+    subHotline: string;
+    other: string;
+    allTimeTotal: string;
+    thisMonth: string;
+    totals: string;
+  };
+  header: {
+    allTimeTitle: string;
+    monthlyTitle: string;
+    allTimeSubtitle: string;
+    monthlySubtitleTemplate: string;
+    generatedOnTemplate: string;
+  };
+  stats: {
+    title: string;
+    activeTutors: string;
+    totalHours: string;
+    avgHoursPerTutor: string;
+    eventHours: string;
+  };
+  insights: {
+    title: string;
+    topPerformerTemplate: string;
+    activePercentageTemplate: string;
+    eventPercentageTemplate: string;
+  };
+  footer: {
+    title: string;
+    reportPeriodTemplate: string;
+    reportPeriodAllTime: string;
+    pageOfTemplate: string;
+  };
+  monthAbbreviations: string[];
+}
+
 interface HoursPDFData {
   selectedDate: Date;
   tutors: Profile[];
@@ -23,6 +70,7 @@ interface HoursPDFData {
   monthlyHours: { [key: string]: number };
   filteredTutors: Profile[];
   logoUrl?: string;
+  labels: HoursReportLabels;
 }
 
 const styles = StyleSheet.create({
@@ -263,6 +311,17 @@ const styles = StyleSheet.create({
   },
 });
 
+// Fills %TOKEN% placeholders in a pre-translated template string with computed values.
+// Plain %TOKEN% (rather than ICU {token}) so the templates can be resolved with
+// next-intl's t() with no arguments in HoursManagement.tsx and interpolated here once
+// the actual numbers/names are known.
+function fillTemplate(template: string, replacements: Record<string, string | number>): string {
+  return Object.entries(replacements).reduce(
+    (result, [token, value]) => result.split(`%${token}%`).join(String(value)),
+    template,
+  );
+}
+
 // Chunk tutors into groups that fit on a page
 const chunkTutors = (tutors: Profile[], maxPerPage: number = 15): Profile[][] => {
   const chunks: Profile[][] = [];
@@ -298,23 +357,10 @@ const TableHeader: React.FC<{
   allTimeView: boolean;
   weeksInMonth: Date[];
   colWidth: string;
-}> = ({ allTimeView, weeksInMonth, colWidth }) => {
+  labels: HoursReportLabels;
+}> = ({ allTimeView, weeksInMonth, colWidth, labels }) => {
   const formatDateRange = (date: Date): string => {
-    const months = [
-      "Jan",
-      "Feb",
-      "Mar",
-      "Apr",
-      "May",
-      "Jun",
-      "Jul",
-      "Aug",
-      "Sep",
-      "Oct",
-      "Nov",
-      "Dec",
-    ];
-    return `${months[date.getMonth()]} ${date.getDate()}`;
+    return `${labels.monthAbbreviations[date.getMonth()]} ${date.getDate()}`;
   };
 
   const addDays = (date: Date, days: number): Date => {
@@ -326,28 +372,28 @@ const TableHeader: React.FC<{
   return (
     <View style={styles.tableRow}>
       <View style={styles.tutorNameColHeader}>
-        <Text style={styles.tableCellHeader}>Tutor Name</Text>
+        <Text style={styles.tableCellHeader}>{labels.table.tutorName}</Text>
       </View>
 
       {allTimeView ? (
         <>
           <View style={[styles.tableColHeader, { width: colWidth }]}>
-            <Text style={styles.tableCellHeader}>All Sessions</Text>
+            <Text style={styles.tableCellHeader}>{labels.table.allSessions}</Text>
           </View>
           <View style={[styles.tableColHeader, { width: colWidth }]}>
-            <Text style={styles.tableCellHeader}>Biweekly{"\n"}Meetings</Text>
+            <Text style={styles.tableCellHeader}>{labels.table.biweeklyMeetings}</Text>
           </View>
           <View style={[styles.tableColHeader, { width: colWidth }]}>
-            <Text style={styles.tableCellHeader}>Tutor{"\n"}Referral</Text>
+            <Text style={styles.tableCellHeader}>{labels.table.tutorReferral}</Text>
           </View>
           <View style={[styles.tableColHeader, { width: colWidth }]}>
-            <Text style={styles.tableCellHeader}>Sub{"\n"}Hotline</Text>
+            <Text style={styles.tableCellHeader}>{labels.table.subHotline}</Text>
           </View>
           <View style={[styles.tableColHeader, { width: colWidth }]}>
-            <Text style={styles.tableCellHeader}>Other</Text>
+            <Text style={styles.tableCellHeader}>{labels.table.other}</Text>
           </View>
           <View style={[styles.tableColHeader, { width: colWidth }]}>
-            <Text style={styles.tableCellHeader}>All Time{"\n"}Total</Text>
+            <Text style={styles.tableCellHeader}>{labels.table.allTimeTotal}</Text>
           </View>
         </>
       ) : (
@@ -361,22 +407,22 @@ const TableHeader: React.FC<{
             </View>
           ))}
           <View style={[styles.tableColHeader, { width: colWidth }]}>
-            <Text style={styles.tableCellHeader}>Biweekly{"\n"}Meetings</Text>
+            <Text style={styles.tableCellHeader}>{labels.table.biweeklyMeetings}</Text>
           </View>
           <View style={[styles.tableColHeader, { width: colWidth }]}>
-            <Text style={styles.tableCellHeader}>Tutor{"\n"}Referral</Text>
+            <Text style={styles.tableCellHeader}>{labels.table.tutorReferral}</Text>
           </View>
           <View style={[styles.tableColHeader, { width: colWidth }]}>
-            <Text style={styles.tableCellHeader}>Sub{"\n"}Hotline</Text>
+            <Text style={styles.tableCellHeader}>{labels.table.subHotline}</Text>
           </View>
           <View style={[styles.tableColHeader, { width: colWidth }]}>
-            <Text style={styles.tableCellHeader}>Other</Text>
+            <Text style={styles.tableCellHeader}>{labels.table.other}</Text>
           </View>
           <View style={[styles.tableColHeader, { width: colWidth }]}>
-            <Text style={styles.tableCellHeader}>This{"\n"}Month</Text>
+            <Text style={styles.tableCellHeader}>{labels.table.thisMonth}</Text>
           </View>
           <View style={[styles.tableColHeader, { width: colWidth }]}>
-            <Text style={styles.tableCellHeader}>All Time{"\n"}Total</Text>
+            <Text style={styles.tableCellHeader}>{labels.table.allTimeTotal}</Text>
           </View>
         </>
       )}
@@ -393,6 +439,7 @@ const TotalsRow: React.FC<{
   totalEventHours: { [key: string]: number };
   totalMonthlyHours: number;
   totalHours: number;
+  labels: HoursReportLabels;
 }> = ({
   allTimeView,
   weeksInMonth,
@@ -401,13 +448,14 @@ const TotalsRow: React.FC<{
   totalEventHours,
   totalMonthlyHours,
   totalHours,
+  labels,
 }) => {
   if (allTimeView) return null;
 
   return (
     <View style={[styles.tableRow, styles.totalsRow]}>
       <View style={styles.tutorNameCol}>
-        <Text style={[styles.tutorNameCell, { color: "#1e40af" }]}>TOTALS</Text>
+        <Text style={[styles.tutorNameCell, { color: "#1e40af" }]}>{labels.table.totals}</Text>
       </View>
 
       {weeksInMonth.map((week) => {
@@ -597,6 +645,7 @@ const HoursPDFDocument: React.FC<{ data: HoursPDFData }> = ({ data }) => {
     monthlyHours,
     filteredTutors,
     logoUrl,
+    labels,
   } = data;
 
   const weeksInMonth = eachWeekOfInterval({
@@ -671,15 +720,19 @@ const HoursPDFDocument: React.FC<{ data: HoursPDFData }> = ({ data }) => {
               <View style={styles.headerContent}>
                 <Text style={styles.companyName}>Connect Me Tutoring</Text>
                 <Text style={styles.reportTitle}>
-                  {allTimeView ? "All-Time Hours Report" : "Monthly Hours Report"}
+                  {allTimeView ? labels.header.allTimeTitle : labels.header.monthlyTitle}
                 </Text>
                 <Text style={styles.reportSubtitle}>
                   {allTimeView
-                    ? "Comprehensive Performance Overview"
-                    : `Performance Report - ${format(selectedDate, "MMMM yyyy")}`}
+                    ? labels.header.allTimeSubtitle
+                    : fillTemplate(labels.header.monthlySubtitleTemplate, {
+                        DATE: format(selectedDate, "MMMM yyyy"),
+                      })}
                 </Text>
                 <Text style={styles.reportDate}>
-                  Generated on {format(new Date(), "MMMM dd, yyyy 'at' HH:mm")}
+                  {fillTemplate(labels.header.generatedOnTemplate, {
+                    DATE: format(new Date(), "MMMM dd, yyyy 'at' HH:mm"),
+                  })}
                 </Text>
               </View>
             </View>
@@ -693,6 +746,7 @@ const HoursPDFDocument: React.FC<{ data: HoursPDFData }> = ({ data }) => {
                 allTimeView={allTimeView}
                 weeksInMonth={weeksInMonth}
                 colWidth={colWidth}
+                labels={labels}
               />
 
               {/* Totals Row - only on first page and only for monthly view */}
@@ -705,6 +759,7 @@ const HoursPDFDocument: React.FC<{ data: HoursPDFData }> = ({ data }) => {
                   totalEventHours={totalEventHours}
                   totalMonthlyHours={totalMonthlyHours}
                   totalHours={totalHours}
+                  labels={labels}
                 />
               )}
 
@@ -730,58 +785,60 @@ const HoursPDFDocument: React.FC<{ data: HoursPDFData }> = ({ data }) => {
           {/* Statistics Section - only on last page */}
           {pageIndex === totalPages - 1 && (
             <View style={styles.statsSection}>
-              <Text style={styles.statsTitle}>Performance Statistics</Text>
+              <Text style={styles.statsTitle}>{labels.stats.title}</Text>
 
               <View style={styles.statsGrid}>
                 <View style={styles.statsCard}>
                   <Text style={styles.statsValue}>{stats.activeTutors}</Text>
-                  <Text style={styles.statsLabel}>Active Tutors</Text>
+                  <Text style={styles.statsLabel}>{labels.stats.activeTutors}</Text>
                 </View>
 
                 <View style={styles.statsCard}>
                   <Text style={styles.statsValue}>{stats.totalHours.toFixed(1)}</Text>
-                  <Text style={styles.statsLabel}>Total Hours</Text>
+                  <Text style={styles.statsLabel}>{labels.stats.totalHours}</Text>
                 </View>
 
                 <View style={styles.statsCard}>
                   <Text style={styles.statsValue}>{stats.averageHours.toFixed(1)}</Text>
-                  <Text style={styles.statsLabel}>Avg Hours/Tutor</Text>
+                  <Text style={styles.statsLabel}>{labels.stats.avgHoursPerTutor}</Text>
                 </View>
 
                 <View style={styles.statsCard}>
                   <Text style={styles.statsValue}>{stats.totalEventHours.toFixed(1)}</Text>
-                  <Text style={styles.statsLabel}>Event Hours</Text>
+                  <Text style={styles.statsLabel}>{labels.stats.eventHours}</Text>
                 </View>
               </View>
 
               <View style={styles.insightsSection}>
-                <Text style={styles.insightsTitle}>Key Insights</Text>
+                <Text style={styles.insightsTitle}>{labels.insights.title}</Text>
 
                 <View style={styles.insightItem}>
                   <View style={styles.insightBullet} />
                   <Text style={styles.insightText}>
-                    Top performer: {stats.topPerformer?.firstName} {stats.topPerformer?.lastName}{" "}
-                    with{" "}
-                    {allTimeView
-                      ? (allTimeHours[stats.topPerformer?.id] || 0).toFixed(1)
-                      : (monthlyHours[stats.topPerformer?.id] || 0).toFixed(1)}{" "}
-                    hours
+                    {fillTemplate(labels.insights.topPerformerTemplate, {
+                      NAME: `${stats.topPerformer?.firstName} ${stats.topPerformer?.lastName}`,
+                      HOURS: allTimeView
+                        ? (allTimeHours[stats.topPerformer?.id] || 0).toFixed(1)
+                        : (monthlyHours[stats.topPerformer?.id] || 0).toFixed(1),
+                    })}
                   </Text>
                 </View>
 
                 <View style={styles.insightItem}>
                   <View style={styles.insightBullet} />
                   <Text style={styles.insightText}>
-                    {Math.round((stats.activeTutors / filteredTutors.length) * 100)}% of tutors are
-                    actively contributing hours
+                    {fillTemplate(labels.insights.activePercentageTemplate, {
+                      PERCENT: Math.round((stats.activeTutors / filteredTutors.length) * 100),
+                    })}
                   </Text>
                 </View>
 
                 <View style={styles.insightItem}>
                   <View style={styles.insightBullet} />
                   <Text style={styles.insightText}>
-                    Event activities account for{" "}
-                    {Math.round((stats.totalEventHours / stats.totalHours) * 100)}% of total hours
+                    {fillTemplate(labels.insights.eventPercentageTemplate, {
+                      PERCENT: Math.round((stats.totalEventHours / stats.totalHours) * 100),
+                    })}
                   </Text>
                 </View>
               </View>
@@ -790,12 +847,19 @@ const HoursPDFDocument: React.FC<{ data: HoursPDFData }> = ({ data }) => {
 
           {/* Footer - on every page */}
           <View style={styles.footer}>
-            <Text style={styles.footerText}>Connect Me Tutoring - Hours Report</Text>
+            <Text style={styles.footerText}>{labels.footer.title}</Text>
             <Text style={styles.footerText}>
-              Report Period: {allTimeView ? "All Time" : format(selectedDate, "MMMM yyyy")}
+              {fillTemplate(labels.footer.reportPeriodTemplate, {
+                PERIOD: allTimeView
+                  ? labels.footer.reportPeriodAllTime
+                  : format(selectedDate, "MMMM yyyy"),
+              })}
             </Text>
             <Text style={styles.footerText}>
-              Page {pageIndex + 1} of {totalPages}
+              {fillTemplate(labels.footer.pageOfTemplate, {
+                PAGE: pageIndex + 1,
+                TOTAL: totalPages,
+              })}
             </Text>
           </View>
         </Page>

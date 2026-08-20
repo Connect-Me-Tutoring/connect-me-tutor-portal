@@ -1,5 +1,6 @@
 import React from "react";
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import {
   Dialog,
   DialogTrigger,
@@ -51,40 +52,6 @@ interface SessionExitFormProps {
   handleStatusChange: (session: Session) => void;
 }
 
-const calculateDeadline = (sessionDate: Date) => {
-  const deadlineDate = addDays(sessionDate, 2);
-  const month: string = String(deadlineDate.getMonth() + 1).padStart(2, "0");
-  const day: string = String(deadlineDate.getDate()).padStart(2, "0");
-
-  const mmdd: string = `${month}/${day}`;
-  return mmdd;
-};
-
-const sessionExitFormDeadline = (currSession: Session) => {
-  const date = new Date(currSession.date);
-  const deadlineDate = addDays(date, 2);
-  const daysUntilDeadline = differenceInDays(deadlineDate, new Date());
-
-  let urgencyClass = "";
-  let deadlineText = ""; //
-
-  if (isToday(deadlineDate) || daysUntilDeadline === 0) {
-    urgencyClass = "bg-red-500 text-white hover:bg-red-600 border-red-500";
-    deadlineText = "SEF Due TODAY by 11:59pm EST";
-  } else if (isTomorrow(deadlineDate) || daysUntilDeadline === 1) {
-    urgencyClass = "bg-orange-500 text-white hover:bg-orange-600 border-orange-500";
-    deadlineText = `SEF Due Tomorrow`;
-  } else if (daysUntilDeadline <= 2) {
-    urgencyClass = "bg-yellow-500 text-white hover:bg-yellow-600 border-yellow-500";
-    deadlineText = `SEF Due in ${daysUntilDeadline} days`;
-  } else {
-    urgencyClass = "bg-gray-100 text-gray-700 hover:bg-gray-200 border-gray-200";
-    deadlineText = `SEF Due ${calculateDeadline(date)}`;
-  }
-
-  return { urgencyClass, deadlineText };
-};
-
 const SessionExitForm = ({
   currSession,
   // isSessionExitFormOpen,
@@ -100,6 +67,7 @@ const SessionExitForm = ({
   actor = "tutor",
 }: any) => {
   const TC = useDashboardContext();
+  const t = useTranslations("tutorSessions.forms.sessionExit");
 
   const [isCancellation, setisCancellation] = useState(false);
   const [isFirstSession, setIsFirstSession] = useState(false);
@@ -110,6 +78,40 @@ const SessionExitForm = ({
     setIsQuestionOrConcern(false);
     setCategory("");
     setIsFirstSession(false);
+  };
+
+  const calculateDeadline = (sessionDate: Date) => {
+    const deadlineDate = addDays(sessionDate, 2);
+    const month: string = String(deadlineDate.getMonth() + 1).padStart(2, "0");
+    const day: string = String(deadlineDate.getDate()).padStart(2, "0");
+
+    const mmdd: string = `${month}/${day}`;
+    return mmdd;
+  };
+
+  const sessionExitFormDeadline = (currSession: Session) => {
+    const date = new Date(currSession.date);
+    const deadlineDate = addDays(date, 2);
+    const daysUntilDeadline = differenceInDays(deadlineDate, new Date());
+
+    let urgencyClass = "";
+    let deadlineText = ""; //
+
+    if (isToday(deadlineDate) || daysUntilDeadline === 0) {
+      urgencyClass = "bg-red-500 text-white hover:bg-red-600 border-red-500";
+      deadlineText = t("deadline.dueToday");
+    } else if (isTomorrow(deadlineDate) || daysUntilDeadline === 1) {
+      urgencyClass = "bg-orange-500 text-white hover:bg-orange-600 border-orange-500";
+      deadlineText = t("deadline.dueTomorrow");
+    } else if (daysUntilDeadline <= 2) {
+      urgencyClass = "bg-yellow-500 text-white hover:bg-yellow-600 border-yellow-500";
+      deadlineText = t("deadline.dueInDays", { days: daysUntilDeadline });
+    } else {
+      urgencyClass = "bg-gray-100 text-gray-700 hover:bg-gray-200 border-gray-200";
+      deadlineText = t("deadline.dueOn", { date: calculateDeadline(date) });
+    }
+
+    return { urgencyClass, deadlineText };
   };
 
   return (
@@ -141,10 +143,8 @@ const SessionExitForm = ({
           </HoverCardTrigger>
           <HoverCardContent>
             <div className="space-y-1 text-sm">
-              <p className="font-medium">Submit by 11:59pm EST</p>
-              <p className="text-muted-foreground">
-                Session Exit Form will be available after your session
-              </p>
+              <p className="font-medium">{t("submitByLabel")}</p>
+              <p className="text-muted-foreground">{t("availabilityHint")}</p>
             </div>
           </HoverCardContent>
         </HoverCard>
@@ -152,10 +152,10 @@ const SessionExitForm = ({
       <DialogContent>
         <DialogHeader>
           <DialogTitle className="flex items-center justify-between">
-            Session Exit Form
+            {t("dialogTitle")}
             <AlertDialog>
               <AlertDialogTrigger asChild>
-                <Button variant="outline">The session did not happen</Button>
+                <Button variant="outline">{t("sessionDidNotHappen")}</Button>
               </AlertDialogTrigger>
               {TC.selectedSession ? (
                 <CancellationForm
@@ -185,17 +185,17 @@ const SessionExitForm = ({
             }}
           />
           <label htmlFor="next-class" className="text-sm font-medium">
-            I have a question or a concern
+            {t("questionOrConcernLabel")}
           </label>
         </div>
         {isQuestionOrConcern && (
           <div className="flex flex-col space-y-1.5">
             <label htmlFor="category" className="text-sm font-medium">
-              Issue Category <span className="text-red-500">*</span>
+              {t("issueCategoryLabel")} <span className="text-red-500">*</span>
             </label>
             <Select value={category} onValueChange={setCategory}>
               <SelectTrigger id="category">
-                <SelectValue placeholder="Select a category..." />
+                <SelectValue placeholder={t("selectCategoryPlaceholder")} />
               </SelectTrigger>
               <SelectContent>
                 {Object.entries(CATEGORY_LABELS).map(([value, label]) => (
@@ -212,9 +212,7 @@ const SessionExitForm = ({
           value={TC.notes}
           onChange={(e) => TC.setNotes(e.target.value)}
           placeholder={
-            isQuestionOrConcern
-              ? "What is your question or concern?"
-              : "In 2-4 sentences, What did you cover during your session?"
+            isQuestionOrConcern ? t("notesPlaceholderQuestion") : t("notesPlaceholderDefault")
           }
         />
         <div className={isQuestionOrConcern ? "hidden" : ""}>
@@ -226,7 +224,7 @@ const SessionExitForm = ({
               onCheckedChange={(checked) => TC.setNextClassConfirmed(checked === true)}
             />
             <label htmlFor="next-class" className="text-sm font-medium flex">
-              <div className="text-red-500">*</div> My student knows about our next class
+              <div className="text-red-500">*</div> {t("nextClassConfirmedLabel")}
             </label>
           </div>
         </div>
@@ -249,7 +247,7 @@ const SessionExitForm = ({
             (isQuestionOrConcern && !category)
           }
         >
-          Submit
+          {t("submit")}
         </Button>
       </DialogContent>
     </Dialog>

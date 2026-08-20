@@ -1,0 +1,49 @@
+{
+  "adminConversationCard": {
+    "title": "Admin Conversation",
+    "description": "Connect with administrators for support and guidance",
+    "studentsAndTutors": "Students & Tutors",
+    "realTimeSupport": "Real-time Support",
+    "accessCta": "Access Admin Conversation"
+  },
+  "roomPage": {
+    "heading": "Tutoring Session"
+  },
+  "room": {
+    "invalidLink": "This chat link is invalid or the pairing id is missing. Open Messages and select an active pairing to start chatting.",
+    "participants": "Participants",
+    "viewers": "Viewers",
+    "chatRoomFallbackTitle": "Chat Room",
+    "readOnlyAnnouncementsChannel": "Read-only announcements channel",
+    "participantsCount": "{count} participants",
+    "muteEmailNotifications": "Mute email notifications for this chat",
+    "unableToLoadParticipants": "Unable to load participants",
+    "noMessagesYet": "No messages yet",
+    "readOnlyBanner": "This is a read-only announcements channel",
+    "messagePlaceholder": "Type your message...",
+    "send": "Send",
+    "download": "Download",
+    "roles": {
+      "tutor": "tutor",
+      "student": "student",
+      "admin": "admin"
+    }
+  },
+  "conversations": {
+    "heading": "Messages",
+    "activeSessionsCount": "{count, plural, one {# active tutoring session} other {# active tutoring sessions}}",
+    "tutorLabel": "Tutor",
+    "emptyState": {
+      "title": "No active sessions",
+      "description": "Your tutoring conversations will appear here"
+    },
+    "mock": {
+      "startConversation": "Start a conversation",
+      "now": "now",
+      "greatProgress": "Great progress on today's lesson!",
+      "reviewHomework": "Let's review the homework tomorrow",
+      "thanksExplanation": "Thanks for the explanation",
+      "reschedule": "Can we reschedule our session?"
+    }
+  }
+}

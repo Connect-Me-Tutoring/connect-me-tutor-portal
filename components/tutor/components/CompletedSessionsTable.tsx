@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useTranslations } from "next-intl";
 import { formatSessionDate, formatSessionDuration } from "@/lib/utils";
 import { Session } from "@/types";
 import { Button } from "@/components/ui/button";
@@ -58,6 +59,7 @@ const CompletedSessionsTable = ({
   handleUndoSessionExitForm,
 }: any) => {
   const TC = useDashboardContext();
+  const t = useTranslations("tutorSessions.tables");
   const [isMeetingNotesOpen, setIsMeetingNotesOpen] = useState(false);
 
   return (
@@ -66,12 +68,12 @@ const CompletedSessionsTable = ({
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Mark Status</TableHead>
-              <TableHead>Date</TableHead>
-              <TableHead>Title</TableHead>
-              <TableHead>Student</TableHead>
-              <TableHead>Duration</TableHead>
-              <TableHead>Meeting Notes</TableHead>
+              <TableHead>{t("common.columns.markStatus")}</TableHead>
+              <TableHead>{t("common.columns.date")}</TableHead>
+              <TableHead>{t("common.columns.title")}</TableHead>
+              <TableHead>{t("common.columns.student")}</TableHead>
+              <TableHead>{t("common.columns.duration")}</TableHead>
+              <TableHead>{t("common.columns.meetingNotes")}</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -81,12 +83,12 @@ const CompletedSessionsTable = ({
                   {session.status === "Complete" ? (
                     <span className="px-3 py-1 inline-flex items-center rounded-full bg-green-100 text-green-800 border border-green-200">
                       <CircleCheckBig size={14} className="mr-1" />
-                      Complete
+                      {t("common.status.complete")}
                     </span>
                   ) : session.status === "Cancelled" ? (
                     <span className="px-3 py-1 inline-flex items-center rounded-full bg-red-100 text-red-800 border border-red-200">
                       <CircleX size={14} className="mr-1" />
-                      Cancelled
+                      {t("common.status.cancelled")}
                     </span>
                   ) : (
                     ""
@@ -94,7 +96,10 @@ const CompletedSessionsTable = ({
                 </TableCell>
                 <TableCell>{formatSessionDate(session.date)}</TableCell>
                 <TableCell className="font-medium">
-                  Tutoring Session with {session.student?.firstName} {session.student?.lastName}
+                  {t("common.sessionTitle", {
+                    firstName: session.student?.firstName ?? "",
+                    lastName: session.student?.lastName ?? "",
+                  })}
                 </TableCell>
                 <TableCell>
                   {session.student?.firstName} {session.student?.lastName}
@@ -111,12 +116,12 @@ const CompletedSessionsTable = ({
                             TC.setSelectedSession(session);
                           }}
                         >
-                          View Session Notes
+                          {t("completed.viewSessionNotes")}
                         </Button>
                       </DialogTrigger>
                       <DialogContent>
                         <DialogHeader>
-                          <DialogTitle>Meeting Notes</DialogTitle>
+                          <DialogTitle>{t("completed.meetingNotesDialogTitle")}</DialogTitle>
                         </DialogHeader>
                         <Textarea readOnly>{TC.selectedSession?.session_exit_form}</Textarea>
                       </DialogContent>
@@ -132,7 +137,7 @@ const CompletedSessionsTable = ({
                     </DropdownMenuTrigger>
                     <DropdownMenuContent>
                       <DropdownMenuGroup>
-                        <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                        <DropdownMenuLabel>{t("common.columns.actions")}</DropdownMenuLabel>
                         <DropdownMenuItem
                           onClick={() => {
                             if (session.status === "Complete") {
@@ -143,7 +148,7 @@ const CompletedSessionsTable = ({
                             }
                           }}
                         >
-                          Undo
+                          {t("completed.undo")}
                         </DropdownMenuItem>
                       </DropdownMenuGroup>
                     </DropdownMenuContent>
@@ -154,9 +159,9 @@ const CompletedSessionsTable = ({
           </TableBody>
         </Table>
         <div className="mt-4 hidden md:flex justify-between items-center">
-          <span>{TC.filteredPastSessions.length} row(s) total.</span>
+          <span>{t("common.pagination.rowsTotal", { count: TC.filteredPastSessions.length })}</span>
           <div className="flex items-center space-x-2">
-            <span>Rows per page</span>
+            <span>{t("common.pagination.rowsPerPage")}</span>
             <Select
               value={TC.rowsPerPagePastSessions.toString()}
               onValueChange={handleRowsPerPageChange}
@@ -171,7 +176,10 @@ const CompletedSessionsTable = ({
               </SelectContent>
             </Select>
             <span>
-              Page {TC.currentPagePastSessions} of {totalPages}
+              {t("common.pagination.page", {
+                current: TC.currentPagePastSessions,
+                total: totalPages,
+              })}
             </span>
             <div className="flex space-x-1">
               <Button
@@ -216,24 +224,29 @@ const CompletedSessionsTable = ({
           <MobileCard key={index}>
             <div className="flex justify-between items-start gap-2">
               <div className="font-medium text-sm">
-                Tutoring Session with {session.student?.firstName} {session.student?.lastName}
+                {t("common.sessionTitle", {
+                  firstName: session.student?.firstName ?? "",
+                  lastName: session.student?.lastName ?? "",
+                })}
               </div>
               {session.status === "Complete" ? (
                 <span className="px-3 py-1 inline-flex items-center rounded-full bg-green-100 text-green-800 border border-green-200 whitespace-nowrap">
                   <CircleCheckBig size={14} className="mr-1" />
-                  Complete
+                  {t("common.status.complete")}
                 </span>
               ) : session.status === "Cancelled" ? (
                 <span className="px-3 py-1 inline-flex items-center rounded-full bg-red-100 text-red-800 border border-red-200 whitespace-nowrap">
                   <CircleX size={14} className="mr-1" />
-                  Cancelled
+                  {t("common.status.cancelled")}
                 </span>
               ) : (
                 ""
               )}
             </div>
             <div className="text-sm text-muted-foreground">{formatSessionDate(session.date)}</div>
-            <div className="text-sm">Duration: {formatSessionDuration(session.duration)}</div>
+            <div className="text-sm">
+              {t("common.columns.duration")}: {formatSessionDuration(session.duration)}
+            </div>
             <div className="flex flex-wrap items-center gap-1">
               <Dialog open={isMeetingNotesOpen} onOpenChange={setIsMeetingNotesOpen}>
                 <DialogTrigger asChild>
@@ -245,12 +258,12 @@ const CompletedSessionsTable = ({
                       TC.setSelectedSession(session);
                     }}
                   >
-                    View Session Notes
+                    {t("completed.viewSessionNotes")}
                   </Button>
                 </DialogTrigger>
                 <DialogContent>
                   <DialogHeader>
-                    <DialogTitle>Meeting Notes</DialogTitle>
+                    <DialogTitle>{t("completed.meetingNotesDialogTitle")}</DialogTitle>
                   </DialogHeader>
                   <Textarea readOnly>{TC.selectedSession?.session_exit_form}</Textarea>
                 </DialogContent>
@@ -263,7 +276,7 @@ const CompletedSessionsTable = ({
                 </DropdownMenuTrigger>
                 <DropdownMenuContent>
                   <DropdownMenuGroup>
-                    <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                    <DropdownMenuLabel>{t("common.columns.actions")}</DropdownMenuLabel>
                     <DropdownMenuItem
                       onClick={() => {
                         if (session.status === "Complete") {
@@ -274,7 +287,7 @@ const CompletedSessionsTable = ({
                         }
                       }}
                     >
-                      Undo
+                      {t("completed.undo")}
                     </DropdownMenuItem>
                   </DropdownMenuGroup>
                 </DropdownMenuContent>

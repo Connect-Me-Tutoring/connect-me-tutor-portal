@@ -1,4 +1,5 @@
 "use client";
+import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import {
   DialogContent,
@@ -19,21 +20,23 @@ const DeleteEnrollmentDialog: React.FC<DeleteEnrollmentDialogProps> = ({
   onCancel,
   onConfirm,
 }) => {
+  const t = useTranslations("adminEnrollments.dialogs.delete");
+
   return (
     <DialogContent className="sm:max-w-[500px]">
       <DialogHeader>
-        <DialogTitle>Delete Enrollment</DialogTitle>
-        <DialogDescription className="sr-only">confirm enrollment deletion</DialogDescription>
+        <DialogTitle>{t("title")}</DialogTitle>
+        <DialogDescription className="sr-only">{t("description")}</DialogDescription>
       </DialogHeader>
       <div className="py-4">
-        <p>Are you sure you want to delete this enrollment? This action cannot be undone.</p>
+        <p>{t("confirmMessage")}</p>
       </div>
       <div className="flex justify-end space-x-2">
         <Button variant="outline" onClick={onCancel}>
-          Cancel
+          {t("cancel")}
         </Button>
         <Button variant="destructive" onClick={onConfirm} disabled={!enrollment}>
-          Delete
+          {t("confirm")}
         </Button>
       </div>
     </DialogContent>

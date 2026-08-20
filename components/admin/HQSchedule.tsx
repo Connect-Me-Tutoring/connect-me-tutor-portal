@@ -1,6 +1,7 @@
 "use client";
 
 import React, { use, useState, useMemo } from "react";
+import { useTranslations } from "next-intl";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { format, startOfWeek, endOfWeek, eachDayOfInterval, isToday } from "date-fns";
 import { Plus } from "lucide-react";
@@ -33,11 +34,11 @@ import { toast, Toaster } from "react-hot-toast";
 
 const HOURS = Array.from({ length: 17 }, (_, i) => i + 7); // 7am–11pm
 
-function formatHour(hour: number) {
-  if (hour === 0) return "12 AM";
-  if (hour < 12) return `${hour} AM`;
-  if (hour === 12) return "12 PM";
-  return `${hour - 12} PM`;
+function formatHour(hour: number, amLabel: string, pmLabel: string) {
+  if (hour === 0) return `12 ${amLabel}`;
+  if (hour < 12) return `${hour} ${amLabel}`;
+  if (hour === 12) return `12 ${pmLabel}`;
+  return `${hour - 12} ${pmLabel}`;
 }
 
 const WEEK_DAYS_LABELS = [
@@ -51,13 +52,15 @@ const WEEK_DAYS_LABELS = [
 ];
 
 // 7:00 AM through 12:00 AM (midnight) in 30-minute increments
-const TIME_OPTIONS = Array.from({ length: 35 }, (_, i) => {
-  const totalMins = 7 * 60 + i * 30;
-  const h = Math.floor(totalMins / 60);
-  const m = totalMins % 60;
-  const label = `${h % 12 === 0 ? 12 : h % 12}:${m === 0 ? "00" : m} ${h % 24 < 12 ? "AM" : "PM"}`;
-  return { value: `${String(h).padStart(2, "0")}:${m === 0 ? "00" : m}`, label };
-});
+function buildTimeOptions(amLabel: string, pmLabel: string) {
+  return Array.from({ length: 35 }, (_, i) => {
+    const totalMins = 7 * 60 + i * 30;
+    const h = Math.floor(totalMins / 60);
+    const m = totalMins % 60;
+    const label = `${h % 12 === 0 ? 12 : h % 12}:${m === 0 ? "00" : m} ${h % 24 < 12 ? amLabel : pmLabel}`;
+    return { value: `${String(h).padStart(2, "0")}:${m === 0 ? "00" : m}`, label };
+  });
+}
 
 const EMPTY_FORM = {
   title: "",
@@ -145,37 +148,43 @@ function EventFormFields({
   idPrefix,
   meetings,
 }: EventFormFieldsProps) {
+  const t = useTranslations("adminSchedule");
+  const timeOptions = useMemo(
+    () => buildTimeOptions(t("time.am"), t("time.pm")),
+    [t],
+  );
+
   return (
     <div className="grid gap-4 py-2">
       <div className="grid gap-1.5">
-        <Label htmlFor={`${idPrefix}-title`}>Title</Label>
+        <Label htmlFor={`${idPrefix}-title`}>{t("hqSchedule.eventForm.titleLabel")}</Label>
         <Input
           id={`${idPrefix}-title`}
-          placeholder="Event title"
+          placeholder={t("hqSchedule.eventForm.titlePlaceholder")}
           value={f.title}
           onChange={(e) => setF((p) => ({ ...p, title: e.target.value }))}
         />
       </div>
       <div className="grid gap-1.5">
-        <Label htmlFor={`${idPrefix}-desc`}>Description</Label>
+        <Label htmlFor={`${idPrefix}-desc`}>{t("hqSchedule.eventForm.descriptionLabel")}</Label>
         <Textarea
           id={`${idPrefix}-desc`}
-          placeholder="Optional description"
+          placeholder={t("hqSchedule.eventForm.descriptionPlaceholder")}
           rows={3}
           value={f.description}
           onChange={(e) => setF((p) => ({ ...p, description: e.target.value }))}
         />
       </div>
       <div className="grid gap-1.5">
-        <Label>Day</Label>
+        <Label>{t("hqSchedule.eventForm.dayLabel")}</Label>
         <Select value={f.day} onValueChange={(v) => setF((p) => ({ ...p, day: v, meetingId: "" }))}>
           <SelectTrigger>
-            <SelectValue placeholder="Select a day" />
+            <SelectValue placeholder={t("hqSchedule.eventForm.dayPlaceholder")} />
           </SelectTrigger>
           <SelectContent>
             {WEEK_DAYS_LABELS.map((d) => (
               <SelectItem key={d} value={d}>
-                {d}
+                {t(`days.${d}`)}
               </SelectItem>
             ))}
           </SelectContent>
@@ -183,36 +192,36 @@ function EventFormFields({
       </div>
       <div className="grid grid-cols-2 gap-3">
         <div className="grid gap-1.5">
-          <Label>Start time</Label>
+          <Label>{t("hqSchedule.eventForm.startTimeLabel")}</Label>
           <Select
             value={f.startTime}
             onValueChange={(v) => setF((p) => ({ ...p, startTime: v, meetingId: "" }))}
           >
             <SelectTrigger>
-              <SelectValue placeholder="Start" />
+              <SelectValue placeholder={t("hqSchedule.eventForm.startTimePlaceholder")} />
             </SelectTrigger>
             <SelectContent>
-              {TIME_OPTIONS.map((t) => (
-                <SelectItem key={t.value} value={t.value}>
-                  {t.label}
+              {timeOptions.map((option) => (
+                <SelectItem key={option.value} value={option.value}>
+                  {option.label}
                 </SelectItem>
               ))}
             </SelectContent>
           </Select>
         </div>
         <div className="grid gap-1.5">
-          <Label>End time</Label>
+          <Label>{t("hqSchedule.eventForm.endTimeLabel")}</Label>
           <Select
             value={f.endTime}
             onValueChange={(v) => setF((p) => ({ ...p, endTime: v, meetingId: "" }))}
           >
             <SelectTrigger>
-              <SelectValue placeholder="End" />
+              <SelectValue placeholder={t("hqSchedule.eventForm.endTimePlaceholder")} />
             </SelectTrigger>
             <SelectContent>
-              {TIME_OPTIONS.map((t) => (
-                <SelectItem key={t.value} value={t.value}>
-                  {t.label}
+              {timeOptions.map((option) => (
+                <SelectItem key={option.value} value={option.value}>
+                  {option.label}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -220,12 +229,16 @@ function EventFormFields({
         </div>
       </div>
       <div className="grid gap-1.5">
-        <Label>Zoom Link</Label>
+        <Label>{t("hqSchedule.eventForm.zoomLinkLabel")}</Label>
         <ZoomLinkSelect
           value={f.meetingId}
           onChange={(v) => setF((p) => ({ ...p, meetingId: v }))}
           disabled={!canCheck}
-          placeholder={canCheck ? "Select a zoom link" : "Set day & times first"}
+          placeholder={
+            canCheck
+              ? t("hqSchedule.eventForm.zoomLinkPlaceholder")
+              : t("hqSchedule.eventForm.zoomLinkSetFirst")
+          }
           meetings={meetings}
           availability={availability}
         />
@@ -235,6 +248,7 @@ function EventFormFields({
 }
 
 export default function HQSchedule({ meetingsPromise, enrollmentsPromise }: Props) {
+  const t = useTranslations("adminSchedule");
   const rawMeetings = use(meetingsPromise) ?? [];
   // Surface the HQ link at the top of the meeting dropdowns
   const meetings = useMemo(
@@ -253,7 +267,7 @@ export default function HQSchedule({ meetingsPromise, enrollmentsPromise }: Prop
     queryKey: ["weekly-meeting-schedules"],
     queryFn: getWeeklyMeetingSchedules,
     useErrorBoundary: (error: Error) => {
-      toast.error(`Failed to load schedules: ${error.message}`);
+      toast.error(t("hqSchedule.toasts.loadSchedulesError", { message: error.message }));
       return false;
     },
   });
@@ -320,13 +334,13 @@ export default function HQSchedule({ meetingsPromise, enrollmentsPromise }: Prop
     };
     try {
       await updateWeeklyMeetingSchedule(slot);
-      toast.success("Event saved");
+      toast.success(t("hqSchedule.toasts.eventSaved"));
       invalidateSchedules();
       setForm(EMPTY_FORM);
       setAddOpen(false);
     } catch (error) {
       console.error(error);
-      toast.error("Failed to save event");
+      toast.error(t("hqSchedule.toasts.eventSaveError"));
     }
   };
 
@@ -343,13 +357,13 @@ export default function HQSchedule({ meetingsPromise, enrollmentsPromise }: Prop
     };
     try {
       await updateWeeklyMeetingSchedule(slot);
-      toast.success("Event updated");
+      toast.success(t("hqSchedule.toasts.eventUpdated"));
       invalidateSchedules();
       setEditOpen(false);
       setEditingSchedule(null);
     } catch (error) {
       console.error(error);
-      toast.error("Failed to update event");
+      toast.error(t("hqSchedule.toasts.eventUpdateError"));
     }
   };
 
@@ -400,11 +414,11 @@ export default function HQSchedule({ meetingsPromise, enrollmentsPromise }: Prop
             <Select value={viewMeetingId} onValueChange={setViewMeetingId}>
               <SelectTrigger className="ml-3 w-44 text-sm">
                 <SelectValue>
-                  {viewMeetingId === "all" ? "All links" : selectedMeetingName}
+                  {viewMeetingId === "all" ? t("hqSchedule.toolbar.allLinks") : selectedMeetingName}
                 </SelectValue>
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All links</SelectItem>
+                <SelectItem value="all">{t("hqSchedule.toolbar.allLinks")}</SelectItem>
                 {meetings.map((m) => (
                   <SelectItem key={m.id} value={m.id}>
                     {m.name}
@@ -422,12 +436,12 @@ export default function HQSchedule({ meetingsPromise, enrollmentsPromise }: Prop
                 className="bg-connect-me-blue-3 hover:bg-connect-me-blue-4 text-white gap-1"
               >
                 <Plus className="h-4 w-4" />
-                New event
+                {t("hqSchedule.toolbar.newEvent")}
               </Button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-md">
               <DialogHeader>
-                <DialogTitle>New Event</DialogTitle>
+                <DialogTitle>{t("hqSchedule.addDialog.title")}</DialogTitle>
               </DialogHeader>
               <EventFormFields
                 f={form}
@@ -439,7 +453,7 @@ export default function HQSchedule({ meetingsPromise, enrollmentsPromise }: Prop
               />
               <DialogFooter>
                 <Button variant="outline" onClick={() => setAddOpen(false)}>
-                  Cancel
+                  {t("hqSchedule.addDialog.cancel")}
                 </Button>
                 <Button
                   className="bg-connect-me-blue-3 hover:bg-connect-me-blue-4 text-white"
@@ -448,7 +462,7 @@ export default function HQSchedule({ meetingsPromise, enrollmentsPromise }: Prop
                   }
                   onClick={handleAdd}
                 >
-                  Save event
+                  {t("hqSchedule.addDialog.save")}
                 </Button>
               </DialogFooter>
             </DialogContent>
@@ -465,7 +479,7 @@ export default function HQSchedule({ meetingsPromise, enrollmentsPromise }: Prop
         >
           <DialogContent className="sm:max-w-md">
             <DialogHeader>
-              <DialogTitle>Edit Event</DialogTitle>
+              <DialogTitle>{t("hqSchedule.editDialog.title")}</DialogTitle>
             </DialogHeader>
             <EventFormFields
               f={editForm}
@@ -477,7 +491,7 @@ export default function HQSchedule({ meetingsPromise, enrollmentsPromise }: Prop
             />
             <DialogFooter>
               <Button variant="outline" onClick={() => setEditOpen(false)}>
-                Cancel
+                {t("hqSchedule.editDialog.cancel")}
               </Button>
               <Button
                 className="bg-connect-me-blue-3 hover:bg-connect-me-blue-4 text-white"
@@ -490,7 +504,7 @@ export default function HQSchedule({ meetingsPromise, enrollmentsPromise }: Prop
                 }
                 onClick={handleEdit}
               >
-                Update event
+                {t("hqSchedule.editDialog.save")}
               </Button>
             </DialogFooter>
           </DialogContent>
@@ -530,7 +544,9 @@ export default function HQSchedule({ meetingsPromise, enrollmentsPromise }: Prop
               {HOURS.map((hour) => (
                 <React.Fragment key={hour}>
                   <div className="border-r border-b min-h-[56px] flex items-start justify-end pr-2 pt-1">
-                    <span className="text-[11px] text-connect-me-gray-1">{formatHour(hour)}</span>
+                    <span className="text-[11px] text-connect-me-gray-1">
+                      {formatHour(hour, t("time.am"), t("time.pm"))}
+                    </span>
                   </div>
                   {weekDays.map((day) => {
                     const dayName = format(day, "EEEE");
@@ -558,7 +574,7 @@ export default function HQSchedule({ meetingsPromise, enrollmentsPromise }: Prop
                           >
                             <span className="inline-flex items-center gap-1">
                               <span className="text-[9px] font-semibold uppercase tracking-wide bg-connect-me-blue-2 text-connect-me-blue-5 rounded px-1 py-px">
-                                Meeting
+                                {t("hqSchedule.meetingBadge")}
                               </span>
                             </span>
                             <span className="block truncate">{s.title}</span>
@@ -574,7 +590,7 @@ export default function HQSchedule({ meetingsPromise, enrollmentsPromise }: Prop
                           >
                             <span className="inline-flex items-center gap-1">
                               <span className="text-[9px] font-semibold uppercase tracking-wide bg-amber-200 text-amber-900 rounded px-1 py-px">
-                                Enrollment
+                                {t("hqSchedule.enrollmentBadge")}
                               </span>
                             </span>
                             <span className="block truncate">

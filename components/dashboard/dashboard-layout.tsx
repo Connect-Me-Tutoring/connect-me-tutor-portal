@@ -1,6 +1,7 @@
 "use client"; // This needs to be at the top to declare a client component
 
 import React, { use, useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
@@ -68,6 +69,7 @@ import { toast, Toaster } from "react-hot-toast";
 import { Select, SelectContent, SelectItem, SelectTrigger } from "../ui/select";
 import { Profile } from "@/types";
 import { getUserProfiles, switchProfile } from "@/lib/actions/profile/server.actions";
+import { LanguageSwitcher } from "@/components/language-switcher";
 
 export default function DashboardLayout({
   children,
@@ -78,6 +80,7 @@ export default function DashboardLayout({
   profile: Profile | null;
   userProfilesPromise: Promise<Partial<Profile>[]>;
 }) {
+  const t = useTranslations("common");
   // const [role, setRole] = useState<string | null>(null);
   const userProfiles: Partial<Profile>[] = use(userProfilesPromise) || [];
 
@@ -101,7 +104,7 @@ export default function DashboardLayout({
 
   const settingsSidebarItems = [
     {
-      title: "Profile",
+      title: t("sidebar.profile"),
       href: "/dashboard/profile",
       icon: <CircleUserRound className="h-5 w-5" />,
     },
@@ -109,27 +112,27 @@ export default function DashboardLayout({
 
   const studentSidebarItems = [
     {
-      title: "Dashboard",
+      title: t("nav.dashboard"),
       href: "/dashboard",
       icon: <LayoutDashboardIcon className="h-5 w-5" />,
     },
     {
-      title: "Announcements",
+      title: t("sidebar.announcements"),
       href: "/dashboard/announcements",
       icon: <BellPlus className="h-5 w-5" />,
     },
     {
-      title: "Chats",
+      title: t("sidebar.chats"),
       href: "/dashboard/chats",
       icon: <MessageCircleIcon className="h-5 w-5" />,
     },
     {
-      title: "Pairings",
+      title: t("sidebar.pairings"),
       href: "/dashboard/pairings",
       icon: <LinkIcon className="h-5 w-5" />,
     },
     {
-      title: "Profile",
+      title: t("sidebar.profile"),
       href: "/dashboard/profile",
       icon: <User className="h-5 w-5" />,
     },
@@ -137,47 +140,47 @@ export default function DashboardLayout({
 
   const tutorSidebarItems = [
     {
-      title: "Dashboard",
+      title: t("nav.dashboard"),
       href: "/dashboard",
       icon: <LayoutDashboardIcon className="h-5 w-5" />,
     },
     {
-      title: "Announcements",
+      title: t("sidebar.announcements"),
       href: "/dashboard/announcements",
       icon: <BellPlus className="h-5 w-5" />,
     },
     {
-      title: "My Students",
+      title: t("sidebar.myStudents"),
       href: "/dashboard/my-students",
       icon: <Users className="h-5 w-5" />,
     },
     {
-      title: "My Enrollments",
+      title: t("sidebar.myEnrollments"),
       href: "/dashboard/my-enrollments",
       icon: <BookOpenText className="h-5 w-5" />,
     },
     {
-      title: "Chats",
+      title: t("sidebar.chats"),
       href: "/dashboard/chats",
       icon: <MessageCircleIcon className="h-5 w-5" />,
     },
     {
-      title: "My Hours",
+      title: t("sidebar.myHours"),
       href: "/dashboard/my-stats",
       icon: <TrendingUp className="h-5 w-5" />,
     },
     {
-      title: "Resources",
+      title: t("sidebar.resources"),
       href: "/dashboard/resources",
       icon: <Layers className="h-5 w-5" />,
     },
     {
-      title: "Worksheets",
+      title: t("sidebar.worksheets"),
       href: "/dashboard/worksheets",
       icon: <FileText className="h-5 w-5" />,
     },
     {
-      title: "Pairings",
+      title: t("sidebar.pairings"),
       href: "/dashboard/pairings",
       icon: <LinkIcon className="h-5 w-5" />,
     },
@@ -187,7 +190,7 @@ export default function DashboardLayout({
     //   icon: <Sparkles className="h-5 w-5" />,
     // },
     {
-      title: "Profile",
+      title: t("sidebar.profile"),
       href: "/dashboard/profile",
       icon: <User className="h-5 w-5" />,
     },
@@ -195,68 +198,68 @@ export default function DashboardLayout({
 
   const adminSidebarItems = [
     {
-      title: "Dashboard",
+      title: t("nav.dashboard"),
       href: "/dashboard",
       icon: <LayoutDashboardIcon className="h-5 w-5" />,
     },
 
     {
-      title: "Notifications",
+      title: t("sidebar.notifications"),
       href: "/dashboard/notifications",
       icon: <Bell className="h-5 w-5" />,
     },
     {
-      title: "Schedule",
+      title: t("sidebar.schedule"),
       href: "/dashboard/schedule",
       icon: <Calendar className="h-5 w-5" />,
     },
     {
-      title: "Enrollments",
+      title: t("sidebar.enrollments"),
       href: "/dashboard/enrollments",
       icon: <BookOpenText className="h-5 w-5" />,
     },
     {
-      title: "Meeting Schedule",
+      title: t("sidebar.meetingSchedule"),
       href: "/dashboard/hq-schedule",
       icon: <CalendarRange className="h-5 w-5" />,
     },
     {
-      title: "Hours Manager",
+      title: t("sidebar.hoursManager"),
       href: "/dashboard/hours-manager",
       icon: <Clock className="h-5 w-5" />,
     },
     {
-      title: "All Tutors",
+      title: t("sidebar.allTutors"),
       href: "/dashboard/all-tutors",
       icon: <Users className="h-5 w-5" />,
     },
     {
-      title: "All Students",
+      title: t("sidebar.allStudents"),
       href: "/dashboard/all-students",
       icon: <Users className="h-5 w-5" />,
     },
     {
-      title: "Email Manager",
+      title: t("sidebar.emailManager"),
       href: "/dashboard/email-manager",
       icon: <Mail className="h-5 w-5" />,
     },
     {
-      title: "Pairing Queue",
+      title: t("sidebar.pairingQueue"),
       href: "/dashboard/pairing-que",
       icon: <ListOrdered className="h-5 w-5" />,
     },
     {
-      title: "Announcements",
+      title: t("sidebar.announcements"),
       href: "/dashboard/announcements",
       icon: <BellPlus className="h-5 w-5" />,
     },
     {
-      title: "Conversations",
+      title: t("sidebar.conversations"),
       href: "/dashboard/admin-conversations",
       icon: <Book className="h-5 w-5" />,
     },
     {
-      title: "Analytics",
+      title: t("sidebar.analytics"),
       href: "/dashboard/data-analytics",
       icon: <ChartColumn className="h-5 w-5" />,
     },
@@ -272,7 +275,7 @@ export default function DashboardLayout({
 
   const handleLogout = async () => {
     await logoutUser();
-    toast.success("Successfully logging out");
+    toast.success(t("toasts.logoutSuccess"));
     window.location.href = "/";
   };
 
@@ -281,10 +284,10 @@ export default function DashboardLayout({
       if (profile) {
         await Promise.all([switchProfile(profile?.userId, newProfileId)]);
         router.refresh();
-        toast.success("Switched Profile");
+        toast.success(t("toasts.switchProfileSuccess"));
       }
     } catch (error) {
-      toast.error("Unable to switch profiles");
+      toast.error(t("toasts.switchProfileError"));
       console.error(error);
     }
   };
@@ -348,7 +351,7 @@ export default function DashboardLayout({
                   <div className="px-4 py-2">
                     <div className="relative">
                       <p className="text-sm text-gray-500">
-                        Manage your account settings and preferences.
+                        {t("sidebar.manageAccountSettings")}
                       </p>
                     </div>
                   </div>
@@ -358,11 +361,11 @@ export default function DashboardLayout({
                   <Breadcrumb className="p-4">
                     <BreadcrumbList>
                       <BreadcrumbItem>
-                        <BreadcrumbLink href="/dashboard">Dashboard</BreadcrumbLink>
+                        <BreadcrumbLink href="/dashboard">{t("nav.dashboard")}</BreadcrumbLink>
                       </BreadcrumbItem>
                       <BreadcrumbSeparator />
                       <BreadcrumbItem>
-                        <BreadcrumbPage>Settings</BreadcrumbPage>
+                        <BreadcrumbPage>{t("nav.settings")}</BreadcrumbPage>
                       </BreadcrumbItem>
                     </BreadcrumbList>
                   </Breadcrumb>
@@ -377,13 +380,13 @@ export default function DashboardLayout({
                         >
                           <Link href="/dashboard/">
                             <LayoutDashboardIcon className="h-5 w-5" />
-                            {isOpen && <span className="ml-3">Dashboard</span>}
+                            {isOpen && <span className="ml-3">{t("nav.dashboard")}</span>}
                           </Link>
                         </Button>
                       </TooltipTrigger>
                       {!isOpen && (
                         <TooltipContent side="right">
-                          <p>Dashboard</p>
+                          <p>{t("nav.dashboard")}</p>
                         </TooltipContent>
                       )}
                     </Tooltip>
@@ -542,13 +545,13 @@ export default function DashboardLayout({
                       rel="noopener noreferrer"
                     >
                       <Flag className="h-5 w-5" />
-                      {isOpen && <span className="ml-3">Report an Issue</span>}
+                      {isOpen && <span className="ml-3">{t("nav.reportIssue")}</span>}
                     </a>
                   </Button>
                 </TooltipTrigger>
                 {!isOpen && (
                   <TooltipContent side="right">
-                    <p>Report an Issue</p>
+                    <p>{t("nav.reportIssue")}</p>
                   </TooltipContent>
                 )}
               </Tooltip>
@@ -563,13 +566,13 @@ export default function DashboardLayout({
                     >
                       <Link href="/dashboard/settings">
                         <Settings className="h-5 w-5" />
-                        {isOpen && <span className="ml-3">Settings</span>}
+                        {isOpen && <span className="ml-3">{t("nav.settings")}</span>}
                       </Link>
                     </Button>
                   </TooltipTrigger>
                   {!isOpen && (
                     <TooltipContent side="right">
-                      <p>Settings</p>
+                      <p>{t("nav.settings")}</p>
                     </TooltipContent>
                   )}
                 </Tooltip>
@@ -587,13 +590,13 @@ export default function DashboardLayout({
                       rel="noopener noreferrer"
                     >
                       <HelpCircleIcon className="h-5 w-5" />
-                      {isOpen && <span className="ml-3">Tutor Portal Manual</span>}
+                      {isOpen && <span className="ml-3">{t("nav.tutorPortalManual")}</span>}
                     </a>
                   </Button>
                 </TooltipTrigger>
                 {!isOpen && (
                   <TooltipContent side="right">
-                    <p>Tutor Portal Manual</p>
+                    <p>{t("nav.tutorPortalManual")}</p>
                   </TooltipContent>
                 )}
               </Tooltip>
@@ -605,12 +608,12 @@ export default function DashboardLayout({
                     onClick={handleLogout}
                   >
                     <LogOut className="h-5 w-5" />
-                    {isOpen && <span className="ml-3">Logout</span>}
+                    {isOpen && <span className="ml-3">{t("nav.logout")}</span>}
                   </Button>
                 </TooltipTrigger>
                 {!isOpen && (
                   <TooltipContent side="right">
-                    <p>Logout</p>
+                    <p>{t("nav.logout")}</p>
                   </TooltipContent>
                 )}
               </Tooltip>
@@ -657,7 +660,7 @@ export default function DashboardLayout({
                   className="flex items-center gap-3 p-2 rounded-md hover:bg-muted text-primary-dark"
                 >
                   <Flag className="h-5 w-5" />
-                  <span>Report an Issue</span>
+                  <span>{t("nav.reportIssue")}</span>
                 </a>
                 <Link
                   href="/dashboard/settings"
@@ -668,7 +671,7 @@ export default function DashboardLayout({
                   )}
                 >
                   <Settings className="h-5 w-5" />
-                  <span>Settings</span>
+                  <span>{t("nav.settings")}</span>
                 </Link>
               </nav>
             </div>
@@ -695,6 +698,7 @@ export default function DashboardLayout({
                 </Button>
               )}
               <div className="flex items-center space-x-2 absolute tpo-4 right-8">
+                <LanguageSwitcher />
                 {profile ? (
                   <Select onValueChange={handleSwitchProfile}>
                     <SelectTrigger className="space-x-2 z-50">
@@ -714,7 +718,7 @@ export default function DashboardLayout({
                 ) : (
                   <div className="flex items-center gap-2 rounded-md border px-3 py-2 text-sm font-medium">
                     <User className="w-4 h-4" />
-                    <span>Complete your account</span>
+                    <span>{t("sidebar.completeYourAccount")}</span>
                   </div>
                 )}
               </div>

@@ -1,0 +1,82 @@
+{
+  "completeProfileBanner": "Debes completar tu perfil antes de usar el resto del panel.",
+  "profiles": {
+    "heading": "Perfiles",
+    "yourProfiles": "Tus Perfiles",
+    "switchProfile": "Cambiar de Perfil",
+    "toasts": {
+      "switchSuccess": "Perfil cambiado",
+      "switchError": "No se pudo cambiar de cuenta",
+      "fetchError": "Error al obtener los perfiles"
+    }
+  },
+  "notifications": {
+    "heading": "Configuración de Notificaciones",
+    "sessionReminders": {
+      "title": "Recordatorios de Sesión",
+      "description": "Recibe notificaciones sobre tus próximas sesiones de tutoría"
+    },
+    "webinarReminders": {
+      "title": "Recordatorios de Webinar",
+      "description": "Recibe notificaciones sobre próximos webinars y eventos"
+    },
+    "emailNotifications": "Notificaciones por correo",
+    "textNotifications": "Notificaciones por texto",
+    "inDevelopment": "En Desarrollo",
+    "save": "Guardar Configuración de Notificaciones",
+    "toasts": {
+      "saveSuccess": "Configuración de notificaciones guardada",
+      "saveError": "No se pudo guardar la configuración de notificaciones"
+    }
+  },
+  "account": {
+    "heading": "Configuración de la Cuenta",
+    "inDevelopment": "En Desarrollo",
+    "description": "Administra tu información y preferencias de cuenta.",
+    "status": {
+      "label": "Estado de la Cuenta",
+      "placeholder": "Selecciona el estado",
+      "active": "Activo",
+      "inactive": "Inactivo"
+    },
+    "firstName": {
+      "label": "Nombre",
+      "placeholder": "Introduce tu nombre (p. ej. Juan)"
+    },
+    "lastName": {
+      "label": "Apellido",
+      "placeholder": "Introduce tu apellido (p. ej. Pérez)"
+    },
+    "phoneNumber": {
+      "label": "Número de Teléfono",
+      "placeholder": "Introduce tu número de teléfono (p. ej. (555) 123-4567)"
+    },
+    "age": {
+      "label": "Edad",
+      "placeholder": "Introduce tu edad (p. ej. 25)"
+    },
+    "email": {
+      "label": "Correo Electrónico",
+      "placeholder": "Introduce tu correo (p. ej. juan@ejemplo.com)"
+    },
+    "bio": {
+      "label": "Biografía",
+      "placeholder": "Cuéntanos sobre ti (p. ej. ¿Qué pasatiempos disfrutas?)"
+    },
+    "subjects": {
+      "label": "Materias de Interés",
+      "placeholder": "Introduce tus materias de interés (p. ej. Matemáticas, Física, Química)"
+    },
+    "languages": {
+      "label": "Idiomas que Hablas",
+      "placeholder": "Introduce los idiomas que hablas (p. ej. Inglés, Español, Francés)"
+    },
+    "updating": "Actualizando...",
+    "update": "Actualizar Perfil",
+    "toasts": {
+      "noActiveProfile": "No hay un perfil activo para actualizar",
+      "updateSuccess": "Perfil actualizado",
+      "updateError": "No se pudo actualizar el perfil"
+    }
+  }
+}

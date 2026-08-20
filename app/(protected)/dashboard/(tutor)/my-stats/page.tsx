@@ -8,6 +8,7 @@ import { cachedGetUser } from "@/lib/actions/user/server.actions";
 import { Calendar } from "lucide-react";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
+import { getTranslations } from "next-intl/server";
 
 async function MyStatsData() {
   const user = await cachedGetUser();
@@ -29,14 +30,15 @@ async function MyStatsData() {
 }
 
 export default async function myStatsPage() {
+  const t = await getTranslations("tutorPages.myStats");
   return (
     <main className="p-8 bg-gray-50 min-h-screen">
-      <h1 className="text-3xl font-bold mb-6">My Hours</h1>
+      <h1 className="text-3xl font-bold mb-6">{t("heading")}</h1>
       <Suspense
         fallback={
           <div className="text-center py-10">
             <Calendar className="w-10 h-10 animate-spin mx-auto text-blue-500" />
-            <p className="mt-4 text-gray-600">Loading hours...</p>
+            <p className="mt-4 text-gray-600">{t("loading")}</p>
           </div>
         }
       >

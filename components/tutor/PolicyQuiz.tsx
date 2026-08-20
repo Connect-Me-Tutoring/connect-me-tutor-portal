@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useCallback, useMemo, useEffect } from "react";
+import { useTranslations } from "next-intl";
 import {
   Card,
   CardContent,
@@ -42,6 +43,7 @@ function shuffle<T>(arr: T[]): T[] {
 type Phase = "answering" | "feedback" | "complete";
 
 export default function PolicyQuiz() {
+  const t = useTranslations("tutorPages.policyQuiz");
   /* ---- state ---- */
   const [queue, setQueue] = useState<QuizQuestion[]>(policyQuizQuestions);
   const [completed, setCompleted] = useState<Set<string>>(new Set());
@@ -141,10 +143,8 @@ export default function PolicyQuiz() {
                   <Trophy className="h-12 w-12 text-yellow-300" />
                 </div>
               </div>
-              <h1 className="mb-2 text-3xl font-bold">Quiz Complete!</h1>
-              <p className="text-lg text-blue-100">
-                You&apos;ve mastered all the policies &amp; FAQs
-              </p>
+              <h1 className="mb-2 text-3xl font-bold">{t("complete.title")}</h1>
+              <p className="text-lg text-blue-100">{t("complete.subtitle")}</p>
             </div>
 
             <CardContent className="space-y-6 p-8">
@@ -152,15 +152,15 @@ export default function PolicyQuiz() {
               <div className="grid grid-cols-3 gap-4 text-center">
                 <div className="rounded-xl bg-green-50 p-4">
                   <p className="text-2xl font-bold text-green-700">{total}</p>
-                  <p className="text-sm text-green-600">Questions</p>
+                  <p className="text-sm text-green-600">{t("complete.questions")}</p>
                 </div>
                 <div className="rounded-xl bg-blue-50 p-4">
                   <p className="text-2xl font-bold text-blue-700">{totalAttempts}</p>
-                  <p className="text-sm text-blue-600">Total Attempts</p>
+                  <p className="text-sm text-blue-600">{t("complete.totalAttempts")}</p>
                 </div>
                 <div className="rounded-xl bg-amber-50 p-4">
                   <p className="text-2xl font-bold text-amber-700">{retries}</p>
-                  <p className="text-sm text-amber-600">Retries Needed</p>
+                  <p className="text-sm text-amber-600">{t("complete.retriesNeeded")}</p>
                 </div>
               </div>
 
@@ -168,17 +168,13 @@ export default function PolicyQuiz() {
                 <div className="flex items-center gap-3 rounded-lg border border-green-200 bg-green-50 p-4">
                   <Sparkles className="h-5 w-5 flex-shrink-0 text-green-600" />
                   <p className="text-sm text-green-800">
-                    <strong>Perfect score!</strong> You answered every question correctly on your
-                    first try. You&apos;re ready to start tutoring!
+                    <strong>{t("complete.perfectTitle")}</strong> {t("complete.perfectBody")}
                   </p>
                 </div>
               ) : (
                 <div className="flex items-center gap-3 rounded-lg border border-blue-200 bg-blue-50 p-4">
                   <BookOpen className="h-5 w-5 flex-shrink-0 text-blue-600" />
-                  <p className="text-sm text-blue-800">
-                    Great job working through the tricky questions! You now have a solid
-                    understanding of Connect Me&apos;s policies.
-                  </p>
+                  <p className="text-sm text-blue-800">{t("complete.goodJobBody")}</p>
                 </div>
               )}
             </CardContent>
@@ -186,7 +182,7 @@ export default function PolicyQuiz() {
             <CardFooter className="border-t bg-gray-50 px-8 py-4">
               <Button variant="outline" onClick={handleRestart} className="w-full gap-2">
                 <RotateCcw className="h-4 w-4" />
-                Retake Quiz
+                {t("complete.retakeQuiz")}
               </Button>
             </CardFooter>
           </Card>
@@ -203,20 +199,19 @@ export default function PolicyQuiz() {
       <div className="mx-auto max-w-2xl">
         {/* header */}
         <div className="mb-8">
-          <h1 className="mb-1 text-3xl font-bold">Policy &amp; FAQ Quiz</h1>
-          <p className="text-sm text-muted-foreground">
-            Answer all questions correctly to complete the quiz. Missed questions will come back
-            later.
-          </p>
+          <h1 className="mb-1 text-3xl font-bold">{t("heading")}</h1>
+          <p className="text-sm text-muted-foreground">{t("subtitle")}</p>
         </div>
 
         {/* progress bar */}
         <div className="mb-6">
           <div className="mb-2 flex items-center justify-between text-sm">
             <span className="font-medium text-muted-foreground">
-              {completed.size} of {total} mastered
+              {t("mastered", { completed: completed.size, total })}
             </span>
-            <span className="font-medium text-muted-foreground">{queue.length} remaining</span>
+            <span className="font-medium text-muted-foreground">
+              {t("remainingCount", { count: queue.length })}
+            </span>
           </div>
           <div className="h-3 overflow-hidden rounded-full bg-gray-100">
             <div
@@ -247,9 +242,11 @@ export default function PolicyQuiz() {
                       : "bg-amber-100 text-amber-800"
                   }
                 >
-                  {current.category === "policy" ? "Policy" : "FAQ"}
+                  {current.category === "policy" ? t("categoryPolicy") : t("categoryFaq")}
                 </Badge>
-                <span className="text-sm text-muted-foreground">Question {questionNumber}</span>
+                <span className="text-sm text-muted-foreground">
+                  {t("questionLabel", { number: questionNumber })}
+                </span>
               </div>
               <CardTitle className="mt-3 text-lg leading-relaxed">{current.question}</CardTitle>
             </CardHeader>
@@ -307,7 +304,7 @@ export default function PolicyQuiz() {
                     <p
                       className={`text-sm font-semibold ${wasCorrect ? "text-green-800" : "text-red-800"}`}
                     >
-                      {wasCorrect ? "Correct!" : "Not quite — this one will come back later"}
+                      {wasCorrect ? t("correct") : t("incorrect")}
                     </p>
                     <p className={`mt-1 text-sm ${wasCorrect ? "text-green-700" : "text-red-700"}`}>
                       {current.explanation}
@@ -324,7 +321,7 @@ export default function PolicyQuiz() {
                   disabled={selectedAnswer === null}
                   className="w-full gap-2 bg-connect-me-blue-3 hover:bg-connect-me-blue-4"
                 >
-                  Check Answer
+                  {t("checkAnswer")}
                 </Button>
               ) : (
                 <Button
@@ -335,7 +332,7 @@ export default function PolicyQuiz() {
                       : "bg-connect-me-blue-3 hover:bg-connect-me-blue-4"
                   }`}
                 >
-                  {queue.length <= 1 && wasCorrect ? "Finish" : "Next"}
+                  {queue.length <= 1 && wasCorrect ? t("finish") : t("next")}
                   <ChevronRight className="h-4 w-4" />
                 </Button>
               )}
@@ -346,8 +343,8 @@ export default function PolicyQuiz() {
         {/* bottom hint */}
         <p className="mt-4 text-center text-xs text-muted-foreground">
           {queue.length > 1
-            ? `${queue.length - 1} more question${queue.length - 1 !== 1 ? "s" : ""} in the queue`
-            : "Last question!"}
+            ? t("remaining", { count: queue.length - 1 })
+            : t("lastQuestion")}
         </p>
       </div>
     </main>

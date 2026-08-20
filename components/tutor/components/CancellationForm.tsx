@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 
 import {
   AlertDialogContent,
@@ -39,6 +40,7 @@ const CancellationForm: React.FC<CancellationFormProps> = ({
   onClose,
   actor = "tutor",
 }) => {
+  const t = useTranslations("tutorSessions.forms.cancellation");
   const [otherReason, setOtherReason] = useState<string>("");
   const [cancellationReason, setCancellationReason] = useState<cancellationReasonType>(null);
 
@@ -56,18 +58,16 @@ const CancellationForm: React.FC<CancellationFormProps> = ({
       {actor === "student" ? (
         <>
           <AlertDialogHeader>
-            <AlertDialogTitle>Cancel Session</AlertDialogTitle>
-            <AlertDialogDescription>
-              Please provide a short reason for cancelling this session
-            </AlertDialogDescription>
+            <AlertDialogTitle>{t("dialogTitle")}</AlertDialogTitle>
+            <AlertDialogDescription>{t("studentDescription")}</AlertDialogDescription>
             <Textarea
-              placeholder="Write your cancellation reason here..."
+              placeholder={t("studentPlaceholder")}
               value={otherReason}
               onChange={(e) => setOtherReason(e.target.value)}
             />
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Back</AlertDialogCancel>
+            <AlertDialogCancel>{t("back")}</AlertDialogCancel>
             <AlertDialogAction
               onClick={(e) => {
                 const updatedSession: Session = {
@@ -79,7 +79,7 @@ const CancellationForm: React.FC<CancellationFormProps> = ({
                 onClose();
               }}
             >
-              Submit
+              {t("submit")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </>
@@ -87,10 +87,8 @@ const CancellationForm: React.FC<CancellationFormProps> = ({
         <>
           {" "}
           <AlertDialogHeader>
-            <AlertDialogTitle>Cancel Session</AlertDialogTitle>
-            <AlertDialogDescription>
-              Please provide an explanation for why this session is being cancelled
-            </AlertDialogDescription>
+            <AlertDialogTitle>{t("dialogTitle")}</AlertDialogTitle>
+            <AlertDialogDescription>{t("tutorDescription")}</AlertDialogDescription>
 
             <RadioGroup
               value={cancellationReason || ""}
@@ -104,7 +102,7 @@ const CancellationForm: React.FC<CancellationFormProps> = ({
                   id="studentUnavailableWithPriorNotice"
                 />
                 <Label htmlFor="studentUnavailableWithPriorNotice">
-                  Student cancelled with prior notice
+                  {t("reasons.studentWithPriorNotice")}
                 </Label>
               </span>
               <span className="space-x-2">
@@ -113,7 +111,7 @@ const CancellationForm: React.FC<CancellationFormProps> = ({
                   id="studentUnavailableWithoutPriorNotice"
                 />
                 <Label htmlFor="studentUnavailableWithoutPriorNotice">
-                  Student did not attend without prior notice
+                  {t("reasons.studentWithoutPriorNotice")}
                 </Label>
               </span>
               <span className="space-x-2">
@@ -122,27 +120,27 @@ const CancellationForm: React.FC<CancellationFormProps> = ({
                   id="tutorCancelledWithPriorNotice"
                 />
                 <Label htmlFor="tutorCancelledWithPriorNotice">
-                  I am cancelling with prior notice
+                  {t("reasons.tutorWithPriorNotice")}
                 </Label>
               </span>
               <span className="space-x-2">
                 <RadioGroupItem value="emergency" id="emergency" />
-                <Label htmlFor="emergency">Last Minute Emergency</Label>
+                <Label htmlFor="emergency">{t("reasons.emergency")}</Label>
               </span>
               <span className="space-x-2">
                 <RadioGroupItem value="other" id="other" />
-                <Label htmlFor="other">Other</Label>
+                <Label htmlFor="other">{t("reasons.other")}</Label>
               </span>
             </RadioGroup>
             <Textarea
-              placeholder="Write here..."
+              placeholder={t("otherPlaceholder")}
               value={otherReason}
               onChange={(e) => setOtherReason(e.target.value)}
               className={isCancellationOther ? "" : "hidden"}
             ></Textarea>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Back</AlertDialogCancel>
+            <AlertDialogCancel>{t("back")}</AlertDialogCancel>
             <AlertDialogAction
               onClick={(e) => {
                 const updatedSession: Session = {
@@ -156,7 +154,7 @@ const CancellationForm: React.FC<CancellationFormProps> = ({
                 onClose();
               }}
             >
-              Submit
+              {t("submit")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </>

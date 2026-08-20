@@ -1,5 +1,7 @@
+"use client";
 import { useState } from "react";
 import toast from "react-hot-toast";
+import { useTranslations } from "next-intl";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -47,6 +49,7 @@ const AddTutorForm = ({
   handleAddTutor,
   handleTimeZone,
 }: AddTutorFormProps) => {
+  const t = useTranslations("adminPeople");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("basic");
   const [addNewProfilesToQueue, setAddNewProfilesToQueue] = useState<boolean>(false);
@@ -107,26 +110,26 @@ const AddTutorForm = ({
     const missingFields: string[] = [];
 
     if (!newTutor.firstName || newTutor.firstName.trim() === "") {
-      missingFields.push("First Name");
+      missingFields.push(t("forms.addTutor.validation.firstName"));
     }
     if (!newTutor.lastName || newTutor.lastName.trim() === "") {
-      missingFields.push("Last Name");
+      missingFields.push(t("forms.addTutor.validation.lastName"));
     }
     if (!newTutor.email || newTutor.email.trim() === "") {
-      missingFields.push("Email");
+      missingFields.push(t("forms.addTutor.validation.email"));
     }
     if (!newTutor.phoneNumber || newTutor.phoneNumber.trim() === "") {
-      missingFields.push("Phone Number");
+      missingFields.push(t("forms.addTutor.validation.phoneNumber"));
     }
     if (!newTutor.startDate || newTutor.startDate.trim() === "") {
-      missingFields.push("Start Date");
+      missingFields.push(t("forms.addTutor.validation.startDate"));
     }
     if (!newTutor.timeZone || newTutor.timeZone.trim() === "") {
-      missingFields.push("Time Zone");
+      missingFields.push(t("forms.addTutor.validation.timeZone"));
     }
 
     if (missingFields.length > 0) {
-      return `Cannot add tutor. All Basic Form fields are required. Missing fields: ${missingFields.join(", ")}`;
+      return t("forms.addTutor.validation.prefix", { fields: missingFields.join(", ") });
     }
 
     return null;
@@ -157,11 +160,11 @@ const AddTutorForm = ({
     <>
       <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
         <DialogTrigger asChild>
-          <Button className="bg-connect-me-blue-2">Add Tutor</Button>
+          <Button className="bg-connect-me-blue-2">{t("forms.addTutor.trigger")}</Button>
         </DialogTrigger>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Add New Tutor</DialogTitle>
+            <DialogTitle>{t("forms.addTutor.dialogTitle")}</DialogTitle>
           </DialogHeader>
 
           {/* Tab Navigation */}
@@ -175,7 +178,7 @@ const AddTutorForm = ({
                   : "border-transparent text-gray-500 hover:text-gray-700"
               }`}
             >
-              Basic Info
+              {t("forms.addTutor.tabs.basic")}
             </button>
             <button
               type="button"
@@ -186,7 +189,7 @@ const AddTutorForm = ({
                   : "border-transparent text-gray-500 hover:text-gray-700"
               }`}
             >
-              Extended Profile
+              {t("forms.addTutor.tabs.extended")}
             </button>
           </div>
 
@@ -197,7 +200,7 @@ const AddTutorForm = ({
                 <div className="space-y-4">
                   <div className="grid grid-cols-4 items-center gap-4">
                     <Label htmlFor="firstName" className="text-right">
-                      First Name
+                      {t("forms.common.firstName.label")}
                     </Label>
                     <Input
                       id="firstName"
@@ -209,7 +212,7 @@ const AddTutorForm = ({
                   </div>
                   <div className="grid grid-cols-4 items-center gap-4">
                     <Label htmlFor="lastName" className="text-right">
-                      Last Name
+                      {t("forms.common.lastName.label")}
                     </Label>
                     <Input
                       id="lastName"
@@ -221,7 +224,7 @@ const AddTutorForm = ({
                   </div>
                   <div className="grid grid-cols-4 items-center gap-4">
                     <Label htmlFor="email" className="text-right">
-                      Email
+                      {t("forms.common.email.label")}
                     </Label>
                     <Input
                       id="email"
@@ -234,7 +237,7 @@ const AddTutorForm = ({
                   </div>
                   <div className="grid grid-cols-4 items-center gap-4">
                     <Label htmlFor="phoneNumber" className="text-right">
-                      Phone Number
+                      {t("forms.common.phoneNumber.label")}
                     </Label>
                     <Input
                       id="phoneNumber"
@@ -247,7 +250,7 @@ const AddTutorForm = ({
                   </div>
                   <div className="grid grid-cols-4 items-center gap-4">
                     <Label htmlFor="startDate" className="text-right">
-                      Start Date
+                      {t("forms.common.startDate.label")}
                     </Label>
                     <Input
                       id="startDate"
@@ -260,7 +263,7 @@ const AddTutorForm = ({
                   </div>
                   <div className="grid grid-cols-4 items-center gap-4">
                     <Label htmlFor="timeZone" className="text-right">
-                      Time Zone
+                      {t("forms.common.timeZone.label")}
                     </Label>
                     <div className="col-span-3">
                       <TimeZoneSelector profile={newTutor} handleTimeZone={handleTimeZone} />
@@ -275,7 +278,7 @@ const AddTutorForm = ({
                 <div className="space-y-6">
                   {/* Availability Section */}
                   <div className="space-y-4">
-                    <h3 className="text-lg font-semibold">Availability</h3>
+                    <h3 className="text-lg font-semibold">{t("forms.common.availability")}</h3>
                     {availability.map((slot, index) => (
                       <div key={index} className="flex gap-2 p-3 border rounded-lg bg-gray-50">
                         <div className="flex-1">
@@ -289,7 +292,7 @@ const AddTutorForm = ({
                             <SelectContent>
                               {DAYS_OF_WEEK.map((day) => (
                                 <SelectItem key={day} value={day}>
-                                  {day}
+                                  {t(`forms.common.days.${day.toLowerCase()}` as any)}
                                 </SelectItem>
                               ))}
                             </SelectContent>
@@ -330,17 +333,17 @@ const AddTutorForm = ({
                       className="w-full"
                     >
                       <Plus className="h-4 w-4 mr-2" />
-                      Add Time Slot
+                      {t("forms.common.addTimeSlot")}
                     </Button>
                   </div>
 
                   {/* Subjects Section */}
                   <div className="space-y-4">
-                    <h3 className="text-lg font-semibold">Subjects of Interest</h3>
+                    <h3 className="text-lg font-semibold">{t("forms.common.subjectsOfInterest")}</h3>
                     <div className="flex gap-2">
                       <Input
                         type="text"
-                        placeholder="e.g., Mathematics, Physics"
+                        placeholder={t("forms.common.subjectsPlaceholderShort")}
                         value={newSubject}
                         onChange={(e) => setNewSubject(e.target.value)}
                         onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), addSubject())}
@@ -373,11 +376,11 @@ const AddTutorForm = ({
 
                   {/* Languages Section */}
                   <div className="space-y-4">
-                    <h3 className="text-lg font-semibold">Languages Spoken</h3>
+                    <h3 className="text-lg font-semibold">{t("forms.common.languagesSpoken")}</h3>
                     <div className="flex gap-2">
                       <Input
                         type="text"
-                        placeholder="e.g., English, Spanish"
+                        placeholder={t("forms.common.languagesPlaceholderShort")}
                         value={newLanguage}
                         onChange={(e) => setNewLanguage(e.target.value)}
                         onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), addLanguage())}
@@ -409,7 +412,9 @@ const AddTutorForm = ({
                   </div>
 
                   <div className="space-y-4">
-                    <h3 className="text-lg font-semibold">Gender</h3>
+                    <h3 className="text-lg font-semibold">
+                      {t("forms.addTutor.genderSectionTitle")}
+                    </h3>
                     <div className="flex gap-2">
                       <Select
                         name="timeZone"
@@ -422,9 +427,9 @@ const AddTutorForm = ({
                           <SelectValue placeholder="" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="male">Male</SelectItem>
-                          <SelectItem value="female">Female</SelectItem>
-                          <SelectItem value="other">Other</SelectItem>
+                          <SelectItem value="male">{t("forms.common.gender.male")}</SelectItem>
+                          <SelectItem value="female">{t("forms.common.gender.female")}</SelectItem>
+                          <SelectItem value="other">{t("forms.common.gender.other")}</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
@@ -455,7 +460,7 @@ const AddTutorForm = ({
           </div>
 
           <Button onClick={() => handleEnhancedAddTutor(true)} disabled={addingTutor}>
-            {addingTutor ? "Adding Tutor..." : "Add Tutor"}
+            {addingTutor ? t("forms.addTutor.submitting") : t("forms.addTutor.submit")}
           </Button>
         </DialogContent>
       </Dialog>

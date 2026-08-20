@@ -1,6 +1,7 @@
 "use client";
 import React, { useState, useEffect, useMemo, useRef } from "react";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import {
   format,
   startOfWeek,
@@ -97,6 +98,7 @@ import { useMutation, useQueries, useQuery } from "@tanstack/react-query";
 import { useQueryClient } from "@tanstack/react-query";
 
 const Schedule = () => {
+  const t = useTranslations("adminSchedule");
   const queryClient = useQueryClient();
   const [currentWeek, setCurrentWeek] = useState(new Date());
   const [calendarView, setCalendarView] = useState<"day" | "week" | "month">("week");
@@ -326,7 +328,7 @@ const Schedule = () => {
       // setSessions(fetchedSessions);
     } catch (error) {
       console.error("Failed to fetch sessions:", error);
-      toast.error("Failed to load sessions");
+      toast.error(t("scheduleManagement.toasts.sessionsLoadError"));
     }
   };
 
@@ -342,7 +344,7 @@ const Schedule = () => {
       // return fetchedStudents;
     } catch (error) {
       console.error("Failed to fetch students:", error);
-      toast.error("Failed to load students");
+      toast.error(t("scheduleManagement.toasts.studentsLoadError"));
     }
   };
 
@@ -357,7 +359,7 @@ const Schedule = () => {
       // return fetchedEnrollments;
     } catch (error) {
       console.error("Failed to fetch enrollments:", error);
-      toast.error("Failed to load enrollments");
+      toast.error(t("scheduleManagement.toasts.enrollmentsLoadError"));
     }
   };
 
@@ -373,7 +375,7 @@ const Schedule = () => {
       // return fetchedMeetings
     } catch (error) {
       console.error("Failed to fetch meetings:", error);
-      toast.error("Failed to load meetings");
+      toast.error(t("scheduleManagement.toasts.meetingsLoadError"));
     }
   };
 
@@ -388,7 +390,7 @@ const Schedule = () => {
       // }
     } catch (error) {
       console.error("Failed to fetch students:", error);
-      toast.error("Failed to load students");
+      toast.error(t("scheduleManagement.toasts.studentsLoadError"));
     }
   };
 
@@ -409,7 +411,7 @@ const Schedule = () => {
       const updatedMeetingAvailability = await checkAvailableMeeting(session, meetings);
       setMeetingAvailabilityMap(updatedMeetingAvailability);
     } catch (error) {
-      toast.error("Unable to find available meeting links");
+      toast.error(t("scheduleManagement.toasts.meetingAvailabilityError"));
       console.error("Unable to find available meeting links", error);
     } finally {
       setIsCheckingMeetingAvailability(false);
@@ -422,12 +424,12 @@ const Schedule = () => {
     onMutate: async () => {},
     onSuccess: (newSessions: Session[]) => {
       queryClient.invalidateQueries({ queryKey: ["sessions"] }); // broad invalidation catches any date range
-      toast.success(`${newSessions.length} new sessions added successfully`);
+      toast.success(t("scheduleManagement.toasts.sessionsAdded", { count: newSessions.length }));
     },
     onError: (error: any, _, context) => {
       error.digest === "4161161223"
-        ? toast.error("Please wait until adding new sessions")
-        : toast.error(`Failed to add sessions. ${error.message}`);
+        ? toast.error(t("scheduleManagement.toasts.waitAddingSessions"))
+        : toast.error(t("scheduleManagement.toasts.addSessionsFailed", { message: error.message }));
     },
     onSettled: () => {},
   });
@@ -477,14 +479,14 @@ const Schedule = () => {
     },
     onSuccess: () => {
       setIsModalOpen(false);
-      toast.success("Session removed successfully");
+      toast.success(t("scheduleManagement.toasts.sessionRemoved"));
     },
     onError: (error: any, sessionId, context) => {
       if (context) {
         queryClient.setQueryData(["sessions", queryStart, queryEnd], context.prevSessions);
       }
       console.error("Failed to remove session", error);
-      toast.error("Failed to remove session");
+      toast.error(t("scheduleManagement.toasts.sessionRemoveFailed"));
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ["sessions"] });
@@ -498,14 +500,14 @@ const Schedule = () => {
   const handleUpdateSession = async (updatedSession: Session) => {
     try {
       await updateSession(updatedSession);
-      toast.success("Session updated successfully");
+      toast.success(t("scheduleManagement.toasts.sessionUpdated"));
       setIsModalOpen(false);
       // the old call refetched into a discarded promise, so changing a status here never
       // repainted the grid or the counts. Invalidate instead, like the remove flow does.
       queryClient.invalidateQueries({ queryKey: ["sessions"] });
     } catch (error) {
       console.error("Failed to update session:", error);
-      toast.error("Failed to update session");
+      toast.error(t("scheduleManagement.toasts.sessionUpdateFailed"));
     }
   };
 
@@ -515,9 +517,9 @@ const Schedule = () => {
         await addStandaloneSession(newSession as Session);
       }
       fetchSessions(weekStart, weekEnd);
-      toast.success("Added Session");
+      toast.success(t("scheduleManagement.toasts.sessionAdded"));
     } catch (error) {
-      toast.error("Unable to add session");
+      toast.error(t("scheduleManagement.toasts.sessionAddError"));
     }
   };
 
@@ -578,6 +580,15 @@ const Schedule = () => {
   const getSessionMinutes = (dateStr: string) => {
     const d = toZonedTime(parseISO(dateStr), "America/New_York");
     return d.getMinutes();
+  };
+
+  const formatHourLabel = (hour: number) => {
+    const amLabel = t("time.am");
+    const pmLabel = t("time.pm");
+    if (hour === 0) return `12:00 ${amLabel}`;
+    if (hour < 12) return `${hour}:00 ${amLabel}`;
+    if (hour === 12) return `12:00 ${pmLabel}`;
+    return `${hour - 12}:00 ${pmLabel}`;
   };
 
   const monthStart = startOfMonth(currentWeek);
@@ -643,13 +654,13 @@ const Schedule = () => {
               <Popover>
                 <PopoverTrigger asChild>
                   <Button variant="outline" size="sm">
-                    Today
+                    {t("scheduleManagement.toolbar.today")}
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-3" align="start">
                   <div className="flex flex-col gap-2">
                     <Button variant="ghost" size="sm" onClick={() => goToDate(new Date())}>
-                      Go to today
+                      {t("scheduleManagement.toolbar.goToToday")}
                     </Button>
                     <Input
                       type="date"
@@ -675,14 +686,14 @@ const Schedule = () => {
             <div className="flex items-center justify-between flex-wrap gap-2">
               <div className="flex flex-wrap items-center gap-3 text-xs text-gray-500">
                 {[
-                  { color: "bg-green-500", label: "Complete" },
-                  { color: "bg-red-500", label: "Cancelled" },
-                  { color: "bg-blue-500", label: "Active" },
-                  { color: "bg-purple-500", label: "Standalone" },
-                ].map(({ color, label }) => (
-                  <span key={label} className="flex items-center gap-1">
+                  { color: "bg-green-500", labelKey: "complete" },
+                  { color: "bg-red-500", labelKey: "cancelled" },
+                  { color: "bg-blue-500", labelKey: "active" },
+                  { color: "bg-purple-500", labelKey: "standalone" },
+                ].map(({ color, labelKey }) => (
+                  <span key={labelKey} className="flex items-center gap-1">
                     <span className={`inline-block h-2 w-2 rounded-full ${color}`} />
-                    {label}
+                    {t(`scheduleManagement.legend.${labelKey}`)}
                   </span>
                 ))}
               </div>
@@ -700,7 +711,7 @@ const Schedule = () => {
                           : "text-gray-500 hover:text-gray-700",
                       )}
                     >
-                      {view}
+                      {t(`scheduleManagement.views.${view}`)}
                     </button>
                   ))}
                 </div>
@@ -714,27 +725,27 @@ const Schedule = () => {
                   {isLoading ? (
                     <>
                       <Loader2 className="mr-1 h-3 w-3 animate-spin" />
-                      Loading
+                      {t("scheduleManagement.toolbar.loading")}
                     </>
                   ) : (
-                    "Update Week"
+                    t("scheduleManagement.toolbar.updateWeek")
                   )}
                 </Button>
 
                 <Dialog>
                   <DialogTrigger asChild>
                     <Button size="sm" className="bg-connect-me-blue-4 hover:bg-connect-me-blue-5">
-                      Add Session
+                      {t("scheduleManagement.addSessionDialog.title")}
                     </Button>
                   </DialogTrigger>
                   <DialogContent>
                     <DialogHeader>
-                      <DialogTitle>Add Session</DialogTitle>
+                      <DialogTitle>{t("scheduleManagement.addSessionDialog.title")}</DialogTitle>
                     </DialogHeader>
                     <ScrollArea className="pr-4">
                       <div className="grid gap-4 py-4">
                         <ProfileSelector
-                          label="Student"
+                          label={t("scheduleManagement.addSessionDialog.studentLabel")}
                           profiles={students}
                           selectedId={selectedStudentId}
                           onSelect={(id) => {
@@ -743,10 +754,10 @@ const Schedule = () => {
                               target: { name: "student.id", value: id },
                             });
                           }}
-                          placeholder="Select a student"
+                          placeholder={t("scheduleManagement.shared.selectAStudent")}
                         />
                         <ProfileSelector
-                          label="Tutor"
+                          label={t("scheduleManagement.addSessionDialog.tutorLabel")}
                           profiles={tutors}
                           selectedId={selectedTutorId}
                           onSelect={(id) => {
@@ -755,11 +766,11 @@ const Schedule = () => {
                               target: { name: "tutor.id", value: id },
                             });
                           }}
-                          placeholder="Select a tutor"
+                          placeholder={t("scheduleManagement.shared.selectATutor")}
                         />
                         <div className="grid grid-cols-4 items-center gap-4">
                           <Label htmlFor="startDate" className="text-right">
-                            Date
+                            {t("scheduleManagement.addSessionDialog.dateLabel")}
                           </Label>
                           <Input
                             id="startDate"
@@ -781,7 +792,7 @@ const Schedule = () => {
                         </div>
                         <div className="grid grid-cols-4 items-center gap-4">
                           <Label htmlFor="duration" className="text-right">
-                            Duration
+                            {t("scheduleManagement.addSessionDialog.durationLabel")}
                           </Label>
                           <div className="col-span-3">
                             <Select
@@ -796,18 +807,29 @@ const Schedule = () => {
                               }}
                             >
                               <SelectTrigger className="w-full">
-                                <SelectValue placeholder="Select a time duration" />
+                                <SelectValue
+                                  placeholder={t(
+                                    "scheduleManagement.addSessionDialog.durationPlaceholder",
+                                  )}
+                                />
                               </SelectTrigger>
                               <SelectContent>
                                 <SelectGroup>
-                                  <SelectLabel>Duration</SelectLabel>
+                                  <SelectLabel>
+                                    {t("scheduleManagement.addSessionDialog.durationLabel")}
+                                  </SelectLabel>
                                   {Array.from({ length: 12 }, (_, i) => (i + 1) * 0.25).map(
                                     (duration) => {
                                       const minutes = (duration % 1) * 60;
                                       const hours = Math.floor(duration);
                                       return (
                                         <SelectItem key={duration} value={duration.toString()}>
-                                          {hours} {hours > 1 ? "hours" : "hour"} {minutes} minutes
+                                          {hours}{" "}
+                                          {hours > 1
+                                            ? t("scheduleManagement.addSessionDialog.hours")
+                                            : t("scheduleManagement.addSessionDialog.hour")}{" "}
+                                          {minutes}{" "}
+                                          {t("scheduleManagement.addSessionDialog.minutes")}
                                         </SelectItem>
                                       );
                                     },
@@ -818,7 +840,9 @@ const Schedule = () => {
                           </div>
                         </div>
                         <div className="grid grid-cols-4 items-center gap-4">
-                          <Label className="text-right">Meeting Link</Label>
+                          <Label className="text-right">
+                            {t("scheduleManagement.addSessionDialog.meetingLinkLabel")}
+                          </Label>
                           <div className="col-span-3">
                             <Select
                               value={newSession?.meeting?.id || ""}
@@ -831,7 +855,8 @@ const Schedule = () => {
                             >
                               <SelectTrigger>
                                 <SelectValue>
-                                  {newSession?.meeting?.name || "Select a meeting"}
+                                  {newSession?.meeting?.name ||
+                                    t("scheduleManagement.shared.selectAMeeting")}
                                 </SelectValue>
                               </SelectTrigger>
                               <SelectContent>
@@ -862,11 +887,11 @@ const Schedule = () => {
                         >
                           {isCheckingMeetingAvailability ? (
                             <>
-                              Checking Meeting Availability
+                              {t("scheduleManagement.addSessionDialog.checkingAvailability")}
                               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                             </>
                           ) : (
-                            "Add Session"
+                            t("scheduleManagement.addSessionDialog.title")
                           )}
                         </Button>
                       </div>
@@ -880,19 +905,19 @@ const Schedule = () => {
           <div className="flex items-center gap-6 mt-3 pt-3 border-t text-sm text-gray-500">
             <span>
               <span className="font-medium text-gray-700">{sessionStats.totalSessions}</span>{" "}
-              sessions
+              {t("scheduleManagement.stats.sessions")}
             </span>
             <span>
               <span className="font-medium text-gray-700">{sessionStats.completedSessions}</span>{" "}
-              completed
+              {t("scheduleManagement.stats.completed")}
             </span>
             <span>
               <span className="font-medium text-gray-700">{sessionStats.tutorsInvolved}</span>{" "}
-              tutors
+              {t("scheduleManagement.stats.tutors")}
             </span>
             <span>
               <span className="font-medium text-gray-700">{sessionStats.studentsThisWeek}</span> /{" "}
-              {sessionStats.totalStudents} students
+              {sessionStats.totalStudents} {t("scheduleManagement.stats.students")}
             </span>
           </div>
         </div>
@@ -901,7 +926,7 @@ const Schedule = () => {
           <div className="bg-white rounded-xl shadow-sm p-10">
             <div className="text-center">
               <Calendar className="w-8 h-8 animate-spin mx-auto text-blue-500" />
-              <p className="mt-3 text-gray-500 text-sm">Loading sessions...</p>
+              <p className="mt-3 text-gray-500 text-sm">{t("scheduleManagement.loadingSessions")}</p>
             </div>
           </div>
         ) : (
@@ -937,13 +962,7 @@ const Schedule = () => {
                       <React.Fragment key={hour}>
                         <div className="flex min-h-[36px] items-start justify-end border-r border-b pr-2 pt-1">
                           <span className="text-[11px] text-gray-400">
-                            {hour === 0
-                              ? "12:00 AM"
-                              : hour < 12
-                                ? `${hour}:00 AM`
-                                : hour === 12
-                                  ? "12:00 PM"
-                                  : `${hour - 12}:00 PM`}
+                            {formatHourLabel(hour)}
                           </span>
                         </div>
                         {weekDays.map((day) => {
@@ -997,13 +1016,7 @@ const Schedule = () => {
                       <React.Fragment key={hour}>
                         <div className="border-r border-b min-h-[36px] flex items-start justify-end pr-2 pt-1">
                           <span className="text-[11px] text-gray-400">
-                            {hour === 0
-                              ? "12:00 AM"
-                              : hour < 12
-                                ? `${hour}:00 AM`
-                                : hour === 12
-                                  ? "12:00 PM"
-                                  : `${hour - 12}:00 PM`}
+                            {formatHourLabel(hour)}
                           </span>
                         </div>
                         <div
@@ -1027,12 +1040,12 @@ const Schedule = () => {
               <div className="overflow-x-auto rounded-xl bg-white shadow-sm">
                 <div className="min-w-[960px] overflow-hidden rounded-xl">
                   <div className="grid grid-cols-7 border-b">
-                    {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((d) => (
+                    {(["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"] as const).map((d) => (
                       <div
                         key={d}
                         className="border-r py-2 text-center text-xs font-medium uppercase text-gray-500 last:border-r-0"
                       >
-                        {d}
+                        {t(`scheduleManagement.monthView.dayAbbrev.${d}`)}
                       </div>
                     ))}
                   </div>
@@ -1092,12 +1105,12 @@ const Schedule = () => {
         <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>Session Details</DialogTitle>
+              <DialogTitle>{t("scheduleManagement.sessionDetailsDialog.title")}</DialogTitle>
             </DialogHeader>
             {selectedSession && (
               <div className="space-y-4">
                 <div>
-                  <Label>Status</Label>
+                  <Label>{t("scheduleManagement.sessionDetailsDialog.statusLabel")}</Label>
                   <Select
                     value={selectedSession?.status}
                     onValueChange={(value: "Active" | "Complete" | "Cancelled") => {
@@ -1110,17 +1123,29 @@ const Schedule = () => {
                     }}
                   >
                     <SelectTrigger>
-                      <SelectValue>{selectedSession?.status || "Select status"}</SelectValue>
+                      <SelectValue>
+                        {selectedSession?.status
+                          ? t(
+                              `scheduleManagement.sessionDetailsDialog.statusOptions.${selectedSession.status.toLowerCase()}`,
+                            )
+                          : t("scheduleManagement.sessionDetailsDialog.statusPlaceholder")}
+                      </SelectValue>
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="Active">Active</SelectItem>
-                      <SelectItem value="Complete">Complete</SelectItem>
-                      <SelectItem value="Cancelled">Cancelled</SelectItem>
+                      <SelectItem value="Active">
+                        {t("scheduleManagement.sessionDetailsDialog.statusOptions.active")}
+                      </SelectItem>
+                      <SelectItem value="Complete">
+                        {t("scheduleManagement.sessionDetailsDialog.statusOptions.complete")}
+                      </SelectItem>
+                      <SelectItem value="Cancelled">
+                        {t("scheduleManagement.sessionDetailsDialog.statusOptions.cancelled")}
+                      </SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
                 <div>
-                  <Label>Tutor</Label>
+                  <Label>{t("scheduleManagement.sessionDetailsDialog.tutorLabel")}</Label>
                   <Select
                     value={selectedSession.tutor?.id}
                     onValueChange={async (value) => {
@@ -1136,7 +1161,7 @@ const Schedule = () => {
                       <SelectValue>
                         {selectedSession.tutor
                           ? `${selectedSession.tutor.firstName} ${selectedSession.tutor.lastName}`
-                          : "Select a tutor"}
+                          : t("scheduleManagement.shared.selectATutor")}
                       </SelectValue>
                     </SelectTrigger>
                     <SelectContent>
@@ -1152,7 +1177,7 @@ const Schedule = () => {
                   </Select>
                 </div>
                 <div>
-                  <Label>Student</Label>
+                  <Label>{t("scheduleManagement.sessionDetailsDialog.studentLabel")}</Label>
                   <Select
                     value={selectedSession.student?.id}
                     onValueChange={async (value) => {
@@ -1168,7 +1193,7 @@ const Schedule = () => {
                       <SelectValue>
                         {selectedSession.student
                           ? `${selectedSession.student.firstName} ${selectedSession.student.lastName}`
-                          : "Select a student"}
+                          : t("scheduleManagement.shared.selectAStudent")}
                       </SelectValue>
                     </SelectTrigger>
                     <SelectContent>
@@ -1184,7 +1209,7 @@ const Schedule = () => {
                   </Select>
                 </div>
                 <div>
-                  <Label>Date</Label>
+                  <Label>{t("scheduleManagement.sessionDetailsDialog.dateLabel")}</Label>
                   <Input
                     type="datetime-local"
                     defaultValue={format(parseISO(selectedSession.date), "yyyy-MM-dd'T'HH:mm")}
@@ -1199,7 +1224,7 @@ const Schedule = () => {
                   />
                 </div>
                 <div>
-                  <Label>Meeting</Label>
+                  <Label>{t("scheduleManagement.sessionDetailsDialog.meetingLabel")}</Label>
                   <Select
                     value={selectedSession?.meeting?.id || ""}
                     onValueChange={async (value) =>
@@ -1211,7 +1236,8 @@ const Schedule = () => {
                   >
                     <SelectTrigger>
                       <SelectValue>
-                        {selectedSession?.meeting?.name || "Select a meeting"}
+                        {selectedSession?.meeting?.name ||
+                          t("scheduleManagement.shared.selectAMeeting")}
                       </SelectValue>
                     </SelectTrigger>
                     <SelectContent>
@@ -1233,7 +1259,9 @@ const Schedule = () => {
                   </Select>
                 </div>
                 <div>
-                  <Label className="text-right">Notes (Only viewable Admin Side)</Label>
+                  <Label className="text-right">
+                    {t("scheduleManagement.sessionDetailsDialog.notesLabel")}
+                  </Label>
                   <Textarea
                     value={selectedSession?.summary}
                     onChange={(e) =>
@@ -1249,9 +1277,13 @@ const Schedule = () => {
                     string | null | undefined;
                   const sefFlags: string[] = [];
                   if ((selectedSession as any)?.isQuestionOrConcern)
-                    sefFlags.push("question/concern");
-                  if ((selectedSession as any)?.isFirstSession) sefFlags.push("first session");
-                  if (selectedSession.status === "Cancelled") sefFlags.push("cancelled");
+                    sefFlags.push(
+                      t("scheduleManagement.sessionDetailsDialog.flags.questionOrConcern"),
+                    );
+                  if ((selectedSession as any)?.isFirstSession)
+                    sefFlags.push(t("scheduleManagement.sessionDetailsDialog.flags.firstSession"));
+                  if (selectedSession.status === "Cancelled")
+                    sefFlags.push(t("scheduleManagement.sessionDetailsDialog.flags.cancelled"));
                   let sefReasonText = rawSef ?? "";
                   if (rawSef && rawSef.trim().startsWith("{")) {
                     try {
@@ -1270,14 +1302,20 @@ const Schedule = () => {
                   }
                   return (
                     <div>
-                      <Label>SEF Exit Reason</Label>
+                      <Label>{t("scheduleManagement.sessionDetailsDialog.sefReasonLabel")}</Label>
                       <Textarea
                         readOnly
                         value={sefReasonText || ""}
-                        placeholder="no session exit form yet"
+                        placeholder={t(
+                          "scheduleManagement.sessionDetailsDialog.sefReasonPlaceholder",
+                        )}
                       />
                       <p className="text-xs text-gray-500 mt-1">
-                        SEF boxes: {sefFlags.length ? sefFlags.join(", ") : "none"}
+                        {t("scheduleManagement.sessionDetailsDialog.sefBoxesLabel", {
+                          boxes: sefFlags.length
+                            ? sefFlags.join(", ")
+                            : t("scheduleManagement.sessionDetailsDialog.sefBoxesNone"),
+                        })}
                       </p>
                     </div>
                   );
@@ -1293,7 +1331,7 @@ const Schedule = () => {
                   >
                     <Button variant="outline" className="w-full">
                       <Users className="mr-2 h-4 w-4" />
-                      View Session Participation
+                      {t("scheduleManagement.sessionDetailsDialog.viewParticipation")}
                     </Button>
                   </Link>
                   <div className="flex flex-row justify-between">
@@ -1303,18 +1341,20 @@ const Schedule = () => {
                     >
                       {isCheckingMeetingAvailability ? (
                         <>
-                          Checking Available Meeting Links
+                          {t(
+                            "scheduleManagement.sessionDetailsDialog.checkingAvailableMeetingLinks",
+                          )}
                           <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                         </>
                       ) : (
-                        "Update Session"
+                        t("scheduleManagement.sessionDetailsDialog.updateSession")
                       )}
                     </Button>
                     <Button
                       variant="destructive"
                       onClick={() => handleRemoveSession(selectedSession.id)}
                     >
-                      Delete Session
+                      {t("scheduleManagement.sessionDetailsDialog.deleteSession")}
                     </Button>
                   </div>
                 </div>

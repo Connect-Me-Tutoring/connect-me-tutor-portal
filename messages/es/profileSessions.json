@@ -1,0 +1,197 @@
+{
+  "days": {
+    "Monday": "Lunes",
+    "Tuesday": "Martes",
+    "Wednesday": "Miércoles",
+    "Thursday": "Jueves",
+    "Friday": "Viernes",
+    "Saturday": "Sábado",
+    "Sunday": "Domingo"
+  },
+  "profilePage": {
+    "header": {
+      "title": "Actualiza tu Perfil",
+      "description": "Mantén actualizada la información de tu perfil para que otros puedan conectar contigo de forma más efectiva"
+    },
+    "availability": {
+      "cardTitle": "Horario de Disponibilidad",
+      "cardDescription": "Indica los días y horarios en los que estás disponible para reuniones o sesiones",
+      "dayLabel": "Día",
+      "startTimeLabel": "Hora de Inicio",
+      "endTimeLabel": "Hora de Fin",
+      "addSlot": "Agregar Horario"
+    },
+    "subjects": {
+      "cardTitle": "Materias de Interés",
+      "cardDescription": "Agrega temas y materias que te apasionen o en los que tengas conocimiento",
+      "placeholder": "p. ej., Matemáticas, Física, Literatura"
+    },
+    "languages": {
+      "cardTitle": "Idiomas que Hablas",
+      "cardDescription": "Indica los idiomas en los que puedes comunicarte",
+      "placeholder": "p. ej., Inglés, Español, Francés"
+    },
+    "messages": {
+      "updateSuccess": "¡Perfil actualizado con éxito!",
+      "updateError": "No se pudo actualizar el perfil",
+      "unexpectedError": "Ocurrió un error inesperado"
+    },
+    "submit": {
+      "updating": "Actualizando Perfil...",
+      "update": "Actualizar Perfil"
+    }
+  },
+  "profileEditor": {
+    "loading": "Cargando datos del perfil...",
+    "availability": {
+      "title": "Disponibilidad",
+      "description": "Configura tus horarios disponibles para sesiones de tutoría o aprendizaje.",
+      "empty": "No se ha configurado disponibilidad",
+      "dayLabel": "Día",
+      "startTimeLabel": "Hora de Inicio",
+      "endTimeLabel": "Hora de Fin",
+      "dayPlaceholder": "Selecciona un día",
+      "add": "Agregar",
+      "removeSr": "Eliminar"
+    },
+    "subjects": {
+      "title": "Materias de Interés",
+      "description": "Agrega materias que te interese enseñar o aprender.",
+      "empty": "No se han agregado materias",
+      "placeholder": "Selecciona o escribe una materia",
+      "add": "Agregar",
+      "removeSr": "Eliminar {subject}"
+    },
+    "languages": {
+      "title": "Idiomas que Hablas",
+      "description": "Agrega los idiomas en los que puedes comunicarte.",
+      "empty": "No se han agregado idiomas",
+      "placeholder": "Selecciona o escribe un idioma",
+      "add": "Agregar",
+      "removeSr": "Eliminar {language}"
+    },
+    "save": {
+      "saving": "Guardando...",
+      "save": "Guardar Perfil"
+    },
+    "toasts": {
+      "loadErrorTitle": "Error",
+      "loadErrorDescription": "No se pudieron cargar los datos del perfil",
+      "saveSuccessTitle": "Éxito",
+      "saveSuccessDescription": "Perfil actualizado con éxito",
+      "saveErrorTitle": "Error",
+      "saveErrorDescription": "No se pudieron guardar los datos del perfil",
+      "missingInfoTitle": "Falta información",
+      "missingInfoDescription": "Completa todos los campos de disponibilidad"
+    },
+    "subjectOptions": {
+      "Mathematics": "Matemáticas",
+      "Physics": "Física",
+      "Chemistry": "Química",
+      "Biology": "Biología",
+      "Computer Science": "Informática",
+      "History": "Historia",
+      "Geography": "Geografía",
+      "Literature": "Literatura",
+      "Languages": "Idiomas",
+      "Art": "Arte",
+      "Music": "Música"
+    },
+    "languageOptions": {
+      "English": "Inglés",
+      "Spanish": "Español",
+      "French": "Francés",
+      "German": "Alemán",
+      "Mandarin": "Mandarín",
+      "Japanese": "Japonés",
+      "Russian": "Ruso",
+      "Arabic": "Árabe",
+      "Portuguese": "Portugués",
+      "Hindi": "Hindi"
+    }
+  },
+  "profilePreview": {
+    "notFound": "Perfil no encontrado",
+    "createProfile": "Crear Perfil",
+    "heading": "Configuración del Perfil",
+    "refresh": "Actualizar",
+    "availability": {
+      "label": "Disponibilidad",
+      "empty": "No se ha configurado disponibilidad"
+    },
+    "subjects": {
+      "label": "Materias",
+      "empty": "No se han agregado materias"
+    },
+    "languages": {
+      "label": "Idiomas",
+      "empty": "No se han agregado idiomas"
+    },
+    "editLink": "Editar configuración del perfil"
+  },
+  "participation": {
+    "header": {
+      "meetingId": "ID de Reunión: {id}",
+      "refresh": "Actualizar",
+      "exportReport": "Exportar Reporte"
+    },
+    "errorCard": {
+      "title": "Error al Cargar los Datos",
+      "retry": "Reintentar"
+    },
+    "errors": {
+      "sessionNotFound": "Sesión no encontrada",
+      "loadFailed": "No se pudieron cargar los datos de participación"
+    },
+    "defaultMeetingTitle": "Sesión de Tutoría",
+    "enrollment": {
+      "activityLink": "Actividad de la inscripción",
+      "showSessionList": "Mostrar lista de sesiones de la inscripción con Zoom",
+      "notLinked": "Esta sesión no está vinculada a una inscripción."
+    },
+    "enrollmentMismatch": {
+      "title": "La inscripción no coincide",
+      "description": "El <code>enrollmentId</code> en la URL no coincide con la inscripción de esta sesión, o no se pudo cargar la inscripción. Elimina el parámetro de la URL o abre la asistencia desde la página de actividad de la inscripción."
+    },
+    "enrollmentContext": {
+      "title": "Contexto de Zoom de la inscripción",
+      "frequency": "Frecuencia",
+      "description": "Todas las sesiones de esta inscripción. Abre otra sesión para ver su registro de entradas/salidas de Zoom; esta página solo muestra el registro de la sesión actual.",
+      "thisSession": "Esta sesión",
+      "zoomEvents": "{count, plural, one {{count} evento de Zoom} other {{count} eventos de Zoom}}",
+      "open": "Abrir",
+      "viewing": "Viendo"
+    },
+    "normalization": {
+      "title": "Asistencia ajustada",
+      "description": "Los registros se agrupan por persona (correo electrónico cuando está disponible; de lo contrario, el ID de usuario de Zoom o el nombre visible). Los eventos duplicados y consecutivos de Zoom se combinan. Si alguien ya estaba en la reunión antes de que el portal pudiera registrar su entrada, puede aparecer una entrada estimada. Las entradas anteriores a la hora de inicio programada se marcan; los minutos del resumen se cuentan desde el inicio programado hasta la salida, o hasta el final programado si la persona permaneció conectada."
+    },
+    "stats": {
+      "duration": "Duración",
+      "totalParticipants": "Total de Participantes",
+      "currentlyActive": "Actualmente Activos",
+      "avgDuration": "Duración Promedio"
+    },
+    "participantSummary": {
+      "title": "Resumen de Participantes",
+      "description": "Tiempo total que pasó cada participante",
+      "empty": "Aún no hay participantes",
+      "joinsCount": "{count, plural, one {{count} entrada} other {{count} entradas}}",
+      "estimatedJoin": "Entrada estimada",
+      "earlyJoin": "Entrada anticipada"
+    },
+    "activityTimeline": {
+      "title": "Cronología de Actividad",
+      "description": "Historial completo de entradas y salidas",
+      "empty": "Aún no hay actividad",
+      "estimated": "Estimado",
+      "beforeStart": "Antes del inicio",
+      "beforeScheduledStart": "Antes del inicio programado de la sesión ({time})"
+    },
+    "status": {
+      "active": "Activo",
+      "left": "Salió",
+      "joined": "Se unió"
+    }
+  }
+}

@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { getTranslations } from "next-intl/server";
 import { getEnrollmentSessionsActivityData } from "@/lib/actions/session/server.actions";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -18,6 +19,8 @@ export default async function EnrollmentActivityPage(props: {
   params: Promise<{ enrollmentId: string }>;
 }) {
   const params = await props.params;
+  const t = await getTranslations("adminEnrollments.activity");
+  const tFrequency = await getTranslations("adminEnrollments.frequency");
   const data = await getEnrollmentSessionsActivityData(params.enrollmentId);
   if (!data) {
     notFound();
@@ -31,34 +34,36 @@ export default async function EnrollmentActivityPage(props: {
         <Button variant="outline" size="sm" asChild>
           <Link href="/dashboard/enrollments">
             <ArrowLeft className="h-4 w-4 mr-2" />
-            All enrollments
+            {t("backToEnrollments")}
           </Link>
         </Button>
       </div>
 
       <div>
-        <h1 className="text-3xl font-bold">Enrollment activity</h1>
-        <p className="text-muted-foreground mt-1">
-          Sessions for this enrollment and Zoom webhook activity counts.
-        </p>
+        <h1 className="text-3xl font-bold">{t("heading")}</h1>
+        <p className="text-muted-foreground mt-1">{t("description")}</p>
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle>Enrollment</CardTitle>
+          <CardTitle>{t("enrollmentCard.title")}</CardTitle>
           <CardDescription>
             {enrollment.studentName} ↔ {enrollment.tutorName}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-2 text-sm">
           <div className="flex flex-wrap gap-2 items-center">
-            <span className="text-muted-foreground">Frequency</span>
-            <Badge variant="secondary">{enrollment.frequency}</Badge>
-            {enrollment.paused && <Badge variant="destructive">Paused</Badge>}
+            <span className="text-muted-foreground">{t("enrollmentCard.frequencyLabel")}</span>
+            <Badge variant="secondary">
+              {enrollment.frequency === "biweekly" ? tFrequency("biweekly") : tFrequency("weekly")}
+            </Badge>
+            {enrollment.paused && (
+              <Badge variant="destructive">{t("enrollmentCard.paused")}</Badge>
+            )}
           </div>
           {enrollment.summary ? (
             <p>
-              <span className="text-muted-foreground">Summary: </span>
+              <span className="text-muted-foreground">{t("enrollmentCard.summaryLabel")} </span>
               {enrollment.summary}
             </p>
           ) : null}
@@ -67,27 +72,27 @@ export default async function EnrollmentActivityPage(props: {
 
       <Card>
         <CardHeader>
-          <CardTitle>Sessions</CardTitle>
+          <CardTitle>{t("sessionsCard.title")}</CardTitle>
           <CardDescription>
-            Open a session to see normalized Zoom join/leave activity. Links include{" "}
-            <code className="text-xs">enrollmentId</code> so the session view can show this
-            enrollment breakdown.
+            {t("sessionsCard.descriptionPrefix")}{" "}
+            <code className="text-xs">enrollmentId</code>{" "}
+            {t("sessionsCard.descriptionSuffix")}
           </CardDescription>
         </CardHeader>
         <CardContent>
           {sessions.length === 0 ? (
             <p className="text-muted-foreground text-center py-8">
-              No sessions linked to this enrollment yet.
+              {t("sessionsCard.empty")}
             </p>
           ) : (
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>When</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Meeting</TableHead>
-                  <TableHead className="text-right">Zoom logs</TableHead>
-                  <TableHead className="text-right">Attendance</TableHead>
+                  <TableHead>{t("sessionsCard.columns.when")}</TableHead>
+                  <TableHead>{t("sessionsCard.columns.status")}</TableHead>
+                  <TableHead>{t("sessionsCard.columns.meeting")}</TableHead>
+                  <TableHead className="text-right">{t("sessionsCard.columns.zoomLogs")}</TableHead>
+                  <TableHead className="text-right">{t("sessionsCard.columns.attendance")}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -117,7 +122,7 @@ export default async function EnrollmentActivityPage(props: {
                           href={`/dashboard/session/${s.id}/participation?enrollmentId=${enrollment.id}`}
                         >
                           <Video className="h-4 w-4 mr-1" />
-                          View
+                          {t("sessionsCard.view")}
                         </Link>
                       </Button>
                     </TableCell>

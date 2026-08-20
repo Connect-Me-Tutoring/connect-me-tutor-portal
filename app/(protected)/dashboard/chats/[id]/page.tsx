@@ -2,12 +2,14 @@ import { ChatRoom, type User, type Message } from "@/components/chat/chat-room";
 import { config } from "@/config";
 import { getPairingFromEnrollmentId } from "@/lib/actions/pairing/server.actions";
 import { createClient } from "@/lib/supabase/server";
+import { getTranslations } from "next-intl/server";
 
 interface Props {
   params: Promise<{ id: string }>;
 }
 
 export default async function ChatRoomPage(props: Props) {
+  const t = await getTranslations("chat.roomPage");
   const params = await props.params;
   // In a real app, these would come from your authentication system and API
 
@@ -20,7 +22,7 @@ export default async function ChatRoomPage(props: Props) {
 
   return (
     <main className="container mx-auto p-4">
-      <h1 className="text-2xl font-bold mb-6">Tutoring Session</h1>
+      <h1 className="text-2xl font-bold mb-6">{t("heading")}</h1>
 
       <ChatRoom
         type="admin"

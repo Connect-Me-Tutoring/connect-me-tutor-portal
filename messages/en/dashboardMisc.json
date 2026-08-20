@@ -1,0 +1,40 @@
+{
+  "dashboardHome": {
+    "noProfileFound": "No profile found."
+  },
+  "error": {
+    "heading": "Something went wrong",
+    "defaultMessage": "An unexpected error occurred in the dashboard.",
+    "tryAgain": "Try again",
+    "goHome": "Go home"
+  },
+  "contact": {
+    "heading": "Contact"
+  },
+  "meeting": {
+    "loadingTitle": "Loading Meeting Details...",
+    "loadingSubtitle": "Please wait a moment.",
+    "missingId": "Meeting ID is missing.",
+    "notFoundFetch": "Meeting not found or could not be retrieved.",
+    "fetchFailed": "Failed to fetch meeting details. Please try again later.",
+    "linkCopied": "Meeting link copied to clipboard!",
+    "noLinkToCopy": "No meeting link available to copy.",
+    "errorTitle": "Error Loading Meeting",
+    "tryAgain": "Try Again",
+    "goToDashboard": "Go to Dashboard",
+    "notFoundTitle": "Meeting Not Found",
+    "notFoundDescription": "The meeting you are looking for could not be found.",
+    "defaultTitle": "Meeting Details",
+    "meetingIdLabel": "Meeting ID: {id}",
+    "joinMeeting": "Join Meeting",
+    "copyLink": "Copy Meeting Link",
+    "noLinkAvailable": "No join link available for this meeting.",
+    "noLinkAvailableSubtitle": "Please check back later or contact support.",
+    "backToDashboard": "Back to Dashboard"
+  },
+  "policyQuizPreview": {
+    "badge": "PREVIEW",
+    "title": "Policy Quiz Component — with Transluscent Test",
+    "backToDashboard": "Back to Dashboard"
+  }
+}

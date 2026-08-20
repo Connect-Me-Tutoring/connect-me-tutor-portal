@@ -1,5 +1,6 @@
 import React from "react";
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import { formatSessionDate, formatDateAdmin } from "@/lib/utils";
 import { Session, Meeting } from "@/types";
 import { Button } from "@/components/ui/button";
@@ -56,6 +57,7 @@ const RescheduleForm: React.FC<RescheduleProps> = ({
   handleInputChange,
   handleReschedule,
 }) => {
+  const t = useTranslations("tutorSessions.rescheduleDialog");
   /** State to track if meeting availability is being checked */
   const [isCheckingMeetingAvailability, setisCheckingMeetingAvailability] = useState(false);
   /** State to store meeting availability status for each meeting link */
@@ -118,7 +120,7 @@ const RescheduleForm: React.FC<RescheduleProps> = ({
       });
       setMeetingAvailability(updatedMeetingAvailability);
     } catch (error) {
-      toast.error("Unable to find available meeting links");
+      toast.error(t("availabilityError"));
       console.error("Unable to find available meeting links", error);
     } finally {
       setisCheckingMeetingAvailability(false);
@@ -138,8 +140,10 @@ const RescheduleForm: React.FC<RescheduleProps> = ({
       <DialogContent>
         <DialogHeader>
           <DialogTitle>
-            Reschedule Session with {selectedSession?.student?.firstName}{" "}
-            {selectedSession?.student?.lastName}
+            {t("title", {
+              firstName: selectedSession?.student?.firstName ?? "",
+              lastName: selectedSession?.student?.lastName ?? "",
+            })}
           </DialogTitle>
         </DialogHeader>
         <div className="py-4 space-y-6">
@@ -162,7 +166,7 @@ const RescheduleForm: React.FC<RescheduleProps> = ({
           />
 
           <div>
-            <Label>Meeting Link</Label>
+            <Label>{t("meetingLinkLabel")}</Label>
             <Select
               name="meeting.id"
               value={selectedSession?.meeting?.id}
@@ -173,13 +177,13 @@ const RescheduleForm: React.FC<RescheduleProps> = ({
               }
             >
               <SelectTrigger>
-                <SelectValue placeholder="Select a meeting link">
+                <SelectValue placeholder={t("meetingLinkSelectPlaceholder")}>
                   {selectedSession?.meeting?.id
                     ? meetingAvailability[selectedSession.meeting.id]
                       ? meetings.find((meeting) => meeting.id === selectedSession?.meeting?.id)
                           ?.name
-                      : "Please select an available link"
-                    : "Select a meeting"}
+                      : t("selectAvailableLink")
+                    : t("noMeetingSelected")}
                 </SelectValue>
               </SelectTrigger>
               <SelectContent>
@@ -223,11 +227,12 @@ const RescheduleForm: React.FC<RescheduleProps> = ({
           >
             {isCheckingMeetingAvailability ? (
               <>
-                Checking Meeting Link Availability{"   "}
+                {t("checkingAvailability")}
+                {"   "}
                 <Loader2 className="mx-2 h-4 w-4 animate-spin" />
               </>
             ) : (
-              "Send Reschedule Request"
+              t("submitButton")
             )}
           </Button>
         </div>

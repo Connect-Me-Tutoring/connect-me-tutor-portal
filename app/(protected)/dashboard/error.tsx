@@ -2,6 +2,7 @@
 
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 
 export default function DashboardError({
@@ -12,6 +13,7 @@ export default function DashboardError({
   reset: () => void;
 }) {
   const router = useRouter();
+  const t = useTranslations("dashboardMisc.error");
 
   useEffect(() => {
     console.error("Dashboard error:", error);
@@ -19,16 +21,16 @@ export default function DashboardError({
 
   return (
     <div className="flex min-h-[40vh] flex-col items-center justify-center gap-4 p-8">
-      <h2 className="text-lg font-semibold">Something went wrong</h2>
+      <h2 className="text-lg font-semibold">{t("heading")}</h2>
       <p className="max-w-md text-center text-sm text-muted-foreground">
-        {error.message || "An unexpected error occurred in the dashboard."}
+        {error.message || t("defaultMessage")}
       </p>
       <div className="flex gap-2">
         <Button type="button" variant="outline" onClick={() => reset()}>
-          Try again
+          {t("tryAgain")}
         </Button>
         <Button type="button" onClick={() => router.push("/")}>
-          Go home
+          {t("goHome")}
         </Button>
       </div>
     </div>

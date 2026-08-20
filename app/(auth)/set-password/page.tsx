@@ -7,6 +7,7 @@ import { setDefaultAutoSelectFamily } from "net";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState, useEffect } from "react";
 import { string } from "zod";
+import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -27,23 +28,25 @@ import {
 import { Input } from "@/components/ui/input";
 import { Router } from "lucide-react";
 
-const formSchema = z
-  .object({
-    password: z.string().min(8, {
-      message: "Password must be at least 8 characters",
-    }),
-    confirmPassword: z.string().min(8, {
-      message: "Password must be at least 8 characters",
-    }),
-  })
-  .refine((data) => data.password === data.confirmPassword, {
-    message: "Passwords do not match",
-    path: ["confirmPassword"],
-  });
-
 export default function ResetPassword() {
   const supabase = createClient();
   const router = useRouter();
+  const t = useTranslations("auth.setPassword");
+  const tCommon = useTranslations("auth.common");
+
+  const formSchema = z
+    .object({
+      password: z.string().min(8, {
+        message: t("errors.passwordMin"),
+      }),
+      confirmPassword: z.string().min(8, {
+        message: t("errors.passwordMin"),
+      }),
+    })
+    .refine((data) => data.password === data.confirmPassword, {
+      message: tCommon("errors.passwordsNoMatch"),
+      path: ["confirmPassword"],
+    });
 
   // const [isVerifying, setIsVerifying ] = useState(true)
   // const [verificationError, setVerificationError ] = useState<string | null>(null);
@@ -61,8 +64,8 @@ export default function ResetPassword() {
     try {
       const { password, confirmPassword } = data;
       if (password !== confirmPassword) {
-        toast.error("Passwords do not match");
-        return alert("Passwords do not match");
+        toast.error(tCommon("errors.passwordsNoMatch"));
+        return alert(tCommon("errors.passwordsNoMatch"));
       }
 
       const { data: resetData, error } = await supabase.auth.updateUser({
@@ -73,12 +76,12 @@ export default function ResetPassword() {
       }
 
       if (resetData.user) {
-        toast.success("Login information updated");
+        toast.success(t("toasts.success"));
         router.push("/");
       }
     } catch (error) {
       console.error("Password update error:", error);
-      toast.error(error instanceof Error ? error.message : "Failed to update password");
+      toast.error(error instanceof Error ? error.message : t("toasts.error"));
     }
   };
 
@@ -103,12 +106,12 @@ export default function ResetPassword() {
           <div className="container h-full mx-auto max-w-lg p-10 flex flex-col items-center justify-center align-center">
             <div className="p-8 flex flex-col items-center justify-center gap-4 border border-gray-300 rounded-xl">
               <div className="flex flex-col gap-3">
-                <h1 className="text-2xl text-center font-bold">Set your Password</h1>
+                <h1 className="text-2xl text-center font-bold">{t("title")}</h1>
                 <p className="text-sm text-gray-600"></p>
               </div>
               <div className="container mx-auto w-[400px] grid gap-4">
                 <div className="grid gap-4">
-                  <label className="text-sm font-medium">Enter your new password</label>
+                  <label className="text-sm font-medium">{t("newPasswordLabel")}</label>
                   <input
                     type={showPassword ? "text" : "password"}
                     name="password"
@@ -118,7 +121,7 @@ export default function ResetPassword() {
                   />
                 </div>
                 <div className="grid gap-4">
-                  <label className="text-sm font-medium">Confirm your new password</label>
+                  <label className="text-sm font-medium">{t("confirmPasswordLabel")}</label>
                   <input
                     type={showPassword ? "text" : "password"}
                     name="confirmPassword"
@@ -131,10 +134,10 @@ export default function ResetPassword() {
                   className="cursor-pointer hover:underline"
                   onClick={() => setShowPassword(!showPassword)}
                 >
-                  Show passwords
+                  {t("showPasswords")}
                 </div>
                 <Button type="submit" className="w-full bg-blue-400" onClick={confirmPasswords}>
-                  Set Password
+                  {t("submit")}
                 </Button>
               </div>
             </div>

@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { getTranslations } from "next-intl/server";
 import { cachedGetUser } from "@/lib/actions/user/server.actions";
 import { cachedGetProfile } from "@/lib/actions/cache";
 import PolicyQuiz from "@/components/tutor/PolicyQuiz";
@@ -15,6 +16,8 @@ export default async function PolicyQuizPreviewPage() {
   const profile = await cachedGetProfile(user.id);
   if (!profile || profile.role !== "Admin") redirect("/dashboard");
 
+  const t = await getTranslations("dashboardMisc.policyQuizPreview");
+
   return (
     <div className="relative min-h-screen overflow-hidden">
       {/* test shapes — visible through translucent areas */}
@@ -28,14 +31,12 @@ export default async function PolicyQuizPreviewPage() {
         <div className="mx-auto flex max-w-2xl items-center justify-between">
           <div className="flex items-center gap-2">
             <span className="rounded bg-amber-200 px-2 py-0.5 text-xs font-semibold text-amber-800">
-              PREVIEW
+              {t("badge")}
             </span>
-            <span className="text-sm font-medium text-amber-900">
-              Policy Quiz Component — with Transluscent Test
-            </span>
+            <span className="text-sm font-medium text-amber-900">{t("title")}</span>
           </div>
           <a href="/dashboard" className="text-sm text-amber-700 underline hover:text-amber-900">
-            ← Back to Dashboard
+            ← {t("backToDashboard")}
           </a>
         </div>
       </div>

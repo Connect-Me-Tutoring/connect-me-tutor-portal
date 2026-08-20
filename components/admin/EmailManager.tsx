@@ -1,5 +1,6 @@
 "use client";
 import React, { useState, useEffect, useMemo } from "react";
+import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import toast, { Toaster } from "react-hot-toast";
 import { Client } from "@upstash/qstash";
@@ -51,6 +52,7 @@ const mockEmails = [
 ];
 
 const EmailManager = () => {
+  const t = useTranslations("adminOps.emailManager");
   const [emails] = useState(mockEmails);
 
   const sendEmail = async () => {
@@ -66,7 +68,7 @@ const EmailManager = () => {
       const data = await fetchScheduledMessages();
     } catch (error) {
       console.error("Error listing messages:", error);
-      toast.error("Failed to fetch schedules");
+      toast.error(t("toasts.fetchError"));
     }
   };
 
@@ -75,22 +77,22 @@ const EmailManager = () => {
       <Toaster />
 
       <main className="p-8">
-        <h1 className="text-3xl font-bold mb-6">Email Manager</h1>
+        <h1 className="text-3xl font-bold mb-6">{t("title")}</h1>
 
         <div className="flex gap-4 mb-6">
-          <Button onClick={() => sendEmail()}>Send Email</Button>
-          <Button onClick={() => listScheduledMessages()}>Show schedules</Button>
+          <Button onClick={() => sendEmail()}>{t("sendEmail")}</Button>
+          <Button onClick={() => listScheduledMessages()}>{t("showSchedules")}</Button>
         </div>
 
         <div className="rounded-md border bg-white">
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Send Date</TableHead>
-                <TableHead>Recipient</TableHead>
-                <TableHead>Subject</TableHead>
-                <TableHead>Content</TableHead>
-                <TableHead>Status</TableHead>
+                <TableHead>{t("table.sendDate")}</TableHead>
+                <TableHead>{t("table.recipient")}</TableHead>
+                <TableHead>{t("table.subject")}</TableHead>
+                <TableHead>{t("table.content")}</TableHead>
+                <TableHead>{t("table.status")}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>

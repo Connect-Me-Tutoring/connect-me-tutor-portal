@@ -7,6 +7,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import toast, { Toaster, ValueFunction } from "react-hot-toast";
 import { useState, Suspense } from "react";
+import { useTranslations } from "next-intl";
 import { createClient } from "@/lib/supabase/client";
 import { startNavigationProgress } from "@/components/ui/navigation-progress";
 import { Eye, EyeOff, X, ExternalLink } from "lucide-react";
@@ -24,20 +25,22 @@ import {
 import { Input } from "@/components/ui/input";
 import { getProfileRole } from "@/lib/actions/user/actions";
 
-const formSchema = z.object({
-  email: z.string().email({
-    message: "Please enter a valid email address.",
-  }),
-  password: z.string().min(6, {
-    message: "Password must be at least 6 characters.",
-  }),
-});
-
 export default function LoginForm() {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const supabase = createClient();
+  const t = useTranslations("auth.login");
+  const tCommon = useTranslations("auth.common");
+
+  const formSchema = z.object({
+    email: z.string().email({
+      message: tCommon("errors.invalidEmail"),
+    }),
+    password: z.string().min(6, {
+      message: t("errors.passwordMin"),
+    }),
+  });
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -67,18 +70,18 @@ export default function LoginForm() {
         await supabase.auth.signOut();
         router.push("/auth/otp-login?autoSend=true&email=" + encodeURIComponent(values.email));
       } else if (data.user) {
-        toast.success("Logged in successfully");
+        toast.success(t("toasts.success"));
         startNavigationProgress();
         window.location.assign("/dashboard");
         return;
       } else {
-        toast.error("Something went wrong. Please try again.");
+        toast.error(t("toasts.genericError"));
       }
     } catch (error) {
       if (error instanceof Error) {
         toast.error(error.message);
       } else {
-        toast.error("An unknown error occurred");
+        toast.error(t("toasts.unknownError"));
       }
     } finally {
       setIsLoading(false);
@@ -86,14 +89,14 @@ export default function LoginForm() {
   };
 
   function showForms() {
-    const message = "Language Questionaire, We'd love your feedback!";
+    const message = t("feedback.message");
     const formUrl = "https://forms.gle/gS8g8JBh7T4kNFUC9";
 
     toast.custom(
-      (t) => (
+      (toastInstance) => (
         <div
           className={`${
-            t.visible ? "animate-enter" : "animate-leave"
+            toastInstance.visible ? "animate-enter" : "animate-leave"
           } max-w-md w-full bg-white shadow-lg rounded-lg pointer-events-auto flex ring-1 ring-black ring-opacity-5`}
         >
           <div className="flex-1 w-0 p-4">
@@ -105,23 +108,23 @@ export default function LoginForm() {
               </div>
               <div className="ml-3 flex-1">
                 <p className="text-sm font-medium text-gray-900">
-                  {message || "We'd love your feedback!"}
+                  {message || t("feedback.fallback")}
                 </p>
                 <button
                   onClick={() => {
                     window.open(formUrl, "_blank");
-                    toast.dismiss(t.id);
+                    toast.dismiss(toastInstance.id);
                   }}
                   className="mt-1 text-sm text-blue-600 hover:text-blue-800 font-medium"
                 >
-                  Fill out our form →
+                  {t("feedback.cta")}
                 </button>
               </div>
             </div>
           </div>
           <div className="flex border-l border-gray-200">
             <button
-              onClick={() => toast.dismiss(t.id)}
+              onClick={() => toast.dismiss(toastInstance.id)}
               className="w-full border border-transparent rounded-none rounded-r-lg p-4 flex items-center justify-center text-sm font-medium text-gray-400 hover:text-gray-500 focus:outline-none"
             >
               <X className="h-5 w-5" />
@@ -145,9 +148,9 @@ export default function LoginForm() {
               name="email"
               render={({ field }) => (
                 <FormItem className="w-full">
-                  <FormLabel>Email</FormLabel>
+                  <FormLabel>{tCommon("email")}</FormLabel>
                   <FormControl>
-                    <Input placeholder="Enter your email address" {...field} />
+                    <Input placeholder={t("emailPlaceholder")} {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -159,12 +162,12 @@ export default function LoginForm() {
               render={({ field }) => (
                 <FormItem>
                   <div className="flex justify-between items-center w-full">
-                    <FormLabel>Password</FormLabel>
+                    <FormLabel>{t("password")}</FormLabel>
                     <Link
                       href="/forgot-password"
                       className="text-sm font-medium hover:text-blue-800 underline" // Added styling for the link
                     >
-                      Forgot password?
+                      {t("forgotPassword")}
                     </Link>
                   </div>
 
@@ -172,13 +175,13 @@ export default function LoginForm() {
                     <div className="relative">
                       <Input
                         type={showPassword ? "text" : "password"}
-                        placeholder="Enter your password"
+                        placeholder={t("passwordPlaceholder")}
                         className="pr-10"
                         {...field}
                       />
                       <button
                         type="button"
-                        aria-label={showPassword ? "Hide password" : "Show password"}
+                        aria-label={showPassword ? t("hidePassword") : t("showPassword")}
                         onClick={() => setShowPassword((visible) => !visible)}
                         className="text-muted-foreground hover:text-foreground absolute inset-y-0 right-0 flex items-center px-3"
                       >
@@ -192,11 +195,11 @@ export default function LoginForm() {
             />
 
             <Button disabled={isLoading} type="submit" className="w-full bg-blue-400">
-              {isLoading ? "Logging in..." : "Login"}
+              {isLoading ? t("loggingIn") : t("login")}
             </Button>
             <div className="after:border-border relative text-center text-sm after:absolute after:inset-0 after:top-1/2 after:z-0 after:flex after:items-center after:border-t">
               <span className="bg-background text-muted-foreground relative z-10 px-2">
-                Or continue with
+                {t("orContinueWith")}
               </span>
             </div>
             <Button
@@ -205,7 +208,7 @@ export default function LoginForm() {
               onClick={() => router.push("/auth/otp-login")}
               type="button"
             >
-              Login with OTP
+              {t("loginWithOtp")}
             </Button>
           </form>
         </Form>

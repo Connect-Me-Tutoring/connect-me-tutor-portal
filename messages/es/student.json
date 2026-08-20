@@ -1,0 +1,64 @@
+{
+  "dashboard": {
+    "headings": {
+      "thisWeek": "Esta Semana",
+      "activeSessions": "Sesiones Activas",
+      "pastSessions": "Sesiones Anteriores"
+    },
+    "filterPlaceholder": "Filtrar sesiones...",
+    "toasts": {
+      "sessionUpdated": "Sesión actualizada correctamente",
+      "rescheduleError": "No se pudo reprogramar la sesión",
+      "updateError": "No se pudo actualizar la sesión",
+      "sessionMarkedComplete": "Sesión marcada como completada",
+      "questionConcernError": "No se pudo registrar la pregunta o inquietud",
+      "exitFormError": "No se pudo registrar el formulario de salida de la sesión"
+    },
+    "errors": {
+      "unknown": "Ocurrió un error desconocido"
+    }
+  },
+  "calendar": {
+    "days": {
+      "su": "Do",
+      "mo": "Lu",
+      "tu": "Ma",
+      "we": "Mi",
+      "th": "Ju",
+      "fr": "Vi",
+      "sa": "Sá"
+    },
+    "meetingWith": "Reunión con {firstName} {lastName}"
+  },
+  "availabilityFormat": {
+    "timezone": "EST"
+  },
+  "tables": {
+    "common": {
+      "headers": {
+        "markStatus": "Estado",
+        "date": "Fecha",
+        "title": "Título",
+        "tutor": "Tutor",
+        "meeting": "Reunión",
+        "feedback": "Comentarios",
+        "actions": "Acciones",
+        "meetingNotes": "Notas de la Reunión"
+      },
+      "status": {
+        "active": "Activa",
+        "complete": "Completada",
+        "cancelled": "Cancelada"
+      },
+      "sessionTitle": "Sesión de Tutoría con {firstName} {lastName}",
+      "notAvailable": "N/D",
+      "noMeetingLink": "Sin enlace de reunión",
+      "cancelSessionTooltip": "Cancelar sesión",
+      "cancel": "Cancelar",
+      "rowsTotal": "{count} fila(s) en total.",
+      "rowsPerPage": "Filas por página",
+      "pageOf": "Página {page} de {total}",
+      "viewSessionNotes": "Ver Notas de la Sesión"
+    }
+  }
+}

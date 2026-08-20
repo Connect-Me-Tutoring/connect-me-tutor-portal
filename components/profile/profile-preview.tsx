@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useTranslations } from "next-intl";
 import { RefreshCw, ExternalLink, Calendar, BookOpen, Languages } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -11,6 +12,7 @@ import { fetchProfileData } from "@/lib/utils/profile-utils";
 import { useFetchProfile } from "@/hooks/auth";
 
 export function ProfilePreview() {
+  const t = useTranslations("profileSessions");
   const { profile, loading } = useFetchProfile();
 
   const [refreshing, setRefreshing] = useState(false);
@@ -32,8 +34,8 @@ export function ProfilePreview() {
   if (!profile) {
     return (
       <div className="text-center py-6">
-        <p className="text-muted-foreground mb-4">Profile not found</p>
-        <Button onClick={openProfileEditor}>Create Profile</Button>
+        <p className="text-muted-foreground mb-4">{t("profilePreview.notFound")}</p>
+        <Button onClick={openProfileEditor}>{t("profilePreview.createProfile")}</Button>
       </div>
     );
   }
@@ -41,10 +43,10 @@ export function ProfilePreview() {
   return (
     <div className="space-y-4">
       <div className="flex justify-between items-center">
-        <h3 className="font-medium">Profile Settings</h3>
+        <h3 className="font-medium">{t("profilePreview.heading")}</h3>
         <Button variant="outline" size="sm" onClick={handleRefresh} disabled={refreshing}>
           <RefreshCw className={`h-4 w-4 mr-1 ${refreshing ? "animate-spin" : ""}`} />
-          Refresh
+          {t("profilePreview.refresh")}
         </Button>
       </div>
 
@@ -54,17 +56,19 @@ export function ProfilePreview() {
         <div className="flex items-start gap-2">
           <Calendar className="h-4 w-4 mt-1 text-muted-foreground" />
           <div className="flex-1">
-            <p className="text-sm font-medium">Availability</p>
+            <p className="text-sm font-medium">{t("profilePreview.availability.label")}</p>
             {profile.availability && profile.availability.length > 0 ? (
               <div className="grid gap-1 mt-1">
                 {profile.availability.map((slot, i) => (
                   <p key={i} className="text-sm text-muted-foreground">
-                    {slot.day}: {slot.startTime} - {slot.endTime}
+                    {t(`days.${slot.day}`)}: {slot.startTime} - {slot.endTime}
                   </p>
                 ))}
               </div>
             ) : (
-              <p className="text-sm text-muted-foreground">No availability set</p>
+              <p className="text-sm text-muted-foreground">
+                {t("profilePreview.availability.empty")}
+              </p>
             )}
           </div>
         </div>
@@ -72,7 +76,7 @@ export function ProfilePreview() {
         <div className="flex items-start gap-2">
           <BookOpen className="h-4 w-4 mt-1 text-muted-foreground" />
           <div className="flex-1">
-            <p className="text-sm font-medium">Subjects</p>
+            <p className="text-sm font-medium">{t("profilePreview.subjects.label")}</p>
             <div className="flex flex-wrap gap-1 mt-1">
               {profile.subjects_of_interest && profile.subjects_of_interest.length > 0 ? (
                 profile.subjects_of_interest.map((subject, i) => (
@@ -81,7 +85,7 @@ export function ProfilePreview() {
                   </Badge>
                 ))
               ) : (
-                <p className="text-sm text-muted-foreground">No subjects added</p>
+                <p className="text-sm text-muted-foreground">{t("profilePreview.subjects.empty")}</p>
               )}
             </div>
           </div>
@@ -90,7 +94,7 @@ export function ProfilePreview() {
         <div className="flex items-start gap-2">
           <Languages className="h-4 w-4 mt-1 text-muted-foreground" />
           <div className="flex-1">
-            <p className="text-sm font-medium">Languages</p>
+            <p className="text-sm font-medium">{t("profilePreview.languages.label")}</p>
             <div className="flex flex-wrap gap-1 mt-1">
               {profile.languages_spoken && profile.languages_spoken.length > 0 ? (
                 profile.languages_spoken.map((language, i) => (
@@ -99,7 +103,9 @@ export function ProfilePreview() {
                   </Badge>
                 ))
               ) : (
-                <p className="text-sm text-muted-foreground">No languages added</p>
+                <p className="text-sm text-muted-foreground">
+                  {t("profilePreview.languages.empty")}
+                </p>
               )}
             </div>
           </div>
@@ -113,7 +119,7 @@ export function ProfilePreview() {
         className="p-0 h-auto w-full justify-start text-primary"
         onClick={openProfileEditor}
       >
-        Edit profile settings
+        {t("profilePreview.editLink")}
         <ExternalLink className="h-3 w-3 ml-1" />
       </Button>
     </div>

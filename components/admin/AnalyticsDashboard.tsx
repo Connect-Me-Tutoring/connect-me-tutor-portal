@@ -1,9 +1,11 @@
 "use client";
 import React, { useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 import { supabase } from "@/lib/supabase/client";
 import toast from "react-hot-toast";
 
 const AnalyticsDashboard = () => {
+  const t = useTranslations("adminOps.analytics");
   const [mapUrl, setMapUrl] = useState<string>("");
   const [isLoading, setIsLoading] = useState(true);
 
@@ -24,7 +26,7 @@ const AnalyticsDashboard = () => {
         setMapUrl(url);
       } catch (error) {
         console.error(error);
-        toast.error("Unable to fetch city map of applicants");
+        toast.error(t("toasts.mapFetchError"));
       } finally {
         setIsLoading(false);
       }
@@ -38,7 +40,7 @@ const AnalyticsDashboard = () => {
     };
   }, []);
 
-  if (isLoading) return <div>Loading map...</div>;
+  if (isLoading) return <div>{t("loading")}</div>;
 
   return (
     <iframe
@@ -48,7 +50,7 @@ const AnalyticsDashboard = () => {
         height: "100vh",
         border: "none",
       }}
-      title="City Map"
+      title={t("mapTitle")}
     />
   );
 };

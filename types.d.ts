@@ -90,6 +90,7 @@ export interface Enrollment {
   paused: boolean;
   duration: number;
   frequency: import("@/types/database.types").Database["public"]["Enums"]["session_frequency"];
+  availability?: Availability[];
 }
 
 export interface Availability {

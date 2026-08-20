@@ -1,0 +1,40 @@
+{
+  "dashboardHome": {
+    "noProfileFound": "No se encontró ningún perfil."
+  },
+  "error": {
+    "heading": "Algo salió mal",
+    "defaultMessage": "Se produjo un error inesperado en el panel.",
+    "tryAgain": "Intentar de nuevo",
+    "goHome": "Ir al inicio"
+  },
+  "contact": {
+    "heading": "Contacto"
+  },
+  "meeting": {
+    "loadingTitle": "Cargando detalles de la reunión...",
+    "loadingSubtitle": "Espera un momento, por favor.",
+    "missingId": "Falta el ID de la reunión.",
+    "notFoundFetch": "No se encontró la reunión o no se pudo recuperar.",
+    "fetchFailed": "No se pudieron obtener los detalles de la reunión. Inténtalo de nuevo más tarde.",
+    "linkCopied": "¡Enlace de la reunión copiado al portapapeles!",
+    "noLinkToCopy": "No hay ningún enlace de reunión disponible para copiar.",
+    "errorTitle": "Error al cargar la reunión",
+    "tryAgain": "Intentar de nuevo",
+    "goToDashboard": "Ir al panel",
+    "notFoundTitle": "Reunión no encontrada",
+    "notFoundDescription": "No se pudo encontrar la reunión que buscas.",
+    "defaultTitle": "Detalles de la reunión",
+    "meetingIdLabel": "ID de la reunión: {id}",
+    "joinMeeting": "Unirse a la reunión",
+    "copyLink": "Copiar enlace de la reunión",
+    "noLinkAvailable": "No hay un enlace de acceso disponible para esta reunión.",
+    "noLinkAvailableSubtitle": "Vuelve a intentarlo más tarde o contacta con soporte.",
+    "backToDashboard": "Volver al panel"
+  },
+  "policyQuizPreview": {
+    "badge": "VISTA PREVIA",
+    "title": "Componente de cuestionario de políticas — con prueba translúcida",
+    "backToDashboard": "Volver al panel"
+  }
+}

@@ -1,0 +1,175 @@
+{
+  "dashboard": {
+    "thisWeek": "Esta Semana",
+    "activeSessions": "Sesiones Activas",
+    "pastSessions": "Sesiones Pasadas",
+    "filterSessionsPlaceholder": "Filtrar sesiones...",
+    "toasts": {
+      "sessionUpdated": "Sesión actualizada con éxito",
+      "rescheduleError": "No se pudo reprogramar la sesión",
+      "updateError": "No se pudo actualizar la sesión",
+      "sessionMarkedComplete": "Sesión marcada como completada",
+      "questionConcernError": "No se pudo registrar la pregunta o inquietud",
+      "sefRecordError": "No se pudo registrar el formulario de salida de sesión",
+      "sefUndone": "Formulario de salida de sesión deshecho",
+      "undoExpired": "El tiempo para deshacer expiró",
+      "undoSefError": "No se pudo deshacer el formulario de salida de sesión",
+      "cancellationUndone": "Cancelación de sesión deshecha",
+      "undoCancelError": "No se pudo deshacer la cancelación de la sesión"
+    }
+  },
+  "calendar": {
+    "daysOfWeek": {
+      "sun": "Do",
+      "mon": "Lu",
+      "tue": "Ma",
+      "wed": "Mi",
+      "thu": "Ju",
+      "fri": "Vi",
+      "sat": "Sá"
+    },
+    "meetingWith": "Reunión con {firstName} {lastName}"
+  },
+  "myStudents": {
+    "heading": "Mis Estudiantes",
+    "filterPlaceholder": "Filtrar estudiantes...",
+    "columns": {
+      "startDate": "Fecha de Inicio",
+      "studentName": "Nombre del Estudiante",
+      "availability": "Disponibilidad",
+      "subjects": "Materias",
+      "studentEmail": "Correo del Estudiante",
+      "emailMobile": "Correo",
+      "parentEmail": "Correo del Padre/Madre",
+      "parentPhone": "Teléfono del Padre/Madre",
+      "actions": "Acciones"
+    },
+    "subjectsLabel": "Materias:",
+    "rowsTotal": "{count, plural, one {# fila en total} other {# filas en total}}",
+    "rowsPerPage": "Filas por página",
+    "pageOf": "Página {current} de {total}"
+  },
+  "myEnrollments": {
+    "heading": "Inscripciones"
+  },
+  "myStats": {
+    "heading": "Mis Horas",
+    "loading": "Cargando horas...",
+    "tabs": {
+      "cardLayout": "Vista en Tarjetas",
+      "unifiedTable": "Tabla Unificada"
+    },
+    "unifiedTable": {
+      "category": "Categoría",
+      "type": "Tipo",
+      "description": "Descripción",
+      "date": "Fecha",
+      "hours": "Horas",
+      "total": "Total",
+      "categorySessions": "Sesiones",
+      "categoryEvents": "Eventos",
+      "typeTutoring": "Tutoría"
+    },
+    "cards": {
+      "hoursSummary": "Resumen de Horas",
+      "sessionHours": "Horas de Sesiones",
+      "eventHours": "Horas de Eventos",
+      "totalHours": "Horas Totales",
+      "students": "Estudiantes",
+      "events": "Eventos",
+      "studentColumn": "Estudiante",
+      "hoursColumn": "Horas",
+      "summaryColumn": "Resumen"
+    }
+  },
+  "resources": {
+    "heading": "Recursos para Tutores",
+    "filterPlaceholder": "Filtrar recursos...",
+    "columns": {
+      "title": "Título",
+      "description": "Descripción",
+      "link": "Enlace",
+      "type": "Tipo",
+      "subject": "Materia"
+    },
+    "openResource": "Abrir Recurso",
+    "resourceTotal": "{count, plural, one {# recurso en total} other {# recursos en total}}",
+    "rowsPerPage": "Filas por página",
+    "pageOf": "Página {current} de {total}",
+    "mobileType": "Tipo: {type}",
+    "mobileSubject": "Materia: {subject}",
+    "handbook": {
+      "title": "Manual del Tutor",
+      "description": "¡Léelo antes de tu primera sesión de tutoría!",
+      "body": "Este manual cubre las expectativas, políticas, asistencia y demás información necesaria para los tutores",
+      "button": "Abrir Manual del Tutor"
+    },
+    "manual": {
+      "title": "Guía del Tutor",
+      "description": "Guía de referencia para los tutores",
+      "body": "Esta guía contiene información útil para los tutores.",
+      "button": "Abrir Guía del Tutor"
+    },
+    "faqs": {
+      "title": "Preguntas Frecuentes para Tutores",
+      "description": "Preguntas frecuentes de los tutores.",
+      "body": "Encuentra respuestas a las preguntas más comunes de los tutores.",
+      "button": "Abrir Preguntas Frecuentes"
+    }
+  },
+  "worksheets": {
+    "heading": "Hojas de Trabajo",
+    "searchPlaceholder": "Buscar hojas de trabajo",
+    "all": "Todas",
+    "allGrades": "Todos los grados",
+    "allWorksheets": "Todas las hojas de trabajo",
+    "shown": "{count} mostrados",
+    "notFoundTitle": "No se encontraron hojas de trabajo",
+    "notFoundBody": "Prueba otra carpeta o término de búsqueda.",
+    "open": "Abrir",
+    "download": "Descargar"
+  },
+  "policyQuiz": {
+    "heading": "Cuestionario de Políticas y Preguntas Frecuentes",
+    "subtitle": "Responde todas las preguntas correctamente para completar el cuestionario. Las preguntas falladas volverán a aparecer más adelante.",
+    "categoryPolicy": "Política",
+    "categoryFaq": "Preguntas Frecuentes",
+    "questionLabel": "Pregunta {number}",
+    "checkAnswer": "Comprobar Respuesta",
+    "next": "Siguiente",
+    "finish": "Finalizar",
+    "correct": "¡Correcto!",
+    "incorrect": "No es correcto — esta pregunta volverá a aparecer más adelante",
+    "mastered": "{completed} de {total} dominadas",
+    "remainingCount": "{count} restantes",
+    "remaining": "{count, plural, one {queda # pregunta más} other {quedan # preguntas más}}",
+    "lastQuestion": "¡Última pregunta!",
+    "complete": {
+      "title": "¡Cuestionario Completado!",
+      "subtitle": "Has dominado todas las políticas y preguntas frecuentes",
+      "questions": "Preguntas",
+      "totalAttempts": "Intentos Totales",
+      "retriesNeeded": "Reintentos Necesarios",
+      "perfectTitle": "¡Puntuación perfecta!",
+      "perfectBody": "Respondiste todas las preguntas correctamente en tu primer intento. ¡Estás listo para comenzar a dar tutorías!",
+      "goodJobBody": "¡Buen trabajo con las preguntas difíciles! Ahora tienes un conocimiento sólido de las políticas de Connect Me.",
+      "retakeQuiz": "Repetir Cuestionario"
+    }
+  },
+  "aiChatbot": {
+    "pageTitle": "Chatbot de IA",
+    "chatTitle": "Chatbot de Connect Me",
+    "chatSubtitle": "Sube hasta 2 documentos y pídele al chatbot que los use como referencia.",
+    "newChat": "Nuevo Chat",
+    "uploadLabel": "Subir documentos (máx. 2)",
+    "uploadLimitError": "Puedes subir un máximo de 2 documentos en total.",
+    "uploadTypeError": "Por ahora solo se admiten documentos .txt y .md.",
+    "loadedDocuments": "Documentos cargados",
+    "noDocuments": "Aún no se han cargado documentos.",
+    "emptyStateTitle": "¿Cómo puedo ayudarte?",
+    "emptyStateSubtitle": "Pregúntame lo que quieras sobre tus tutorías o materiales de estudio.",
+    "inputPlaceholder": "Envía un mensaje al Chatbot de IA...",
+    "disclaimer": "El Chatbot de IA puede generar información inexacta",
+    "errorPrefix": "Error: {message}"
+  }
+}

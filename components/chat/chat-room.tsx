@@ -4,6 +4,7 @@ import type React from "react";
 
 import { useState, useEffect, useRef } from "react";
 // import { useToast } from "@/hooks/use-toast"
+import { useTranslations } from "next-intl";
 import { Send, PaperclipIcon, X, Download, Megaphone } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -68,6 +69,7 @@ export function ChatRoom({
   onFileUpload,
   type,
 }: ChatRoomProps) {
+  const t = useTranslations("chat.room");
   const [messages, setMessages] = useState<Message[]>(initialMessages);
   const [users, setUsers] = useState<Record<string, User>>({});
   const [messageInput, setMessageInput] = useState("");
@@ -400,10 +402,7 @@ export function ChatRoom({
   if (!roomIdValid) {
     return (
       <div className="flex min-h-[80dvh] border rounded-lg p-8 items-center justify-center bg-white">
-        <p className="text-sm text-gray-600 text-center max-w-md">
-          This chat link is invalid or the pairing id is missing. Open Messages and select an active
-          pairing to start chatting.
-        </p>
+        <p className="text-sm text-gray-600 text-center max-w-md">{t("invalidLink")}</p>
       </div>
     );
   }
@@ -421,7 +420,7 @@ export function ChatRoom({
           <div className="flex items-center gap-2">
             {type === "announcements" && <Megaphone className="h-5 w-5 " />}
             <h3 className="font-semibold text-lg">
-              {type === "announcements" ? roomName : "Participants"}
+              {type === "announcements" ? roomName : t("participants")}
             </h3>
           </div>
         </div>
@@ -456,7 +455,7 @@ export function ChatRoom({
                     variant={user.role === "tutor" ? "default" : "secondary"}
                     className="text-xs"
                   >
-                    {user.role}
+                    {t(`roles.${user.role}`)}
                   </Badge>
                 </div>
               </div>
@@ -475,13 +474,13 @@ export function ChatRoom({
             <div className="flex items-center gap-2">
               {type === "announcements" && <Megaphone className="h-5 w-5 " />}
               <h2 className="font-semibold text-lg">
-                {type === "announcements" ? roomName : (roomName ?? `Chat Room`)}
+                {type === "announcements" ? roomName : (roomName ?? t("chatRoomFallbackTitle"))}
               </h2>
             </div>
             <p className="text-sm text-gray-500">
               {type === "announcements"
-                ? "Read-only announcements channel"
-                : `${Object.keys(users).length} participants`}
+                ? t("readOnlyAnnouncementsChannel")
+                : t("participantsCount", { count: Object.keys(users).length })}
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-3 justify-end shrink-0">
@@ -503,7 +502,7 @@ export function ChatRoom({
                 htmlFor={`email-mute-${roomId}`}
                 className="text-xs sm:text-sm text-gray-600 cursor-pointer leading-snug"
               >
-                Mute email notifications for this chat
+                {t("muteEmailNotifications")}
               </Label>
             </div>
             <Button
@@ -517,7 +516,7 @@ export function ChatRoom({
               }}
               className="md:hidden"
             >
-              {type === "announcements" ? "Viewers" : "Participants"}
+              {type === "announcements" ? t("viewers") : t("participants")}
             </Button>
           </div>
         </div>
@@ -539,14 +538,14 @@ export function ChatRoom({
           ) : !hasUsers ? (
             <div className="absolute inset-0 flex items-center justify-center text-gray-400">
               <div className="text-center">
-                <p className="text-sm">Unable to load participants</p>
+                <p className="text-sm">{t("unableToLoadParticipants")}</p>
               </div>
             </div>
           ) : messages.length === 0 ? (
             <div className="absolute inset-0 flex items-center justify-center text-gray-400">
               <div className="text-center">
                 <Megaphone className="mx-auto h-8 w-8 mb-2" />
-                <p className="text-sm">No messages yet</p>
+                <p className="text-sm">{t("noMessagesYet")}</p>
               </div>
             </div>
           ) : (
@@ -583,7 +582,7 @@ export function ChatRoom({
                             variant={user.role === "tutor" ? "default" : "secondary"}
                             className="text-xs"
                           >
-                            {user.role}
+                            {t(`roles.${user.role}`)}
                           </Badge>
                           <span className="text-xs text-gray-500">
                             {new Date(message.created_at).toLocaleTimeString([], {
@@ -616,7 +615,7 @@ export function ChatRoom({
                                 className="mt-2 flex items-center gap-1 text-xs text-blue-600 hover:underline"
                               >
                                 <Download className="h-3 w-3" />
-                                Download
+                                {t("download")}
                               </a>
                             </div>
                           )}
@@ -647,7 +646,7 @@ export function ChatRoom({
           <div className="p-4 border-t ">
             <div className="flex items-center justify-center gap-2 ">
               <Megaphone className="h-4 w-4" />
-              <span className="text-sm font-medium">This is a read-only announcements channel</span>
+              <span className="text-sm font-medium">{t("readOnlyBanner")}</span>
             </div>
           </div>
         ) : (
@@ -672,13 +671,13 @@ export function ChatRoom({
                 type="text"
                 value={messageInput}
                 onChange={(e) => setMessageInput(e.target.value)}
-                placeholder="Type your message..."
+                placeholder={t("messagePlaceholder")}
                 className="flex-1 border rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary"
                 disabled={isLoading}
               />
               <Button type="submit" disabled={isLoading || !messageInput.trim()}>
                 <Send className="h-4 w-4 mr-2" />
-                Send
+                {t("send")}
               </Button>
             </form>
           </div>
@@ -692,7 +691,7 @@ export function ChatRoom({
             <div className="flex items-center gap-2">
               {type === "announcements" && <Megaphone className="h-5 w-5 " />}
               <h3 className="font-semibold text-lg">
-                {type === "announcements" ? "Viewers" : "Participants"}
+                {type === "announcements" ? t("viewers") : t("participants")}
               </h3>
             </div>
             <form method="dialog">
@@ -719,7 +718,7 @@ export function ChatRoom({
                     variant={user.role === "tutor" ? "default" : "secondary"}
                     className="text-xs"
                   >
-                    {user.role}
+                    {t(`roles.${user.role}`)}
                   </Badge>
                 </div>
               </div>

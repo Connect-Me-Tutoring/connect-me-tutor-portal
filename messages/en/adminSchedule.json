@@ -1,0 +1,300 @@
+{
+  "calendar": {
+    "daysOfWeek": {
+      "Su": "Su",
+      "Mo": "Mo",
+      "Tu": "Tu",
+      "We": "We",
+      "Th": "Th",
+      "Fr": "Fr",
+      "Sa": "Sa"
+    },
+    "meetingWith": "Meeting with {name}"
+  },
+  "days": {
+    "Sunday": "Sunday",
+    "Monday": "Monday",
+    "Tuesday": "Tuesday",
+    "Wednesday": "Wednesday",
+    "Thursday": "Thursday",
+    "Friday": "Friday",
+    "Saturday": "Saturday"
+  },
+  "time": {
+    "am": "AM",
+    "pm": "PM"
+  },
+  "scheduleManagement": {
+    "toolbar": {
+      "today": "Today",
+      "goToToday": "Go to today",
+      "updateWeek": "Update Week",
+      "loading": "Loading"
+    },
+    "legend": {
+      "complete": "Complete",
+      "cancelled": "Cancelled",
+      "active": "Active",
+      "standalone": "Standalone"
+    },
+    "views": {
+      "day": "Day",
+      "week": "Week",
+      "month": "Month"
+    },
+    "monthView": {
+      "dayAbbrev": {
+        "Sun": "Sun",
+        "Mon": "Mon",
+        "Tue": "Tue",
+        "Wed": "Wed",
+        "Thu": "Thu",
+        "Fri": "Fri",
+        "Sat": "Sat"
+      }
+    },
+    "loadingSessions": "Loading sessions...",
+    "stats": {
+      "sessions": "sessions",
+      "completed": "completed",
+      "tutors": "tutors",
+      "students": "students"
+    },
+    "shared": {
+      "selectAStudent": "Select a student",
+      "selectATutor": "Select a tutor",
+      "selectAMeeting": "Select a meeting"
+    },
+    "addSessionDialog": {
+      "title": "Add Session",
+      "studentLabel": "Student",
+      "tutorLabel": "Tutor",
+      "dateLabel": "Date",
+      "durationLabel": "Duration",
+      "durationPlaceholder": "Select a time duration",
+      "hour": "hour",
+      "hours": "hours",
+      "minutes": "minutes",
+      "meetingLinkLabel": "Meeting Link",
+      "checkingAvailability": "Checking Meeting Availability"
+    },
+    "sessionDetailsDialog": {
+      "title": "Session Details",
+      "statusLabel": "Status",
+      "statusPlaceholder": "Select status",
+      "statusOptions": {
+        "active": "Active",
+        "complete": "Complete",
+        "cancelled": "Cancelled"
+      },
+      "tutorLabel": "Tutor",
+      "studentLabel": "Student",
+      "dateLabel": "Date",
+      "meetingLabel": "Meeting",
+      "notesLabel": "Notes (Only viewable Admin Side)",
+      "sefReasonLabel": "SEF Exit Reason",
+      "sefReasonPlaceholder": "no session exit form yet",
+      "sefBoxesLabel": "SEF boxes: {boxes}",
+      "sefBoxesNone": "none",
+      "flags": {
+        "questionOrConcern": "question/concern",
+        "firstSession": "first session",
+        "cancelled": "cancelled"
+      },
+      "viewParticipation": "View Session Participation",
+      "checkingAvailableMeetingLinks": "Checking Available Meeting Links",
+      "updateSession": "Update Session",
+      "deleteSession": "Delete Session"
+    },
+    "toasts": {
+      "sessionsLoadError": "Failed to load sessions",
+      "studentsLoadError": "Failed to load students",
+      "enrollmentsLoadError": "Failed to load enrollments",
+      "meetingsLoadError": "Failed to load meetings",
+      "meetingAvailabilityError": "Unable to find available meeting links",
+      "sessionsAdded": "{count} new sessions added successfully",
+      "waitAddingSessions": "Please wait until adding new sessions",
+      "addSessionsFailed": "Failed to add sessions. {message}",
+      "sessionRemoved": "Session removed successfully",
+      "sessionRemoveFailed": "Failed to remove session",
+      "sessionUpdated": "Session updated successfully",
+      "sessionUpdateFailed": "Failed to update session",
+      "sessionAdded": "Added Session",
+      "sessionAddError": "Unable to add session"
+    }
+  },
+  "hqSchedule": {
+    "toolbar": {
+      "allLinks": "All links",
+      "newEvent": "New event"
+    },
+    "eventForm": {
+      "titleLabel": "Title",
+      "titlePlaceholder": "Event title",
+      "descriptionLabel": "Description",
+      "descriptionPlaceholder": "Optional description",
+      "dayLabel": "Day",
+      "dayPlaceholder": "Select a day",
+      "startTimeLabel": "Start time",
+      "startTimePlaceholder": "Start",
+      "endTimeLabel": "End time",
+      "endTimePlaceholder": "End",
+      "zoomLinkLabel": "Zoom Link",
+      "zoomLinkPlaceholder": "Select a zoom link",
+      "zoomLinkSetFirst": "Set day & times first"
+    },
+    "addDialog": {
+      "title": "New Event",
+      "cancel": "Cancel",
+      "save": "Save event"
+    },
+    "editDialog": {
+      "title": "Edit Event",
+      "cancel": "Cancel",
+      "save": "Update event"
+    },
+    "meetingBadge": "Meeting",
+    "enrollmentBadge": "Enrollment",
+    "toasts": {
+      "loadSchedulesError": "Failed to load schedules: {message}",
+      "eventSaved": "Event saved",
+      "eventSaveError": "Failed to save event",
+      "eventUpdated": "Event updated",
+      "eventUpdateError": "Failed to update event"
+    }
+  },
+  "hoursManager": {
+    "title": "Hours Manager",
+    "filterPlaceholder": "Filter Tutors",
+    "monthSelectPlaceholder": "Select month",
+    "allTime": "All Time",
+    "buttons": {
+      "addEvent": "Add Event",
+      "removeEvent": "Remove Event",
+      "addSubHours": "Add Sub Hours",
+      "downloadReport": "Download Report"
+    },
+    "addEventDialog": {
+      "title": "Add New Event",
+      "typePlaceholder": "Select Type",
+      "types": {
+        "tutorReferral": "Tutor Referral",
+        "subHotline": "Sub Hotline",
+        "additionalTutoringHours": "Additional Tutoring Hours",
+        "schoolTutoring": "School Tutoring",
+        "biweeklyMeeting": "Biweekly Meeting",
+        "other": "Other"
+      },
+      "datePlaceholder": "Date",
+      "hoursPlaceholder": "Hours",
+      "summaryPlaceholder": "Summary"
+    },
+    "removeEventDialog": {
+      "title": "Remove Event",
+      "eventPlaceholder": "Select Event to Remove",
+      "hoursSuffix": "hrs"
+    },
+    "subHoursDialog": {
+      "title": "Add Sub Hours",
+      "hoursPlaceholder": "Hours",
+      "summaryPlaceholder": "Summary (optional)",
+      "filterPlaceholder": "Filter tutors...",
+      "selectedCount": "{count} selected",
+      "remove": "remove",
+      "submit": "Add Hours"
+    },
+    "table": {
+      "tutorName": "Tutor Name",
+      "allSessions": "All Sessions",
+      "biweeklyMeetings": "Biweekly Meetings",
+      "tutorReferral": "Tutor Referral",
+      "subHotline": "Sub Hotline",
+      "other": "Other",
+      "allTime": "All Time",
+      "thisMonth": "This Month",
+      "total": "Total"
+    },
+    "mobile": {
+      "totals": "Totals"
+    },
+    "toasts": {
+      "allTimeHoursError": "Unable to set all time hours",
+      "eventHoursError": "Unable to get event hours",
+      "monthlyHoursError": "Error fetching monthly hours",
+      "allTimeEventHoursError": "Error fetching All Time Event Hours",
+      "totalMonthlyHoursError": "Error fetching total monthly hours",
+      "totalHoursError": "Error fetching total hours",
+      "allTimeSessionHoursError": "Error fetching All Time Session Hours",
+      "totalWeeklySessionHoursError": "Error fetching Total Weekly Session Hours",
+      "totalEventHoursError": "Error fetching Total Event Hours",
+      "totalSessionHoursError": "Error fetching Total Session Hours",
+      "eventAdded": "Event added successfully.",
+      "eventAddError": "Failed to add event",
+      "fillAllFields": "Please fill all fields",
+      "eventRemoved": "Event removed successfully. Refresh to view update.",
+      "eventRemoveUnable": "Unable to remove event",
+      "eventRemoveError": "Failed to remove event",
+      "selectEventToRemove": "Please select an event to remove",
+      "selectAtLeastOneTutor": "Select at least one tutor",
+      "fillDateAndHours": "Fill in date and hours",
+      "subHoursAdded": "Added sub hours to {count} tutor(s)",
+      "subHoursAddError": "Failed to add sub hours",
+      "loadingEvents": "Loading events...",
+      "eventsLoadError": "Failed to load events",
+      "downloadReportError": "Failed to download Hours Report"
+    }
+  },
+  "hoursReport": {
+    "table": {
+      "tutorName": "Tutor Name",
+      "allSessions": "All Sessions",
+      "biweeklyMeetings": "Biweekly\nMeetings",
+      "tutorReferral": "Tutor\nReferral",
+      "subHotline": "Sub\nHotline",
+      "other": "Other",
+      "allTimeTotal": "All Time\nTotal",
+      "thisMonth": "This\nMonth",
+      "totals": "TOTALS"
+    },
+    "header": {
+      "allTimeTitle": "All-Time Hours Report",
+      "monthlyTitle": "Monthly Hours Report",
+      "allTimeSubtitle": "Comprehensive Performance Overview",
+      "monthlySubtitleTemplate": "Performance Report - %DATE%",
+      "generatedOnTemplate": "Generated on %DATE%"
+    },
+    "stats": {
+      "title": "Performance Statistics",
+      "activeTutors": "Active Tutors",
+      "totalHours": "Total Hours",
+      "avgHoursPerTutor": "Avg Hours/Tutor",
+      "eventHours": "Event Hours"
+    },
+    "insights": {
+      "title": "Key Insights",
+      "topPerformerTemplate": "Top performer: %NAME% with %HOURS% hours",
+      "activePercentageTemplate": "%PERCENT%% of tutors are actively contributing hours",
+      "eventPercentageTemplate": "Event activities account for %PERCENT%% of total hours"
+    },
+    "footer": {
+      "title": "Connect Me Tutoring - Hours Report",
+      "reportPeriodTemplate": "Report Period: %PERIOD%",
+      "reportPeriodAllTime": "All Time",
+      "pageOfTemplate": "Page %PAGE% of %TOTAL%"
+    },
+    "monthAbbreviations": [
+      "Jan",
+      "Feb",
+      "Mar",
+      "Apr",
+      "May",
+      "Jun",
+      "Jul",
+      "Aug",
+      "Sep",
+      "Oct",
+      "Nov",
+      "Dec"
+    ]
+  }
+}

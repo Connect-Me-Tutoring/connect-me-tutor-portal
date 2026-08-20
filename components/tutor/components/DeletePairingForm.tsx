@@ -1,5 +1,6 @@
 import React from "react";
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import { formatSessionDate, formatSessionDuration } from "@/lib/utils";
 import { Session, Meeting, Profile } from "@/types";
 import { Button } from "@/components/ui/button";
@@ -70,6 +71,7 @@ interface DeletePairingFormProps {
 }
 
 const DeletePairingForm = ({ tutor, student, onRemove }: DeletePairingFormProps) => {
+  const t = useTranslations("tutorSessions.forms.deletePairing");
   const handleDeletePairing = async (tutorId: string | null, studentId: string) => {
     try {
       if (!tutor) throw new Error("No tutor found");
@@ -85,32 +87,29 @@ const DeletePairingForm = ({ tutor, student, onRemove }: DeletePairingFormProps)
   return (
     <AlertDialog>
       <AlertDialogTrigger asChild>
-        <Button variant="ghost" size="icon" aria-label="Remove student pairing">
+        <Button variant="ghost" size="icon" aria-label={t("removeAriaLabel")}>
           <Trash className="h-4 w-4" color="#ef4444" />
         </Button>
       </AlertDialogTrigger>
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>Remove Student</AlertDialogTitle>
-          <AlertDialogDescription>
-            Removing this student will delete the pairing and automatically remove any related
-            enrollments and future sessions. You do not need to delete the enrollments separately.
-          </AlertDialogDescription>
+          <AlertDialogTitle>{t("dialogTitle")}</AlertDialogTitle>
+          <AlertDialogDescription>{t("dialogDescription")}</AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel>Cancel</AlertDialogCancel>
+          <AlertDialogCancel>{t("cancel")}</AlertDialogCancel>
           <AlertDialogAction
             onClick={() => {
               if (tutor)
                 handleDeletePairing(tutor.id, student.id)
                   .then(() => {
-                    toast.success("Successfully removed student and deleted related enrollments");
+                    toast.success(t("successToast"));
                     onRemove?.(student.id);
                   })
-                  .catch(() => toast.error("Failed to remove student"));
+                  .catch(() => toast.error(t("errorToast")));
             }}
           >
-            Remove Student
+            {t("confirmButton")}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>

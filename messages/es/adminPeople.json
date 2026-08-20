@@ -1,0 +1,357 @@
+{
+  "pages": {
+    "allStudents": {
+      "heading": "Todos los Estudiantes"
+    },
+    "allTutors": {
+      "heading": "Todos los Tutores"
+    }
+  },
+  "studentList": {
+    "filterPlaceholder": "Filtrar estudiantes...",
+    "exportCsv": "Exportar CSV",
+    "csvHeaders": {
+      "firstName": "Nombre",
+      "lastName": "Apellido",
+      "email": "Correo Electrónico"
+    },
+    "table": {
+      "studentNumber": "N.º de Estudiante",
+      "status": "Estado",
+      "startDate": "Fecha de Inicio",
+      "name": "Nombre del Estudiante",
+      "grade": "Nivel de Grado",
+      "availability": "Disponibilidad",
+      "subjectsLearning": "Materias que Estudia",
+      "email": "Correo Electrónico",
+      "parentEmail": "Correo del Padre/Madre",
+      "parentPhone": "Teléfono del Padre/Madre",
+      "actions": "Acciones"
+    },
+    "mobileSubjectsLearningLabel": "Materias que Estudia:",
+    "resendEmail": {
+      "title": "Reenviar Confirmación de Correo a {name}",
+      "description": "Nota: No se reenviará el correo de confirmación si el usuario ya ha iniciado sesión anteriormente",
+      "cancel": "Cancelar",
+      "confirm": "Reenviar"
+    },
+    "pagination": {
+      "rowsTotal": "{count} fila(s) en total.",
+      "rowsPerPage": "Filas por página",
+      "page": "Página {current} de {total}"
+    },
+    "toasts": {
+      "addSuccess": "Estudiante agregado correctamente.",
+      "addErrorEmail": "No se pudo agregar al estudiante. Verifica que el correo electrónico sea válido y único.",
+      "addErrorRequired": "No se pudo agregar al estudiante. Error en un campo obligatorio: {message}",
+      "addErrorGeneric": "No se pudo agregar al estudiante: {message}",
+      "addErrorGenericFallback": "Inténtalo de nuevo",
+      "deleteSuccess": "Estudiante eliminado correctamente",
+      "deleteError": "No se pudo eliminar al estudiante",
+      "deactivateSuccess": "Estudiante desactivado correctamente",
+      "deactivateError": "No se pudo desactivar al estudiante",
+      "editSuccess": "Tutor editado correctamente",
+      "editError": "No se pudo editar al tutor",
+      "reactivateSuccess": "Estudiante reactivado correctamente",
+      "reactivateError": "No se pudo desactivar al estudiante",
+      "resendSuccess": "Confirmación de correo reenviada",
+      "resendError": "No se pudo reenviar el correo"
+    }
+  },
+  "tutorList": {
+    "filterPlaceholder": "Filtrar tutores...",
+    "exportCsv": "Exportar CSV",
+    "csvHeaders": {
+      "firstName": "Nombre",
+      "lastName": "Apellido",
+      "email": "Correo Electrónico"
+    },
+    "table": {
+      "status": "Estado",
+      "startDate": "Fecha de Inicio",
+      "name": "Nombre del Tutor",
+      "availability": "Disponibilidad",
+      "subjectsTeaching": "Materias que Enseña",
+      "email": "Correo Electrónico",
+      "phoneNumber": "Número de Teléfono",
+      "gender": "Género",
+      "actions": "Acciones"
+    },
+    "mobileSubjectsTeachingLabel": "Materias que Enseña:",
+    "resendEmail": {
+      "title": "Reenviar Correo de Confirmación a {name}",
+      "description": "Nota: No se reenviará el correo de confirmación si el usuario ya ha iniciado sesión anteriormente",
+      "cancel": "Cancelar",
+      "confirm": "Reenviar"
+    },
+    "pagination": {
+      "rowsTotal": "{count} fila(s) en total.",
+      "rowsPerPage": "Filas por página",
+      "page": "Página {current} de {total}"
+    },
+    "toasts": {
+      "addSuccess": "Tutor agregado correctamente.",
+      "addErrorEmail": "No se pudo agregar al tutor. Verifica que el correo electrónico sea válido y único.",
+      "addErrorRequired": "No se pudo agregar al tutor. Error en un campo obligatorio: {message}",
+      "addErrorGeneric": "No se pudo agregar al tutor: {message}",
+      "addErrorGenericFallback": "Inténtalo de nuevo",
+      "resendSuccess": "Confirmación de correo reenviada",
+      "resendError": "No se pudo reenviar la confirmación de correo",
+      "deleteSuccess": "Tutor eliminado correctamente",
+      "deleteError": "No se pudo eliminar al tutor",
+      "deactivateSuccess": "Tutor desactivado correctamente",
+      "deactivateError": "No se pudo desactivar al tutor",
+      "editSuccess": "Tutor editado correctamente",
+      "editError": "No se pudo editar al tutor"
+    }
+  },
+  "forms": {
+    "common": {
+      "firstName": {
+        "label": "Nombre",
+        "placeholder": "Introduce el nombre"
+      },
+      "lastName": {
+        "label": "Apellido",
+        "placeholder": "Introduce el apellido"
+      },
+      "age": {
+        "label": "Edad",
+        "placeholder": "Edad"
+      },
+      "grade": {
+        "label": "Grado",
+        "placeholder": "Selecciona el grado"
+      },
+      "grades": {
+        "kindergarten": "Kínder",
+        "grade1": "1.º Grado",
+        "grade2": "2.º Grado",
+        "grade3": "3.º Grado",
+        "grade4": "4.º Grado",
+        "grade5": "5.º Grado",
+        "grade6": "6.º Grado",
+        "grade7": "7.º Grado",
+        "grade8": "8.º Grado",
+        "grade9": "9.º Grado",
+        "grade10": "10.º Grado",
+        "grade11": "11.º Grado",
+        "grade12": "12.º Grado"
+      },
+      "gender": {
+        "label": "Género",
+        "placeholder": "Selecciona el género",
+        "male": "Masculino",
+        "female": "Femenino",
+        "other": "Otro"
+      },
+      "email": {
+        "label": "Correo Electrónico"
+      },
+      "phoneNumber": {
+        "label": "Número de Teléfono",
+        "placeholder": "(555) 123-4567"
+      },
+      "startDate": {
+        "label": "Fecha de Inicio"
+      },
+      "timeZone": {
+        "label": "Zona Horaria"
+      },
+      "status": {
+        "label": "Estado",
+        "placeholder": "Selecciona el estado",
+        "active": "Activo",
+        "inactive": "Inactivo"
+      },
+      "cancel": "Cancelar",
+      "confirmDeletion": "Confirmar Eliminación",
+      "basicInfo": "Información Básica",
+      "extendedProfile": "Perfil Extendido",
+      "availability": "Disponibilidad",
+      "availabilitySchedule": "Horario de Disponibilidad",
+      "addTimeSlot": "Agregar Horario",
+      "noAvailabilitySlots": "Aún no se han agregado horarios de disponibilidad",
+      "clickAddTimeSlot": "Haz clic en \"Agregar Horario\" para comenzar",
+      "day": "Día",
+      "start": "Inicio",
+      "end": "Fin",
+      "to": "a",
+      "subjectsOfInterest": "Materias de Interés",
+      "subjectsPlaceholderLong": "p. ej., Matemáticas, Física, Química",
+      "subjectsPlaceholderShort": "p. ej., Matemáticas, Física",
+      "languagesSpoken": "Idiomas que Habla",
+      "languagesPlaceholderLong": "p. ej., Inglés, Español, Francés",
+      "languagesPlaceholderShort": "p. ej., Inglés, Español",
+      "days": {
+        "monday": "Lunes",
+        "tuesday": "Martes",
+        "wednesday": "Miércoles",
+        "thursday": "Jueves",
+        "friday": "Viernes",
+        "saturday": "Sábado",
+        "sunday": "Domingo"
+      }
+    },
+    "addStudent": {
+      "trigger": "Agregar Estudiante",
+      "dialogTitle": "Agregar Nuevo Estudiante",
+      "tabs": {
+        "basicVertical": "Información Básica (vertical)",
+        "basic": "Información Básica",
+        "extended": "Perfil Extendido"
+      },
+      "studentNumber": {
+        "label": "N.º de Estudiante",
+        "placeholder": "Introduce el número de estudiante"
+      },
+      "studentEmail": {
+        "label": "Correo del Estudiante",
+        "placeholderVertical": "Introduce el correo del estudiante",
+        "placeholder": "estudiante@ejemplo.com"
+      },
+      "personalInformation": "Información Personal (Obligatoria)",
+      "parentInformation": "Información del Padre/Madre o Tutor Legal (Obligatoria)",
+      "parentName": {
+        "label": "Nombre del Padre/Madre o Tutor Legal",
+        "placeholder": "Introduce el nombre del padre/madre o tutor legal"
+      },
+      "parentPhone": {
+        "label": "Número de Teléfono",
+        "placeholder": "(555) 123-4567"
+      },
+      "parentEmail": {
+        "label": "Correo Electrónico",
+        "placeholder": "padre@ejemplo.com"
+      },
+      "cancel": "Cancelar",
+      "submit": "Agregar Estudiante",
+      "submitting": "Agregando...",
+      "validation": {
+        "prefix": "No se puede agregar al estudiante. Todos los campos de Información Básica son obligatorios. Campos faltantes: {fields}",
+        "firstName": "Nombre",
+        "lastName": "Apellido",
+        "age": "Edad",
+        "grade": "Grado",
+        "gender": "Género",
+        "studentEmail": "Correo del Estudiante",
+        "startDate": "Fecha de Inicio",
+        "parentName": "Nombre del Padre/Madre o Tutor Legal",
+        "parentPhone": "Número de Teléfono del Padre/Madre",
+        "parentEmail": "Correo del Padre/Madre",
+        "timeZone": "Zona Horaria",
+        "studentNumber": "Número de Estudiante"
+      }
+    },
+    "addTutor": {
+      "trigger": "Agregar Tutor",
+      "dialogTitle": "Agregar Nuevo Tutor",
+      "tabs": {
+        "basic": "Información Básica",
+        "extended": "Perfil Extendido"
+      },
+      "genderSectionTitle": "Género",
+      "submit": "Agregar Tutor",
+      "submitting": "Agregando Tutor...",
+      "validation": {
+        "prefix": "No se puede agregar al tutor. Todos los campos de Información Básica son obligatorios. Campos faltantes: {fields}",
+        "firstName": "Nombre",
+        "lastName": "Apellido",
+        "email": "Correo Electrónico",
+        "phoneNumber": "Número de Teléfono",
+        "startDate": "Fecha de Inicio",
+        "timeZone": "Zona Horaria"
+      }
+    },
+    "editStudent": {
+      "trigger": "Editar Estudiante",
+      "dialogTitleSelect": "Selecciona un Estudiante para Editar",
+      "studentLabel": "Estudiante",
+      "selectToEdit": "Seleccionar estudiante a editar",
+      "dialogTitleEdit": "Editar Estudiante",
+      "tabs": {
+        "basic": "Información Básica",
+        "extended": "Perfil Extendido"
+      },
+      "studentNumber": "N.º de Estudiante",
+      "parentName": "Nombre del Padre/Madre",
+      "parentPhone": "Teléfono del Padre/Madre",
+      "parentEmail": "Correo del Padre/Madre",
+      "finish": "Terminar de editar al estudiante"
+    },
+    "editTutor": {
+      "trigger": "Editar Tutor",
+      "dialogTitleSelect": "Selecciona un Tutor para Editar",
+      "tutorLabel": "Tutor",
+      "selectToEdit": "Seleccionar tutor a editar",
+      "dialogTitleEdit": "Editar Tutor",
+      "tabs": {
+        "basic": "Información Básica",
+        "extended": "Perfil Extendido"
+      },
+      "statusSectionTitle": "Estado",
+      "genderSectionTitle": "Género",
+      "finish": "Terminar de editar al tutor"
+    },
+    "deleteStudent": {
+      "trigger": "Eliminar Estudiante",
+      "dialogTitle": "Selecciona un Estudiante para Eliminar",
+      "studentLabel": "Estudiante",
+      "confirm": "Confirmar Eliminación"
+    },
+    "deleteTutor": {
+      "trigger": "Eliminar Tutor",
+      "dialogTitle": "Selecciona un Tutor para Eliminar",
+      "tutorLabel": "Tutor",
+      "confirm": "Confirmar Eliminación"
+    },
+    "manageTutorSessions": {
+      "trigger": "Gestionar Sesiones",
+      "dialogTitle": "Gestionar Sesiones del Tutor",
+      "table": {
+        "date": "Fecha",
+        "student": "Estudiante",
+        "status": "Estado"
+      },
+      "noSessions": "No se encontraron sesiones.",
+      "selectedCount": "{count} seleccionada(s)",
+      "markCancelled": "Marcar como Cancelada",
+      "markComplete": "Marcar como Completada",
+      "statusCancelled": "Cancelada",
+      "statusComplete": "Completada",
+      "toasts": {
+        "loadError": "No se pudieron cargar las sesiones",
+        "updateSuccess": "Se marcaron {count} sesión(es) como {status}",
+        "updateError": "No se pudieron actualizar las sesiones"
+      }
+    },
+    "condensedProfile": {
+      "studentTitle": "Detalles del Perfil del Estudiante",
+      "tutorTitle": "Detalles del Perfil del Tutor",
+      "day": "Día",
+      "start": "Inicio",
+      "end": "Fin"
+    }
+  },
+  "timezoneSelector": {
+    "hawaiian": "Hora Estándar de Hawái (UTC-10)",
+    "alaskan": "Hora de Alaska (UTC-9)",
+    "pacific": "Hora del Pacífico (UTC-8)",
+    "mountain": "Hora de la Montaña (UTC-7)",
+    "central": "Hora Central (UTC-6)",
+    "eastern": "Hora del Este (UTC-5)",
+    "puertoRican": "Hora de Puerto Rico (UTC-4)",
+    "gmt": "Hora del Meridiano de Greenwich (UTC)",
+    "centralEuropean": "Hora de Europa Central (UTC+1)",
+    "easternEuropean": "Hora de Europa del Este (UTC+2)",
+    "easternEuropeanSummer": "Hora de Verano de Europa del Este (UTC+3)",
+    "moscow": "Hora Estándar de Moscú (UTC+4)",
+    "pakistan": "Hora Estándar de Pakistán (UTC+5)",
+    "indian": "Hora Estándar de India (UTC+5:30)",
+    "bangladesh": "Hora Estándar de Bangladés (UTC+6)",
+    "indochina": "Hora de Indochina (UTC+7)",
+    "china": "Hora Estándar de China (UTC+8)",
+    "japan": "Hora Estándar de Japón (UTC+9)",
+    "australianEastern": "Hora Estándar del Este de Australia (UTC+10)"
+  }
+}

@@ -1,5 +1,6 @@
 "use client";
 import React, { useState, useEffect } from "react";
+import { useTranslations } from "next-intl";
 import { format, startOfMonth, endOfMonth, eachWeekOfInterval, parseISO } from "date-fns";
 import {
   AlertDialog,
@@ -75,6 +76,7 @@ import { capitalizeFirstLetter } from "@/lib/utils";
 import { UserAvailabilities } from "../ui/UserAvailabilities";
 
 const TutorList = ({ initialTutors }: any) => {
+  const t = useTranslations("adminPeople.tutorList");
   const supabase = createClient();
   const [tutors, setTutors] = useState<Profile[]>(initialTutors);
   const [filteredTutors, setFilteredTutors] = useState<Profile[]>(initialTutors);
@@ -229,7 +231,7 @@ const TutorList = ({ initialTutors }: any) => {
         setIsModalOpen(false);
         setTutors((prevTutors) => [...prevTutors, addedTutor]);
         setFilteredTutors((prev) => [...prev, addedTutor]);
-        toast.success("Successfully added tutor.");
+        toast.success(t("toasts.addSuccess"));
 
         setNewTutor({
           role: "Tutor",
@@ -255,13 +257,15 @@ const TutorList = ({ initialTutors }: any) => {
 
       // Provide more descriptive error messages
       if (err.message.includes("Email")) {
-        toast.error(
-          "Failed to add tutor. Please check the email address and ensure it is valid and unique.",
-        );
+        toast.error(t("toasts.addErrorEmail"));
       } else if (err.message.includes("required")) {
-        toast.error(`Failed to add tutor. Required field error: ${err.message}`);
+        toast.error(t("toasts.addErrorRequired", { message: err.message }));
       } else {
-        toast.error(`Failed to add tutor: ${err.message || "Please try again"}`);
+        toast.error(
+          t("toasts.addErrorGeneric", {
+            message: err.message || t("toasts.addErrorGenericFallback"),
+          }),
+        );
       }
     } finally {
       setAddingTutor(false);
@@ -272,10 +276,10 @@ const TutorList = ({ initialTutors }: any) => {
     if (selectedTutor) {
       try {
         await resendEmailConfirmation(selectedTutor.email);
-        toast.success("Resent Email Confirmation");
+        toast.success(t("toasts.resendSuccess"));
       } catch (error) {
         console.error("Failed to resend email confirmation", error);
-        toast.error("Failed to resend email confirmation");
+        toast.error(t("toasts.resendError"));
       }
     }
   };
@@ -284,11 +288,11 @@ const TutorList = ({ initialTutors }: any) => {
     if (selectedTutorId) {
       try {
         await deleteUser(selectedTutorId);
-        toast.success("Tutor deleted successfully");
+        toast.success(t("toasts.deleteSuccess"));
         setSelectedTutorId(null);
         getTutorData();
       } catch (error) {
-        toast.error("Failed to delete Tutor");
+        toast.error(t("toasts.deleteError"));
       }
     }
   };
@@ -298,12 +302,12 @@ const TutorList = ({ initialTutors }: any) => {
       try {
         const data = await deactivateUser(selectedTutorId); // Call deactivateUser function with studentId
         if (data) {
-          toast.success("Tutor deactivated successfully");
+          toast.success(t("toasts.deactivateSuccess"));
           setSelectedTutorId(null);
           getTutorData();
         }
       } catch (error) {
-        toast.error("Failed to deactivate tutor");
+        toast.error(t("toasts.deactivateError"));
       }
     }
   };
@@ -325,18 +329,18 @@ const TutorList = ({ initialTutors }: any) => {
     if (selectedTutor) {
       try {
         await editProfile(selectedTutor);
-        toast.success("Tutor Edited Successfully");
+        toast.success(t("toasts.editSuccess"));
         setIsEditModalOpen(false);
         setSelectedTutor(null);
         getTutorData();
       } catch (error) {
-        toast.error("Failed to edit tutor");
+        toast.error(t("toasts.editError"));
       }
     }
   };
 
   const handleExportCSV = () => {
-    const headers = ["First Name", "Last Name", "Email"];
+    const headers = [t("csvHeaders.firstName"), t("csvHeaders.lastName"), t("csvHeaders.email")];
     const csvData = filteredTutors.map((tutor) => [tutor.firstName, tutor.lastName, tutor.email]);
 
     const csvContent = [
@@ -364,26 +368,24 @@ const TutorList = ({ initialTutors }: any) => {
 
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle> Resend Confirmation Email for {tutor.firstName}</AlertDialogTitle>
-          <AlertDialogDescription>
-            Note: Will not resend confirmation email if the user has already signed in before
-          </AlertDialogDescription>
+          <AlertDialogTitle> {t("resendEmail.title", { name: tutor.firstName })}</AlertDialogTitle>
+          <AlertDialogDescription>{t("resendEmail.description")}</AlertDialogDescription>
         </AlertDialogHeader>{" "}
         <AlertDialogFooter>
           {" "}
-          <AlertDialogCancel>Cancel</AlertDialogCancel>
+          <AlertDialogCancel>{t("resendEmail.cancel")}</AlertDialogCancel>
           <AlertDialogAction
             onClick={() => {
               resendEmailConfirmation(tutor.email)
                 .then(() => {
-                  toast.success("Resent Email Confirmation");
+                  toast.success(t("toasts.resendSuccess"));
                 })
                 .catch(() => {
-                  toast.error("Failed to resend email confirmation");
+                  toast.error(t("toasts.resendError"));
                 });
             }}
           >
-            Resend
+            {t("resendEmail.confirm")}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
@@ -393,31 +395,31 @@ const TutorList = ({ initialTutors }: any) => {
   const columns: ResponsiveListColumn<Profile>[] = [
     {
       key: "status",
-      header: "Status",
+      header: t("table.status"),
       cell: (tutor) => tutor.status,
       mobileCell: null,
     },
     {
       key: "startDate",
-      header: "Start Date",
+      header: t("table.startDate"),
       cell: (tutor) => tutor.startDate,
-      mobileLabel: "Start Date",
+      mobileLabel: t("table.startDate"),
       mobileClassName: "text-sm text-muted-foreground",
     },
     {
       key: "name",
-      header: "Tutor Name",
+      header: t("table.name"),
       cell: (tutor) => `${tutor.firstName} ${tutor.lastName}`,
       mobileCell: null,
     },
     {
       key: "availability",
-      header: "Availability",
+      header: t("table.availability"),
       cell: (tutor) => <UserAvailabilities user={tutor} />,
     },
     {
       key: "subjects",
-      header: "Subjects Teaching ",
+      header: t("table.subjectsTeaching"),
       cell: (tutor) => (
         <>
           {tutor.subjects_of_interest?.map((item, i) => (
@@ -429,7 +431,7 @@ const TutorList = ({ initialTutors }: any) => {
       mobileCell: (tutor) =>
         tutor.subjects_of_interest?.length > 0 && (
           <>
-            <div className="font-medium">Subjects Teaching:</div>
+            <div className="font-medium">{t("mobileSubjectsTeachingLabel")}</div>
             <div className="flex flex-wrap gap-2 mt-1">
               {tutor.subjects_of_interest.map((subject, i) => (
                 <span key={i} className="px-2 py-1 text-xs bg-muted rounded-md">
@@ -442,28 +444,28 @@ const TutorList = ({ initialTutors }: any) => {
     },
     {
       key: "email",
-      header: "Email",
+      header: t("table.email"),
       cell: (tutor) => tutor.email,
-      mobileLabel: "Email",
+      mobileLabel: t("table.email"),
       mobileGroup: "contact",
     },
     {
       key: "phoneNumber",
-      header: "Phone Number",
+      header: t("table.phoneNumber"),
       cell: (tutor) => tutor.phoneNumber,
-      mobileLabel: "Phone Number",
+      mobileLabel: t("table.phoneNumber"),
       mobileGroup: "contact",
     },
     {
       key: "gender",
-      header: "Gender",
+      header: t("table.gender"),
       cell: (tutor) => capitalizeFirstLetter(tutor.gender),
-      mobileLabel: "Gender",
+      mobileLabel: t("table.gender"),
       mobileGroup: "contact",
     },
     {
       key: "actions",
-      header: "Actions",
+      header: t("table.actions"),
       cell: (tutor) => renderResendEmailAction(tutor),
       mobileCell: null,
     },
@@ -476,13 +478,13 @@ const TutorList = ({ initialTutors }: any) => {
         <div className="flex space-x-2">
           <Input
             type="text"
-            placeholder="Filter tutors..."
+            placeholder={t("filterPlaceholder")}
             className="w-64"
             value={filterValue}
             onChange={(e) => setFilterValue(e.target.value)}
           />
           <Button variant="outline" onClick={handleExportCSV}>
-            <Download className="mr-2 h-4 w-4" /> Export CSV
+            <Download className="mr-2 h-4 w-4" /> {t("exportCsv")}
           </Button>
           {/*Add Tutor*/}
           <AddTutorForm
@@ -533,9 +535,9 @@ const TutorList = ({ initialTutors }: any) => {
         mobileFooter={<LoadMoreButton hasMore={hasMoreTutors} onClick={loadMoreTutors} />}
       />
       <div className="mt-4 hidden md:flex justify-between items-center">
-        <span>{filteredTutors.length} row(s) total.</span>
+        <span>{t("pagination.rowsTotal", { count: filteredTutors.length })}</span>
         <div className="flex items-center space-x-2">
-          <span>Rows per page</span>
+          <span>{t("pagination.rowsPerPage")}</span>
           <Select value={rowsPerPage.toString()} onValueChange={handleRowsPerPageChange}>
             <SelectTrigger className="w-[70px]">
               <SelectValue placeholder={rowsPerPage.toString()} />
@@ -546,9 +548,7 @@ const TutorList = ({ initialTutors }: any) => {
               <SelectItem value="50">50</SelectItem>
             </SelectContent>
           </Select>
-          <span>
-            Page {currentPage} of {totalPages}
-          </span>
+          <span>{t("pagination.page", { current: currentPage, total: totalPages })}</span>
           <div className="flex space-x-1">
             <Button
               variant="ghost"

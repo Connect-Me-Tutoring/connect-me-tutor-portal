@@ -10,6 +10,7 @@ import {
   type KeyboardEvent as ReactKeyboardEvent,
   type MouseEvent,
 } from "react";
+import { useTranslations } from "next-intl";
 import {
   Dialog,
   DialogContent,
@@ -168,6 +169,7 @@ export function PairingCommitteeGraphDialog({
   title,
   description,
 }: PairingCommitteeGraphDialogProps) {
+  const t = useTranslations("pairing.committeeGraph");
   const markerId = useId().replace(/:/g, "");
   const [focusedNodeId, setFocusedNodeId] = useState<string | null>(null);
   const [edgeTip, setEdgeTip] = useState<{
@@ -192,8 +194,7 @@ export function PairingCommitteeGraphDialog({
         students,
         tutors,
         canvasH,
-        subtitle:
-          "Click a student or tutor to show only their connections. Click an arrow for subject and time overlap. Click Clear focus to show everyone again.",
+        subtitle: t("subtitlePreview"),
       };
     }
 
@@ -212,13 +213,12 @@ export function PairingCommitteeGraphDialog({
       students,
       tutors,
       canvasH,
-      subtitle:
-        "Click a student or tutor to show only their queue overlaps with tutors or students. Click an arrow for overlapping subjects and times.",
+      subtitle: t("subtitleQueue"),
     };
-  }, [mode, requests, previews]);
+  }, [mode, requests, previews, t]);
 
   const { edges, nodes, students, tutors, canvasH, subtitle } = graph;
-  const dialogTitle = title ?? "Pairing committee graph";
+  const dialogTitle = title ?? t("defaultTitle");
   const dialogDescription = description ?? subtitle;
 
   const positions = useMemo(() => layoutColumns(students, tutors), [students, tutors]);
@@ -330,26 +330,24 @@ export function PairingCommitteeGraphDialog({
         <div className="flex flex-wrap items-center gap-2 shrink-0 pb-2">
           {focusedNodeId && focusedLabel && (
             <>
-              <span className="text-sm text-muted-foreground">Showing links for</span>
+              <span className="text-sm text-muted-foreground">{t("showingLinksFor")}</span>
               <Badge variant="secondary" className="font-medium">
                 {focusedLabel}
               </Badge>
               <Button type="button" variant="outline" size="sm" onClick={clearFocus}>
-                Clear focus
+                {t("clearFocus")}
               </Button>
             </>
           )}
         </div>
         <div className="flex-1 min-h-0 overflow-auto rounded-md border bg-muted/20 p-2 relative">
           {empty ? (
-            <p className="text-sm text-muted-foreground p-4">Nothing to graph yet.</p>
+            <p className="text-sm text-muted-foreground p-4">{t("nothingToGraph")}</p>
           ) : (
             <>
               {edges.length === 0 && mode === "queue" && (
                 <p className="text-sm text-amber-900 bg-amber-50 border border-amber-200 rounded-md p-2 mb-2">
-                  No subject or time overlap between any student and tutor in the queue. People are
-                  still shown below; add overlaps in profiles or run a preview to see proposed
-                  matches.
+                  {t("noOverlapWarning")}
                 </p>
               )}
               <svg
@@ -357,7 +355,7 @@ export function PairingCommitteeGraphDialog({
                 viewBox={`0 0 ${CANVAS_W} ${canvasH}`}
                 className="min-w-[640px] h-auto block"
                 role="img"
-                aria-label="Tutor and student connection graph"
+                aria-label={t("graphAriaLabel")}
               >
                 <defs>
                   <marker
@@ -418,12 +416,11 @@ export function PairingCommitteeGraphDialog({
                     );
                   const fill = isStudent ? "#eff6ff" : "#ecfdf5";
                   const stroke = isFocused ? "#2563eb" : isStudent ? "#60a5fa" : "#34d399";
+                  const roleLabel = isStudent ? t("roleStudent") : t("roleTutor");
                   const sub =
                     n.priority != null
-                      ? `${isStudent ? "Student" : "Tutor"} · P${n.priority}`
-                      : isStudent
-                        ? "Student"
-                        : "Tutor";
+                      ? t("roleWithPriority", { role: roleLabel, priority: n.priority })
+                      : roleLabel;
                   return (
                     <g
                       key={n.id}
@@ -493,7 +490,7 @@ export function PairingCommitteeGraphDialog({
                 <div
                   ref={tipRef}
                   role="dialog"
-                  aria-label="Overlap details"
+                  aria-label={t("overlapDetailsAriaLabel")}
                   className="fixed z-[200] w-[min(22rem,calc(100vw-2rem))] max-h-[min(70vh,24rem)] overflow-y-auto rounded-md border bg-popover p-3 text-popover-foreground shadow-lg"
                   style={(() => {
                     const pad = 8;
@@ -517,16 +514,16 @@ export function PairingCommitteeGraphDialog({
                   </div>
                   {edgeTip.edge.similarity != null && (
                     <p className="text-xs text-muted-foreground mb-2">
-                      Similarity score: {edgeTip.edge.similarity}
+                      {t("similarityScore", { score: edgeTip.edge.similarity })}
                     </p>
                   )}
                   <div className="space-y-2">
                     <div>
                       <p className="text-xs font-medium text-muted-foreground mb-1">
-                        Overlapping subjects
+                        {t("overlappingSubjects")}
                       </p>
                       {edgeTip.edge.subjects.length === 0 ? (
-                        <p className="text-xs text-muted-foreground">None listed</p>
+                        <p className="text-xs text-muted-foreground">{t("noneListed")}</p>
                       ) : (
                         <div className="flex flex-wrap gap-1">
                           {edgeTip.edge.subjects.map((s) => (
@@ -539,10 +536,10 @@ export function PairingCommitteeGraphDialog({
                     </div>
                     <div>
                       <p className="text-xs font-medium text-muted-foreground mb-1">
-                        Overlapping times
+                        {t("overlappingTimes")}
                       </p>
                       {edgeTip.edge.slots.length === 0 ? (
-                        <p className="text-xs text-muted-foreground">None listed</p>
+                        <p className="text-xs text-muted-foreground">{t("noneListed")}</p>
                       ) : (
                         <ul className="text-xs space-y-1 list-disc pl-4">
                           {edgeTip.edge.slots.map((slot, i) => (
@@ -559,7 +556,7 @@ export function PairingCommitteeGraphDialog({
                     className="mt-3 w-full"
                     onClick={() => setEdgeTip(null)}
                   >
-                    Close
+                    {t("close")}
                   </Button>
                 </div>
               )}

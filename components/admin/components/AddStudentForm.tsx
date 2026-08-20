@@ -1,5 +1,7 @@
+"use client";
 import { useState } from "react";
 import toast from "react-hot-toast";
+import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -47,6 +49,7 @@ const AddStudentForm = ({
   handleAddStudent,
   addingStudent,
 }: AddStudentFormProps) => {
+  const t = useTranslations("adminPeople");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("basic2");
 
@@ -115,44 +118,44 @@ const AddStudentForm = ({
     const missingFields: string[] = [];
 
     if (!newStudent.firstName || newStudent.firstName.trim() === "") {
-      missingFields.push("First Name");
+      missingFields.push(t("forms.addStudent.validation.firstName"));
     }
     if (!newStudent.lastName || newStudent.lastName.trim() === "") {
-      missingFields.push("Last Name");
+      missingFields.push(t("forms.addStudent.validation.lastName"));
     }
     if (!newStudent.age || newStudent.age.toString().trim() === "") {
-      missingFields.push("Age");
+      missingFields.push(t("forms.addStudent.validation.age"));
     }
     if (!newStudent.grade || newStudent.grade.trim() === "") {
-      missingFields.push("Grade");
+      missingFields.push(t("forms.addStudent.validation.grade"));
     }
     if (!newStudent.gender || newStudent.gender.trim() === "") {
-      missingFields.push("Gender");
+      missingFields.push(t("forms.addStudent.validation.gender"));
     }
     if (!newStudent.email || newStudent.email.trim() === "") {
-      missingFields.push("Student Email");
+      missingFields.push(t("forms.addStudent.validation.studentEmail"));
     }
     if (!newStudent.startDate || newStudent.startDate.trim() === "") {
-      missingFields.push("Start Date");
+      missingFields.push(t("forms.addStudent.validation.startDate"));
     }
     if (!newStudent.parentName || newStudent.parentName.trim() === "") {
-      missingFields.push("Parent/Guardian Name");
+      missingFields.push(t("forms.addStudent.validation.parentName"));
     }
     if (!newStudent.parentPhone || newStudent.parentPhone.trim() === "") {
-      missingFields.push("Parent Phone Number");
+      missingFields.push(t("forms.addStudent.validation.parentPhone"));
     }
     if (!newStudent.parentEmail || newStudent.parentEmail.trim() === "") {
-      missingFields.push("Parent Email Address");
+      missingFields.push(t("forms.addStudent.validation.parentEmail"));
     }
     if (!newStudent.timeZone || newStudent.timeZone.trim() === "") {
-      missingFields.push("Time Zone");
+      missingFields.push(t("forms.addStudent.validation.timeZone"));
     }
     if (!newStudent.studentNumber || newStudent.studentNumber.trim() === "") {
-      missingFields.push("Student Number");
+      missingFields.push(t("forms.addStudent.validation.studentNumber"));
     }
 
     if (missingFields.length > 0) {
-      return `Cannot add student. All Basic Form fields are required. Missing fields: ${missingFields.join(", ")}`;
+      return t("forms.addStudent.validation.prefix", { fields: missingFields.join(", ") });
     }
 
     return null;
@@ -179,11 +182,13 @@ const AddStudentForm = ({
   return (
     <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
       <DialogTrigger asChild>
-        <Button className="bg-connect-me-blue-2">Add Student</Button>
+        <Button className="bg-connect-me-blue-2">{t("forms.addStudent.trigger")}</Button>
       </DialogTrigger>
       <DialogContent className="max-w-2xl max-h-[90vh] p-0 flex flex-col">
         <DialogHeader className="px-6 py-4 border-b bg-gray-50/50 shrink-0">
-          <DialogTitle className="text-xl font-semibold text-gray-900">Add New Student</DialogTitle>
+          <DialogTitle className="text-xl font-semibold text-gray-900">
+            {t("forms.addStudent.dialogTitle")}
+          </DialogTitle>
         </DialogHeader>
 
         {/* Tab Navigation */}
@@ -197,7 +202,7 @@ const AddStudentForm = ({
                 : "border-transparent text-gray-600 hover:text-gray-900 hover:border-gray-300"
             }`}
           >
-            Basic Information (vertical)
+            {t("forms.addStudent.tabs.basicVertical")}
           </button>
           <button
             type="button"
@@ -208,7 +213,7 @@ const AddStudentForm = ({
                 : "border-transparent text-gray-600 hover:text-gray-900 hover:border-gray-300"
             }`}
           >
-            Basic Information
+            {t("forms.addStudent.tabs.basic")}
           </button>
           <button
             type="button"
@@ -219,7 +224,7 @@ const AddStudentForm = ({
                 : "border-transparent text-gray-600 hover:text-gray-900 hover:border-gray-300"
             }`}
           >
-            Extended Profile
+            {t("forms.addStudent.tabs.extended")}
           </button>
         </div>
 
@@ -232,7 +237,7 @@ const AddStudentForm = ({
               <div className="space-y-4">
                 <div className="grid grid-cols-4 items-center gap-4">
                   <Label htmlFor="studentNumber" className=" text-right">
-                    Student #
+                    {t("forms.addStudent.studentNumber.label")}
                   </Label>
                   <Input
                     id="studentNumber"
@@ -240,12 +245,12 @@ const AddStudentForm = ({
                     value={newStudent.studentNumber || ""}
                     onChange={handleInputChange}
                     className="col-span-3"
-                    placeholder="Enter student number"
+                    placeholder={t("forms.addStudent.studentNumber.placeholder")}
                   />
                 </div>
                 <div className="grid grid-cols-4 items-center gap-4">
                   <Label htmlFor="firstName" className="text-right">
-                    First Name
+                    {t("forms.common.firstName.label")}
                   </Label>
                   <Input
                     id="firstName"
@@ -253,12 +258,12 @@ const AddStudentForm = ({
                     value={newStudent.firstName}
                     onChange={handleInputChange}
                     className="col-span-3"
-                    placeholder="Enter First Name"
+                    placeholder={t("forms.common.firstName.placeholder")}
                   />
                 </div>
                 <div className="grid grid-cols-4 items-center gap-4">
                   <Label htmlFor="lastName" className="text-right">
-                    Last Name
+                    {t("forms.common.lastName.label")}
                   </Label>
                   <Input
                     id="lastName"
@@ -266,12 +271,12 @@ const AddStudentForm = ({
                     value={newStudent.lastName}
                     onChange={handleInputChange}
                     className="col-span-3"
-                    placeholder="Enter Last Name"
+                    placeholder={t("forms.common.lastName.placeholder")}
                   />
                 </div>
                 <div className="grid grid-cols-4 items-center gap-4">
                   <Label htmlFor="age" className="text-right">
-                    Age
+                    {t("forms.common.age.label")}
                   </Label>
                   <Input
                     id="age"
@@ -280,22 +285,24 @@ const AddStudentForm = ({
                     value={newStudent.age}
                     onChange={handleInputChange}
                     className="col-span-3"
-                    placeholder="Age"
+                    placeholder={t("forms.common.age.placeholder")}
                   />
                 </div>
                 <div className="grid grid-cols-4 items-center gap-4">
                   <Label htmlFor="grade" className="text-right">
-                    Grade
+                    {t("forms.common.grade.label")}
                   </Label>
                   <Select name="grade" value={newStudent.grade} onValueChange={handleGradeChange}>
                     <SelectTrigger className="col-span-3">
-                      <SelectValue placeholder="Select grade" />
+                      <SelectValue placeholder={t("forms.common.grade.placeholder")} />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="Kindergarten">Kindergarten</SelectItem>
+                      <SelectItem value="Kindergarten">
+                        {t("forms.common.grades.kindergarten")}
+                      </SelectItem>
                       {Array.from({ length: 12 }, (_, i) => (
                         <SelectItem key={i} value={`${i + 1}${getOrdinalSuffix(i + 1)}-grade`}>
-                          {`${i + 1}${getOrdinalSuffix(i + 1)} Grade`}
+                          {t(`forms.common.grades.grade${i + 1}` as any)}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -304,22 +311,22 @@ const AddStudentForm = ({
 
                 <div className="grid grid-cols-4 items-center gap-4">
                   <Label htmlFor="gender" className="text-right">
-                    Gender
+                    {t("forms.common.gender.label")}
                   </Label>
                   <Select name="gender" value={newStudent.gender} onValueChange={handleGender}>
                     <SelectTrigger className="col-span-3">
-                      <SelectValue placeholder="Select gender" />
+                      <SelectValue placeholder={t("forms.common.gender.placeholder")} />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="male">Male</SelectItem>
-                      <SelectItem value="female">Female</SelectItem>
-                      <SelectItem value="other">Other</SelectItem>
+                      <SelectItem value="male">{t("forms.common.gender.male")}</SelectItem>
+                      <SelectItem value="female">{t("forms.common.gender.female")}</SelectItem>
+                      <SelectItem value="other">{t("forms.common.gender.other")}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
                 <div className="grid grid-cols-4 items-center gap-4">
                   <Label htmlFor="email" className="text-right">
-                    Student Email
+                    {t("forms.addStudent.studentEmail.label")}
                   </Label>
                   <Input
                     id="email"
@@ -328,12 +335,12 @@ const AddStudentForm = ({
                     value={newStudent.email}
                     onChange={handleInputChange}
                     className="col-span-3"
-                    placeholder="Enter Student Email"
+                    placeholder={t("forms.addStudent.studentEmail.placeholderVertical")}
                   />
                 </div>
                 <div className="grid grid-cols-4 items-center gap-4">
                   <Label htmlFor="phoneNumber" className="text-right">
-                    Phone Number
+                    {t("forms.common.phoneNumber.label")}
                   </Label>
                   <Input
                     id="phoneNumber"
@@ -342,12 +349,12 @@ const AddStudentForm = ({
                     value={newStudent.phoneNumber}
                     onChange={handleInputChange}
                     className="col-span-3"
-                    placeholder="(555) 123-4567"
+                    placeholder={t("forms.common.phoneNumber.placeholder")}
                   />
                 </div>
                 <div className="grid grid-cols-4 items-center gap-4">
                   <Label htmlFor="startDate" className="text-right">
-                    Start Date
+                    {t("forms.common.startDate.label")}
                   </Label>
                   <Input
                     id="startDate"
@@ -360,20 +367,20 @@ const AddStudentForm = ({
                 </div>
                 <div className="grid grid-cols-4 items-center gap-4">
                   <Label htmlFor="parentName" className="text-right">
-                    Parent/Guardian Name
+                    {t("forms.addStudent.parentName.label")}
                   </Label>
                   <Input
                     id="parentName"
                     name="parentName"
                     value={newStudent.parentName}
                     onChange={handleInputChange}
-                    placeholder="Enter parent/guardian name"
+                    placeholder={t("forms.addStudent.parentName.placeholder")}
                     className="col-span-3"
                   />
                 </div>
                 <div className="grid grid-cols-4 items-center gap-4">
                   <Label htmlFor="parentPhone" className="text-right">
-                    Phone Number
+                    {t("forms.addStudent.parentPhone.label")}
                   </Label>
                   <Input
                     id="parentPhone"
@@ -381,14 +388,14 @@ const AddStudentForm = ({
                     type="tel"
                     value={newStudent.parentPhone}
                     onChange={handleInputChange}
-                    placeholder="(555) 123-4567"
+                    placeholder={t("forms.addStudent.parentPhone.placeholder")}
                     className="col-span-3"
                   />
                 </div>
 
                 <div className="grid grid-cols-4 items-center gap-4">
                   <Label htmlFor="parentEmail" className="text-right">
-                    Email Address
+                    {t("forms.addStudent.parentEmail.label")}
                   </Label>
                   <Input
                     id="parentEmail"
@@ -396,13 +403,13 @@ const AddStudentForm = ({
                     type="email"
                     value={newStudent.parentEmail}
                     onChange={handleInputChange}
-                    placeholder="parent@example.com"
+                    placeholder={t("forms.addStudent.parentEmail.placeholder")}
                     className="col-span-3"
                   />
                 </div>
                 <div className="grid grid-cols-4 items-center gap-4">
                   <Label htmlFor="timeZone" className="text-right">
-                    Time Zone
+                    {t("forms.common.timeZone.label")}
                   </Label>
                   <div className="col-span-3">
                     <TimeZoneSelector profile={newStudent} handleTimeZone={handleTimeZone} />
@@ -421,7 +428,7 @@ const AddStudentForm = ({
                       htmlFor="studentNumber"
                       className="text-sm font-medium text-gray-700 w-28 text-right"
                     >
-                      Student #
+                      {t("forms.addStudent.studentNumber.label")}
                     </Label>
                     <Input
                       id="studentNumber"
@@ -429,7 +436,7 @@ const AddStudentForm = ({
                       value={newStudent.studentNumber || ""}
                       onChange={handleInputChange}
                       className="flex-1"
-                      placeholder="Enter student number"
+                      placeholder={t("forms.addStudent.studentNumber.placeholder")}
                     />
                   </div>
                 </div>
@@ -437,33 +444,33 @@ const AddStudentForm = ({
                 {/* Personal Information Section */}
                 <div className="space-y-4 pt-2 border-t">
                   <h3 className="text-sm font-semibold text-gray-800 mb-3">
-                    Personal Information (Required)
+                    {t("forms.addStudent.personalInformation")}
                   </h3>
 
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label htmlFor="firstName" className="text-sm font-medium text-gray-700">
-                        First Name
+                        {t("forms.common.firstName.label")}
                       </Label>
                       <Input
                         id="firstName"
                         name="firstName"
                         value={newStudent.firstName}
                         onChange={handleInputChange}
-                        placeholder="Enter first name"
+                        placeholder={t("forms.common.firstName.placeholder")}
                       />
                     </div>
 
                     <div className="space-y-2">
                       <Label htmlFor="lastName" className="text-sm font-medium text-gray-700">
-                        Last Name
+                        {t("forms.common.lastName.label")}
                       </Label>
                       <Input
                         id="lastName"
                         name="lastName"
                         value={newStudent.lastName}
                         onChange={handleInputChange}
-                        placeholder="Enter last name"
+                        placeholder={t("forms.common.lastName.placeholder")}
                       />
                     </div>
                   </div>
@@ -471,7 +478,7 @@ const AddStudentForm = ({
                   <div className="grid grid-cols-3 gap-4">
                     <div className="space-y-2">
                       <Label htmlFor="age" className="text-sm font-medium text-gray-700">
-                        Age
+                        {t("forms.common.age.label")}
                       </Label>
                       <Input
                         id="age"
@@ -479,13 +486,13 @@ const AddStudentForm = ({
                         type="number"
                         value={newStudent.age}
                         onChange={handleInputChange}
-                        placeholder="Age"
+                        placeholder={t("forms.common.age.placeholder")}
                       />
                     </div>
 
                     <div className="space-y-2">
                       <Label htmlFor="grade" className="text-sm font-medium text-gray-700">
-                        Grade
+                        {t("forms.common.grade.label")}
                       </Label>
                       <Select
                         name="grade"
@@ -493,13 +500,15 @@ const AddStudentForm = ({
                         onValueChange={handleGradeChange}
                       >
                         <SelectTrigger>
-                          <SelectValue placeholder="Select grade" />
+                          <SelectValue placeholder={t("forms.common.grade.placeholder")} />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="Kindergarten">Kindergarten</SelectItem>
+                          <SelectItem value="Kindergarten">
+                            {t("forms.common.grades.kindergarten")}
+                          </SelectItem>
                           {Array.from({ length: 12 }, (_, i) => (
                             <SelectItem key={i} value={`${i + 1}${getOrdinalSuffix(i + 1)}-grade`}>
-                              {`${i + 1}${getOrdinalSuffix(i + 1)} Grade`}
+                              {t(`forms.common.grades.grade${i + 1}` as any)}
                             </SelectItem>
                           ))}
                         </SelectContent>
@@ -508,16 +517,16 @@ const AddStudentForm = ({
 
                     <div className="space-y-2">
                       <Label htmlFor="gender" className="text-sm font-medium text-gray-700">
-                        Gender
+                        {t("forms.common.gender.label")}
                       </Label>
                       <Select name="gender" value={newStudent.gender} onValueChange={handleGender}>
                         <SelectTrigger>
-                          <SelectValue placeholder="Select gender" />
+                          <SelectValue placeholder={t("forms.common.gender.placeholder")} />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="male">Male</SelectItem>
-                          <SelectItem value="female">Female</SelectItem>
-                          <SelectItem value="other">Other</SelectItem>
+                          <SelectItem value="male">{t("forms.common.gender.male")}</SelectItem>
+                          <SelectItem value="female">{t("forms.common.gender.female")}</SelectItem>
+                          <SelectItem value="other">{t("forms.common.gender.other")}</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
@@ -526,7 +535,7 @@ const AddStudentForm = ({
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label htmlFor="email" className="text-sm font-medium text-gray-700">
-                        Student Email
+                        {t("forms.addStudent.studentEmail.label")}
                       </Label>
                       <Input
                         id="email"
@@ -534,13 +543,13 @@ const AddStudentForm = ({
                         type="email"
                         value={newStudent.email}
                         onChange={handleInputChange}
-                        placeholder="student@example.com"
+                        placeholder={t("forms.addStudent.studentEmail.placeholder")}
                       />
                     </div>
 
                     <div className="space-y-2">
                       <Label htmlFor="startDate" className="text-sm font-medium text-gray-700">
-                        Start Date
+                        {t("forms.common.startDate.label")}
                       </Label>
                       <Input
                         id="startDate"
@@ -556,26 +565,26 @@ const AddStudentForm = ({
                 {/* Parent Information Section */}
                 <div className="space-y-4 pt-2 border-t">
                   <h3 className="text-sm font-semibold text-gray-800 mb-3">
-                    Parent/Guardian Information (Required)
+                    {t("forms.addStudent.parentInformation")}
                   </h3>
 
                   <div className="space-y-2">
                     <Label htmlFor="parentName" className="text-sm font-medium text-gray-700">
-                      Parent/Guardian Name
+                      {t("forms.addStudent.parentName.label")}
                     </Label>
                     <Input
                       id="parentName"
                       name="parentName"
                       value={newStudent.parentName}
                       onChange={handleInputChange}
-                      placeholder="Enter parent/guardian name"
+                      placeholder={t("forms.addStudent.parentName.placeholder")}
                     />
                   </div>
 
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label htmlFor="parentPhone" className="text-sm font-medium text-gray-700">
-                        Phone Number
+                        {t("forms.addStudent.parentPhone.label")}
                       </Label>
                       <Input
                         id="parentPhone"
@@ -583,13 +592,13 @@ const AddStudentForm = ({
                         type="tel"
                         value={newStudent.parentPhone}
                         onChange={handleInputChange}
-                        placeholder="(555) 123-4567"
+                        placeholder={t("forms.addStudent.parentPhone.placeholder")}
                       />
                     </div>
 
                     <div className="space-y-2">
                       <Label htmlFor="parentEmail" className="text-sm font-medium text-gray-700">
-                        Email Address
+                        {t("forms.addStudent.parentEmail.label")}
                       </Label>
                       <Input
                         id="parentEmail"
@@ -597,14 +606,14 @@ const AddStudentForm = ({
                         type="email"
                         value={newStudent.parentEmail}
                         onChange={handleInputChange}
-                        placeholder="parent@example.com"
+                        placeholder={t("forms.addStudent.parentEmail.placeholder")}
                       />
                     </div>
                   </div>
 
                   <div className="space-y-2">
                     <Label htmlFor="timeZone" className="text-sm font-medium text-gray-700">
-                      Time Zone
+                      {t("forms.common.timeZone.label")}
                     </Label>
                     <TimeZoneSelector profile={newStudent} handleTimeZone={handleTimeZone} />
                   </div>
@@ -619,7 +628,9 @@ const AddStudentForm = ({
                 {/* Availability Section */}
                 <div className="space-y-4">
                   <div className="flex items-center justify-between">
-                    <h3 className="text-lg font-semibold text-gray-800">Availability Schedule</h3>
+                    <h3 className="text-lg font-semibold text-gray-800">
+                      {t("forms.common.availabilitySchedule")}
+                    </h3>
                     <Button
                       type="button"
                       variant="outline"
@@ -628,14 +639,14 @@ const AddStudentForm = ({
                       className="flex items-center gap-2"
                     >
                       <Plus className="h-4 w-4" />
-                      Add Time Slot
+                      {t("forms.common.addTimeSlot")}
                     </Button>
                   </div>
 
                   {availability.length === 0 ? (
                     <div className="text-center py-8 text-gray-500 bg-gray-50 rounded-lg border-2 border-dashed">
-                      <p className="mb-2">No availability slots added yet</p>
-                      <p className="text-sm">{`  Click "Add Time Slot" to get started`}</p>
+                      <p className="mb-2">{t("forms.common.noAvailabilitySlots")}</p>
+                      <p className="text-sm">{`  ${t("forms.common.clickAddTimeSlot")}`}</p>
                     </div>
                   ) : (
                     <div className="space-y-3">
@@ -655,7 +666,7 @@ const AddStudentForm = ({
                               <SelectContent>
                                 {DAYS_OF_WEEK.map((day) => (
                                   <SelectItem key={day} value={day}>
-                                    {day}
+                                    {t(`forms.common.days.${day.toLowerCase()}` as any)}
                                   </SelectItem>
                                 ))}
                               </SelectContent>
@@ -671,7 +682,7 @@ const AddStudentForm = ({
                               }
                               className="w-32"
                             />
-                            <span className="text-gray-500 text-sm">to</span>
+                            <span className="text-gray-500 text-sm">{t("forms.common.to")}</span>
                             <Input
                               type="time"
                               value={slot.endTime}
@@ -699,12 +710,14 @@ const AddStudentForm = ({
 
                 {/* Subjects Section */}
                 <div className="space-y-4">
-                  <h3 className="text-lg font-semibold text-gray-800">Subjects of Interest</h3>
+                  <h3 className="text-lg font-semibold text-gray-800">
+                    {t("forms.common.subjectsOfInterest")}
+                  </h3>
 
                   <div className="flex gap-2">
                     <Input
                       type="text"
-                      placeholder="e.g., Mathematics, Physics, Chemistry"
+                      placeholder={t("forms.common.subjectsPlaceholderLong")}
                       value={newSubject}
                       onChange={(e) => setNewSubject(e.target.value)}
                       onKeyPress={(e) => e.key === "Enter" && (e.preventDefault(), addSubject())}
@@ -739,12 +752,14 @@ const AddStudentForm = ({
 
                 {/* Languages Section */}
                 <div className="space-y-4">
-                  <h3 className="text-lg font-semibold text-gray-800">Languages Spoken</h3>
+                  <h3 className="text-lg font-semibold text-gray-800">
+                    {t("forms.common.languagesSpoken")}
+                  </h3>
 
                   <div className="flex gap-2">
                     <Input
                       type="text"
-                      placeholder="e.g., English, Spanish, French"
+                      placeholder={t("forms.common.languagesPlaceholderLong")}
                       value={newLanguage}
                       onChange={(e) => setNewLanguage(e.target.value)}
                       onKeyPress={(e) => e.key === "Enter" && (e.preventDefault(), addLanguage())}
@@ -784,10 +799,10 @@ const AddStudentForm = ({
         {/* Footer with Action Button */}
         <div className="px-6 py-4 border-t bg-gray-50/50 flex justify-end gap-3 shrink-0">
           <Button variant="outline" onClick={() => setIsModalOpen(false)} disabled={addingStudent}>
-            Cancel
+            {t("forms.addStudent.cancel")}
           </Button>
           <Button onClick={handleEnhancedAddStudent} disabled={addingStudent}>
-            {addingStudent ? "Adding..." : "Add Student"}
+            {addingStudent ? t("forms.addStudent.submitting") : t("forms.addStudent.submit")}
           </Button>
         </div>
       </DialogContent>

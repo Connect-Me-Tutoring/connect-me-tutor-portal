@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { useTranslations } from "next-intl";
 import axios from "axios";
 import toast from "react-hot-toast";
 import { Button } from "@/components/ui/button";
@@ -38,6 +39,7 @@ function previewKey(p: PairingMatchPreview): string {
 }
 
 export function PairingRunLogsPage() {
+  const t = useTranslations("pairing.runLogs");
   const router = useRouter();
   const searchParams = useSearchParams();
   const runId = searchParams.get("runId");
@@ -148,7 +150,7 @@ export function PairingRunLogsPage() {
     if (!run) return;
 
     if (!isLegacyPreview && selectedKeys.size === 0) {
-      toast.error("Select at least one proposed match to apply");
+      toast.error(t("toasts.selectAtLeastOne"));
       return;
     }
 
@@ -176,9 +178,9 @@ export function PairingRunLogsPage() {
     });
 
     toast.promise(promise, {
-      success: "Applied this run's saved queue changes",
-      error: "Failed to apply this run",
-      loading: "Applying saved run...",
+      success: t("toasts.applySuccess"),
+      error: t("toasts.applyError"),
+      loading: t("toasts.applying"),
     });
 
     try {
@@ -204,12 +206,12 @@ export function PairingRunLogsPage() {
     return (
       <Card>
         <CardHeader>
-          <CardTitle>Pairing Run Logs</CardTitle>
+          <CardTitle>{t("cardTitle")}</CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
-          <p className="text-sm text-muted-foreground">No saved preview run found for this page.</p>
+          <p className="text-sm text-muted-foreground">{t("noSavedRun")}</p>
           <Button variant="outline" onClick={() => router.push("/dashboard/pairing-que")}>
-            Back to Pairing Queue
+            {t("backToQueue")}
           </Button>
         </CardContent>
       </Card>
@@ -233,23 +235,23 @@ export function PairingRunLogsPage() {
         }
         title={
           graphScope === "selected"
-            ? "Selected for apply"
+            ? t("graphDialog.selectedTitle")
             : graphScope === "complete"
-              ? "All proposed matches"
+              ? t("graphDialog.completeTitle")
               : undefined
         }
         description={
           graphScope === "selected"
-            ? "Only checked rows will be applied. Arrows: student → tutor."
+            ? t("graphDialog.selectedDescription")
             : graphScope === "complete"
-              ? "Every pairing in this preview run. Compare with your selection before applying."
+              ? t("graphDialog.completeDescription")
               : undefined
         }
       />
 
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle>Pairing Run Logs</CardTitle>
+          <CardTitle>{t("cardTitle")}</CardTitle>
           <div className="flex flex-wrap gap-2">
             {hasOverlapData && (
               <>
@@ -259,14 +261,10 @@ export function PairingRunLogsPage() {
                   className="gap-2"
                   onClick={() => setGraphScope("selected")}
                   disabled={!canShowSelectedGraph}
-                  title={
-                    !canShowSelectedGraph
-                      ? "Select at least one row in the overlap table"
-                      : undefined
-                  }
+                  title={!canShowSelectedGraph ? t("actions.selectRowHint") : undefined}
                 >
                   <Waypoints className="h-4 w-4" />
-                  Selected graph
+                  {t("actions.selectedGraph")}
                 </Button>
                 <Button
                   type="button"
@@ -276,7 +274,7 @@ export function PairingRunLogsPage() {
                   disabled={!canShowGraph}
                 >
                   <Waypoints className="h-4 w-4" />
-                  All proposed
+                  {t("actions.allProposed")}
                 </Button>
               </>
             )}
@@ -289,11 +287,11 @@ export function PairingRunLogsPage() {
                 disabled={!canShowGraph}
               >
                 <Waypoints className="h-4 w-4" />
-                View graph
+                {t("actions.viewGraph")}
               </Button>
             )}
             <Button variant="outline" onClick={() => router.push("/dashboard/pairing-que/logs")}>
-              View Global Logs
+              {t("actions.viewGlobalLogs")}
             </Button>
             <Button
               onClick={handleApplyRun}
@@ -304,34 +302,41 @@ export function PairingRunLogsPage() {
               }
             >
               {run.appliedAt
-                ? "Already Applied"
+                ? t("actions.alreadyApplied")
                 : isLegacyPreview
-                  ? "Apply This Run"
-                  : `Apply selected (${selectedKeys.size})`}
+                  ? t("actions.applyThisRun")
+                  : t("actions.applySelected", { count: selectedKeys.size })}
             </Button>
           </div>
         </CardHeader>
         <CardContent className="space-y-3">
           <div className="text-sm text-muted-foreground">
-            Run ID: <span className="font-mono">{run.runId}</span>
+            {t("runIdLabel")} <span className="font-mono">{run.runId}</span>
           </div>
-          <div className="text-sm text-muted-foreground">Created: {createdAtText}</div>
+          <div className="text-sm text-muted-foreground">
+            {t("createdLabel")} {createdAtText}
+          </div>
           {run.appliedAt && (
             <div className="text-sm text-green-700">
-              Applied at {new Date(run.appliedAt).toLocaleString()}
+              {t("appliedAt", { date: new Date(run.appliedAt).toLocaleString() })}
             </div>
           )}
           <div className="flex flex-wrap gap-2">
-            <Badge variant="outline">Proposed matches: {run.preview.summary.matchesToInsert}</Badge>
-            <Badge variant="outline">Run logs: {run.preview.summary.logsToInsert}</Badge>
+            <Badge variant="outline">
+              {t("badges.proposedMatches", { count: run.preview.summary.matchesToInsert })}
+            </Badge>
+            <Badge variant="outline">
+              {t("badges.runLogs", { count: run.preview.summary.logsToInsert })}
+            </Badge>
             {hasOverlapData && (
-              <Badge variant="secondary">Selected to apply: {selectedKeys.size}</Badge>
+              <Badge variant="secondary">
+                {t("badges.selectedToApply", { count: selectedKeys.size })}
+              </Badge>
             )}
           </div>
           {isLegacyPreview && (
             <p className="text-sm text-amber-800 bg-amber-50 border border-amber-200 rounded-md p-2">
-              This preview was saved before overlap metadata existed. Apply will insert all proposed
-              matches. Run a new preview for overlap review and selective apply.
+              {t("legacyPreviewWarning")}
             </p>
           )}
         </CardContent>
@@ -340,7 +345,7 @@ export function PairingRunLogsPage() {
       {hasOverlapData && (
         <Card>
           <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-2">
-            <CardTitle>Review overlap before apply</CardTitle>
+            <CardTitle>{t("overlapReview.cardTitle")}</CardTitle>
             <div className="flex flex-wrap gap-2">
               <Button
                 type="button"
@@ -349,12 +354,10 @@ export function PairingRunLogsPage() {
                 className="gap-1.5"
                 onClick={() => setGraphScope("selected")}
                 disabled={!canShowSelectedGraph}
-                title={
-                  !canShowSelectedGraph ? "Select at least one row in the table below" : undefined
-                }
+                title={!canShowSelectedGraph ? t("overlapReview.selectRowHint") : undefined}
               >
                 <Waypoints className="h-4 w-4 shrink-0" />
-                Selected graph
+                {t("actions.selectedGraph")}
               </Button>
               <Button
                 type="button"
@@ -365,13 +368,13 @@ export function PairingRunLogsPage() {
                 disabled={!canShowGraph}
               >
                 <Waypoints className="h-4 w-4 shrink-0" />
-                All proposed
+                {t("actions.allProposed")}
               </Button>
               <Button type="button" variant="outline" size="sm" onClick={selectAllVisible}>
-                Select all (visible)
+                {t("overlapReview.selectAllVisible")}
               </Button>
               <Button type="button" variant="outline" size="sm" onClick={clearAll}>
-                Clear all
+                {t("overlapReview.clearAll")}
               </Button>
               <Button
                 type="button"
@@ -379,7 +382,9 @@ export function PairingRunLogsPage() {
                 size="sm"
                 onClick={() => setShowNoOverlapOnly((v) => !v)}
               >
-                {showNoOverlapOnly ? "Show all" : "Show no-overlap only"}
+                {showNoOverlapOnly
+                  ? t("overlapReview.showAll")
+                  : t("overlapReview.showNoOverlapOnly")}
               </Button>
             </div>
           </CardHeader>
@@ -389,18 +394,18 @@ export function PairingRunLogsPage() {
                 <TableHeader>
                   <TableRow>
                     <TableHead className="w-10" />
-                    <TableHead>Student</TableHead>
-                    <TableHead>Tutor</TableHead>
-                    <TableHead>Similarity</TableHead>
-                    <TableHead>Subject overlap</TableHead>
-                    <TableHead>Time overlap</TableHead>
+                    <TableHead>{t("overlapReview.student")}</TableHead>
+                    <TableHead>{t("overlapReview.tutor")}</TableHead>
+                    <TableHead>{t("overlapReview.similarity")}</TableHead>
+                    <TableHead>{t("overlapReview.subjectOverlap")}</TableHead>
+                    <TableHead>{t("overlapReview.timeOverlap")}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {visiblePreviews.length === 0 ? (
                     <TableRow>
                       <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
-                        No proposed matches in this filter.
+                        {t("overlapReview.noMatchesInFilter")}
                       </TableCell>
                     </TableRow>
                   ) : (
@@ -413,7 +418,10 @@ export function PairingRunLogsPage() {
                             <Checkbox
                               checked={checked}
                               onCheckedChange={(v) => toggleKey(key, v === true)}
-                              aria-label={`Select match ${p.student_name} / ${p.tutor_name}`}
+                              aria-label={t("overlapReview.selectMatchAriaLabel", {
+                                student: p.student_name,
+                                tutor: p.tutor_name,
+                              })}
                             />
                           </TableCell>
                           <TableCell className="font-medium">{p.student_name}</TableCell>
@@ -424,7 +432,9 @@ export function PairingRunLogsPage() {
                           <TableCell>
                             <div className="flex flex-wrap gap-1 max-w-xs">
                               {p.overlapping_subjects.length === 0 ? (
-                                <span className="text-xs text-muted-foreground">None</span>
+                                <span className="text-xs text-muted-foreground">
+                                  {t("overlapReview.none")}
+                                </span>
                               ) : (
                                 p.overlapping_subjects.map((s) => (
                                   <Badge key={s} variant="secondary" className="text-xs">
@@ -437,7 +447,9 @@ export function PairingRunLogsPage() {
                           <TableCell>
                             <div className="flex flex-col gap-1 max-w-sm">
                               {p.overlapping_slots.length === 0 ? (
-                                <span className="text-xs text-muted-foreground">None</span>
+                                <span className="text-xs text-muted-foreground">
+                                  {t("overlapReview.none")}
+                                </span>
                               ) : (
                                 p.overlapping_slots.map((slot, i) => (
                                   <Badge
@@ -463,7 +475,7 @@ export function PairingRunLogsPage() {
             <div className="md:hidden space-y-4">
               {visiblePreviews.length === 0 ? (
                 <div className="text-center py-8 text-muted-foreground">
-                  No proposed matches in this filter.
+                  {t("overlapReview.noMatchesInFilter")}
                 </div>
               ) : (
                 visiblePreviews.map((p) => {
@@ -475,22 +487,30 @@ export function PairingRunLogsPage() {
                         <Checkbox
                           checked={checked}
                           onCheckedChange={(v) => toggleKey(key, v === true)}
-                          aria-label={`Select match ${p.student_name} / ${p.tutor_name}`}
+                          aria-label={t("overlapReview.selectMatchAriaLabel", {
+                            student: p.student_name,
+                            tutor: p.tutor_name,
+                          })}
                         />
                         <div className="text-sm">
                           <div className="font-medium">{p.student_name}</div>
-                          <div className="text-muted-foreground">with {p.tutor_name}</div>
+                          <div className="text-muted-foreground">
+                            {t("overlapReview.withTutor", { tutorName: p.tutor_name })}
+                          </div>
                         </div>
                       </div>
                       <div className="text-sm">
-                        Similarity:{" "}
-                        {typeof p.similarity === "number" ? p.similarity.toFixed(2) : "—"}
+                        {t("overlapReview.similarityValue", {
+                          value: typeof p.similarity === "number" ? p.similarity.toFixed(2) : "—",
+                        })}
                       </div>
                       <div className="text-sm">
-                        <div className="font-medium mb-1">Subject overlap</div>
+                        <div className="font-medium mb-1">{t("overlapReview.subjectOverlap")}</div>
                         <div className="flex flex-wrap gap-1">
                           {p.overlapping_subjects.length === 0 ? (
-                            <span className="text-xs text-muted-foreground">None</span>
+                            <span className="text-xs text-muted-foreground">
+                              {t("overlapReview.none")}
+                            </span>
                           ) : (
                             p.overlapping_subjects.map((s) => (
                               <Badge key={s} variant="secondary" className="text-xs">
@@ -501,10 +521,12 @@ export function PairingRunLogsPage() {
                         </div>
                       </div>
                       <div className="text-sm">
-                        <div className="font-medium mb-1">Time overlap</div>
+                        <div className="font-medium mb-1">{t("overlapReview.timeOverlap")}</div>
                         <div className="flex flex-col gap-1">
                           {p.overlapping_slots.length === 0 ? (
-                            <span className="text-xs text-muted-foreground">None</span>
+                            <span className="text-xs text-muted-foreground">
+                              {t("overlapReview.none")}
+                            </span>
                           ) : (
                             p.overlapping_slots.map((slot, i) => (
                               <Badge
@@ -529,24 +551,26 @@ export function PairingRunLogsPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Logs for this run only ({run.preview.logs.length})</CardTitle>
+          <CardTitle>
+            {t("runLogsTable.cardTitle", { count: run.preview.logs.length })}
+          </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="hidden md:block rounded-md border">
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Step</TableHead>
-                  <TableHead>Type</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Message</TableHead>
+                  <TableHead>{t("runLogsTable.step")}</TableHead>
+                  <TableHead>{t("runLogsTable.type")}</TableHead>
+                  <TableHead>{t("runLogsTable.status")}</TableHead>
+                  <TableHead>{t("runLogsTable.message")}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {run.preview.logs.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={4} className="text-center py-8 text-muted-foreground">
-                      No logs captured in this run.
+                      {t("runLogsTable.noLogsCaptured")}
                     </TableCell>
                   </TableRow>
                 ) : (
@@ -556,7 +580,7 @@ export function PairingRunLogsPage() {
                       <TableCell>{log.type}</TableCell>
                       <TableCell>
                         <Badge variant={log.error ? "destructive" : "outline"}>
-                          {log.error ? "error" : "ok"}
+                          {log.error ? t("runLogsTable.statusError") : t("runLogsTable.statusOk")}
                         </Badge>
                       </TableCell>
                       <TableCell>{log.message}</TableCell>
@@ -570,15 +594,17 @@ export function PairingRunLogsPage() {
           <div className="md:hidden space-y-4">
             {run.preview.logs.length === 0 ? (
               <div className="text-center py-8 text-muted-foreground">
-                No logs captured in this run.
+                {t("runLogsTable.noLogsCaptured")}
               </div>
             ) : (
               run.preview.logs.map((log, index) => (
                 <MobileCard key={`${log.type}-${index}`}>
                   <div className="flex justify-between items-start gap-2">
-                    <div className="text-sm font-mono text-muted-foreground">Step {index + 1}</div>
+                    <div className="text-sm font-mono text-muted-foreground">
+                      {t("runLogsTable.stepLabel", { number: index + 1 })}
+                    </div>
                     <Badge variant={log.error ? "destructive" : "outline"}>
-                      {log.error ? "error" : "ok"}
+                      {log.error ? t("runLogsTable.statusError") : t("runLogsTable.statusOk")}
                     </Badge>
                   </div>
                   <div className="text-sm">{log.type}</div>

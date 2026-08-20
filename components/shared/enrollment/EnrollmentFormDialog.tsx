@@ -1,5 +1,6 @@
 "use client";
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import { ChevronDown, Check, Circle, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
@@ -86,8 +87,13 @@ const EnrollmentFormDialog: React.FC<EnrollmentFormDialogProps> = ({
   const [studentSearch, setStudentSearch] = useState("");
   const [tutorSearch, setTutorSearch] = useState("");
 
-  const title = mode === "add" ? "Add New Enrollment" : "Edit Enrollment";
-  const submitLabel = mode === "add" ? "Add Enrollment" : "Update Enrollment";
+  const t = useTranslations("adminEnrollments.dialogs");
+  const tForm = useTranslations("adminEnrollments.dialogs.form");
+  const tFrequency = useTranslations("adminEnrollments.frequency");
+
+  const title = mode === "add" ? t("add.title") : t("edit.title");
+  const submitLabel = mode === "add" ? t("add.submit") : t("edit.submit");
+  const description = mode === "add" ? t("add.description") : t("edit.description");
   const selectedStudent = students.find((student) => student.id === selectedStudentId);
   const selectedTutor = tutors.find((tutor) => tutor.id === selectedTutorId);
 
@@ -95,15 +101,13 @@ const EnrollmentFormDialog: React.FC<EnrollmentFormDialogProps> = ({
     <DialogContent className="sm:max-w-[500px]">
       <DialogHeader>
         <DialogTitle>{title}</DialogTitle>
-        <DialogDescription className="sr-only">
-          {mode === "add" ? "add a new enrollment" : "edit enrollment details"}
-        </DialogDescription>
+        <DialogDescription className="sr-only">{description}</DialogDescription>
       </DialogHeader>
       <ScrollArea className="max-h-[calc(80vh-120px)] pr-4">
         {enrollment && (
           <div className="grid gap-4 py-4">
             <div className="grid grid-cols-4 items-center gap-4">
-              <Label className="text-right">Student</Label>
+              <Label className="text-right">{tForm("studentLabel")}</Label>
               <Popover open={openStudentOptions} onOpenChange={setOpenStudentOptions}>
                 <PopoverTrigger asChild>
                   <Button
@@ -114,19 +118,19 @@ const EnrollmentFormDialog: React.FC<EnrollmentFormDialogProps> = ({
                   >
                     {selectedStudent
                       ? `${selectedStudent.firstName} ${selectedStudent.lastName}`
-                      : "Select a student"}
+                      : tForm("selectStudentPlaceholder")}
                     <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent>
                   <Command>
                     <CommandInput
-                      placeholder="Search student..."
+                      placeholder={tForm("searchStudentPlaceholder")}
                       value={studentSearch}
                       onValueChange={setStudentSearch}
                     />
                     <CommandList>
-                      <CommandEmpty>No student found.</CommandEmpty>
+                      <CommandEmpty>{tForm("noStudentFound")}</CommandEmpty>
                       <CommandGroup>
                         {students.map((student) => (
                           <CommandItem
@@ -160,7 +164,7 @@ const EnrollmentFormDialog: React.FC<EnrollmentFormDialogProps> = ({
               {context === "admin" ? (
                 <>
                   {" "}
-                  <Label className="text-right">Tutor</Label>
+                  <Label className="text-right">{tForm("tutorLabel")}</Label>
                   <Popover open={openTutorOptions} onOpenChange={setOpenTutorOptions}>
                     <PopoverTrigger asChild>
                       <Button
@@ -171,19 +175,19 @@ const EnrollmentFormDialog: React.FC<EnrollmentFormDialogProps> = ({
                       >
                         {selectedTutor
                           ? `${selectedTutor.firstName} ${selectedTutor.lastName}`
-                          : "Select a tutor"}
+                          : tForm("selectTutorPlaceholder")}
                         <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                       </Button>
                     </PopoverTrigger>
                     <PopoverContent>
                       <Command>
                         <CommandInput
-                          placeholder="Search Tutor..."
+                          placeholder={tForm("searchTutorPlaceholder")}
                           value={tutorSearch}
                           onValueChange={setTutorSearch}
                         />
                         <CommandList>
-                          <CommandEmpty>No Tutor found.</CommandEmpty>
+                          <CommandEmpty>{tForm("noTutorFound")}</CommandEmpty>
                           <CommandGroup>
                             {tutors.map((tutor) => (
                               <CommandItem
@@ -223,25 +227,25 @@ const EnrollmentFormDialog: React.FC<EnrollmentFormDialogProps> = ({
             />
 
             <div className="grid grid-cols-[80px_1fr] items-center gap-4">
-              <Label className="text-right">Frequency</Label>
+              <Label className="text-right">{tForm("frequencyLabel")}</Label>
               <div className="flex items-center gap-2">
                 <Select value={enrollment.frequency} onValueChange={onFrequencyChange}>
                   <SelectTrigger className="w-full">
-                    <SelectValue placeholder="weekly" />
+                    <SelectValue placeholder={tFrequency("weekly")} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="weekly">Weekly</SelectItem>
+                    <SelectItem value="weekly">{tFrequency("weekly")}</SelectItem>
                     <SelectItem value="biweekly" disabled={mode === "edit"}>
-                      Biweekly
+                      {tFrequency("biweekly")}
                     </SelectItem>
                   </SelectContent>
                 </Select>
               </div>
 
-              <Label className="text-right">Summary</Label>
+              <Label className="text-right">{tForm("summaryLabel")}</Label>
               <Input name="summary" value={enrollment.summary} onChange={onInputChange} />
 
-              <Label className="text-right">Start Date</Label>
+              <Label className="text-right">{tForm("startDateLabel")}</Label>
               <Input
                 name="startDate"
                 type="date"
@@ -251,7 +255,7 @@ const EnrollmentFormDialog: React.FC<EnrollmentFormDialogProps> = ({
             </div>
 
             <div>
-              <Label>Meeting Link</Label>
+              <Label>{tForm("meetingLinkLabel")}</Label>
               <Select
                 value={enrollment.meetingId}
                 disabled={isCheckingMeetingAvailability}
@@ -261,16 +265,16 @@ const EnrollmentFormDialog: React.FC<EnrollmentFormDialogProps> = ({
                 onValueChange={(value) => onInputChange({ target: { name: "meetingId", value } })}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Select a meeting link">
+                  <SelectValue placeholder={tForm("selectMeetingLinkPlaceholder")}>
                     {isCheckingMeetingAvailability ? (
                       <>
-                        Checking meeting availabilites
+                        {tForm("checkingAvailability")}
                         <Loader2 className="mx-2 h-4 w-4 animate-spin" />
                       </>
                     ) : enrollment.meetingId ? (
                       meetings.find((meeting) => meeting.id === enrollment.meetingId)?.name
                     ) : (
-                      "Select a meeting"
+                      tForm("selectMeetingPlaceholder")
                     )}
                   </SelectValue>
                 </SelectTrigger>

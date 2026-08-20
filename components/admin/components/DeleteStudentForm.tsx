@@ -1,4 +1,6 @@
+"use client";
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -34,18 +36,20 @@ const DeleteStudentForm = ({
   setSelectedStudentId,
   handleDeleteStudent,
 }: DeleteStudentFormProps) => {
+  const t = useTranslations("adminPeople.forms.deleteStudent");
+
   return (
     <Dialog>
       <DialogTrigger asChild>
-        <Button className="bg-connect-me-blue-3">Delete Student</Button>
+        <Button className="bg-connect-me-blue-3">{t("trigger")}</Button>
       </DialogTrigger>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle>Select a Student to Delete</DialogTitle>
+          <DialogTitle>{t("dialogTitle")}</DialogTitle>
         </DialogHeader>
         <div className="grid gap-4 py-4">
           <Label htmlFor="studentSelect" className="text-right">
-            Student
+            {t("studentLabel")}
           </Label>
           <div className="relative">
             <Combobox
@@ -61,7 +65,7 @@ const DeleteStudentForm = ({
           </div>
         </div>
         <Button onClick={handleDeleteStudent} disabled={!selectedStudentId} className="w-full">
-          Confirm Deletion
+          {t("confirm")}
         </Button>
       </DialogContent>
     </Dialog>

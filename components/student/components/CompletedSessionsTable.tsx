@@ -1,5 +1,8 @@
+"use client";
+
 import React from "react";
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import { formatSessionDate } from "@/lib/utils";
 import { Session, Meeting } from "@/types";
 import { Button } from "@/components/ui/button";
@@ -74,6 +77,7 @@ const CompletedSessionsTable = ({
 }: any) => {
   const [isMeetingNotesOpen, setIsMeetingNotesOpen] = useState(false);
   const SC = useDashboardContext();
+  const t = useTranslations("student.tables.common");
 
   return (
     <>
@@ -81,11 +85,11 @@ const CompletedSessionsTable = ({
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Mark Status</TableHead>
-              <TableHead>Date</TableHead>
-              <TableHead>Title</TableHead>
-              <TableHead>Tutor</TableHead>
-              <TableHead>Meeting Notes</TableHead>
+              <TableHead>{t("headers.markStatus")}</TableHead>
+              <TableHead>{t("headers.date")}</TableHead>
+              <TableHead>{t("headers.title")}</TableHead>
+              <TableHead>{t("headers.tutor")}</TableHead>
+              <TableHead>{t("headers.meetingNotes")}</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -95,12 +99,12 @@ const CompletedSessionsTable = ({
                   {session.status === "Complete" ? (
                     <span className="px-3 py-1 inline-flex items-center rounded-full bg-green-100 text-green-800 border border-green-200">
                       <CircleCheckBig size={14} className="mr-1" />
-                      Complete
+                      {t("status.complete")}
                     </span>
                   ) : session.status === "Cancelled" ? (
                     <span className="px-3 py-1 inline-flex items-center rounded-full bg-red-100 text-red-800 border border-red-200">
                       <CircleX size={14} className="mr-1" />
-                      Cancelled
+                      {t("status.cancelled")}
                     </span>
                   ) : (
                     ""
@@ -108,7 +112,10 @@ const CompletedSessionsTable = ({
                 </TableCell>
                 <TableCell>{formatSessionDate(session.date)}</TableCell>
                 <TableCell className="font-medium">
-                  Tutoring Session with {session.tutor?.firstName} {session.tutor?.lastName}
+                  {t("sessionTitle", {
+                    firstName: session.tutor?.firstName ?? "",
+                    lastName: session.tutor?.lastName ?? "",
+                  })}
                 </TableCell>
                 <TableCell>
                   {session.tutor?.firstName} {session.tutor?.lastName}
@@ -124,12 +131,12 @@ const CompletedSessionsTable = ({
                           SC.setSelectedSession(session);
                         }}
                       >
-                        View Session Notes
+                        {t("viewSessionNotes")}
                       </Button>
                     </DialogTrigger>
                     <DialogContent>
                       <DialogHeader>
-                        <DialogTitle>Meeting Notes</DialogTitle>
+                        <DialogTitle>{t("headers.meetingNotes")}</DialogTitle>
                       </DialogHeader>
                       <Textarea>{SC.selectedSession?.session_exit_form}</Textarea>
                     </DialogContent>
@@ -141,9 +148,9 @@ const CompletedSessionsTable = ({
         </Table>
 
         <div className="mt-4 hidden md:flex justify-between items-center">
-          <span>{SC.filteredPastSessions.length} row(s) total.</span>
+          <span>{t("rowsTotal", { count: SC.filteredPastSessions.length })}</span>
           <div className="flex items-center space-x-2">
-            <span>Rows per page</span>
+            <span>{t("rowsPerPage")}</span>
             <Select
               value={SC.rowsPerPagePastSessions.toString()}
               onValueChange={handleRowsPerPageChange}
@@ -158,7 +165,7 @@ const CompletedSessionsTable = ({
               </SelectContent>
             </Select>
             <span>
-              Page {SC.currentPagePastSessions} of {totalPages}
+              {t("pageOf", { page: SC.currentPagePastSessions, total: totalPages })}
             </span>
             <div className="flex space-x-1">
               <Button
@@ -202,17 +209,20 @@ const CompletedSessionsTable = ({
           <MobileCard key={index}>
             <div className="flex justify-between items-start gap-2">
               <div className="font-medium text-sm">
-                Tutoring Session with {session.tutor?.firstName} {session.tutor?.lastName}
+                {t("sessionTitle", {
+                  firstName: session.tutor?.firstName ?? "",
+                  lastName: session.tutor?.lastName ?? "",
+                })}
               </div>
               {session.status === "Complete" ? (
                 <span className="px-3 py-1 inline-flex items-center rounded-full bg-green-100 text-green-800 border border-green-200 whitespace-nowrap">
                   <CircleCheckBig size={14} className="mr-1" />
-                  Complete
+                  {t("status.complete")}
                 </span>
               ) : session.status === "Cancelled" ? (
                 <span className="px-3 py-1 inline-flex items-center rounded-full bg-red-100 text-red-800 border border-red-200 whitespace-nowrap">
                   <CircleX size={14} className="mr-1" />
-                  Cancelled
+                  {t("status.cancelled")}
                 </span>
               ) : (
                 ""
@@ -229,12 +239,12 @@ const CompletedSessionsTable = ({
                     SC.setSelectedSession(session);
                   }}
                 >
-                  View Session Notes
+                  {t("viewSessionNotes")}
                 </Button>
               </DialogTrigger>
               <DialogContent>
                 <DialogHeader>
-                  <DialogTitle>Meeting Notes</DialogTitle>
+                  <DialogTitle>{t("headers.meetingNotes")}</DialogTitle>
                 </DialogHeader>
                 <Textarea>{SC.selectedSession?.session_exit_form}</Textarea>
               </DialogContent>

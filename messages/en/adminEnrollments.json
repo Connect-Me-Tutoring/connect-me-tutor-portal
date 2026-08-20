@@ -1,0 +1,132 @@
+{
+  "listPage": {
+    "heading": "All Enrollments"
+  },
+  "filters": {
+    "searchPlaceholder": "Filter enrollments..."
+  },
+  "actions": {
+    "addEnrollment": "Add Enrollment"
+  },
+  "frequency": {
+    "weekly": "Weekly",
+    "biweekly": "Biweekly"
+  },
+  "table": {
+    "columns": {
+      "student": "Student",
+      "tutor": "Tutor",
+      "availability": "Availability",
+      "summary": "Summary",
+      "startDate": "Start Date",
+      "meetingLink": "Meeting Link",
+      "duration": "Duration",
+      "frequency": "Frequency",
+      "actions": "Actions",
+      "status": "Status",
+      "chat": "Chat"
+    },
+    "noMeetingLink": "No Meeting Link",
+    "durationUnit": "hr(s)",
+    "statusPaused": "Paused",
+    "statusOngoing": "Ongoing",
+    "viewChat": "View Chat",
+    "rowsTotal": "{count} row(s) total.",
+    "rowsPerPage": "Rows per page",
+    "pageOf": "Page {current} of {total}",
+    "loading": "Loading...",
+    "errorPrefix": "Error: {message}"
+  },
+  "dialogs": {
+    "add": {
+      "title": "Add New Enrollment",
+      "description": "add a new enrollment",
+      "submit": "Add Enrollment"
+    },
+    "edit": {
+      "title": "Edit Enrollment",
+      "description": "edit enrollment details",
+      "submit": "Update Enrollment"
+    },
+    "form": {
+      "studentLabel": "Student",
+      "tutorLabel": "Tutor",
+      "selectStudentPlaceholder": "Select a student",
+      "selectTutorPlaceholder": "Select a tutor",
+      "searchStudentPlaceholder": "Search student...",
+      "searchTutorPlaceholder": "Search Tutor...",
+      "noStudentFound": "No student found.",
+      "noTutorFound": "No Tutor found.",
+      "frequencyLabel": "Frequency",
+      "summaryLabel": "Summary",
+      "startDateLabel": "Start Date",
+      "meetingLinkLabel": "Meeting Link",
+      "selectMeetingLinkPlaceholder": "Select a meeting link",
+      "selectMeetingPlaceholder": "Select a meeting",
+      "checkingAvailability": "Checking meeting availability"
+    },
+    "sefWarning": {
+      "title": "⚠️ SEF Warning",
+      "description": "Please confirm before deleting this enrollment.",
+      "message": "Have you ensured that all Session Exit Forms (SEF) have been submitted for this enrollment?",
+      "goBack": "No, go back",
+      "continue": "Yes, continue"
+    },
+    "delete": {
+      "title": "Delete Enrollment",
+      "description": "confirm enrollment deletion",
+      "confirmMessage": "Are you sure you want to delete this enrollment? This action cannot be undone.",
+      "sefWarningMessage": "⚠️ Warning: Please ensure all Session Exit Forms (SEF) have been submitted before deleting this enrollment.",
+      "cancel": "Cancel",
+      "confirm": "Delete"
+    }
+  },
+  "toasts": {
+    "meetingsLoadError": "Failed to load meetings",
+    "noEnrollmentsFound": "No enrollments found",
+    "fetchEnrollmentsUnknownError": "An unknown error occurred",
+    "addSuccess": "Enrollment added successfully",
+    "updateSuccess": "Enrollment updated successfully",
+    "updateError": "Failed to update enrollment",
+    "deleteSuccess": "Enrollment deleted successfully",
+    "deleteError": "Failed to delete enrollment",
+    "summerPlanChanged": "Enrollment summer plan changed",
+    "meetingNotFound": "Meeting not found",
+    "noZoomLink": "No Zoom link available",
+    "meetingLinkCopied": "Meeting link copied!",
+    "copyLinkFailed": "Failed to copy link"
+  },
+  "validation": {
+    "durationPositive": "Duration must be a positive number",
+    "durationMin": "Duration must be at least 0",
+    "durationInvalid": "Invalid duration"
+  },
+  "activity": {
+    "backToEnrollments": "All enrollments",
+    "heading": "Enrollment activity",
+    "description": "Sessions for this enrollment and Zoom webhook activity counts.",
+    "enrollmentCard": {
+      "title": "Enrollment",
+      "frequencyLabel": "Frequency",
+      "paused": "Paused",
+      "summaryLabel": "Summary:"
+    },
+    "sessionsCard": {
+      "title": "Sessions",
+      "descriptionPrefix": "Open a session to see normalized Zoom join/leave activity. Links include",
+      "descriptionSuffix": "so the session view can show this enrollment breakdown.",
+      "empty": "No sessions linked to this enrollment yet.",
+      "columns": {
+        "when": "When",
+        "status": "Status",
+        "meeting": "Meeting",
+        "zoomLogs": "Zoom logs",
+        "attendance": "Attendance"
+      },
+      "view": "View"
+    }
+  },
+  "chat": {
+    "heading": "Tutoring Session"
+  }
+}

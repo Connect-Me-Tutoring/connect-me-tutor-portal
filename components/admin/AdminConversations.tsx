@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -59,6 +60,7 @@ const existingConversations = [
 ];
 
 export function AdminConversationManager() {
+  const t = useTranslations("adminOps.conversations");
   const [selectedProfileUserId, setSelectedProfileUserId] = useState<string>("");
   const [openProfileOptions, setOpenProfileOptions] = useState(false);
   const [profileSearch, setProfileSearch] = useState("");
@@ -95,9 +97,9 @@ export function AdminConversationManager() {
     if (!selectedProfileUserId) return;
     const promise = createAdminConversation(selectedProfileUserId);
     toast.promise(promise, {
-      success: "Successfully created conversation",
-      error: "Failed to create conversation",
-      loading: "Creating...",
+      success: t("toasts.createSuccess"),
+      error: t("toasts.createError"),
+      loading: t("toasts.creating"),
     });
 
     promise.then(() => router.refresh());
@@ -113,8 +115,8 @@ export function AdminConversationManager() {
     <div className="min-h-screen bg-background p-6">
       <div className="mx-auto max-w-6xl">
         <div className="mb-8 text-center">
-          <h1 className="text-3xl font-bold text-foreground mb-2">Create New Conversation</h1>
-          <p className="text-muted-foreground">Start a conversation with a team member</p>
+          <h1 className="text-3xl font-bold text-foreground mb-2">{t("title")}</h1>
+          <p className="text-muted-foreground">{t("subtitle")}</p>
         </div>
 
         <div className="">
@@ -124,16 +126,14 @@ export function AdminConversationManager() {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <MessageCircle className="h-5 w-5" />
-                  Conversation Details
+                  {t("detailsCardTitle")}
                 </CardTitle>
-                <CardDescription>
-                  Fill in the details below to create a new conversation
-                </CardDescription>
+                <CardDescription>{t("detailsCardDescription")}</CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
                 {/* Profile Selection */}
                 <div className="space-y-2">
-                  <Label htmlFor="profile">Select Profile</Label>
+                  <Label htmlFor="profile">{t("selectProfileLabel")}</Label>
                   <Popover open={openProfileOptions} onOpenChange={setOpenProfileOptions}>
                     <PopoverTrigger asChild>
                       <Button
@@ -157,7 +157,9 @@ export function AdminConversationManager() {
                             </div>
                           </div>
                         ) : (
-                          <span className="text-muted-foreground">Select a profile...</span>
+                          <span className="text-muted-foreground">
+                            {t("selectProfilePlaceholder")}
+                          </span>
                         )}
                         <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                       </Button>
@@ -165,12 +167,12 @@ export function AdminConversationManager() {
                     <PopoverContent className="w-full p-0" align="start">
                       <Command>
                         <CommandInput
-                          placeholder="Search profiles..."
+                          placeholder={t("searchProfilesPlaceholder")}
                           value={profileSearch}
                           onValueChange={setProfileSearch}
                         />
                         <CommandList>
-                          <CommandEmpty>No profile found.</CommandEmpty>
+                          <CommandEmpty>{t("noProfileFound")}</CommandEmpty>
                           <CommandGroup>
                             {profiles.map((profile) => (
                               <CommandItem
@@ -220,7 +222,7 @@ export function AdminConversationManager() {
                     disabled={!selectedProfileUserId}
                     className="flex-1"
                   >
-                    Create Conversation
+                    {t("createButton")}
                   </Button>
                   <Button
                     variant="outline"
@@ -231,7 +233,7 @@ export function AdminConversationManager() {
                       setProfileSearch("");
                     }}
                   >
-                    Clear
+                    {t("clearButton")}
                   </Button>
                 </div>
               </CardContent>
@@ -241,7 +243,7 @@ export function AdminConversationManager() {
             {selectedProfile && conversationTitle && (
               <Card className="mt-6">
                 <CardHeader>
-                  <CardTitle className="text-lg">Preview</CardTitle>
+                  <CardTitle className="text-lg">{t("previewTitle")}</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="flex items-start gap-3 p-4 bg-muted rounded-lg">
@@ -266,8 +268,8 @@ export function AdminConversationManager() {
           <div className="mt-4">
             <Card>
               <CardHeader>
-                <CardTitle className="text-lg">Recent Conversations</CardTitle>
-                <CardDescription>Your ongoing conversations</CardDescription>
+                <CardTitle className="text-lg">{t("recentTitle")}</CardTitle>
+                <CardDescription>{t("recentDescription")}</CardDescription>
               </CardHeader>
               <CardContent className="space-y-3">
                 {existingConversations?.map((conversation) => (
@@ -286,7 +288,7 @@ export function AdminConversationManager() {
                 {existingConversations?.length === 0 && (
                   <div className="text-center py-8 text-muted-foreground">
                     <MessageCircle className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                    <p className="text-sm">No conversations yet</p>
+                    <p className="text-sm">{t("noConversations")}</p>
                   </div>
                 )}
               </CardContent>

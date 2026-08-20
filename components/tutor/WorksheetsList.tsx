@@ -1,14 +1,16 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useTranslations } from "next-intl";
 import type { WorksheetResource } from "@/app/(protected)/dashboard/(tutor)/worksheets/page";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/lib/supabase/client";
 import { Download, ExternalLink, FileText, FolderOpen, Search } from "lucide-react";
 
+// Internal sentinel value only (never rendered directly); the visible "All grades" label is
+// looked up separately via translations.
 const allCategories = "All categories";
-const allCollections = "All grades";
 
 const gradeOrder = ["4th Grade", "5th Grade", "6th Grade", "7th Grade", "8th Grade", "Algebra 1"];
 
@@ -25,6 +27,8 @@ const getCollectionSortIndex = (collection: string) => {
 };
 
 const WorksheetsList = ({ worksheets }: { worksheets: WorksheetResource[] }) => {
+  const t = useTranslations("tutorPages.worksheets");
+  const allCollections = t("allGrades");
   const [searchQuery, setSearchQuery] = useState("");
   const [activeCategory, setActiveCategory] = useState(allCategories);
   const [activeCollection, setActiveCollection] = useState(allCollections);
@@ -112,13 +116,13 @@ const WorksheetsList = ({ worksheets }: { worksheets: WorksheetResource[] }) => 
   return (
     <section className="mx-auto flex w-full max-w-6xl flex-col gap-6">
       <div className="flex flex-col gap-5 md:flex-row md:items-start md:justify-between">
-        <h1 className="text-4xl font-semibold tracking-tight text-gray-900">Worksheets</h1>
+        <h1 className="text-4xl font-semibold tracking-tight text-gray-900">{t("heading")}</h1>
         <div className="relative w-full md:max-w-md">
           <Search className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400" />
           <Input
             value={searchQuery}
             onChange={(event) => setSearchQuery(event.target.value)}
-            placeholder="Search worksheets"
+            placeholder={t("searchPlaceholder")}
             className="h-12 bg-white pl-12 text-base"
           />
         </div>
@@ -137,7 +141,7 @@ const WorksheetsList = ({ worksheets }: { worksheets: WorksheetResource[] }) => 
               : "border-gray-200 bg-white text-gray-700 hover:bg-gray-100"
           }`}
         >
-          All
+          {t("all")}
         </button>
         {categories.map((category) => (
           <button
@@ -198,16 +202,18 @@ const WorksheetsList = ({ worksheets }: { worksheets: WorksheetResource[] }) => 
         <div className="min-w-0 rounded-lg border bg-white">
           <div className="flex items-center justify-between border-b px-5 py-4">
             <div className="text-base font-medium text-gray-900">
-              {activeCollection === allCollections ? "All worksheets" : activeCollection}
+              {activeCollection === allCollections ? t("allWorksheets") : activeCollection}
             </div>
-            <div className="text-base text-gray-500">{filteredWorksheets.length} shown</div>
+            <div className="text-base text-gray-500">
+              {t("shown", { count: filteredWorksheets.length })}
+            </div>
           </div>
 
           {filteredWorksheets.length === 0 ? (
             <div className="px-4 py-14 text-center">
               <FileText className="mx-auto mb-3 h-9 w-9 text-gray-400" />
-              <h2 className="text-lg font-medium text-gray-900">No worksheets found</h2>
-              <p className="mt-1 text-base text-gray-500">Try another folder or search term.</p>
+              <h2 className="text-lg font-medium text-gray-900">{t("notFoundTitle")}</h2>
+              <p className="mt-1 text-base text-gray-500">{t("notFoundBody")}</p>
             </div>
           ) : (
             <div className="divide-y">
@@ -245,7 +251,7 @@ const WorksheetsList = ({ worksheets }: { worksheets: WorksheetResource[] }) => 
                       className="h-11 justify-center gap-2 text-base sm:w-28"
                     >
                       <ExternalLink className="h-5 w-5" />
-                      Open
+                      {t("open")}
                     </Button>
                     <Button
                       type="button"
@@ -254,7 +260,7 @@ const WorksheetsList = ({ worksheets }: { worksheets: WorksheetResource[] }) => 
                       className="h-11 justify-center gap-2 text-base sm:w-36"
                     >
                       <Download className="h-5 w-5" />
-                      Download
+                      {t("download")}
                     </Button>
                   </div>
                 </article>

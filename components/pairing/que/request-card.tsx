@@ -2,6 +2,7 @@
 
 import type React from "react";
 import { useState, useEffect, useCallback } from "react";
+import { useTranslations } from "next-intl";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -38,6 +39,7 @@ interface PairingRequestCardProps {
 }
 
 export function PairingRequestCard({ userId, profileId, role }: PairingRequestCardProps) {
+  const t = useTranslations("pairing.requestCard");
   const [notes, setNotes] = useState("");
   const [excludeRejectedTutors, setExcludeRejectedTutors] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -73,9 +75,9 @@ export function PairingRequestCard({ userId, profileId, role }: PairingRequestCa
     try {
       const promise = createPairingRequest(userId, notes, excludeRejectedTutors);
       toast.promise(promise, {
-        success: "Successfully added to pairing queue",
-        loading: "Creating pairing request",
-        error: "Failed to add to pairing queue",
+        success: t("toasts.joinSuccess"),
+        loading: t("toasts.joining"),
+        error: t("toasts.joinError"),
       });
       await promise;
       setNotes("");
@@ -91,9 +93,9 @@ export function PairingRequestCard({ userId, profileId, role }: PairingRequestCa
     try {
       const promise = removePairingRequest(myRequest.id);
       toast.promise(promise, {
-        success: "Removed from active queue (your request is saved)",
-        loading: "Leaving queue",
-        error: "Failed to leave queue",
+        success: t("toasts.leaveSuccess"),
+        loading: t("toasts.leaving"),
+        error: t("toasts.leaveError"),
       });
       await promise;
       await refetch();
@@ -108,9 +110,9 @@ export function PairingRequestCard({ userId, profileId, role }: PairingRequestCa
     try {
       const promise = createPairingRequest(userId, myRequest.notes ?? "", excludeRejectedTutors);
       toast.promise(promise, {
-        success: "You’re back in the pairing queue",
-        loading: "Rejoining queue",
-        error: (e: Error) => e.message || "Failed to rejoin",
+        success: t("toasts.rejoinSuccess"),
+        loading: t("toasts.rejoining"),
+        error: (e: Error) => e.message || t("toasts.rejoinError"),
       });
       await promise;
       await refetch();
@@ -171,9 +173,9 @@ export function PairingRequestCard({ userId, profileId, role }: PairingRequestCa
       : setExcludeRejectedTutorsPreference(userId, checked);
 
     toast.promise(promise, {
-      loading: "Updating preference",
-      success: "Preference updated",
-      error: "Failed to update preference",
+      loading: t("toasts.preferenceUpdating"),
+      success: t("toasts.preferenceUpdated"),
+      error: t("toasts.preferenceError"),
     });
 
     try {
@@ -221,7 +223,7 @@ export function PairingRequestCard({ userId, profileId, role }: PairingRequestCa
     return (
       <Card className="w-full mx-auto border-0 shadow-none">
         <CardContent className="p-6">
-          <p className="text-muted-foreground text-sm">Loading...</p>
+          <p className="text-muted-foreground text-sm">{t("loading")}</p>
         </CardContent>
       </Card>
     );
@@ -231,14 +233,14 @@ export function PairingRequestCard({ userId, profileId, role }: PairingRequestCa
     <div className="rounded-xl bg-muted/50 p-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
       <div className="space-y-1 min-w-0">
         <Label htmlFor="pairing-queue-switch" className="text-base font-semibold">
-          In pairing queue
+          {t("queueSwitch.label")}
         </Label>
         <p className="text-sm text-muted-foreground">
           {isInQueue
-            ? "You can be matched while this is on. Turn it off to pause without losing your saved details."
+            ? t("queueSwitch.onDescription")
             : isArchivedRequest
-              ? "You left the active queue. Turn this on to rejoin with your saved preferences."
-              : "Turn this on to join the queue. You can add optional notes below first."}
+              ? t("queueSwitch.archivedDescription")
+              : t("queueSwitch.offDescription")}
         </p>
       </div>
       <Switch
@@ -257,24 +259,27 @@ export function PairingRequestCard({ userId, profileId, role }: PairingRequestCa
         <CardHeader className="space-y-4">
           <div className="flex items-center gap-2">
             <Users className="h-6 w-6 text-primary" />
-            <CardTitle className="text-2xl">Pairing queue (archived)</CardTitle>
+            <CardTitle className="text-2xl">{t("archived.title")}</CardTitle>
           </div>
           <CardDescription className="text-base leading-relaxed">
-            You left the active queue. Your notes and preferences are saved; you won’t be matched
-            until you rejoin.
+            {t("archived.description")}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
           {queueSwitch}
           <div className="flex flex-wrap items-center gap-2">
             <Badge variant="secondary" className="capitalize">
-              Archived
+              {t("archived.badge")}
             </Badge>
-            <Badge variant="outline">Priority {myRequest.priority}</Badge>
+            <Badge variant="outline">
+              {t("archived.priorityBadge", { priority: myRequest.priority })}
+            </Badge>
           </div>
           {myRequest.notes ? (
             <div className="rounded-md bg-muted/30 p-3 text-sm">
-              <span className="font-medium text-muted-foreground">Saved notes</span>
+              <span className="font-medium text-muted-foreground">
+                {t("archived.savedNotesLabel")}
+              </span>
               <p className="mt-1 whitespace-pre-wrap">{myRequest.notes}</p>
             </div>
           ) : null}
@@ -289,33 +294,32 @@ export function PairingRequestCard({ userId, profileId, role }: PairingRequestCa
         <CardHeader className="space-y-4">
           <div className="flex items-center gap-2">
             <Users className="h-6 w-6 text-primary" />
-            <CardTitle className="text-2xl">Pairing Queue</CardTitle>
+            <CardTitle className="text-2xl">{t("active.title")}</CardTitle>
           </div>
           <CardDescription className="text-base leading-relaxed">
-            You are in the pairing queue. You will be matched based on availability and
-            compatibility.
+            {t("active.description")}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
           {queueSwitch}
           <div className="flex flex-wrap items-center gap-2">
-            <Badge
-              className={`${getStatusColor(myRequest.status)} flex items-center gap-1 capitalize`}
-            >
+            <Badge className={`${getStatusColor(myRequest.status)} flex items-center gap-1`}>
               {getStatusIcon(myRequest.status)}
-              {myRequest.status}
+              {t(`status.${myRequest.status}`)}
             </Badge>
-            <Badge variant="outline">Priority {myRequest.priority}</Badge>
+            <Badge variant="outline">
+              {t("active.priorityBadge", { priority: myRequest.priority })}
+            </Badge>
           </div>
 
           {isStudent && (
             <div className="flex items-center justify-between rounded-lg p-4">
               <div className="space-y-0.5">
                 <Label htmlFor="block-rejected" className="text-base">
-                  Block tutors who declined me in the past
+                  {t("blockRejected.label")}
                 </Label>
                 <p className="text-sm text-muted-foreground">
-                  When on, you won’t be matched with tutors who previously declined your request.
+                  {t("blockRejected.description")}
                 </p>
               </div>
               <Switch
@@ -335,12 +339,10 @@ export function PairingRequestCard({ userId, profileId, role }: PairingRequestCa
       <CardHeader className="space-y-4">
         <div className="flex items-center gap-2">
           <Users className="h-6 w-6 text-primary" />
-          <CardTitle className="text-2xl">Submit Pairing Request</CardTitle>
+          <CardTitle className="text-2xl">{t("newRequest.title")}</CardTitle>
         </div>
         <CardDescription className="text-base leading-relaxed">
-          Submit a request to be paired with a tutor or student. Your request will be reviewed and
-          matched based on availability, subject expertise, and compatibility. The matching process
-          typically takes 24-48 hours.
+          {t("newRequest.description")}
         </CardDescription>
       </CardHeader>
 
@@ -348,7 +350,7 @@ export function PairingRequestCard({ userId, profileId, role }: PairingRequestCa
         {queueSwitch}
         <div className="bg-muted/50 p-4 rounded-lg space-y-3">
           <h3 className="font-semibold text-sm uppercase tracking-wide text-muted-foreground">
-            How It Works
+            {t("newRequest.howItWorksHeading")}
           </h3>
           <div className="space-y-2 text-sm">
             <div className="flex items-start gap-2">
@@ -356,26 +358,28 @@ export function PairingRequestCard({ userId, profileId, role }: PairingRequestCa
                 1
               </Badge>
               <span>
-                Turn on <strong>In pairing queue</strong> above (add optional notes first)
+                {t.rich("newRequest.step1", {
+                  strong: (chunks) => <strong>{chunks}</strong>,
+                })}
               </span>
             </div>
             <div className="flex items-start gap-2">
               <Badge variant="outline" className="mt-0.5 text-xs">
                 2
               </Badge>
-              <span>Our system matches you based on availability and compatibility</span>
+              <span>{t("newRequest.step2")}</span>
             </div>
             <div className="flex items-start gap-2">
               <Badge variant="outline" className="mt-0.5 text-xs">
                 3
               </Badge>
-              <span>You’ll receive a notification when a match is found</span>
+              <span>{t("newRequest.step3")}</span>
             </div>
             <div className="flex items-start gap-2">
               <Badge variant="outline" className="mt-0.5 text-xs">
                 4
               </Badge>
-              <span>Connect with your paired partner to begin your learning journey</span>
+              <span>{t("newRequest.step4")}</span>
             </div>
           </div>
         </div>
@@ -383,19 +387,21 @@ export function PairingRequestCard({ userId, profileId, role }: PairingRequestCa
         <div className="space-y-6">
           <div className="space-y-3">
             <Label htmlFor="notes" className="text-base font-medium">
-              Additional Notes
-              <span className="text-sm font-normal text-muted-foreground ml-2">(Optional)</span>
+              {t("newRequest.notesLabel")}
+              <span className="text-sm font-normal text-muted-foreground ml-2">
+                {t("newRequest.optional")}
+              </span>
             </Label>
             <Textarea
               id="notes"
-              placeholder="Tell us about your learning goals, preferred subjects, availability, or any specific requirements..."
+              placeholder={t("newRequest.notesPlaceholder")}
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               className="min-h-[120px] resize-none"
               maxLength={500}
             />
             <div className="text-xs text-muted-foreground text-right">
-              {notes.length}/500 characters
+              {t("newRequest.charCount", { count: notes.length })}
             </div>
           </div>
 
@@ -403,10 +409,10 @@ export function PairingRequestCard({ userId, profileId, role }: PairingRequestCa
             <div className="flex items-center justify-between rounded-lg p-4">
               <div className="space-y-0.5">
                 <Label htmlFor="block-rejected-form" className="text-base">
-                  Block tutors who declined me in the past
+                  {t("blockRejected.label")}
                 </Label>
                 <p className="text-sm text-muted-foreground">
-                  When on, you won’t be matched with tutors who previously declined your request.
+                  {t("blockRejected.description")}
                 </p>
               </div>
               <Switch
@@ -420,20 +426,20 @@ export function PairingRequestCard({ userId, profileId, role }: PairingRequestCa
 
         <div className="pt-4">
           <h4 className="text-sm font-medium mb-3 text-muted-foreground">
-            Request Status Examples
+            {t("newRequest.statusExamplesHeading")}
           </h4>
           <div className="flex flex-wrap gap-2">
             <Badge className={`${getStatusColor("pending")} flex items-center gap-1`}>
               {getStatusIcon("pending")}
-              Pending Review
+              {t("newRequest.pendingReview")}
             </Badge>
             <Badge className={`${getStatusColor("accepted")} flex items-center gap-1`}>
               {getStatusIcon("accepted")}
-              Match Found
+              {t("newRequest.matchFound")}
             </Badge>
             <Badge className={`${getStatusColor("rejected")} flex items-center gap-1`}>
               {getStatusIcon("rejected")}
-              No Match Available
+              {t("newRequest.noMatchAvailable")}
             </Badge>
           </div>
         </div>

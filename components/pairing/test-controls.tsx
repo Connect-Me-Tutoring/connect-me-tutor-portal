@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { Button } from "../ui/button";
 import axios from "axios";
 import toast from "react-hot-toast";
@@ -30,6 +31,7 @@ type StoredPairingRun = {
 const PREVIEW_RUN_STORAGE_PREFIX = "pairing-preview-run:";
 
 export function TestingPairingControls() {
+  const t = useTranslations("pairing.testControls");
   const router = useRouter();
   const [previewResult, setPreviewResult] = useState<PairingWorkflowPreviewPayload | null>(null);
   const [latestRunId, setLatestRunId] = useState<string | null>(null);
@@ -48,7 +50,7 @@ export function TestingPairingControls() {
 
   const handleOpenLatestRunLogs = () => {
     if (!latestRunId) {
-      toast.error("Run a preview first");
+      toast.error(t("toasts.runPreviewFirst"));
       return;
     }
     router.push(`/dashboard/pairing-que/logs?runId=${latestRunId}`);
@@ -57,9 +59,9 @@ export function TestingPairingControls() {
   const handlePreviewQueues = async () => {
     const promise = axios.post("/api/pairing?dryRun=1&debug=1");
     toast.promise(promise, {
-      success: "Preview ready. Review logs before applying.",
-      error: "Failed to run pairing preview",
-      loading: "Building pairing preview...",
+      success: t("toasts.previewReady"),
+      error: t("toasts.previewError"),
+      loading: t("toasts.previewLoading"),
     });
 
     const response = await promise;
@@ -82,7 +84,7 @@ export function TestingPairingControls() {
 
   const handleApplySavedPreview = async () => {
     if (!previewResult) {
-      toast.error("Run a preview before applying queue changes");
+      toast.error(t("toasts.runPreviewBeforeApply"));
       return;
     }
 
@@ -95,9 +97,9 @@ export function TestingPairingControls() {
     });
 
     toast.promise(promise, {
-      success: "Applied saved queue changes",
-      error: "Failed to apply saved queue changes",
-      loading: "Applying saved queue changes...",
+      success: t("toasts.applySuccess"),
+      error: t("toasts.applyError"),
+      loading: t("toasts.applyLoading"),
     });
 
     await promise;
@@ -108,34 +110,34 @@ export function TestingPairingControls() {
   const handleResolveQueues = () => {
     const promise = axios.post("/api/pairing");
     toast.promise(promise, {
-      success: "Successfully ran pairing process",
-      error: "Failed to run pairing process",
-      loading: "Pairing...",
+      success: t("toasts.resolveSuccess"),
+      error: t("toasts.resolveError"),
+      loading: t("toasts.resolveLoading"),
     });
   };
 
   const handleClearQueues = () => {
     toast.promise(resetPairingQueues(), {
-      success: "Successfully Reset Queue",
-      error: "Failed to Reset Queue",
-      loading: "Resetting Queue",
+      success: t("toasts.resetQueueSuccess"),
+      error: t("toasts.resetQueueError"),
+      loading: t("toasts.resetQueueLoading"),
     });
   };
 
   const handleResetPairings = () => {
     toast.promise(deleteAllPairingRequests(), {
-      success: "Successfully Cleared Queue",
-      error: "Failed to clear queue",
-      loading: "Clearing...",
+      success: t("toasts.clearQueueSuccess"),
+      error: t("toasts.clearQueueError"),
+      loading: t("toasts.clearQueueLoading"),
     });
   };
 
   return (
     <div className="p-4 border border-dashed border-gray-300 rounded-lg bg-gray-50">
-      <h3 className="text-sm font-medium text-gray-700 mb-3">Testing Controls</h3>
+      <h3 className="text-sm font-medium text-gray-700 mb-3">{t("heading")}</h3>
       <div className="flex flex-wrap gap-2">
         <Button onClick={handlePreviewQueues} variant="outline" size="sm">
-          Preview Queue Output
+          {t("previewQueueOutput")}
         </Button>
         <Button
           onClick={handleApplySavedPreview}
@@ -143,7 +145,7 @@ export function TestingPairingControls() {
           size="sm"
           disabled={!previewResult}
         >
-          Apply Saved Preview
+          {t("applySavedPreview")}
         </Button>
         <Button
           onClick={handleOpenLatestRunLogs}
@@ -151,42 +153,40 @@ export function TestingPairingControls() {
           size="sm"
           disabled={!latestRunId}
         >
-          Open Latest Run Logs
+          {t("openLatestRunLogs")}
         </Button>
         <Button onClick={handleResolveQueues} variant="outline" size="sm">
-          {" Resolve Queue (Immediate)"}
+          {t("resolveQueueImmediate")}
         </Button>
         <Button onClick={handleClearQueues} variant="outline" size="sm">
-          {" Clear Queue"}
+          {t("clearQueue")}
         </Button>
         <Button
           onClick={() => router.push("/dashboard/pairing-que/logs")}
           variant="outline"
           size="sm"
         >
-          Logs
+          {t("logs")}
         </Button>
 
         <AlertDialog>
           <AlertDialogTrigger asChild>
             <Button variant="destructive" size="sm">
-              Reset all pairing matches
+              {t("resetAllPairingMatches")}
             </Button>
           </AlertDialogTrigger>
 
           <AlertDialogContent>
             <AlertDialogHeader>
-              <AlertDialogTitle>Reset All Pairing Matches</AlertDialogTitle>
-              <AlertDialogDescription>
-                Remove tutors and students from pairing queue
-              </AlertDialogDescription>
+              <AlertDialogTitle>{t("resetDialog.title")}</AlertDialogTitle>
+              <AlertDialogDescription>{t("resetDialog.description")}</AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
               <AlertDialogCancel asChild>
-                <Button variant="outline">Back</Button>
+                <Button variant="outline">{t("resetDialog.back")}</Button>
               </AlertDialogCancel>
               <AlertDialogAction onClick={handleResetPairings}>
-                Reset all pairing matches
+                {t("resetDialog.confirm")}
               </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>
@@ -195,18 +195,22 @@ export function TestingPairingControls() {
       {previewResult && (
         <div className="mt-4 rounded-md border bg-white p-3">
           <div className="mb-2 text-sm text-gray-700">
-            Preview generated with {previewResult.summary.matchesToInsert} proposed match
-            {previewResult.summary.matchesToInsert === 1 ? "" : "es"} and{" "}
-            {previewResult.summary.logsToInsert} log
-            {previewResult.summary.logsToInsert === 1 ? "" : "s"}.
+            {t("previewSummary", {
+              matchCount: previewResult.summary.matchesToInsert,
+              logCount: previewResult.summary.logsToInsert,
+            })}
           </div>
           <div className="max-h-56 overflow-y-auto rounded border bg-gray-50 p-2 text-xs text-gray-700">
             {previewResult.logs.length === 0 ? (
-              <p>No preview logs were returned.</p>
+              <p>{t("noPreviewLogs")}</p>
             ) : (
               previewResult.logs.map((log, index) => (
                 <p key={`${log.type}-${index}`} className="mb-1 last:mb-0">
-                  {log.error ? "ERROR" : "OK"} - [{log.type}] {log.message}
+                  {t("logEntry", {
+                    status: log.error ? t("statusError") : t("statusOk"),
+                    type: log.type,
+                    message: log.message,
+                  })}
                 </p>
               ))
             )}

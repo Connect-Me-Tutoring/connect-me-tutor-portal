@@ -1,5 +1,6 @@
 "use client";
 import React, { useState, useEffect } from "react";
+import { useTranslations } from "next-intl";
 import {
   Bell,
   ChevronDown,
@@ -46,6 +47,7 @@ import { LoadMoreButton } from "@/components/ui/load-more-button";
 import { useLoadMore } from "@/hooks/useLoadMore";
 
 const AdminDashboard = () => {
+  const t = useTranslations("adminOps.dashboard");
   const supabase = getSupabase();
   const [sessions, setSessions] = useState<Session[]>([]);
   const [filteredSessions, setFilteredSessions] = useState<Session[]>([]);
@@ -129,7 +131,7 @@ const AdminDashboard = () => {
 
   return (
     <main className="p-8">
-      <h1 className="text-3xl font-bold mb-6">Admin Dashboard</h1>
+      <h1 className="text-3xl font-bold mb-6">{t("title")}</h1>
 
       <div className="flex space-x-6">
         <div className="flex-grow bg-white rounded-lg shadow p-6">
@@ -137,7 +139,7 @@ const AdminDashboard = () => {
             <div className="flex space-x-2">
               <Input
                 type="text"
-                placeholder="Filter sessions..."
+                placeholder={t("filterPlaceholder")}
                 className="w-64"
                 value={filterValue}
                 onChange={(e) => setFilterValue(e.target.value)}
@@ -149,11 +151,11 @@ const AdminDashboard = () => {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Date</TableHead>
-                  <TableHead>Title</TableHead>
-                  <TableHead>Tutor</TableHead>
-                  <TableHead>Student</TableHead>
-                  <TableHead>Meeting</TableHead>
+                  <TableHead>{t("table.date")}</TableHead>
+                  <TableHead>{t("table.title")}</TableHead>
+                  <TableHead>{t("table.tutor")}</TableHead>
+                  <TableHead>{t("table.student")}</TableHead>
+                  <TableHead>{t("table.meeting")}</TableHead>
                   <TableHead className="w-[50px]"></TableHead>
                 </TableRow>
               </TableHeader>
@@ -178,9 +180,10 @@ const AdminDashboard = () => {
                       })}
                     </TableCell>
                     <TableCell className="font-medium">
-                      Tutoring Session with Tutor {session.tutor?.firstName}{" "}
-                      {session.tutor?.lastName} and Student {session.student?.firstName}{" "}
-                      {session.student?.lastName}
+                      {t("sessionTitle", {
+                        tutorName: `${session.tutor?.firstName} ${session.tutor?.lastName}`,
+                        studentName: `${session.student?.firstName} ${session.student?.lastName}`,
+                      })}
                     </TableCell>
                     <TableCell>
                       {session.tutor?.firstName} {session.tutor?.lastName}
@@ -196,11 +199,11 @@ const AdminDashboard = () => {
                           }
                           className="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600"
                         >
-                          View Link
+                          {t("viewLink")}
                         </button>
                       ) : (
                         <button className="text-black px-3 py-1 border border-gray-200 rounded">
-                          N/A
+                          {t("notAvailable")}
                         </button>
                       )}
                     </TableCell>
@@ -214,14 +217,16 @@ const AdminDashboard = () => {
                               setIsDialogOpen(true);
                             }}
                           >
-                            Reschedule
+                            {t("reschedule")}
                           </Button>
                         </DialogTrigger>
                         <DialogContent>
                           <DialogHeader>
                             <DialogTitle>
-                              Reschedule Session with {session.tutor?.firstName}{" "}
-                              {session.tutor?.lastName} on {formatSessionDate(session.date)}
+                              {t("rescheduleDialogTitle", {
+                                tutorName: `${session.tutor?.firstName} ${session.tutor?.lastName}`,
+                                date: formatSessionDate(session.date),
+                              })}
                             </DialogTitle>
                           </DialogHeader>
                           <div className="py-4 space-y-6">
@@ -242,7 +247,7 @@ const AdminDashboard = () => {
                                 handleReschedule(selectedSession?.id, selectedSessionDate)
                               }
                             >
-                              Reschedule
+                              {t("reschedule")}
                             </Button>
                           </div>
                         </DialogContent>
@@ -254,9 +259,9 @@ const AdminDashboard = () => {
             </Table>
 
             <div className="mt-4 hidden md:flex justify-between items-center">
-              <span>{filteredSessions.length} row(s) total.</span>
+              <span>{t("rowsTotal", { count: filteredSessions.length })}</span>
               <div className="flex items-center space-x-2">
-                <span>Rows per page</span>
+                <span>{t("rowsPerPage")}</span>
                 <Select value={rowsPerPage.toString()} onValueChange={handleRowsPerPageChange}>
                   <SelectTrigger className="w-[70px]">
                     <SelectValue placeholder={rowsPerPage.toString()} />
@@ -267,9 +272,7 @@ const AdminDashboard = () => {
                     <SelectItem value="50">50</SelectItem>
                   </SelectContent>
                 </Select>
-                <span>
-                  Page {currentPage} of {totalPages}
-                </span>
+                <span>{t("pageOf", { current: currentPage, total: totalPages })}</span>
                 <div className="flex space-x-1">
                   <Button
                     variant="ghost"
@@ -321,18 +324,24 @@ const AdminDashboard = () => {
                 }
               >
                 <div className="font-medium text-sm">
-                  Tutoring Session with Tutor {session.tutor?.firstName} {session.tutor?.lastName}{" "}
-                  and Student {session.student?.firstName} {session.student?.lastName}
+                  {t("sessionTitle", {
+                    tutorName: `${session.tutor?.firstName} ${session.tutor?.lastName}`,
+                    studentName: `${session.student?.firstName} ${session.student?.lastName}`,
+                  })}
                 </div>
                 <div className="text-sm text-muted-foreground">
                   {formatDateAdmin(session.date, { includeTime: true, includeDate: true })}
                 </div>
                 <div className="text-sm space-y-1">
                   <div>
-                    Tutor: {session.tutor?.firstName} {session.tutor?.lastName}
+                    {t("mobileTutorLine", {
+                      name: `${session.tutor?.firstName} ${session.tutor?.lastName}`,
+                    })}
                   </div>
                   <div>
-                    Student: {session.student?.firstName} {session.student?.lastName}
+                    {t("mobileStudentLine", {
+                      name: `${session.student?.firstName} ${session.student?.lastName}`,
+                    })}
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
@@ -341,11 +350,11 @@ const AdminDashboard = () => {
                       onClick={() => (window.location.href = `/meeting/${session?.meeting?.id}`)}
                       className="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600"
                     >
-                      View Link
+                      {t("viewLink")}
                     </button>
                   ) : (
                     <button className="text-black px-3 py-1 border border-gray-200 rounded">
-                      N/A
+                      {t("notAvailable")}
                     </button>
                   )}
                   <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
@@ -357,14 +366,16 @@ const AdminDashboard = () => {
                           setIsDialogOpen(true);
                         }}
                       >
-                        Reschedule
+                        {t("reschedule")}
                       </Button>
                     </DialogTrigger>
                     <DialogContent>
                       <DialogHeader>
                         <DialogTitle>
-                          Reschedule Session with {session.tutor?.firstName}{" "}
-                          {session.tutor?.lastName} on {formatSessionDate(session.date)}
+                          {t("rescheduleDialogTitle", {
+                            tutorName: `${session.tutor?.firstName} ${session.tutor?.lastName}`,
+                            date: formatSessionDate(session.date),
+                          })}
                         </DialogTitle>
                       </DialogHeader>
                       <div className="py-4 space-y-6">
@@ -385,7 +396,7 @@ const AdminDashboard = () => {
                             handleReschedule(selectedSession?.id, selectedSessionDate)
                           }
                         >
-                          Reschedule
+                          {t("reschedule")}
                         </Button>
                       </div>
                     </DialogContent>

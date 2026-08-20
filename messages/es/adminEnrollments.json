@@ -1,0 +1,132 @@
+{
+  "listPage": {
+    "heading": "Todas las Inscripciones"
+  },
+  "filters": {
+    "searchPlaceholder": "Filtrar inscripciones..."
+  },
+  "actions": {
+    "addEnrollment": "Agregar Inscripción"
+  },
+  "frequency": {
+    "weekly": "Semanal",
+    "biweekly": "Quincenal"
+  },
+  "table": {
+    "columns": {
+      "student": "Estudiante",
+      "tutor": "Tutor",
+      "availability": "Disponibilidad",
+      "summary": "Resumen",
+      "startDate": "Fecha de Inicio",
+      "meetingLink": "Enlace de Reunión",
+      "duration": "Duración",
+      "frequency": "Frecuencia",
+      "actions": "Acciones",
+      "status": "Estado",
+      "chat": "Chat"
+    },
+    "noMeetingLink": "Sin Enlace de Reunión",
+    "durationUnit": "hr(s)",
+    "statusPaused": "Pausado",
+    "statusOngoing": "En Curso",
+    "viewChat": "Ver Chat",
+    "rowsTotal": "{count} fila(s) en total.",
+    "rowsPerPage": "Filas por página",
+    "pageOf": "Página {current} de {total}",
+    "loading": "Cargando...",
+    "errorPrefix": "Error: {message}"
+  },
+  "dialogs": {
+    "add": {
+      "title": "Agregar Nueva Inscripción",
+      "description": "agregar una nueva inscripción",
+      "submit": "Agregar Inscripción"
+    },
+    "edit": {
+      "title": "Editar Inscripción",
+      "description": "editar los detalles de la inscripción",
+      "submit": "Actualizar Inscripción"
+    },
+    "form": {
+      "studentLabel": "Estudiante",
+      "tutorLabel": "Tutor",
+      "selectStudentPlaceholder": "Selecciona un estudiante",
+      "selectTutorPlaceholder": "Selecciona un tutor",
+      "searchStudentPlaceholder": "Buscar estudiante...",
+      "searchTutorPlaceholder": "Buscar tutor...",
+      "noStudentFound": "No se encontró ningún estudiante.",
+      "noTutorFound": "No se encontró ningún tutor.",
+      "frequencyLabel": "Frecuencia",
+      "summaryLabel": "Resumen",
+      "startDateLabel": "Fecha de Inicio",
+      "meetingLinkLabel": "Enlace de Reunión",
+      "selectMeetingLinkPlaceholder": "Selecciona un enlace de reunión",
+      "selectMeetingPlaceholder": "Selecciona una reunión",
+      "checkingAvailability": "Comprobando la disponibilidad de la reunión"
+    },
+    "sefWarning": {
+      "title": "⚠️ Advertencia de SEF",
+      "description": "Confirma antes de eliminar esta inscripción.",
+      "message": "¿Has verificado que se hayan enviado todos los Formularios de Salida de Sesión (SEF) para esta inscripción?",
+      "goBack": "No, volver atrás",
+      "continue": "Sí, continuar"
+    },
+    "delete": {
+      "title": "Eliminar Inscripción",
+      "description": "confirmar la eliminación de la inscripción",
+      "confirmMessage": "¿Estás seguro de que deseas eliminar esta inscripción? Esta acción no se puede deshacer.",
+      "sefWarningMessage": "⚠️ Advertencia: Asegúrate de que se hayan enviado todos los Formularios de Salida de Sesión (SEF) antes de eliminar esta inscripción.",
+      "cancel": "Cancelar",
+      "confirm": "Eliminar"
+    }
+  },
+  "toasts": {
+    "meetingsLoadError": "No se pudieron cargar las reuniones",
+    "noEnrollmentsFound": "No se encontraron inscripciones",
+    "fetchEnrollmentsUnknownError": "Ocurrió un error desconocido",
+    "addSuccess": "Inscripción agregada correctamente",
+    "updateSuccess": "Inscripción actualizada correctamente",
+    "updateError": "No se pudo actualizar la inscripción",
+    "deleteSuccess": "Inscripción eliminada correctamente",
+    "deleteError": "No se pudo eliminar la inscripción",
+    "summerPlanChanged": "Se cambió el plan de verano de la inscripción",
+    "meetingNotFound": "Reunión no encontrada",
+    "noZoomLink": "No hay un enlace de Zoom disponible",
+    "meetingLinkCopied": "¡Enlace de reunión copiado!",
+    "copyLinkFailed": "No se pudo copiar el enlace"
+  },
+  "validation": {
+    "durationPositive": "La duración debe ser un número positivo",
+    "durationMin": "La duración debe ser de al menos 0",
+    "durationInvalid": "Duración inválida"
+  },
+  "activity": {
+    "backToEnrollments": "Todas las inscripciones",
+    "heading": "Actividad de la inscripción",
+    "description": "Sesiones de esta inscripción y conteos de actividad del webhook de Zoom.",
+    "enrollmentCard": {
+      "title": "Inscripción",
+      "frequencyLabel": "Frecuencia",
+      "paused": "Pausado",
+      "summaryLabel": "Resumen:"
+    },
+    "sessionsCard": {
+      "title": "Sesiones",
+      "descriptionPrefix": "Abre una sesión para ver la actividad normalizada de ingreso/salida de Zoom. Los enlaces incluyen",
+      "descriptionSuffix": "para que la vista de la sesión pueda mostrar este desglose de la inscripción.",
+      "empty": "Todavía no hay sesiones vinculadas a esta inscripción.",
+      "columns": {
+        "when": "Fecha",
+        "status": "Estado",
+        "meeting": "Reunión",
+        "zoomLogs": "Registros de Zoom",
+        "attendance": "Asistencia"
+      },
+      "view": "Ver"
+    }
+  },
+  "chat": {
+    "heading": "Sesión de Tutoría"
+  }
+}

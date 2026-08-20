@@ -1,0 +1,197 @@
+{
+  "days": {
+    "Monday": "Monday",
+    "Tuesday": "Tuesday",
+    "Wednesday": "Wednesday",
+    "Thursday": "Thursday",
+    "Friday": "Friday",
+    "Saturday": "Saturday",
+    "Sunday": "Sunday"
+  },
+  "profilePage": {
+    "header": {
+      "title": "Update Your Profile",
+      "description": "Keep your profile information up to date to help others connect with you more effectively"
+    },
+    "availability": {
+      "cardTitle": "Availability Schedule",
+      "cardDescription": "Set your available days and times for meetings or sessions",
+      "dayLabel": "Day",
+      "startTimeLabel": "Start Time",
+      "endTimeLabel": "End Time",
+      "addSlot": "Add Time Slot"
+    },
+    "subjects": {
+      "cardTitle": "Subjects of Interest",
+      "cardDescription": "Add topics and subjects you're passionate about or knowledgeable in",
+      "placeholder": "e.g., Mathematics, Physics, Literature"
+    },
+    "languages": {
+      "cardTitle": "Languages Spoken",
+      "cardDescription": "List the languages you can communicate in",
+      "placeholder": "e.g., English, Spanish, French"
+    },
+    "messages": {
+      "updateSuccess": "Profile updated successfully!",
+      "updateError": "Failed to update profile",
+      "unexpectedError": "An unexpected error occurred"
+    },
+    "submit": {
+      "updating": "Updating Profile...",
+      "update": "Update Profile"
+    }
+  },
+  "profileEditor": {
+    "loading": "Loading profile data...",
+    "availability": {
+      "title": "Availability",
+      "description": "Set your available time slots for tutoring or learning sessions.",
+      "empty": "No availability set",
+      "dayLabel": "Day",
+      "startTimeLabel": "Start Time",
+      "endTimeLabel": "End Time",
+      "dayPlaceholder": "Select day",
+      "add": "Add",
+      "removeSr": "Remove"
+    },
+    "subjects": {
+      "title": "Subjects of Interest",
+      "description": "Add subjects you're interested in teaching or learning.",
+      "empty": "No subjects added",
+      "placeholder": "Select or type a subject",
+      "add": "Add",
+      "removeSr": "Remove {subject}"
+    },
+    "languages": {
+      "title": "Languages Spoken",
+      "description": "Add languages you can communicate in.",
+      "empty": "No languages added",
+      "placeholder": "Select or type a language",
+      "add": "Add",
+      "removeSr": "Remove {language}"
+    },
+    "save": {
+      "saving": "Saving...",
+      "save": "Save Profile"
+    },
+    "toasts": {
+      "loadErrorTitle": "Error",
+      "loadErrorDescription": "Failed to load profile data",
+      "saveSuccessTitle": "Success",
+      "saveSuccessDescription": "Profile updated successfully",
+      "saveErrorTitle": "Error",
+      "saveErrorDescription": "Failed to save profile data",
+      "missingInfoTitle": "Missing information",
+      "missingInfoDescription": "Please fill in all availability fields"
+    },
+    "subjectOptions": {
+      "Mathematics": "Mathematics",
+      "Physics": "Physics",
+      "Chemistry": "Chemistry",
+      "Biology": "Biology",
+      "Computer Science": "Computer Science",
+      "History": "History",
+      "Geography": "Geography",
+      "Literature": "Literature",
+      "Languages": "Languages",
+      "Art": "Art",
+      "Music": "Music"
+    },
+    "languageOptions": {
+      "English": "English",
+      "Spanish": "Spanish",
+      "French": "French",
+      "German": "German",
+      "Mandarin": "Mandarin",
+      "Japanese": "Japanese",
+      "Russian": "Russian",
+      "Arabic": "Arabic",
+      "Portuguese": "Portuguese",
+      "Hindi": "Hindi"
+    }
+  },
+  "profilePreview": {
+    "notFound": "Profile not found",
+    "createProfile": "Create Profile",
+    "heading": "Profile Settings",
+    "refresh": "Refresh",
+    "availability": {
+      "label": "Availability",
+      "empty": "No availability set"
+    },
+    "subjects": {
+      "label": "Subjects",
+      "empty": "No subjects added"
+    },
+    "languages": {
+      "label": "Languages",
+      "empty": "No languages added"
+    },
+    "editLink": "Edit profile settings"
+  },
+  "participation": {
+    "header": {
+      "meetingId": "Meeting ID: {id}",
+      "refresh": "Refresh",
+      "exportReport": "Export Report"
+    },
+    "errorCard": {
+      "title": "Error Loading Data",
+      "retry": "Retry"
+    },
+    "errors": {
+      "sessionNotFound": "Session not found",
+      "loadFailed": "Failed to load participation data"
+    },
+    "defaultMeetingTitle": "Tutoring Session",
+    "enrollment": {
+      "activityLink": "Enrollment activity",
+      "showSessionList": "Show enrollment session list with Zoom",
+      "notLinked": "This session is not linked to an enrollment."
+    },
+    "enrollmentMismatch": {
+      "title": "Enrollment mismatch",
+      "description": "The <code>enrollmentId</code> in the URL does not match this session's enrollment, or the enrollment could not be loaded. Remove the query parameter or open attendance from the enrollment activity page."
+    },
+    "enrollmentContext": {
+      "title": "Enrollment Zoom context",
+      "frequency": "Frequency",
+      "description": "All sessions on this enrollment. Open another session to see its Zoom join/leave log; this page shows the log for the current session only.",
+      "thisSession": "This session",
+      "zoomEvents": "{count, plural, one {{count} Zoom event} other {{count} Zoom events}}",
+      "open": "Open",
+      "viewing": "Viewing"
+    },
+    "normalization": {
+      "title": "Adjusted attendance",
+      "description": "Logs are aggregated per person (email when available, otherwise Zoom user id or display name). Duplicate back-to-back events from Zoom are merged. If someone was already in the meeting before the portal could log a join, an estimated join may appear. Joins before the scheduled start time are labeled; minutes in the summary count from scheduled start through leave, or through the scheduled end if they stayed on."
+    },
+    "stats": {
+      "duration": "Duration",
+      "totalParticipants": "Total Participants",
+      "currentlyActive": "Currently Active",
+      "avgDuration": "Avg. Duration"
+    },
+    "participantSummary": {
+      "title": "Participant Summary",
+      "description": "Total time spent by each participant",
+      "empty": "No participants yet",
+      "joinsCount": "{count, plural, one {{count} join} other {{count} joins}}",
+      "estimatedJoin": "Estimated join",
+      "earlyJoin": "Early join"
+    },
+    "activityTimeline": {
+      "title": "Activity Timeline",
+      "description": "Complete history of joins and leaves",
+      "empty": "No activity yet",
+      "estimated": "Estimated",
+      "beforeStart": "Before start",
+      "beforeScheduledStart": "Before scheduled session start ({time})"
+    },
+    "status": {
+      "active": "Active",
+      "left": "Left",
+      "joined": "Joined"
+    }
+  }
+}

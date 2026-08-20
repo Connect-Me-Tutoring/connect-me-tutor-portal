@@ -1,0 +1,64 @@
+{
+  "dashboard": {
+    "headings": {
+      "thisWeek": "This Week",
+      "activeSessions": "Active Sessions",
+      "pastSessions": "Past Sessions"
+    },
+    "filterPlaceholder": "Filter sessions...",
+    "toasts": {
+      "sessionUpdated": "Session updated successfully",
+      "rescheduleError": "Failed to reschedule session",
+      "updateError": "Failed to update session",
+      "sessionMarkedComplete": "Session Marked Complete",
+      "questionConcernError": "Unable to record question or concern",
+      "exitFormError": "Failed to record Session Exit Form"
+    },
+    "errors": {
+      "unknown": "An unknown error occurred"
+    }
+  },
+  "calendar": {
+    "days": {
+      "su": "Su",
+      "mo": "Mo",
+      "tu": "Tu",
+      "we": "We",
+      "th": "Th",
+      "fr": "Fr",
+      "sa": "Sa"
+    },
+    "meetingWith": "Meeting with {firstName} {lastName}"
+  },
+  "availabilityFormat": {
+    "timezone": "EST"
+  },
+  "tables": {
+    "common": {
+      "headers": {
+        "markStatus": "Status",
+        "date": "Date",
+        "title": "Title",
+        "tutor": "Tutor",
+        "meeting": "Meeting",
+        "feedback": "Feedback",
+        "actions": "Actions",
+        "meetingNotes": "Meeting Notes"
+      },
+      "status": {
+        "active": "Active",
+        "complete": "Complete",
+        "cancelled": "Cancelled"
+      },
+      "sessionTitle": "Tutoring Session with {firstName} {lastName}",
+      "notAvailable": "N/A",
+      "noMeetingLink": "No meeting link",
+      "cancelSessionTooltip": "Cancel session",
+      "cancel": "Cancel",
+      "rowsTotal": "{count} row(s) total.",
+      "rowsPerPage": "Rows per page",
+      "pageOf": "Page {page} of {total}",
+      "viewSessionNotes": "View Session Notes"
+    }
+  }
+}

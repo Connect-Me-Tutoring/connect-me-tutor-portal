@@ -6,6 +6,7 @@ import * as z from "zod";
 import { useRouter } from "next/navigation";
 import toast, { Toaster } from "react-hot-toast";
 import { useState, useEffect, useRef, Suspense } from "react";
+import { useTranslations } from "next-intl";
 import { createClient } from "@/lib/supabase/client";
 import { startNavigationProgress } from "@/components/ui/navigation-progress";
 import { useSearchParams } from "next/navigation";
@@ -22,16 +23,6 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 
-// Define your Zod schema for OTP login
-const emailSchema = z.object({
-  email: z.string().email({ message: "Please enter a valid email." }),
-});
-
-const otpSchema = z.object({
-  email: z.string().email(), // Keep email for verification if needed
-  token: z.string().min(6, { message: "OTP must be 6 digits." }).max(6),
-});
-
 function OTPLogin() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -40,6 +31,17 @@ function OTPLogin() {
   const [otpSent, setOtpSent] = useState(false);
   const [emailForOtp, setEmailForOtp] = useState("");
   const sentOtp = useRef(false);
+  const t = useTranslations("auth.otpLogin");
+  const tCommon = useTranslations("auth.common");
+
+  const emailSchema = z.object({
+    email: z.string().email({ message: tCommon("errors.invalidEmail") }),
+  });
+
+  const otpSchema = z.object({
+    email: z.string().email(),
+    token: z.string().min(6, { message: t("errors.otpLength") }).max(6),
+  });
 
   const emailForm = useForm<z.infer<typeof emailSchema>>({
     resolver: zodResolver(emailSchema),
@@ -93,7 +95,7 @@ function OTPLogin() {
         throw error;
       }
 
-      toast.success("OTP sent to your email!");
+      toast.success(t("toasts.otpSent"));
       setOtpSent(true);
       emailForm.reset();
 
@@ -127,12 +129,12 @@ function OTPLogin() {
       }
 
       if (session) {
-        toast.success("Logged in successfully!");
+        toast.success(t("toasts.success"));
         startNavigationProgress();
         window.location.assign("/dashboard");
         return;
       } else {
-        toast.error("Failed to verify OTP. Please try again.");
+        toast.error(tCommon("toasts.otpVerifyFailed"));
       }
     } catch (error) {
       console.error("Error verifying OTP:", error);
@@ -157,10 +159,8 @@ function OTPLogin() {
               {!otpSent ? (
                 <>
                   <div className="flex flex-col gap-3 text-center">
-                    <h1 className="text-xl sm:text-2xl font-bold">Login with OTP</h1>
-                    <p className="text-sm text-gray-600">
-                      Enter your email to receive a One-Time Password.
-                    </p>
+                    <h1 className="text-xl sm:text-2xl font-bold">{t("title")}</h1>
+                    <p className="text-sm text-gray-600">{t("description")}</p>
                   </div>
                   <Form {...emailForm}>
                     <form
@@ -172,9 +172,13 @@ function OTPLogin() {
                         name="email"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Email</FormLabel>
+                            <FormLabel>{tCommon("email")}</FormLabel>
                             <FormControl>
-                              <Input type="email" placeholder="youremail@example.com" {...field} />
+                              <Input
+                                type="email"
+                                placeholder={tCommon("emailPlaceholder")}
+                                {...field}
+                              />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -185,7 +189,7 @@ function OTPLogin() {
                         className="w-full bg-blue-500 hover:bg-blue-600 text-white"
                         disabled={isLoading}
                       >
-                        {isLoading ? "Sending OTP..." : "Send OTP"}
+                        {isLoading ? t("sendingOtp") : t("sendOtp")}
                       </Button>
                     </form>
                   </Form>
@@ -193,9 +197,9 @@ function OTPLogin() {
               ) : (
                 <>
                   <div className="flex flex-col gap-3 text-center">
-                    <h1 className="text-xl sm:text-2xl font-bold">Enter OTP</h1>
+                    <h1 className="text-xl sm:text-2xl font-bold">{t("enterOtpTitle")}</h1>
                     <p className="text-sm text-gray-600">
-                      An OTP has been sent to {emailForOtp}. Please enter it below.
+                      {t("otpSentDescription", { email: emailForOtp })}
                     </p>
                   </div>
                   <Form {...otpForm} key="otp-form">
@@ -208,11 +212,11 @@ function OTPLogin() {
                         name="token"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>One-Time Password</FormLabel>
+                            <FormLabel>{t("otpLabel")}</FormLabel>
                             <FormControl>
                               <Input
                                 type="text"
-                                placeholder="Enter your 6-digit OTP"
+                                placeholder={t("otpPlaceholder")}
                                 maxLength={6}
                                 {...field}
                               />
@@ -226,7 +230,7 @@ function OTPLogin() {
                         className="w-full bg-green-500 hover:bg-green-600 text-white"
                         disabled={isLoading}
                       >
-                        {isLoading ? "Verifying..." : "Verify OTP & Login"}
+                        {isLoading ? tCommon("verifying") : t("verifyAndLogin")}
                       </Button>
                     </form>
                   </Form>
@@ -239,7 +243,7 @@ function OTPLogin() {
                     }}
                     disabled={isLoading}
                   >
-                    Use a different email?
+                    {tCommon("useDifferentEmail")}
                   </Button>
                 </>
               )}

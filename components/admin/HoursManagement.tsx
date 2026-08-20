@@ -1,5 +1,6 @@
 "use client";
 import React, { useState, useEffect } from "react";
+import { useTranslations } from "next-intl";
 import {
   format,
   startOfMonth,
@@ -77,6 +78,7 @@ import { LoadMoreButton } from "@/components/ui/load-more-button";
 import { useLoadMore } from "@/hooks/useLoadMore";
 
 const HoursManager = () => {
+  const t = useTranslations("adminSchedule");
   const [tutors, setTutors] = useState<Profile[]>([]);
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [sessionsData, setSessionsData] = useState<{
@@ -273,7 +275,7 @@ const HoursManager = () => {
       const data = (await getAllHoursBatch()) as unknown as { [key: string]: number };
       setAllTimeHours(data);
     } catch (error) {
-      toast.error("Unable to set all time hours");
+      toast.error(t("hoursManager.toasts.allTimeHoursError"));
     }
   };
 
@@ -296,7 +298,7 @@ const HoursManager = () => {
       )) as unknown as { [key: string]: { [key: string]: number } };
       setEventHoursData(data);
     } catch (error) {
-      toast.error("Unable to get event hours");
+      toast.error(t("hoursManager.toasts.eventHoursError"));
     }
   };
 
@@ -346,7 +348,7 @@ const HoursManager = () => {
       )) as unknown as { [key: string]: number };
       setMonthlyHours(data);
     } catch (error) {
-      toast.error("Error fetching monthly hours");
+      toast.error(t("hoursManager.toasts.monthlyHoursError"));
     }
   };
 
@@ -357,7 +359,7 @@ const HoursManager = () => {
       };
       setEventHoursData(data);
     } catch (error) {
-      toast.error("Error fetching All Time Event Hours");
+      toast.error(t("hoursManager.toasts.allTimeEventHoursError"));
     }
   };
 
@@ -369,7 +371,7 @@ const HoursManager = () => {
       const data: number = await getTotalHoursRange(firstDay.toISOString(), lastDay.toISOString());
       setTotalMonthlyHours(data);
     } catch (error) {
-      toast.error("Error fetching total monthly hours");
+      toast.error(t("hoursManager.toasts.totalMonthlyHoursError"));
     }
   };
 
@@ -378,7 +380,7 @@ const HoursManager = () => {
       const data: number = await getTotalHours();
       setTotalHours(data);
     } catch (error) {
-      toast.error("Error fetching total hours");
+      toast.error(t("hoursManager.toasts.totalHoursError"));
     }
   };
 
@@ -387,7 +389,7 @@ const HoursManager = () => {
       const data = (await getAllSessionHoursBatch()) as unknown as { [key: string]: number };
       setAllTimeSessionHours(data);
     } catch (error) {
-      toast.error("Error fetching All Time Session Hours");
+      toast.error(t("hoursManager.toasts.allTimeSessionHoursError"));
     }
   };
 
@@ -430,7 +432,7 @@ const HoursManager = () => {
 
       setTotalSessionHours(weeklyTotalSessionHours);
     } catch (error) {
-      toast.error("Error fetching Total Weekly Session Hours");
+      toast.error(t("hoursManager.toasts.totalWeeklySessionHoursError"));
     }
   };
 
@@ -445,7 +447,7 @@ const HoursManager = () => {
 
       setTotalEventHours(data);
     } catch (error) {
-      toast.error("Error fetching Total Event Hours");
+      toast.error(t("hoursManager.toasts.totalEventHoursError"));
     }
   };
 
@@ -458,7 +460,7 @@ const HoursManager = () => {
         calculateTotalHours(),
       ]);
     } catch (error) {
-      toast.error("Error fetching Total Session Hours");
+      toast.error(t("hoursManager.toasts.totalSessionHoursError"));
     }
   };
 
@@ -490,17 +492,17 @@ const HoursManager = () => {
     if (newEvent.tutorId && newEvent.date && newEvent.hours && newEvent.summary && newEvent.type) {
       try {
         await createEvent(newEvent as Event);
-        toast.success("Event added successfully.");
+        toast.success(t("hoursManager.toasts.eventAdded"));
         setIsAddEventModalOpen(false);
         setNewEvent({});
         setEventType("");
         fetchSessionsAndEvents();
       } catch (error) {
         console.error("Failed to add event:", error);
-        toast.error("Failed to add event");
+        toast.error(t("hoursManager.toasts.eventAddError"));
       }
     } else {
-      toast.error("Please fill all fields");
+      toast.error(t("hoursManager.toasts.fillAllFields"));
     }
   };
 
@@ -508,17 +510,17 @@ const HoursManager = () => {
     if (selectedEventToRemove) {
       try {
         const res = await removeEvent(selectedEventToRemove);
-        if (res) toast.success("Event removed successfully. Refresh to view update.");
-        else toast.error("Unable to remove event");
+        if (res) toast.success(t("hoursManager.toasts.eventRemoved"));
+        else toast.error(t("hoursManager.toasts.eventRemoveUnable"));
         setIsRemoveEventModalOpen(false);
         setSelectedEventToRemove(null);
         fetchSessionsAndEvents();
       } catch (error) {
         console.error("Failed to remove event:", error);
-        toast.error("Failed to remove event");
+        toast.error(t("hoursManager.toasts.eventRemoveError"));
       }
     } else {
-      toast.error("Please select an event to remove");
+      toast.error(t("hoursManager.toasts.selectEventToRemove"));
     }
   };
 
@@ -530,11 +532,11 @@ const HoursManager = () => {
   // bulk add sub hotline hours to selected tutors
   const handleAddSubHours = async () => {
     if (selectedSubTutors.length === 0) {
-      toast.error("Select at least one tutor");
+      toast.error(t("hoursManager.toasts.selectAtLeastOneTutor"));
       return;
     }
     if (!subHoursDate || !subHoursAmount) {
-      toast.error("Fill in date and hours");
+      toast.error(t("hoursManager.toasts.fillDateAndHours"));
       return;
     }
     try {
@@ -548,7 +550,7 @@ const HoursManager = () => {
         summary: subHoursSummary || "sub hours",
       }));
       await createEventsBatch(events);
-      toast.success(`Added sub hours to ${selectedSubTutors.length} tutor(s)`);
+      toast.success(t("hoursManager.toasts.subHoursAdded", { count: selectedSubTutors.length }));
       setIsSubHoursModalOpen(false);
       setSelectedSubTutors([]);
       setSubHoursSummary("");
@@ -557,7 +559,7 @@ const HoursManager = () => {
       fetchSessionsAndEvents();
     } catch (error) {
       console.error("Failed to add sub hours:", error);
-      toast.error("Failed to add sub hours");
+      toast.error(t("hoursManager.toasts.subHoursAddError"));
     }
   };
 
@@ -571,7 +573,7 @@ const HoursManager = () => {
   const handleFetchEvents = async (value: string) => {
     try {
       // Show loading state
-      toast.loading("Loading events...");
+      toast.loading(t("hoursManager.toasts.loadingEvents"));
       const events = await getEvents(value, {
         field: "date",
         ascending: false,
@@ -580,8 +582,55 @@ const HoursManager = () => {
       toast.dismiss();
     } catch (error) {
       console.error("Failed to fetch events:", error);
-      toast.error("Failed to load events");
+      toast.error(t("hoursManager.toasts.eventsLoadError"));
     }
+  };
+
+  // Translated copy for the PDF report. HoursReport.tsx is rendered outside the
+  // Next.js request/render tree (invoked from an API route via @react-pdf/renderer),
+  // so it can't call useTranslations/getTranslations itself — the already-resolved
+  // strings are passed through as part of the request payload instead. Template
+  // strings use %TOKEN% placeholders (not ICU {}) that HoursReport.tsx fills in with
+  // values only known once the PDF is being assembled (name, hours, percentages, etc).
+  const hoursReportLabels = {
+    table: {
+      tutorName: t("hoursReport.table.tutorName"),
+      allSessions: t("hoursReport.table.allSessions"),
+      biweeklyMeetings: t("hoursReport.table.biweeklyMeetings"),
+      tutorReferral: t("hoursReport.table.tutorReferral"),
+      subHotline: t("hoursReport.table.subHotline"),
+      other: t("hoursReport.table.other"),
+      allTimeTotal: t("hoursReport.table.allTimeTotal"),
+      thisMonth: t("hoursReport.table.thisMonth"),
+      totals: t("hoursReport.table.totals"),
+    },
+    header: {
+      allTimeTitle: t("hoursReport.header.allTimeTitle"),
+      monthlyTitle: t("hoursReport.header.monthlyTitle"),
+      allTimeSubtitle: t("hoursReport.header.allTimeSubtitle"),
+      monthlySubtitleTemplate: t("hoursReport.header.monthlySubtitleTemplate"),
+      generatedOnTemplate: t("hoursReport.header.generatedOnTemplate"),
+    },
+    stats: {
+      title: t("hoursReport.stats.title"),
+      activeTutors: t("hoursReport.stats.activeTutors"),
+      totalHours: t("hoursReport.stats.totalHours"),
+      avgHoursPerTutor: t("hoursReport.stats.avgHoursPerTutor"),
+      eventHours: t("hoursReport.stats.eventHours"),
+    },
+    insights: {
+      title: t("hoursReport.insights.title"),
+      topPerformerTemplate: t("hoursReport.insights.topPerformerTemplate"),
+      activePercentageTemplate: t("hoursReport.insights.activePercentageTemplate"),
+      eventPercentageTemplate: t("hoursReport.insights.eventPercentageTemplate"),
+    },
+    footer: {
+      title: t("hoursReport.footer.title"),
+      reportPeriodTemplate: t("hoursReport.footer.reportPeriodTemplate"),
+      reportPeriodAllTime: t("hoursReport.footer.reportPeriodAllTime"),
+      pageOfTemplate: t("hoursReport.footer.pageOfTemplate"),
+    },
+    monthAbbreviations: t.raw("hoursReport.monthAbbreviations") as string[],
   };
 
   // Sample data to test the basic PDF
@@ -601,6 +650,7 @@ const HoursManager = () => {
     filteredTutors: filteredTutors,
     logoUrl: "/logo.png",
     month: getMonth(selectedDate).toString(),
+    labels: hoursReportLabels,
   };
 
   // Example of how to call the API from the frontend
@@ -629,7 +679,7 @@ const HoursManager = () => {
       setReportLoading(false);
     } catch (error) {
       console.error("Error:", error);
-      toast.error("Failed to download Hours Report");
+      toast.error(t("hoursManager.toasts.downloadReportError"));
     }
   };
 
@@ -642,7 +692,7 @@ const HoursManager = () => {
   return (
     <main className="p-8">
       <div>
-        <h1 className="text-3xl font-bold mb-6">Hours Manager</h1>
+        <h1 className="text-3xl font-bold mb-6">{t("hoursManager.title")}</h1>
       </div>
       <div>
         <div className="overflow-x-auto flex-grow bg-white rounded-lg shadow p-6">
@@ -650,7 +700,7 @@ const HoursManager = () => {
             <div className="flex space-x-4">
               <Input
                 type="text"
-                placeholder="Filter Tutors"
+                placeholder={t("hoursManager.filterPlaceholder")}
                 className="w64"
                 value={filterValue}
                 onChange={(e) => setFilterValue(e.target.value)}
@@ -669,11 +719,11 @@ const HoursManager = () => {
                   }}
                 >
                   <SelectTrigger className="w-[180px]">
-                    <SelectValue placeholder="Select month" />
+                    <SelectValue placeholder={t("hoursManager.monthSelectPlaceholder")} />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem disabled={loading} value="All Time">
-                      All Time
+                      {t("hoursManager.allTime")}
                     </SelectItem>
                     {monthYearOptions.map((date) => (
                       <SelectItem key={date.toISOString()} value={date.toISOString()}>
@@ -688,12 +738,12 @@ const HoursManager = () => {
                       className="bg-connect-me-blue-2"
                       onClick={() => setIsAddEventModalOpen(true)}
                     >
-                      Add Event
+                      {t("hoursManager.buttons.addEvent")}
                     </Button>
                   </DialogTrigger>
                   <DialogContent>
                     <DialogHeader>
-                      <DialogTitle>Add New Event</DialogTitle>
+                      <DialogTitle>{t("hoursManager.addEventDialog.title")}</DialogTitle>
                     </DialogHeader>
                     <Combobox
                       list={tutors
@@ -713,23 +763,33 @@ const HoursManager = () => {
                       }}
                     >
                       <SelectTrigger className="">
-                        <SelectValue placeholder={"Select Type"} />
+                        <SelectValue placeholder={t("hoursManager.addEventDialog.typePlaceholder")} />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="Tutor Referral">Tutor Referral</SelectItem>
-                        <SelectItem value="Sub Hotline">Sub Hotline</SelectItem>
-                        <SelectItem value="Additional Tutoring Hours">
-                          Additional Tutoring Hours
+                        <SelectItem value="Tutor Referral">
+                          {t("hoursManager.addEventDialog.types.tutorReferral")}
                         </SelectItem>
-                        <SelectItem value="School Tutoring">School Tutoring</SelectItem>
-                        <SelectItem value="Biweekly Meeting">Biweekly Meeting</SelectItem>
-                        <SelectItem value="Other">Other</SelectItem>
+                        <SelectItem value="Sub Hotline">
+                          {t("hoursManager.addEventDialog.types.subHotline")}
+                        </SelectItem>
+                        <SelectItem value="Additional Tutoring Hours">
+                          {t("hoursManager.addEventDialog.types.additionalTutoringHours")}
+                        </SelectItem>
+                        <SelectItem value="School Tutoring">
+                          {t("hoursManager.addEventDialog.types.schoolTutoring")}
+                        </SelectItem>
+                        <SelectItem value="Biweekly Meeting">
+                          {t("hoursManager.addEventDialog.types.biweeklyMeeting")}
+                        </SelectItem>
+                        <SelectItem value="Other">
+                          {t("hoursManager.addEventDialog.types.other")}
+                        </SelectItem>
                       </SelectContent>
                     </Select>
                     <Input
                       type="date"
                       onChange={(e) => setNewEvent({ ...newEvent, date: e.target.value })}
-                      placeholder="Date"
+                      placeholder={t("hoursManager.addEventDialog.datePlaceholder")}
                     />
                     <Input
                       type="number"
@@ -739,16 +799,16 @@ const HoursManager = () => {
                           hours: parseFloat(e.target.value),
                         })
                       }
-                      placeholder="Hours"
+                      placeholder={t("hoursManager.addEventDialog.hoursPlaceholder")}
                     />
 
                     <Input
                       type="text"
                       onChange={(e) => setNewEvent({ ...newEvent, summary: e.target.value })}
-                      placeholder="Summary"
+                      placeholder={t("hoursManager.addEventDialog.summaryPlaceholder")}
                     />
                     <Button className="bg-connect-me-blue-2" onClick={handleAddEvent}>
-                      Add Event
+                      {t("hoursManager.buttons.addEvent")}
                     </Button>
                   </DialogContent>
                 </Dialog>
@@ -758,12 +818,12 @@ const HoursManager = () => {
                       className="bg-connect-me-blue-3"
                       onClick={() => setIsRemoveEventModalOpen(true)}
                     >
-                      Remove Event
+                      {t("hoursManager.buttons.removeEvent")}
                     </Button>
                   </DialogTrigger>
                   <DialogContent>
                     <DialogHeader>
-                      <DialogTitle>Remove Event</DialogTitle>
+                      <DialogTitle>{t("hoursManager.removeEventDialog.title")}</DialogTitle>
                     </DialogHeader>
                     <Combobox
                       list={tutors
@@ -778,7 +838,9 @@ const HoursManager = () => {
                     {eventsToRemove && (
                       <Select onValueChange={(value) => setSelectedEventToRemove(value)}>
                         <SelectTrigger>
-                          <SelectValue placeholder="Select Event to Remove" />
+                          <SelectValue
+                            placeholder={t("hoursManager.removeEventDialog.eventPlaceholder")}
+                          />
                         </SelectTrigger>
                         <SelectContent>
                           {eventsToRemove.map((event) => (
@@ -787,7 +849,9 @@ const HoursManager = () => {
                                 <span>
                                   {format(parseISO(event.date), "yyyy-MM-dd")} - {event.summary}
                                 </span>
-                                <span className="font-semibold ml-2">{event.hours} hrs</span>
+                                <span className="font-semibold ml-2">
+                                  {event.hours} {t("hoursManager.removeEventDialog.hoursSuffix")}
+                                </span>
                               </div>
                             </SelectItem>
                           ))}
@@ -795,7 +859,7 @@ const HoursManager = () => {
                       </Select>
                     )}
                     <Button className="bg-connect-me-3" onClick={handleRemoveEvent}>
-                      Remove Event
+                      {t("hoursManager.buttons.removeEvent")}
                     </Button>
                   </DialogContent>
                 </Dialog>
@@ -806,12 +870,12 @@ const HoursManager = () => {
                       className="bg-connect-me-blue-2"
                       onClick={() => setIsSubHoursModalOpen(true)}
                     >
-                      Add Sub Hours
+                      {t("hoursManager.buttons.addSubHours")}
                     </Button>
                   </DialogTrigger>
                   <DialogContent className="max-h-[80vh] flex flex-col">
                     <DialogHeader>
-                      <DialogTitle>Add Sub Hours</DialogTitle>
+                      <DialogTitle>{t("hoursManager.subHoursDialog.title")}</DialogTitle>
                     </DialogHeader>
                     {/* date defaults to yesterday, still editable */}
                     <Input
@@ -823,30 +887,30 @@ const HoursManager = () => {
                       type="number"
                       value={subHoursAmount}
                       onChange={(e) => setSubHoursAmount(parseFloat(e.target.value))}
-                      placeholder="Hours"
+                      placeholder={t("hoursManager.subHoursDialog.hoursPlaceholder")}
                     />
                     <Input
                       type="text"
                       value={subHoursSummary}
                       onChange={(e) => setSubHoursSummary(e.target.value)}
-                      placeholder="Summary (optional)"
+                      placeholder={t("hoursManager.subHoursDialog.summaryPlaceholder")}
                     />
                     {/* multi-select tutor list w/ filter */}
                     <Input
                       type="text"
-                      placeholder="Filter tutors..."
+                      placeholder={t("hoursManager.subHoursDialog.filterPlaceholder")}
                       value={subHoursFilter}
                       onChange={(e) => setSubHoursFilter(e.target.value)}
                     />
                     <div className="overflow-y-auto max-h-[300px] border rounded-md p-2 space-y-1">
                       {tutors
-                        .filter((t) => {
+                        .filter((tutor) => {
                           const q = subHoursFilter.toLowerCase();
                           if (!q) return true;
                           return (
-                            (t.firstName?.toLowerCase() || "").includes(q) ||
-                            (t.lastName?.toLowerCase() || "").includes(q) ||
-                            (t.email?.toLowerCase() || "").includes(q)
+                            (tutor.firstName?.toLowerCase() || "").includes(q) ||
+                            (tutor.lastName?.toLowerCase() || "").includes(q) ||
+                            (tutor.email?.toLowerCase() || "").includes(q)
                           );
                         })
                         .map((tutor) => (
@@ -870,34 +934,36 @@ const HoursManager = () => {
                         className="flex items-center gap-1 text-sm text-gray-500 hover:text-gray-700"
                         onClick={() => setShowSelectedList((v) => !v)}
                       >
-                        {selectedSubTutors.length} selected
+                        {t("hoursManager.subHoursDialog.selectedCount", {
+                          count: selectedSubTutors.length,
+                        })}
                         <ChevronDown
                           className={`h-4 w-4 transition-transform ${showSelectedList ? "rotate-180" : ""}`}
                         />
                       </button>
                       <Button className="bg-connect-me-blue-2" onClick={handleAddSubHours}>
-                        Add Hours
+                        {t("hoursManager.subHoursDialog.submit")}
                       </Button>
                     </div>
                     {/* dropdown showing who's selected */}
                     {showSelectedList && selectedSubTutors.length > 0 && (
                       <div className="border rounded-md p-2 space-y-1 max-h-[150px] overflow-y-auto bg-gray-50 text-sm">
                         {tutors
-                          .filter((t) => selectedSubTutors.includes(t.id))
-                          .map((t) => (
+                          .filter((tutor) => selectedSubTutors.includes(tutor.id))
+                          .map((tutor) => (
                             <div
-                              key={t.id}
+                              key={tutor.id}
                               className="flex items-center justify-between px-2 py-0.5"
                             >
                               <span>
-                                {t.firstName} {t.lastName}
+                                {tutor.firstName} {tutor.lastName}
                               </span>
                               <button
                                 type="button"
                                 className="text-xs text-red-400 hover:text-red-600"
-                                onClick={() => toggleSubTutor(t.id)}
+                                onClick={() => toggleSubTutor(tutor.id)}
                               >
-                                remove
+                                {t("hoursManager.subHoursDialog.remove")}
                               </button>
                             </div>
                           ))}
@@ -911,7 +977,7 @@ const HoursManager = () => {
                   onClick={handleDownloadHoursReport}
                   className="bg-connect-me-blue-4"
                 >
-                  Download Report
+                  {t("hoursManager.buttons.downloadReport")}
                   {reportLoading ? <Loader2 className="h-4 w-4 animate-spin ml-2" /> : ""}
                 </Button>
               </div>
@@ -922,15 +988,17 @@ const HoursManager = () => {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="sticky left-0 z-10 bg-white">Tutor Name</TableHead>
+                  <TableHead className="sticky left-0 z-10 bg-white">
+                    {t("hoursManager.table.tutorName")}
+                  </TableHead>
                   {allTimeView ? (
                     <>
-                      <TableHead>All Sessions</TableHead>
-                      <TableHead>Biweekly Meetings</TableHead>
-                      <TableHead>Tutor Referral</TableHead>
-                      <TableHead>Sub Hotline</TableHead>
-                      <TableHead>Other</TableHead>
-                      <TableHead>All Time</TableHead>
+                      <TableHead>{t("hoursManager.table.allSessions")}</TableHead>
+                      <TableHead>{t("hoursManager.table.biweeklyMeetings")}</TableHead>
+                      <TableHead>{t("hoursManager.table.tutorReferral")}</TableHead>
+                      <TableHead>{t("hoursManager.table.subHotline")}</TableHead>
+                      <TableHead>{t("hoursManager.table.other")}</TableHead>
+                      <TableHead>{t("hoursManager.table.allTime")}</TableHead>
                     </>
                   ) : (
                     <>
@@ -939,12 +1007,12 @@ const HoursManager = () => {
                           {format(week, "MMM d")} - {format(addDays(week, 6), "MMM d")}
                         </TableHead>
                       ))}
-                      <TableHead>Biweekly Meetings</TableHead>
-                      <TableHead>Tutor Referral</TableHead>
-                      <TableHead>Sub Hotline</TableHead>
-                      <TableHead>Other</TableHead>
-                      <TableHead>This Month</TableHead>
-                      <TableHead>All Time</TableHead>
+                      <TableHead>{t("hoursManager.table.biweeklyMeetings")}</TableHead>
+                      <TableHead>{t("hoursManager.table.tutorReferral")}</TableHead>
+                      <TableHead>{t("hoursManager.table.subHotline")}</TableHead>
+                      <TableHead>{t("hoursManager.table.other")}</TableHead>
+                      <TableHead>{t("hoursManager.table.thisMonth")}</TableHead>
+                      <TableHead>{t("hoursManager.table.allTime")}</TableHead>
                     </>
                   )}
                 </TableRow>
@@ -954,7 +1022,7 @@ const HoursManager = () => {
                   ""
                 ) : (
                   <TableRow key={"total hours"}>
-                    <TableCell>Total</TableCell>
+                    <TableCell>{t("hoursManager.table.total")}</TableCell>
                     {weeksInMonth.map((week) => {
                       const hours = totalSessionHours[week.getTime().toString()]
                         ? totalSessionHours[week.getTime().toString()] || ""
@@ -1044,19 +1112,19 @@ const HoursManager = () => {
           <div className="md:hidden space-y-4">
             {!allTimeView && (
               <MobileCard className="bg-muted/50">
-                <div className="font-semibold text-base">Totals</div>
+                <div className="font-semibold text-base">{t("hoursManager.mobile.totals")}</div>
                 <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm">
-                  <div>Biweekly Meetings</div>
+                  <div>{t("hoursManager.table.biweeklyMeetings")}</div>
                   <div>{totalEventHours["Biweekly Meeting"] || ""}</div>
-                  <div>Tutor Referral</div>
+                  <div>{t("hoursManager.table.tutorReferral")}</div>
                   <div>{totalEventHours["Tutor Referral"] || ""}</div>
-                  <div>Sub Hotline</div>
+                  <div>{t("hoursManager.table.subHotline")}</div>
                   <div>{totalEventHours["Sub Hotline"] || ""}</div>
-                  <div>Other</div>
+                  <div>{t("hoursManager.table.other")}</div>
                   <div>{totalEventHours["Other"] || ""}</div>
-                  <div>This Month</div>
+                  <div>{t("hoursManager.table.thisMonth")}</div>
                   <div>{totalMonthlyHours}</div>
-                  <div>All Time</div>
+                  <div>{t("hoursManager.table.allTime")}</div>
                   <div>{totalHours}</div>
                 </div>
                 <div className="flex gap-2 overflow-x-auto pt-1">
@@ -1081,32 +1149,32 @@ const HoursManager = () => {
                 <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm">
                   {allTimeView ? (
                     <>
-                      <div>All Sessions</div>
+                      <div>{t("hoursManager.table.allSessions")}</div>
                       <div>{allTimeSessionHours[tutor.id] || ""}</div>
-                      <div>Biweekly Meetings</div>
+                      <div>{t("hoursManager.table.biweeklyMeetings")}</div>
                       <div>{eventHoursData[tutor.id]?.["Biweekly Meeting"] || ""}</div>
-                      <div>Tutor Referral</div>
+                      <div>{t("hoursManager.table.tutorReferral")}</div>
                       <div>{eventHoursData[tutor.id]?.["Tutor Referral"] || ""}</div>
-                      <div>Sub Hotline</div>
+                      <div>{t("hoursManager.table.subHotline")}</div>
                       <div>{eventHoursData[tutor.id]?.["Sub Hotline"] || ""}</div>
-                      <div>Other</div>
+                      <div>{t("hoursManager.table.other")}</div>
                       <div>{eventHoursData[tutor.id]?.["Other"] || ""}</div>
-                      <div>All Time</div>
+                      <div>{t("hoursManager.table.allTime")}</div>
                       <div>{allTimeHours[tutor.id] || ""}</div>
                     </>
                   ) : (
                     <>
-                      <div>Biweekly Meetings</div>
+                      <div>{t("hoursManager.table.biweeklyMeetings")}</div>
                       <div>{eventHoursData[tutor.id]?.["Biweekly Meetings"] || ""}</div>
-                      <div>Tutor Referral</div>
+                      <div>{t("hoursManager.table.tutorReferral")}</div>
                       <div>{eventHoursData[tutor.id]?.["Tutor Referral"] || ""}</div>
-                      <div>Sub Hotline</div>
+                      <div>{t("hoursManager.table.subHotline")}</div>
                       <div>{eventHoursData[tutor.id]?.["Sub Hotline"] || ""}</div>
-                      <div>Other</div>
+                      <div>{t("hoursManager.table.other")}</div>
                       <div>{eventHoursData[tutor.id]?.["Other"] || ""}</div>
-                      <div>This Month</div>
+                      <div>{t("hoursManager.table.thisMonth")}</div>
                       <div>{monthlyHours[tutor.id] || ""}</div>
-                      <div>All Time</div>
+                      <div>{t("hoursManager.table.allTime")}</div>
                       <div>{allTimeHours[tutor.id] || ""}</div>
                     </>
                   )}

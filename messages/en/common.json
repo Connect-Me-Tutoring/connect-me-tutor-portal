@@ -1,0 +1,46 @@
+{
+  "save": "Save",
+  "cancel": "Cancel",
+  "loading": "Loading...",
+  "nav": {
+    "dashboard": "Dashboard",
+    "settings": "Settings",
+    "logout": "Logout",
+    "reportIssue": "Report an Issue",
+    "tutorPortalManual": "Tutor Portal Manual"
+  },
+  "toasts": {
+    "logoutSuccess": "Successfully logging out",
+    "switchProfileSuccess": "Switched Profile",
+    "switchProfileError": "Unable to switch profiles"
+  },
+  "languageSwitcher": {
+    "label": "Language",
+    "english": "English",
+    "spanish": "Spanish"
+  },
+  "sidebar": {
+    "announcements": "Announcements",
+    "chats": "Chats",
+    "pairings": "Pairings",
+    "profile": "Profile",
+    "myStudents": "My Students",
+    "myEnrollments": "My Enrollments",
+    "myHours": "My Hours",
+    "resources": "Resources",
+    "worksheets": "Worksheets",
+    "notifications": "Notifications",
+    "schedule": "Schedule",
+    "enrollments": "Enrollments",
+    "meetingSchedule": "Meeting Schedule",
+    "hoursManager": "Hours Manager",
+    "allTutors": "All Tutors",
+    "allStudents": "All Students",
+    "emailManager": "Email Manager",
+    "pairingQueue": "Pairing Queue",
+    "conversations": "Conversations",
+    "analytics": "Analytics",
+    "completeYourAccount": "Complete your account",
+    "manageAccountSettings": "Manage your account settings and preferences."
+  }
+}

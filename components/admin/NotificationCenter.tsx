@@ -1,5 +1,6 @@
 "use client";
 import React, { useState, useEffect, useCallback } from "react";
+import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import {
   Table,
@@ -29,6 +30,7 @@ import { LoadMoreButton } from "@/components/ui/load-more-button";
 import { useLoadMore } from "@/hooks/useLoadMore";
 
 const NotificationCenter = () => {
+  const t = useTranslations("adminOps.notifications");
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [filteredNotifications, setFilteredNotifications] = useState<Notification[]>([]);
   const [filterValue, setFilterValue] = useState("Active");
@@ -55,7 +57,7 @@ const NotificationCenter = () => {
       }
     } catch (error) {
       console.error("Failed to fetch notifications:", error);
-      toast.error("Failed to load notifications");
+      toast.error(t("toasts.loadError"));
     } finally {
       setLoading(false);
     }
@@ -108,10 +110,10 @@ const NotificationCenter = () => {
           notification.id === notificationId ? { ...notification, status: value } : notification,
         ),
       );
-      toast.success("Notification status updated");
+      toast.success(t("toasts.updateSuccess"));
     } catch (error) {
       console.error("Failed to update notification status:", error);
-      toast.error("Failed to update notification status");
+      toast.error(t("toasts.updateError"));
     }
   };
 
@@ -121,25 +123,25 @@ const NotificationCenter = () => {
 
   return (
     <main className="p-8">
-      <h1 className="text-3xl font-bold mb-6">Notification Center</h1>
+      <h1 className="text-3xl font-bold mb-6">{t("title")}</h1>
 
       <div className="flex-grow bg-white rounded-lg shadow p-6">
         <div className="flex justify-between items-center mb-4">
           <Input
             type="text"
-            placeholder="Search notifications..."
+            placeholder={t("searchPlaceholder")}
             className="w-64"
             value={searchValue}
             onChange={(e) => setSearchValue(e.target.value)}
           />
           <Select value={filterValue} onValueChange={setFilterValue}>
             <SelectTrigger className="w-[120px]">
-              <SelectValue placeholder="Filter Status" />
+              <SelectValue placeholder={t("filterStatusPlaceholder")} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="Active">Active</SelectItem>
-              <SelectItem value="Resolved">Resolved</SelectItem>
-              <SelectItem value="All">All</SelectItem>
+              <SelectItem value="Active">{t("status.active")}</SelectItem>
+              <SelectItem value="Resolved">{t("status.resolved")}</SelectItem>
+              <SelectItem value="All">{t("status.all")}</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -147,13 +149,13 @@ const NotificationCenter = () => {
           <Table className="bg-white">
             <TableHeader>
               <TableRow>
-                <TableHead>Status</TableHead>
-                <TableHead>Created At</TableHead>
-                <TableHead>Summary</TableHead>
-                <TableHead>Previous Date</TableHead>
-                <TableHead>Suggested Date</TableHead>
-                <TableHead>Tutor Name</TableHead>
-                <TableHead>Student Name</TableHead>
+                <TableHead>{t("table.status")}</TableHead>
+                <TableHead>{t("table.createdAt")}</TableHead>
+                <TableHead>{t("table.summary")}</TableHead>
+                <TableHead>{t("table.previousDate")}</TableHead>
+                <TableHead>{t("table.suggestedDate")}</TableHead>
+                <TableHead>{t("table.tutorName")}</TableHead>
+                <TableHead>{t("table.studentName")}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -170,8 +172,8 @@ const NotificationCenter = () => {
                         <SelectValue placeholder={notification.status} />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="Active">Active</SelectItem>
-                        <SelectItem value="Resolved">Resolved</SelectItem>
+                        <SelectItem value="Active">{t("status.active")}</SelectItem>
+                        <SelectItem value="Resolved">{t("status.resolved")}</SelectItem>
                       </SelectContent>
                     </Select>
                   </TableCell>
@@ -192,9 +194,9 @@ const NotificationCenter = () => {
 
           {/* Pagination Controls */}
           <div className="mt-4 hidden md:flex justify-between items-center">
-            <span>{filteredNotifications.length} row(s) total.</span>
+            <span>{t("rowsTotal", { count: filteredNotifications.length })}</span>
             <div className="flex items-center space-x-2">
-              <span>Rows per page</span>
+              <span>{t("rowsPerPage")}</span>
               <Select value={rowsPerPage.toString()} onValueChange={handleRowsPerPageChange}>
                 <SelectTrigger className="w-[70px]">
                   <SelectValue placeholder={rowsPerPage.toString()} />
@@ -205,9 +207,7 @@ const NotificationCenter = () => {
                   <SelectItem value="50">50</SelectItem>
                 </SelectContent>
               </Select>
-              <span>
-                Page {currentPage} of {totalPages}
-              </span>
+              <span>{t("pageOf", { current: currentPage, total: totalPages })}</span>
               <div className="flex space-x-1">
                 <Button
                   variant="ghost"
@@ -263,20 +263,28 @@ const NotificationCenter = () => {
                     <SelectValue placeholder={notification.status} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="Active">Active</SelectItem>
-                    <SelectItem value="Resolved">Resolved</SelectItem>
+                    <SelectItem value="Active">{t("status.active")}</SelectItem>
+                    <SelectItem value="Resolved">{t("status.resolved")}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
               <div className="text-sm">{notification.summary}</div>
               <div className="text-sm space-y-1">
-                <div>Previous Date: {formatDateAdmin(notification.previousDate)}</div>
-                <div>Suggested Date: {formatDateAdmin(notification.suggestedDate)}</div>
                 <div>
-                  Tutor: {notification.tutor?.firstName} {notification.tutor?.lastName}
+                  {t("mobilePreviousDate", { date: formatDateAdmin(notification.previousDate) })}
                 </div>
                 <div>
-                  Student: {notification.student?.firstName} {notification.student?.lastName}
+                  {t("mobileSuggestedDate", { date: formatDateAdmin(notification.suggestedDate) })}
+                </div>
+                <div>
+                  {t("mobileTutor", {
+                    name: `${notification.tutor?.firstName} ${notification.tutor?.lastName}`,
+                  })}
+                </div>
+                <div>
+                  {t("mobileStudent", {
+                    name: `${notification.student?.firstName} ${notification.student?.lastName}`,
+                  })}
                 </div>
               </div>
             </MobileCard>

@@ -1,0 +1,49 @@
+{
+  "adminConversationCard": {
+    "title": "Conversación con Administración",
+    "description": "Comunícate con los administradores para recibir apoyo y orientación",
+    "studentsAndTutors": "Estudiantes y Tutores",
+    "realTimeSupport": "Soporte en Tiempo Real",
+    "accessCta": "Acceder a la Conversación con Administración"
+  },
+  "roomPage": {
+    "heading": "Sesión de Tutoría"
+  },
+  "room": {
+    "invalidLink": "Este enlace de chat no es válido o falta el identificador de la pareja. Abre Mensajes y selecciona una pareja activa para comenzar a chatear.",
+    "participants": "Participantes",
+    "viewers": "Espectadores",
+    "chatRoomFallbackTitle": "Sala de Chat",
+    "readOnlyAnnouncementsChannel": "Canal de anuncios de solo lectura",
+    "participantsCount": "{count} participantes",
+    "muteEmailNotifications": "Silenciar notificaciones por correo para este chat",
+    "unableToLoadParticipants": "No se pudieron cargar los participantes",
+    "noMessagesYet": "Aún no hay mensajes",
+    "readOnlyBanner": "Este es un canal de anuncios de solo lectura",
+    "messagePlaceholder": "Escribe tu mensaje...",
+    "send": "Enviar",
+    "download": "Descargar",
+    "roles": {
+      "tutor": "tutor",
+      "student": "estudiante",
+      "admin": "administrador"
+    }
+  },
+  "conversations": {
+    "heading": "Mensajes",
+    "activeSessionsCount": "{count, plural, one {# sesión de tutoría activa} other {# sesiones de tutoría activas}}",
+    "tutorLabel": "Tutor",
+    "emptyState": {
+      "title": "No hay sesiones activas",
+      "description": "Tus conversaciones de tutoría aparecerán aquí"
+    },
+    "mock": {
+      "startConversation": "Inicia una conversación",
+      "now": "ahora",
+      "greatProgress": "¡Buen progreso en la lección de hoy!",
+      "reviewHomework": "Repasemos la tarea mañana",
+      "thanksExplanation": "Gracias por la explicación",
+      "reschedule": "¿Podemos reprogramar nuestra sesión?"
+    }
+  }
+}

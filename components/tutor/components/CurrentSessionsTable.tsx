@@ -1,5 +1,6 @@
 import React from "react";
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import { formatSessionDate, formatDateAdmin, formatSessionDuration } from "@/lib/utils";
 import { Session, Meeting } from "@/types";
 import { Button } from "@/components/ui/button";
@@ -116,20 +117,21 @@ const CurrentSessionsTable = ({
   };
 
   const TC = useDashboardContext();
+  const t = useTranslations("tutorSessions.tables");
   return (
     <>
       <div className="hidden md:block w-full">
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Mark Status</TableHead>
-              <TableHead>Date</TableHead>
-              <TableHead>Title</TableHead>
-              <TableHead>Student</TableHead>
-              <TableHead>Duration</TableHead>
-              <TableHead>Meeting</TableHead>
-              <TableHead>Session Exit Form</TableHead>
-              <TableHead>Actions</TableHead>
+              <TableHead>{t("common.columns.markStatus")}</TableHead>
+              <TableHead>{t("common.columns.date")}</TableHead>
+              <TableHead>{t("common.columns.title")}</TableHead>
+              <TableHead>{t("common.columns.student")}</TableHead>
+              <TableHead>{t("common.columns.duration")}</TableHead>
+              <TableHead>{t("common.columns.meeting")}</TableHead>
+              <TableHead>{t("common.columns.sessionExitForm")}</TableHead>
+              <TableHead>{t("common.columns.actions")}</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -139,17 +141,17 @@ const CurrentSessionsTable = ({
                   {session.status === "Active" ? (
                     <span className="px-3 py-1 inline-flex items-center rounded-full bg-blue-100 text-blue-800 border border-blue-200">
                       <Clock size={14} className="mr-1" />
-                      Active
+                      {t("common.status.active")}
                     </span>
                   ) : session.status === "Complete" ? (
                     <span className="px-3 py-1 inline-flex items-center rounded-full bg-green-100 text-green-800 border border-green-200">
                       <CircleCheckBig size={14} className="mr-1" />
-                      Complete
+                      {t("common.status.complete")}
                     </span>
                   ) : session.status === "Cancelled" ? (
                     <span className="px-3 py-1 inline-flex items-center rounded-full bg-red-100 text-red-800 border border-red-200">
                       <CircleX size={14} className="mr-1" />
-                      Cancelled
+                      {t("common.status.cancelled")}
                     </span>
                   ) : (
                     ""
@@ -157,7 +159,10 @@ const CurrentSessionsTable = ({
                 </TableCell>
                 <TableCell>{formatSessionDate(session.date)}</TableCell>
                 <TableCell className="font-medium">
-                  Tutoring Session with {session.student?.firstName} {session.student?.lastName}
+                  {t("common.sessionTitle", {
+                    firstName: session.student?.firstName ?? "",
+                    lastName: session.student?.lastName ?? "",
+                  })}
                 </TableCell>
                 <TableCell>
                   {session.student?.firstName} {session.student?.lastName}
@@ -170,10 +175,10 @@ const CurrentSessionsTable = ({
                       className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-connect-me-blue-2 transition-colors"
                     >
                       <Video className="h-4 w-4" />
-                      Meeting
+                      {t("common.meetingLinkLabel")}
                     </button>
                   ) : (
-                    <span className="text-sm text-muted-foreground/50">N/A</span>
+                    <span className="text-sm text-muted-foreground/50">{t("common.noMeetingLink")}</span>
                   )}
                 </TableCell>
                 <TableCell>
@@ -212,7 +217,7 @@ const CurrentSessionsTable = ({
                       </Button>
                     </HoverCardTrigger>
                     <HoverCardContent>
-                      <center>Request a Substitute</center>
+                      <center>{t("current.requestSubstituteHover")}</center>
                     </HoverCardContent>
                   </HoverCard>
                   {/* changed to show X icon for cancelled sessions, trash for active */}
@@ -228,7 +233,7 @@ const CurrentSessionsTable = ({
                         </Button>
                       </HoverCardTrigger>
                       <HoverCardContent>
-                        <center>Undo Cancel</center>
+                        <center>{t("current.undoCancelHover")}</center>
                       </HoverCardContent>
                     </HoverCard>
                   ) : (
@@ -257,22 +262,25 @@ const CurrentSessionsTable = ({
           <MobileCard key={index}>
             <div className="flex justify-between items-start gap-2">
               <div className="font-medium text-sm">
-                Tutoring Session with {session.student?.firstName} {session.student?.lastName}
+                {t("common.sessionTitle", {
+                  firstName: session.student?.firstName ?? "",
+                  lastName: session.student?.lastName ?? "",
+                })}
               </div>
               {session.status === "Active" ? (
                 <span className="px-3 py-1 inline-flex items-center rounded-full bg-blue-100 text-blue-800 border border-blue-200 whitespace-nowrap">
                   <Clock size={14} className="mr-1" />
-                  Active
+                  {t("common.status.active")}
                 </span>
               ) : session.status === "Complete" ? (
                 <span className="px-3 py-1 inline-flex items-center rounded-full bg-green-100 text-green-800 border border-green-200 whitespace-nowrap">
                   <CircleCheckBig size={14} className="mr-1" />
-                  Complete
+                  {t("common.status.complete")}
                 </span>
               ) : session.status === "Cancelled" ? (
                 <span className="px-3 py-1 inline-flex items-center rounded-full bg-red-100 text-red-800 border border-red-200 whitespace-nowrap">
                   <CircleX size={14} className="mr-1" />
-                  Cancelled
+                  {t("common.status.cancelled")}
                 </span>
               ) : (
                 ""
@@ -280,7 +288,9 @@ const CurrentSessionsTable = ({
             </div>
             <div className="text-sm text-muted-foreground">{formatSessionDate(session.date)}</div>
             <div className="text-sm space-y-1">
-              <div>Duration: {formatSessionDuration(session.duration)}</div>
+              <div>
+                {t("common.columns.duration")}: {formatSessionDuration(session.duration)}
+              </div>
               <div>
                 {session?.meeting?.meetingId ? (
                   <button
@@ -288,10 +298,12 @@ const CurrentSessionsTable = ({
                     className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-connect-me-blue-2 transition-colors"
                   >
                     <Video className="h-4 w-4" />
-                    Meeting
+                    {t("common.meetingLinkLabel")}
                   </button>
                 ) : (
-                  <span className="text-sm text-muted-foreground/50">No meeting link</span>
+                  <span className="text-sm text-muted-foreground/50">
+                    {t("common.noMeetingLinkMobile")}
+                  </span>
                 )}
               </div>
             </div>

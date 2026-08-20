@@ -1,0 +1,175 @@
+{
+  "dashboard": {
+    "thisWeek": "This Week",
+    "activeSessions": "Active Sessions",
+    "pastSessions": "Past Sessions",
+    "filterSessionsPlaceholder": "Filter sessions...",
+    "toasts": {
+      "sessionUpdated": "Session updated successfully",
+      "rescheduleError": "Failed to reschedule session",
+      "updateError": "Failed to update session",
+      "sessionMarkedComplete": "Session Marked Complete",
+      "questionConcernError": "Unable to record question or concern",
+      "sefRecordError": "Failed to record Session Exit Form",
+      "sefUndone": "Session exit form undone",
+      "undoExpired": "Time To Undo Expired",
+      "undoSefError": "Could not undo session exit form",
+      "cancellationUndone": "Session cancellation undone",
+      "undoCancelError": "Failed to undo session cancellation"
+    }
+  },
+  "calendar": {
+    "daysOfWeek": {
+      "sun": "Su",
+      "mon": "Mo",
+      "tue": "Tu",
+      "wed": "We",
+      "thu": "Th",
+      "fri": "Fr",
+      "sat": "Sa"
+    },
+    "meetingWith": "Meeting with {firstName} {lastName}"
+  },
+  "myStudents": {
+    "heading": "My Students",
+    "filterPlaceholder": "Filter students...",
+    "columns": {
+      "startDate": "Start Date",
+      "studentName": "Student Name",
+      "availability": "Availability",
+      "subjects": "Subjects",
+      "studentEmail": "Student Email",
+      "emailMobile": "Email",
+      "parentEmail": "Parent Email",
+      "parentPhone": "Parent Phone",
+      "actions": "Actions"
+    },
+    "subjectsLabel": "Subjects:",
+    "rowsTotal": "{count, plural, one {# row total} other {# rows total}}",
+    "rowsPerPage": "Rows per page",
+    "pageOf": "Page {current} of {total}"
+  },
+  "myEnrollments": {
+    "heading": "Enrollments"
+  },
+  "myStats": {
+    "heading": "My Hours",
+    "loading": "Loading hours...",
+    "tabs": {
+      "cardLayout": "Card Layout",
+      "unifiedTable": "Unified Table"
+    },
+    "unifiedTable": {
+      "category": "Category",
+      "type": "Type",
+      "description": "Description",
+      "date": "Date",
+      "hours": "Hours",
+      "total": "Total",
+      "categorySessions": "Sessions",
+      "categoryEvents": "Events",
+      "typeTutoring": "Tutoring"
+    },
+    "cards": {
+      "hoursSummary": "Hours Summary",
+      "sessionHours": "Session Hours",
+      "eventHours": "Event Hours",
+      "totalHours": "Total Hours",
+      "students": "Students",
+      "events": "Events",
+      "studentColumn": "Student",
+      "hoursColumn": "Hours",
+      "summaryColumn": "Summary"
+    }
+  },
+  "resources": {
+    "heading": "Tutor Resources",
+    "filterPlaceholder": "Filter resources...",
+    "columns": {
+      "title": "Title",
+      "description": "Description",
+      "link": "Link",
+      "type": "Type",
+      "subject": "Subject"
+    },
+    "openResource": "Open Resource",
+    "resourceTotal": "{count, plural, one {# resource total} other {# resources total}}",
+    "rowsPerPage": "Rows per page",
+    "pageOf": "Page {current} of {total}",
+    "mobileType": "Type: {type}",
+    "mobileSubject": "Subject: {subject}",
+    "handbook": {
+      "title": "Tutor Handbook",
+      "description": "Read before your first tutoring session!",
+      "body": "This handbook covers the expectations, policy, attendance, and other necessary information for the tutors",
+      "button": "Open Tutor Handbook"
+    },
+    "manual": {
+      "title": "Tutor Manual",
+      "description": "Manual that tutors can refer to",
+      "body": "This manual contains helpful information for tutors.",
+      "button": "Open Tutor Manual"
+    },
+    "faqs": {
+      "title": "Tutor FAQs",
+      "description": "Frequently asked questions for tutors.",
+      "body": "Find answers to common questions asked by tutors.",
+      "button": "Open Tutor FAQs"
+    }
+  },
+  "worksheets": {
+    "heading": "Worksheets",
+    "searchPlaceholder": "Search worksheets",
+    "all": "All",
+    "allGrades": "All grades",
+    "allWorksheets": "All worksheets",
+    "shown": "{count} shown",
+    "notFoundTitle": "No worksheets found",
+    "notFoundBody": "Try another folder or search term.",
+    "open": "Open",
+    "download": "Download"
+  },
+  "policyQuiz": {
+    "heading": "Policy & FAQ Quiz",
+    "subtitle": "Answer all questions correctly to complete the quiz. Missed questions will come back later.",
+    "categoryPolicy": "Policy",
+    "categoryFaq": "FAQ",
+    "questionLabel": "Question {number}",
+    "checkAnswer": "Check Answer",
+    "next": "Next",
+    "finish": "Finish",
+    "correct": "Correct!",
+    "incorrect": "Not quite — this one will come back later",
+    "mastered": "{completed} of {total} mastered",
+    "remainingCount": "{count} remaining",
+    "remaining": "{count, plural, one {# more question in the queue} other {# more questions in the queue}}",
+    "lastQuestion": "Last question!",
+    "complete": {
+      "title": "Quiz Complete!",
+      "subtitle": "You've mastered all the policies & FAQs",
+      "questions": "Questions",
+      "totalAttempts": "Total Attempts",
+      "retriesNeeded": "Retries Needed",
+      "perfectTitle": "Perfect score!",
+      "perfectBody": "You answered every question correctly on your first try. You're ready to start tutoring!",
+      "goodJobBody": "Great job working through the tricky questions! You now have a solid understanding of Connect Me's policies.",
+      "retakeQuiz": "Retake Quiz"
+    }
+  },
+  "aiChatbot": {
+    "pageTitle": "AI Chatbot",
+    "chatTitle": "Connect Me Chatbot",
+    "chatSubtitle": "Upload up to 2 documents and ask the chatbot to refer to them.",
+    "newChat": "New Chat",
+    "uploadLabel": "Upload documents (max 2)",
+    "uploadLimitError": "You can upload up to 2 documents total.",
+    "uploadTypeError": "Only .txt and .md documents are supported for now.",
+    "loadedDocuments": "Loaded documents",
+    "noDocuments": "No documents loaded yet.",
+    "emptyStateTitle": "How can I help you?",
+    "emptyStateSubtitle": "Ask me anything about your tutoring or learning materials.",
+    "inputPlaceholder": "Message AI Chatbot...",
+    "disclaimer": "AI Chatbot may produce inaccurate information",
+    "errorPrefix": "Error: {message}"
+  }
+}

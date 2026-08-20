@@ -2,12 +2,14 @@
 
 import { useState, useEffect, useRef } from "react";
 import { Send, Plus, User, Bot } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 
 function ChatInterface() {
+  const t = useTranslations("tutorPages.aiChatbot");
   const [input, setInput] = useState("");
   const [messages, setMessages] = useState<
     { role: "user" | "assistant"; content: string; id: string }[]
@@ -38,7 +40,7 @@ function ChatInterface() {
       return responseText;
     } catch (err: any) {
       console.error("chat error", err);
-      return `Error: ${err.message}`;
+      return t("errorPrefix", { message: err.message });
     }
   };
 
@@ -66,10 +68,8 @@ function ChatInterface() {
       <div className="border-b border-gray-200 px-6 py-4">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h2 className="text-lg font-semibold text-gray-900">Connect Me Chatbot</h2>
-            <p className="text-sm text-gray-500">
-              Upload up to 2 documents and ask the chatbot to refer to them.
-            </p>
+            <h2 className="text-lg font-semibold text-gray-900">{t("chatTitle")}</h2>
+            <p className="text-sm text-gray-500">{t("chatSubtitle")}</p>
           </div>
           <Button
             variant="outline"
@@ -83,12 +83,12 @@ function ChatInterface() {
             }}
           >
             <Plus className="h-4 w-4" />
-            New Chat
+            {t("newChat")}
           </Button>
         </div>
         <div className="mt-4 grid gap-3 sm:grid-cols-2">
           <label className="flex flex-col gap-2 text-sm text-slate-700">
-            Upload documents (max 2)
+            {t("uploadLabel")}
             <input
               type="file"
               multiple
@@ -99,7 +99,7 @@ function ChatInterface() {
                 if (!files?.length) return;
 
                 if (files.length + documents.length > 2) {
-                  setDocError("You can upload up to 2 documents total.");
+                  setDocError(t("uploadLimitError"));
                   return;
                 }
 
@@ -109,7 +109,7 @@ function ChatInterface() {
                   const name = file.name;
                   const lower = name.toLowerCase();
                   if (!lower.endsWith(".txt") && !lower.endsWith(".md")) {
-                    setDocError("Only .txt and .md documents are supported for now.");
+                    setDocError(t("uploadTypeError"));
                     continue;
                   }
 
@@ -130,9 +130,9 @@ function ChatInterface() {
             />
           </label>
           <div className="space-y-2">
-            <div className="text-sm font-medium text-slate-700">Loaded documents</div>
+            <div className="text-sm font-medium text-slate-700">{t("loadedDocuments")}</div>
             {documents.length === 0 ? (
-              <div className="text-sm text-slate-500">No documents loaded yet.</div>
+              <div className="text-sm text-slate-500">{t("noDocuments")}</div>
             ) : (
               <ul className="list-disc pl-5 text-sm text-slate-700">
                 {documents.map((doc) => (
@@ -149,10 +149,8 @@ function ChatInterface() {
         {messages.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full text-center">
             <div className="space-y-2">
-              <h3 className="text-lg font-medium text-gray-700">How can I help you?</h3>
-              <p className="text-sm text-gray-500">
-                Ask me anything about your tutoring or learning materials.
-              </p>
+              <h3 className="text-lg font-medium text-gray-700">{t("emptyStateTitle")}</h3>
+              <p className="text-sm text-gray-500">{t("emptyStateSubtitle")}</p>
             </div>
           </div>
         ) : (
@@ -194,7 +192,7 @@ function ChatInterface() {
           <div className="flex gap-2">
             <Input
               type="text"
-              placeholder="Message AI Chatbot..."
+              placeholder={t("inputPlaceholder")}
               value={input}
               onChange={(e) => setInput(e.target.value)}
               className="flex-1"
@@ -208,7 +206,7 @@ function ChatInterface() {
               <Send className="h-4 w-4" />
             </Button>
           </div>
-          <p className="text-xs text-gray-400">AI Chatbot may produce inaccurate information</p>
+          <p className="text-xs text-gray-400">{t("disclaimer")}</p>
         </form>
       </div>
     </div>
@@ -216,10 +214,11 @@ function ChatInterface() {
 }
 
 export default function AIChatbotPage() {
+  const t = useTranslations("tutorPages.aiChatbot");
   return (
     <div className="h-screen flex flex-col">
       <div className="p-8 pb-4">
-        <h1 className="text-3xl font-bold mb-6">AI Chatbot</h1>
+        <h1 className="text-3xl font-bold mb-6">{t("pageTitle")}</h1>
       </div>
       <div className="flex px-8 pb-32">
         <div className="flex-grow max-h-[65vh]">

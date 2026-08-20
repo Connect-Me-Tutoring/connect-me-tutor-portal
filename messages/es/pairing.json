@@ -1,0 +1,369 @@
+{
+  "page": {
+    "title": "Panel de Emparejamiento",
+    "description": "Encuentra tu pareja de aprendizaje ideal o ayuda a otros compartiendo tu conocimiento.",
+    "queueHeading": "Cola de emparejamiento y coincidencias",
+    "profileHeading": "Tu Perfil"
+  },
+  "chatPage": {
+    "title": "Sesión de Tutoría"
+  },
+  "committeeGraph": {
+    "defaultTitle": "Gráfico del comité de emparejamiento",
+    "subtitleQueue": "Haz clic en un estudiante o tutor para ver solo sus coincidencias en la cola con tutores o estudiantes. Haz clic en una flecha para ver materias y horarios en común.",
+    "subtitlePreview": "Haz clic en un estudiante o tutor para ver solo sus conexiones. Haz clic en una flecha para ver materias y horarios en común. Haz clic en Quitar filtro para mostrar a todos de nuevo.",
+    "showingLinksFor": "Mostrando conexiones de",
+    "clearFocus": "Quitar filtro",
+    "nothingToGraph": "Todavía no hay nada que graficar.",
+    "noOverlapWarning": "No hay materias ni horarios en común entre ningún estudiante y tutor de la cola. Aun así, se muestran a continuación; agrega coincidencias en los perfiles o ejecuta una vista previa para ver posibles emparejamientos.",
+    "graphAriaLabel": "Gráfico de conexiones entre tutores y estudiantes",
+    "overlapDetailsAriaLabel": "Detalles de la coincidencia",
+    "similarityScore": "Puntaje de similitud: {score}",
+    "overlappingSubjects": "Materias en común",
+    "overlappingTimes": "Horarios en común",
+    "noneListed": "Ninguno indicado",
+    "close": "Cerrar",
+    "roleStudent": "Estudiante",
+    "roleTutor": "Tutor",
+    "roleWithPriority": "{role} · P{priority}"
+  },
+  "interface": {
+    "statusTitle": "Estado de la cola de emparejamiento",
+    "loadingStatusDescription": "Cargando tu estado de emparejamiento...",
+    "inQueueLabel": "En la cola de emparejamiento",
+    "fetchingDescription": "Estamos obteniendo tu perfil y el estado de tu cola.",
+    "profileErrorDescription": "No pudimos cargar tu perfil para mostrar el estado del emparejamiento.",
+    "signInDescription": "Inicia sesión para ver y controlar el estado de tu cola de emparejamiento.",
+    "unavailableDescription": "El estado del emparejamiento no estará disponible hasta que se cargue tu cuenta.",
+    "incomingHeading": "Emparejamientos recibidos",
+    "searchPlaceholder": "Buscar por nombre o materia...",
+    "subjects": "Materias",
+    "languages": "Idiomas",
+    "studentAvailabilities": "Disponibilidad del Estudiante",
+    "accept": "Aceptar",
+    "decline": "Rechazar",
+    "waiting": "En espera",
+    "noResultsForSearch": "No hay resultados para tu búsqueda",
+    "noMatchingProfiles": "No se encontraron perfiles coincidentes",
+    "toasts": {
+      "accepting": "Aceptando emparejamiento...",
+      "rejecting": "Rechazando emparejamiento...",
+      "acceptSuccess": "Emparejamiento aceptado correctamente",
+      "rejectSuccess": "Emparejamiento rechazado correctamente",
+      "acceptError": "No se pudo aceptar el emparejamiento: {error}",
+      "rejectError": "No se pudo rechazar el emparejamiento: {error}"
+    }
+  },
+  "logs": {
+    "loading": "Cargando registros de emparejamiento...",
+    "errors": {
+      "noPreviewRunForId": "No se encontró ninguna vista previa guardada para este id de ejecución",
+      "loadSavedPreviewFailed": "No se pudo cargar la vista previa guardada",
+      "loadLogsFailed": "No se pudieron cargar los registros de emparejamiento",
+      "reloadSavedPreviewFailed": "No se pudo volver a cargar la vista previa guardada",
+      "refreshLogsFailed": "No se pudieron actualizar los registros de emparejamiento"
+    },
+    "toasts": {
+      "noPreviewLoaded": "No hay ninguna vista previa cargada",
+      "selectAtLeastOne": "Selecciona al menos una coincidencia propuesta para guardar",
+      "saveSuccess": "Se guardaron los cambios de la cola de esta vista previa",
+      "saveError": "No se pudieron guardar los cambios de la cola",
+      "saving": "Guardando cambios de la cola..."
+    },
+    "graphDialog": {
+      "selectedTitle": "Seleccionados para guardar",
+      "completeTitle": "Todas las coincidencias propuestas",
+      "selectedDescription": "Solo se enviarán las filas marcadas en la tabla de coincidencias al guardar. Flechas: estudiante → tutor.",
+      "completeDescription": "Todos los emparejamientos estudiante → tutor propuestos en esta vista previa. Compáralos con el gráfico de seleccionados antes de guardar."
+    },
+    "retry": "Reintentar",
+    "previewActions": {
+      "cardTitle": "Acciones de la Vista Previa ({runId})",
+      "selectedGraph": "Gráfico de seleccionados",
+      "allProposed": "Todos los propuestos",
+      "viewProposedGraph": "Ver gráfico de propuestos",
+      "selectRowHint": "Selecciona al menos una fila en la tabla de coincidencias",
+      "queueAlreadySaved": "Cola Ya Guardada",
+      "saving": "Guardando...",
+      "saveSelected": "Guardar seleccionados ({count})",
+      "saveQueue": "Guardar Cola",
+      "reloadPreview": "Volver a Cargar Vista Previa",
+      "refreshing": "Actualizando..."
+    },
+    "legacyPreviewWarning": "Esta vista previa no tiene metadatos de coincidencias. Al guardar se aplicarán todas las coincidencias propuestas. Ejecuta una nueva vista previa desde la cola para revisar coincidencias y guardar de forma selectiva.",
+    "overlapBeforeSave": {
+      "cardTitle": "Coincidencias antes de guardar",
+      "selectAll": "Seleccionar todo",
+      "clearAll": "Quitar selección",
+      "student": "Estudiante",
+      "tutor": "Tutor",
+      "subjects": "Materias",
+      "times": "Horarios",
+      "selectRowAriaLabel": "Seleccionar {name}",
+      "none": "Ninguno",
+      "withTutor": "con {tutorName}"
+    },
+    "stats": {
+      "totalEvents": "Eventos Totales",
+      "matchesCreated": "Coincidencias Creadas",
+      "accepted": "Aceptadas",
+      "rejected": "Rechazadas",
+      "failed": "Fallidas"
+    },
+    "filters": {
+      "cardTitle": "Filtros",
+      "refresh": "Actualizar",
+      "refreshing": "Actualizando...",
+      "dateFrom": "Desde la Fecha",
+      "dateTo": "Hasta la Fecha",
+      "eventType": "Tipo de Evento",
+      "userType": "Tipo de Usuario",
+      "status": "Estado",
+      "allTypes": "Todos los Tipos",
+      "pairingMatch": "Coincidencia de Emparejamiento",
+      "matchAccepted": "Coincidencia Aceptada",
+      "matchRejected": "Coincidencia Rechazada",
+      "selectionFailed": "Selección Fallida",
+      "allUsers": "Todos los Usuarios",
+      "students": "Estudiantes",
+      "tutors": "Tutores",
+      "allStatuses": "Todos los Estados",
+      "clearFilters": "Limpiar Filtros"
+    },
+    "table": {
+      "cardTitle": "Registros de Actividad de Emparejamiento ({count} eventos)",
+      "timestamp": "Fecha y Hora",
+      "type": "Tipo",
+      "user": "Usuario",
+      "status": "Estado",
+      "message": "Mensaje",
+      "loading": "Cargando...",
+      "noLogsFound": "No se encontraron registros de emparejamiento",
+      "noLogsMatchFilters": "Ningún registro coincide con los filtros actuales"
+    }
+  },
+  "runLogs": {
+    "cardTitle": "Registros de la Ejecución de Emparejamiento",
+    "noSavedRun": "No se encontró ninguna vista previa guardada para esta página.",
+    "backToQueue": "Volver a la Cola de Emparejamiento",
+    "graphDialog": {
+      "selectedTitle": "Seleccionados para aplicar",
+      "completeTitle": "Todas las coincidencias propuestas",
+      "selectedDescription": "Solo se aplicarán las filas marcadas. Flechas: estudiante → tutor.",
+      "completeDescription": "Todos los emparejamientos de esta vista previa. Compáralos con tu selección antes de aplicar."
+    },
+    "toasts": {
+      "selectAtLeastOne": "Selecciona al menos una coincidencia propuesta para aplicar",
+      "applySuccess": "Se aplicaron los cambios guardados de esta ejecución",
+      "applyError": "No se pudo aplicar esta ejecución",
+      "applying": "Aplicando ejecución guardada..."
+    },
+    "actions": {
+      "selectedGraph": "Gráfico de seleccionados",
+      "allProposed": "Todos los propuestos",
+      "viewGraph": "Ver gráfico",
+      "viewGlobalLogs": "Ver Registros Globales",
+      "selectRowHint": "Selecciona al menos una fila en la tabla de coincidencias",
+      "alreadyApplied": "Ya Aplicado",
+      "applyThisRun": "Aplicar Esta Ejecución",
+      "applySelected": "Aplicar seleccionados ({count})"
+    },
+    "runIdLabel": "ID de Ejecución:",
+    "createdLabel": "Creado:",
+    "appliedAt": "Aplicado el {date}",
+    "badges": {
+      "proposedMatches": "Coincidencias propuestas: {count}",
+      "runLogs": "Registros de la ejecución: {count}",
+      "selectedToApply": "Seleccionados para aplicar: {count}"
+    },
+    "legacyPreviewWarning": "Esta vista previa se guardó antes de que existieran los metadatos de coincidencias. Al aplicar se insertarán todas las coincidencias propuestas. Ejecuta una nueva vista previa para revisar coincidencias y aplicar de forma selectiva.",
+    "overlapReview": {
+      "cardTitle": "Revisar coincidencias antes de aplicar",
+      "selectRowHint": "Selecciona al menos una fila en la tabla siguiente",
+      "selectAllVisible": "Seleccionar todo (visible)",
+      "clearAll": "Quitar selección",
+      "showAll": "Mostrar todo",
+      "showNoOverlapOnly": "Mostrar solo sin coincidencias",
+      "student": "Estudiante",
+      "tutor": "Tutor",
+      "similarity": "Similitud",
+      "subjectOverlap": "Materias en común",
+      "timeOverlap": "Horarios en común",
+      "noMatchesInFilter": "No hay coincidencias propuestas con este filtro.",
+      "selectMatchAriaLabel": "Seleccionar coincidencia {student} / {tutor}",
+      "none": "Ninguno",
+      "withTutor": "con {tutorName}",
+      "similarityValue": "Similitud: {value}"
+    },
+    "runLogsTable": {
+      "cardTitle": "Registros solo de esta ejecución ({count})",
+      "step": "Paso",
+      "type": "Tipo",
+      "status": "Estado",
+      "message": "Mensaje",
+      "noLogsCaptured": "No se registró ninguna actividad en esta ejecución.",
+      "stepLabel": "Paso {number}",
+      "statusError": "error",
+      "statusOk": "ok"
+    }
+  },
+  "queue": {
+    "heading": "Gestión de la Cola de Emparejamiento",
+    "description": "Solicitudes de emparejamiento activas (tutores y estudiantes), ordenadas por prioridad",
+    "loadError": "No se pudo cargar la cola de emparejamiento",
+    "queueHeading": "Cola ({count})",
+    "countSummary": "{tutorCount, plural, one {# tutor} other {# tutores}} · {studentCount, plural, one {# estudiante} other {# estudiantes}}",
+    "viewGraph": "Ver gráfico",
+    "saveResults": "Guardar Resultados",
+    "saving": "Guardando...",
+    "saveResultsWithCount": "Guardar Resultados ({count})",
+    "toasts": {
+      "noChanges": "No hay cambios en las opciones de emparejamiento para guardar",
+      "saving": "Guardando opciones de emparejamiento...",
+      "saveSuccess": "Opciones de emparejamiento guardadas",
+      "saveError": "No se pudieron guardar las opciones de emparejamiento"
+    },
+    "reviewDialog": {
+      "title": "Revisar cambios de prioridad",
+      "description": "Confirma las actualizaciones de prioridad y revisa cómo coincide cada perfil (materias y horarios) con los mejores candidatos del rol opuesto en la cola actual.",
+      "priorityChange": "Prioridad {previous} → {next}",
+      "topOverlapHeading": "Mejores coincidencias con otros miembros de la cola",
+      "noOppositeRole": "No hay solicitudes del rol opuesto en la cola para comparar.",
+      "subjectOverlap": "Materias en común",
+      "timeOverlap": "Horarios en común",
+      "none": "Ninguno",
+      "cancel": "Cancelar",
+      "confirmSave": "Confirmar guardado",
+      "saving": "Guardando…"
+    },
+    "table": {
+      "profile": "Perfil",
+      "role": "Rol",
+      "status": "Estado",
+      "priority": "Prioridad",
+      "availability": "Disponibilidad",
+      "subjects": "Materias",
+      "languages": "Idiomas",
+      "actions": "Acciones",
+      "priorityBadge": "Prioridad {level}",
+      "moreCount": "+{count} más",
+      "moreCountShort": "+{count}"
+    },
+    "status": {
+      "pending": "Pendiente",
+      "accepted": "Aceptado",
+      "rejected": "Rechazado"
+    },
+    "role": {
+      "tutor": "tutor",
+      "student": "estudiante"
+    },
+    "removeDialog": {
+      "title": "Eliminar Solicitud de Emparejamiento de {name}",
+      "back": "Atrás",
+      "confirm": "Eliminar Solicitud de Emparejamiento"
+    },
+    "emptyState": "No hay nadie en la cola de emparejamiento"
+  },
+  "requestCard": {
+    "loading": "Cargando...",
+    "queueSwitch": {
+      "label": "En la cola de emparejamiento",
+      "onDescription": "Puedes ser emparejado mientras esto esté activado. Desactívalo para pausar sin perder tus datos guardados.",
+      "archivedDescription": "Saliste de la cola activa. Activa esto para volver a unirte con tus preferencias guardadas.",
+      "offDescription": "Activa esto para unirte a la cola. Puedes agregar notas opcionales a continuación primero."
+    },
+    "archived": {
+      "title": "Cola de emparejamiento (archivada)",
+      "description": "Saliste de la cola activa. Tus notas y preferencias están guardadas; no serás emparejado hasta que vuelvas a unirte.",
+      "badge": "Archivada",
+      "priorityBadge": "Prioridad {priority}",
+      "savedNotesLabel": "Notas guardadas"
+    },
+    "active": {
+      "title": "Cola de Emparejamiento",
+      "description": "Estás en la cola de emparejamiento. Serás emparejado según disponibilidad y compatibilidad.",
+      "priorityBadge": "Prioridad {priority}"
+    },
+    "status": {
+      "pending": "Pendiente",
+      "accepted": "Aceptado",
+      "rejected": "Rechazado"
+    },
+    "blockRejected": {
+      "label": "Bloquear tutores que me rechazaron antes",
+      "description": "Cuando está activado, no serás emparejado con tutores que hayan rechazado tu solicitud anteriormente."
+    },
+    "newRequest": {
+      "title": "Enviar Solicitud de Emparejamiento",
+      "description": "Envía una solicitud para ser emparejado con un tutor o estudiante. Tu solicitud será revisada y emparejada según disponibilidad, experiencia en la materia y compatibilidad. El proceso de emparejamiento suele tardar entre 24 y 48 horas.",
+      "howItWorksHeading": "Cómo Funciona",
+      "step1": "Activa <strong>En la cola de emparejamiento</strong> arriba (agrega notas opcionales primero)",
+      "step2": "Nuestro sistema te empareja según disponibilidad y compatibilidad",
+      "step3": "Recibirás una notificación cuando se encuentre una coincidencia",
+      "step4": "Conéctate con tu pareja de aprendizaje para comenzar tu proceso de aprendizaje",
+      "notesLabel": "Notas Adicionales",
+      "optional": "(Opcional)",
+      "notesPlaceholder": "Cuéntanos sobre tus metas de aprendizaje, materias preferidas, disponibilidad o cualquier requisito específico...",
+      "charCount": "{count}/500 caracteres",
+      "statusExamplesHeading": "Ejemplos de Estado de la Solicitud",
+      "pendingReview": "Revisión Pendiente",
+      "matchFound": "Coincidencia Encontrada",
+      "noMatchAvailable": "Sin Coincidencia Disponible"
+    },
+    "toasts": {
+      "joinSuccess": "Agregado correctamente a la cola de emparejamiento",
+      "joining": "Creando solicitud de emparejamiento",
+      "joinError": "No se pudo agregar a la cola de emparejamiento",
+      "leaveSuccess": "Se eliminó de la cola activa (tu solicitud está guardada)",
+      "leaving": "Saliendo de la cola",
+      "leaveError": "No se pudo salir de la cola",
+      "rejoinSuccess": "Ya estás de vuelta en la cola de emparejamiento",
+      "rejoining": "Volviendo a unirte a la cola",
+      "rejoinError": "No se pudo volver a unir",
+      "preferenceUpdating": "Actualizando preferencia",
+      "preferenceUpdated": "Preferencia actualizada",
+      "preferenceError": "No se pudo actualizar la preferencia"
+    }
+  },
+  "testControls": {
+    "heading": "Controles de Prueba",
+    "previewQueueOutput": "Vista Previa de la Cola",
+    "applySavedPreview": "Aplicar Vista Previa Guardada",
+    "openLatestRunLogs": "Abrir Registros de la Última Ejecución",
+    "resolveQueueImmediate": "Resolver Cola (Inmediato)",
+    "clearQueue": "Vaciar Cola",
+    "logs": "Registros",
+    "resetAllPairingMatches": "Restablecer todas las coincidencias de emparejamiento",
+    "resetDialog": {
+      "title": "Restablecer Todas las Coincidencias de Emparejamiento",
+      "description": "Quitar tutores y estudiantes de la cola de emparejamiento",
+      "back": "Atrás",
+      "confirm": "Restablecer todas las coincidencias de emparejamiento"
+    },
+    "toasts": {
+      "runPreviewFirst": "Ejecuta primero una vista previa",
+      "previewReady": "Vista previa lista. Revisa los registros antes de aplicar.",
+      "previewError": "No se pudo ejecutar la vista previa de emparejamiento",
+      "previewLoading": "Generando vista previa de emparejamiento...",
+      "runPreviewBeforeApply": "Ejecuta una vista previa antes de aplicar cambios en la cola",
+      "applySuccess": "Se aplicaron los cambios guardados de la cola",
+      "applyError": "No se pudieron aplicar los cambios guardados de la cola",
+      "applyLoading": "Aplicando cambios guardados de la cola...",
+      "resolveSuccess": "El proceso de emparejamiento se ejecutó correctamente",
+      "resolveError": "No se pudo ejecutar el proceso de emparejamiento",
+      "resolveLoading": "Emparejando...",
+      "resetQueueSuccess": "Cola restablecida correctamente",
+      "resetQueueError": "No se pudo restablecer la cola",
+      "resetQueueLoading": "Restableciendo cola",
+      "clearQueueSuccess": "Cola vaciada correctamente",
+      "clearQueueError": "No se pudo vaciar la cola",
+      "clearQueueLoading": "Vaciando..."
+    },
+    "previewSummary": "Vista previa generada con {matchCount, plural, one {# coincidencia propuesta} other {# coincidencias propuestas}} y {logCount, plural, one {# registro} other {# registros}}.",
+    "noPreviewLogs": "No se devolvió ningún registro de vista previa.",
+    "logEntry": "{status} - [{type}] {message}",
+    "statusOk": "OK",
+    "statusError": "ERROR"
+  }
+}

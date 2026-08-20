@@ -1,5 +1,6 @@
 "use client";
 import React, { useState, useEffect } from "react";
+import { useTranslations } from "next-intl";
 import {
   Bell,
   ChevronDown,
@@ -92,6 +93,7 @@ const StudentList = ({ initialStudents }: any) =>
   //   onDeactivate: (studentId: string) => void;
   // }
   {
+    const t = useTranslations("adminPeople.studentList");
     const supabase = createClient();
     const [students, setStudents] = useState<Profile[]>(initialStudents);
     const [filteredStudents, setFilteredStudents] = useState<Profile[]>(initialStudents);
@@ -290,7 +292,7 @@ const StudentList = ({ initialStudents }: any) =>
           setIsModalOpen(false);
           setStudents((prevStudents) => [...prevStudents, addedStudent]);
           setFilteredStudents((prev) => [...prev, addedStudent]);
-          toast.success("Successfully added student.");
+          toast.success(t("toasts.addSuccess"));
 
           // Reset form
           setNewStudent({
@@ -318,13 +320,15 @@ const StudentList = ({ initialStudents }: any) =>
 
         // Provide more descriptive error messages
         if (err.message.includes("Email")) {
-          toast.error(
-            "Failed to add student. Please check the email address and ensure it is valid and unique.",
-          );
+          toast.error(t("toasts.addErrorEmail"));
         } else if (err.message.includes("required")) {
-          toast.error(`Failed to add student. Required field error: ${err.message}`);
+          toast.error(t("toasts.addErrorRequired", { message: err.message }));
         } else {
-          toast.error(`Failed to add student: ${err.message || "Please try again"}`);
+          toast.error(
+            t("toasts.addErrorGeneric", {
+              message: err.message || t("toasts.addErrorGenericFallback"),
+            }),
+          );
         }
       } finally {
         setAddingStudent(false);
@@ -359,7 +363,7 @@ const StudentList = ({ initialStudents }: any) =>
           setIsModalOpen(false);
           setStudents((prevStudents) => [...prevStudents, addedStudent]);
 
-          toast.success("Successfully added student.");
+          toast.success(t("toasts.addSuccess"));
 
           // Reset form
           setNewStudent({
@@ -388,13 +392,15 @@ const StudentList = ({ initialStudents }: any) =>
 
         // Provide more descriptive error messages
         if (err.message.includes("Email")) {
-          toast.error(
-            "Failed to add student. Please check the email address and ensure it is valid and unique.",
-          );
+          toast.error(t("toasts.addErrorEmail"));
         } else if (err.message.includes("required")) {
-          toast.error(`Failed to add student. Required field error: ${err.message}`);
+          toast.error(t("toasts.addErrorRequired", { message: err.message }));
         } else {
-          toast.error(`Failed to add student: ${err.message || "Please try again"}`);
+          toast.error(
+            t("toasts.addErrorGeneric", {
+              message: err.message || t("toasts.addErrorGenericFallback"),
+            }),
+          );
         }
       } finally {
         setAddingStudent(false);
@@ -406,12 +412,12 @@ const StudentList = ({ initialStudents }: any) =>
         try {
           console.log("Deleting User");
           await deleteUser(selectedStudentId);
-          toast.success("Student deleted successfully");
+          toast.success(t("toasts.deleteSuccess"));
           setIsDeactivateModalOpen(false);
           setSelectedStudentId(null);
           getStudentData();
         } catch (error) {
-          toast.error("Failed to delete student");
+          toast.error(t("toasts.deleteError"));
         }
       }
     };
@@ -422,13 +428,13 @@ const StudentList = ({ initialStudents }: any) =>
         try {
           const data = await deactivateUser(selectedStudentId); // Call deactivateUser function with studentId
           if (data) {
-            toast.success("Student deactivated successfully");
+            toast.success(t("toasts.deactivateSuccess"));
             setIsDeactivateModalOpen(false);
             setSelectedStudentId(null);
             getStudentData();
           }
         } catch (error) {
-          toast.error("Failed to deactivate student");
+          toast.error(t("toasts.deactivateError"));
         }
       }
     };
@@ -450,12 +456,12 @@ const StudentList = ({ initialStudents }: any) =>
       if (selectedStudent) {
         try {
           await editProfile(selectedStudent);
-          toast.success("Tutor Edited Successfully");
+          toast.success(t("toasts.editSuccess"));
           setIsEditModalOpen(false);
           setSelectedStudent(null);
           getStudentData();
         } catch (error) {
-          toast.error("Failed to edit tutor");
+          toast.error(t("toasts.editError"));
         }
       }
     };
@@ -465,19 +471,19 @@ const StudentList = ({ initialStudents }: any) =>
         try {
           const data = await reactivateUser(selectedStudentId); // Call deactivateUser function with studentId
           if (data) {
-            toast.success("Student reactivated successfully");
+            toast.success(t("toasts.reactivateSuccess"));
             setIsReactivateModalOpen(false);
             setSelectedStudentId(null);
             getStudentData();
           }
         } catch (error) {
-          toast.error("Failed to deactivate student");
+          toast.error(t("toasts.reactivateError"));
         }
       }
     };
 
     const handleExportCSV = () => {
-      const headers = ["First Name", "Last Name", "Email"];
+      const headers = [t("csvHeaders.firstName"), t("csvHeaders.lastName"), t("csvHeaders.email")];
       const csvData = filteredStudents.map((student) => [
         student.firstName,
         student.lastName,
@@ -510,22 +516,21 @@ const StudentList = ({ initialStudents }: any) =>
         </AlertDialogTrigger>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Resend Email Confirmation for {student.firstName}</AlertDialogTitle>
-            <AlertDialogDescription>
-              {" "}
-              Note: Will not resend confirmation email if the user has already signed in before
-            </AlertDialogDescription>
+            <AlertDialogTitle>
+              {t("resendEmail.title", { name: student.firstName })}
+            </AlertDialogTitle>
+            <AlertDialogDescription> {t("resendEmail.description")}</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel>{t("resendEmail.cancel")}</AlertDialogCancel>
             <AlertDialogAction
               onClick={() =>
                 resendEmailConfirmation(student.email)
-                  .then(() => toast.success("Resent Email Confirmation"))
-                  .catch(() => toast.error("Failed to resend email"))
+                  .then(() => toast.success(t("toasts.resendSuccess")))
+                  .catch(() => toast.error(t("toasts.resendError")))
               }
             >
-              Resend
+              {t("resendEmail.confirm")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -535,43 +540,43 @@ const StudentList = ({ initialStudents }: any) =>
     const columns: ResponsiveListColumn<Profile>[] = [
       {
         key: "studentNumber",
-        header: "Student #",
+        header: t("table.studentNumber"),
         cell: (student) => student.studentNumber,
         mobileCell: null,
       },
       {
         key: "status",
-        header: "Status",
+        header: t("table.status"),
         cell: (student) => student.status,
         mobileCell: null,
       },
       {
         key: "startDate",
-        header: "Start Date",
+        header: t("table.startDate"),
         cell: (student) => student.startDate,
-        mobileLabel: "Start Date",
+        mobileLabel: t("table.startDate"),
         mobileClassName: "text-sm text-muted-foreground",
       },
       {
         key: "name",
-        header: "Student Name",
+        header: t("table.name"),
         cell: (student) => `${student.firstName} ${student.lastName}`,
         mobileCell: null,
       },
       {
         key: "grade",
-        header: "Grade Level",
+        header: t("table.grade"),
         cell: (student) => student.grade,
-        mobileLabel: "Grade Level",
+        mobileLabel: t("table.grade"),
       },
       {
         key: "availability",
-        header: "Availability",
+        header: t("table.availability"),
         cell: (student) => <UserAvailabilities user={student} />,
       },
       {
         key: "subjects",
-        header: "Subjects Learning",
+        header: t("table.subjectsLearning"),
         cell: (student) => (
           <>
             {student.subjects_of_interest?.map((item, i) => (
@@ -583,7 +588,7 @@ const StudentList = ({ initialStudents }: any) =>
         mobileCell: (student) =>
           student.subjects_of_interest?.length > 0 && (
             <>
-              <div className="font-medium">Subjects Learning:</div>
+              <div className="font-medium">{t("mobileSubjectsLearningLabel")}</div>
               <div className="flex flex-wrap gap-2 mt-1">
                 {student.subjects_of_interest.map((subject, i) => (
                   <span key={i} className="px-2 py-1 text-xs bg-muted rounded-md">
@@ -596,28 +601,28 @@ const StudentList = ({ initialStudents }: any) =>
       },
       {
         key: "email",
-        header: "Email",
+        header: t("table.email"),
         cell: (student) => student.email,
-        mobileLabel: "Email",
+        mobileLabel: t("table.email"),
         mobileGroup: "contact",
       },
       {
         key: "parentEmail",
-        header: "Parent Email",
+        header: t("table.parentEmail"),
         cell: (student) => student.parentEmail || "",
-        mobileLabel: "Parent Email",
+        mobileLabel: t("table.parentEmail"),
         mobileGroup: "contact",
       },
       {
         key: "parentPhone",
-        header: "Parent Phone",
+        header: t("table.parentPhone"),
         cell: (student) => student.parentPhone,
-        mobileLabel: "Parent Phone",
+        mobileLabel: t("table.parentPhone"),
         mobileGroup: "contact",
       },
       {
         key: "actions",
-        header: "Actions",
+        header: t("table.actions"),
         cell: (student) => renderResendEmailAction(student),
         mobileCell: null,
       },
@@ -629,13 +634,13 @@ const StudentList = ({ initialStudents }: any) =>
           <div className="flex space-x-2">
             <Input
               type="text"
-              placeholder="Filter students..."
+              placeholder={t("filterPlaceholder")}
               className="w-64"
               value={filterValue}
               onChange={(e) => setFilterValue(e.target.value)}
             />
             <Button variant="outline" onClick={handleExportCSV}>
-              <Download className="mr-2 h-4 w-4" /> Export CSV
+              <Download className="mr-2 h-4 w-4" /> {t("exportCsv")}
             </Button>
             {/*Add Student*/}
             <AddStudentForm
@@ -690,9 +695,9 @@ const StudentList = ({ initialStudents }: any) =>
         />
 
         <div className="mt-4 hidden md:flex justify-between items-center">
-          <span>{filteredStudents.length} row(s) total.</span>
+          <span>{t("pagination.rowsTotal", { count: filteredStudents.length })}</span>
           <div className="flex items-center space-x-2">
-            <span>Rows per page</span>
+            <span>{t("pagination.rowsPerPage")}</span>
             <Select value={rowsPerPage.toString()} onValueChange={handleRowsPerPageChange}>
               <SelectTrigger className="w-[70px]">
                 <SelectValue placeholder={rowsPerPage.toString()} />
@@ -703,9 +708,7 @@ const StudentList = ({ initialStudents }: any) =>
                 <SelectItem value="50">50</SelectItem>
               </SelectContent>
             </Select>
-            <span>
-              Page {currentPage} of {totalPages}
-            </span>
+            <span>{t("pagination.page", { current: currentPage, total: totalPages })}</span>
             <div className="flex space-x-1">
               <Button
                 variant="ghost"

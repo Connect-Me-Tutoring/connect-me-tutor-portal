@@ -11,6 +11,7 @@ import {
   ChevronLeft,
   ChevronRight,
 } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import AvailabilityFormat from "@/components/student/AvailabilityFormat";
@@ -32,6 +33,7 @@ import { useLoadMore } from "@/hooks/useLoadMore";
 import { ResponsiveList, ResponsiveListColumn } from "@/components/ui/responsive-list";
 
 const StudentList = ({ initialStudents }: any) => {
+  const t = useTranslations("tutorPages.myStudents");
   const supabase = createClient();
   const { profile, setProfile } = useProfile();
   const [students, setStudents] = useState<Profile[]>([]);
@@ -82,25 +84,25 @@ const StudentList = ({ initialStudents }: any) => {
   const columns: ResponsiveListColumn<Profile>[] = [
     {
       key: "startDate",
-      header: "Start Date",
+      header: t("columns.startDate"),
       cell: (student) => student.startDate,
-      mobileLabel: "Start Date",
+      mobileLabel: t("columns.startDate"),
       mobileClassName: "text-sm text-muted-foreground",
     },
     {
       key: "name",
-      header: "Student Name",
+      header: t("columns.studentName"),
       cell: (student) => `${student.firstName} ${student.lastName}`,
       mobileCell: null,
     },
     {
       key: "availability",
-      header: "Availability",
+      header: t("columns.availability"),
       cell: (student) => <UserAvailabilities user={student} />,
     },
     {
       key: "subjects",
-      header: "Subjects",
+      header: t("columns.subjects"),
       cell: (student) => (
         <div className="flex flex-col">
           {student.subjects_of_interest?.map((subject, i) => (
@@ -111,7 +113,7 @@ const StudentList = ({ initialStudents }: any) => {
       mobileCell: (student) =>
         student.subjects_of_interest?.length > 0 && (
           <>
-            <div className="font-medium">Subjects:</div>
+            <div className="font-medium">{t("subjectsLabel")}</div>
             <div className="flex flex-wrap gap-2 mt-1">
               {student.subjects_of_interest.map((subject, i) => (
                 <span key={i} className="px-2 py-1 text-xs bg-muted rounded-md">
@@ -124,28 +126,28 @@ const StudentList = ({ initialStudents }: any) => {
     },
     {
       key: "email",
-      header: "Student Email",
+      header: t("columns.studentEmail"),
       cell: (student) => student.email,
-      mobileLabel: "Email",
+      mobileLabel: t("columns.emailMobile"),
       mobileGroup: "contact",
     },
     {
       key: "parentEmail",
-      header: "Parent Email",
+      header: t("columns.parentEmail"),
       cell: (student) => student.parentEmail,
-      mobileLabel: "Parent Email",
+      mobileLabel: t("columns.parentEmail"),
       mobileGroup: "contact",
     },
     {
       key: "parentPhone",
-      header: "Parent Phone",
+      header: t("columns.parentPhone"),
       cell: (student) => student.parentPhone,
-      mobileLabel: "Parent Phone",
+      mobileLabel: t("columns.parentPhone"),
       mobileGroup: "contact",
     },
     {
       key: "actions",
-      header: "Actions",
+      header: t("columns.actions"),
       cell: (student) => <DeletePairingForm student={student} tutor={profile} />,
       mobileCell: null,
     },
@@ -156,7 +158,7 @@ const StudentList = ({ initialStudents }: any) => {
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
         <Input
           type="text"
-          placeholder="Filter students..."
+          placeholder={t("filterPlaceholder")}
           className="w-full sm:w-64"
           value={filterValue}
           onChange={(e) => setFilterValue(e.target.value)}
@@ -175,10 +177,10 @@ const StudentList = ({ initialStudents }: any) => {
         mobileFooter={<LoadMoreButton hasMore={hasMoreStudents} onClick={loadMoreStudents} />}
       />
       <div className="hidden md:flex justify-between mt-4">
-        <span>{filteredStudents.length} row(s) total.</span>
+        <span>{t("rowsTotal", { count: filteredStudents.length })}</span>
 
         <div className="flex items-center space-x-2">
-          <span>Rows per page</span>
+          <span>{t("rowsPerPage")}</span>
           <Select value={rowsPerPage.toString()} onValueChange={handleRowsPerPageChange}>
             <SelectTrigger className="w-[70px]">
               <SelectValue />
@@ -193,7 +195,7 @@ const StudentList = ({ initialStudents }: any) => {
 
         <div className="flex items-center gap-2">
           <span className="text-sm">
-            Page {currentPage} of {totalPages || 1}
+            {t("pageOf", { current: currentPage, total: totalPages || 1 })}
           </span>
           <div className="flex gap-1">
             <Button

@@ -1,0 +1,300 @@
+{
+  "calendar": {
+    "daysOfWeek": {
+      "Su": "Do",
+      "Mo": "Lu",
+      "Tu": "Ma",
+      "We": "Mi",
+      "Th": "Ju",
+      "Fr": "Vi",
+      "Sa": "Sá"
+    },
+    "meetingWith": "Reunión con {name}"
+  },
+  "days": {
+    "Sunday": "Domingo",
+    "Monday": "Lunes",
+    "Tuesday": "Martes",
+    "Wednesday": "Miércoles",
+    "Thursday": "Jueves",
+    "Friday": "Viernes",
+    "Saturday": "Sábado"
+  },
+  "time": {
+    "am": "a.m.",
+    "pm": "p.m."
+  },
+  "scheduleManagement": {
+    "toolbar": {
+      "today": "Hoy",
+      "goToToday": "Ir a hoy",
+      "updateWeek": "Actualizar Semana",
+      "loading": "Cargando"
+    },
+    "legend": {
+      "complete": "Completada",
+      "cancelled": "Cancelada",
+      "active": "Activa",
+      "standalone": "Independiente"
+    },
+    "views": {
+      "day": "Día",
+      "week": "Semana",
+      "month": "Mes"
+    },
+    "monthView": {
+      "dayAbbrev": {
+        "Sun": "Dom",
+        "Mon": "Lun",
+        "Tue": "Mar",
+        "Wed": "Mié",
+        "Thu": "Jue",
+        "Fri": "Vie",
+        "Sat": "Sáb"
+      }
+    },
+    "loadingSessions": "Cargando sesiones...",
+    "stats": {
+      "sessions": "sesiones",
+      "completed": "completadas",
+      "tutors": "tutores",
+      "students": "estudiantes"
+    },
+    "shared": {
+      "selectAStudent": "Selecciona un estudiante",
+      "selectATutor": "Selecciona un tutor",
+      "selectAMeeting": "Selecciona una reunión"
+    },
+    "addSessionDialog": {
+      "title": "Agregar Sesión",
+      "studentLabel": "Estudiante",
+      "tutorLabel": "Tutor",
+      "dateLabel": "Fecha",
+      "durationLabel": "Duración",
+      "durationPlaceholder": "Selecciona una duración",
+      "hour": "hora",
+      "hours": "horas",
+      "minutes": "minutos",
+      "meetingLinkLabel": "Enlace de Reunión",
+      "checkingAvailability": "Verificando Disponibilidad de la Reunión"
+    },
+    "sessionDetailsDialog": {
+      "title": "Detalles de la Sesión",
+      "statusLabel": "Estado",
+      "statusPlaceholder": "Selecciona un estado",
+      "statusOptions": {
+        "active": "Activa",
+        "complete": "Completada",
+        "cancelled": "Cancelada"
+      },
+      "tutorLabel": "Tutor",
+      "studentLabel": "Estudiante",
+      "dateLabel": "Fecha",
+      "meetingLabel": "Reunión",
+      "notesLabel": "Notas (Solo visibles para el Administrador)",
+      "sefReasonLabel": "Motivo del Formulario de Salida",
+      "sefReasonPlaceholder": "aún no hay formulario de salida de sesión",
+      "sefBoxesLabel": "Casillas del formulario de salida: {boxes}",
+      "sefBoxesNone": "ninguna",
+      "flags": {
+        "questionOrConcern": "pregunta/inquietud",
+        "firstSession": "primera sesión",
+        "cancelled": "cancelada"
+      },
+      "viewParticipation": "Ver Participación de la Sesión",
+      "checkingAvailableMeetingLinks": "Verificando Enlaces de Reunión Disponibles",
+      "updateSession": "Actualizar Sesión",
+      "deleteSession": "Eliminar Sesión"
+    },
+    "toasts": {
+      "sessionsLoadError": "No se pudieron cargar las sesiones",
+      "studentsLoadError": "No se pudieron cargar los estudiantes",
+      "enrollmentsLoadError": "No se pudieron cargar las inscripciones",
+      "meetingsLoadError": "No se pudieron cargar las reuniones",
+      "meetingAvailabilityError": "No se pudieron encontrar enlaces de reunión disponibles",
+      "sessionsAdded": "Se agregaron {count} sesiones nuevas correctamente",
+      "waitAddingSessions": "Espera mientras se agregan las nuevas sesiones",
+      "addSessionsFailed": "No se pudieron agregar las sesiones. {message}",
+      "sessionRemoved": "Sesión eliminada correctamente",
+      "sessionRemoveFailed": "No se pudo eliminar la sesión",
+      "sessionUpdated": "Sesión actualizada correctamente",
+      "sessionUpdateFailed": "No se pudo actualizar la sesión",
+      "sessionAdded": "Sesión agregada",
+      "sessionAddError": "No se pudo agregar la sesión"
+    }
+  },
+  "hqSchedule": {
+    "toolbar": {
+      "allLinks": "Todos los enlaces",
+      "newEvent": "Nuevo evento"
+    },
+    "eventForm": {
+      "titleLabel": "Título",
+      "titlePlaceholder": "Título del evento",
+      "descriptionLabel": "Descripción",
+      "descriptionPlaceholder": "Descripción opcional",
+      "dayLabel": "Día",
+      "dayPlaceholder": "Selecciona un día",
+      "startTimeLabel": "Hora de inicio",
+      "startTimePlaceholder": "Inicio",
+      "endTimeLabel": "Hora de finalización",
+      "endTimePlaceholder": "Fin",
+      "zoomLinkLabel": "Enlace de Zoom",
+      "zoomLinkPlaceholder": "Selecciona un enlace de Zoom",
+      "zoomLinkSetFirst": "Primero define el día y las horas"
+    },
+    "addDialog": {
+      "title": "Nuevo Evento",
+      "cancel": "Cancelar",
+      "save": "Guardar evento"
+    },
+    "editDialog": {
+      "title": "Editar Evento",
+      "cancel": "Cancelar",
+      "save": "Actualizar evento"
+    },
+    "meetingBadge": "Reunión",
+    "enrollmentBadge": "Inscripción",
+    "toasts": {
+      "loadSchedulesError": "No se pudieron cargar los horarios: {message}",
+      "eventSaved": "Evento guardado",
+      "eventSaveError": "No se pudo guardar el evento",
+      "eventUpdated": "Evento actualizado",
+      "eventUpdateError": "No se pudo actualizar el evento"
+    }
+  },
+  "hoursManager": {
+    "title": "Gestor de Horas",
+    "filterPlaceholder": "Filtrar Tutores",
+    "monthSelectPlaceholder": "Selecciona un mes",
+    "allTime": "Todo el Tiempo",
+    "buttons": {
+      "addEvent": "Agregar Evento",
+      "removeEvent": "Eliminar Evento",
+      "addSubHours": "Agregar Horas de Suplencia",
+      "downloadReport": "Descargar Informe"
+    },
+    "addEventDialog": {
+      "title": "Agregar Nuevo Evento",
+      "typePlaceholder": "Selecciona un Tipo",
+      "types": {
+        "tutorReferral": "Referido de Tutor",
+        "subHotline": "Línea de Suplencias",
+        "additionalTutoringHours": "Horas Adicionales de Tutoría",
+        "schoolTutoring": "Tutoría Escolar",
+        "biweeklyMeeting": "Reunión Quincenal",
+        "other": "Otro"
+      },
+      "datePlaceholder": "Fecha",
+      "hoursPlaceholder": "Horas",
+      "summaryPlaceholder": "Resumen"
+    },
+    "removeEventDialog": {
+      "title": "Eliminar Evento",
+      "eventPlaceholder": "Selecciona el Evento a Eliminar",
+      "hoursSuffix": "hrs"
+    },
+    "subHoursDialog": {
+      "title": "Agregar Horas de Suplencia",
+      "hoursPlaceholder": "Horas",
+      "summaryPlaceholder": "Resumen (opcional)",
+      "filterPlaceholder": "Filtrar tutores...",
+      "selectedCount": "{count} seleccionados",
+      "remove": "eliminar",
+      "submit": "Agregar Horas"
+    },
+    "table": {
+      "tutorName": "Nombre del Tutor",
+      "allSessions": "Todas las Sesiones",
+      "biweeklyMeetings": "Reuniones Quincenales",
+      "tutorReferral": "Referido de Tutor",
+      "subHotline": "Línea de Suplencias",
+      "other": "Otro",
+      "allTime": "Todo el Tiempo",
+      "thisMonth": "Este Mes",
+      "total": "Total"
+    },
+    "mobile": {
+      "totals": "Totales"
+    },
+    "toasts": {
+      "allTimeHoursError": "No se pudieron establecer las horas totales",
+      "eventHoursError": "No se pudieron obtener las horas de eventos",
+      "monthlyHoursError": "Error al obtener las horas mensuales",
+      "allTimeEventHoursError": "Error al obtener las Horas de Eventos de Todo el Tiempo",
+      "totalMonthlyHoursError": "Error al obtener el total de horas mensuales",
+      "totalHoursError": "Error al obtener el total de horas",
+      "allTimeSessionHoursError": "Error al obtener las Horas de Sesión de Todo el Tiempo",
+      "totalWeeklySessionHoursError": "Error al obtener el Total de Horas de Sesión Semanales",
+      "totalEventHoursError": "Error al obtener el Total de Horas de Eventos",
+      "totalSessionHoursError": "Error al obtener el Total de Horas de Sesión",
+      "eventAdded": "Evento agregado correctamente.",
+      "eventAddError": "No se pudo agregar el evento",
+      "fillAllFields": "Por favor completa todos los campos",
+      "eventRemoved": "Evento eliminado correctamente. Actualiza la página para ver el cambio.",
+      "eventRemoveUnable": "No se pudo eliminar el evento",
+      "eventRemoveError": "No se pudo eliminar el evento",
+      "selectEventToRemove": "Por favor selecciona un evento para eliminar",
+      "selectAtLeastOneTutor": "Selecciona al menos un tutor",
+      "fillDateAndHours": "Completa la fecha y las horas",
+      "subHoursAdded": "Se agregaron horas de suplencia a {count} tutor(es)",
+      "subHoursAddError": "No se pudieron agregar las horas de suplencia",
+      "loadingEvents": "Cargando eventos...",
+      "eventsLoadError": "No se pudieron cargar los eventos",
+      "downloadReportError": "No se pudo descargar el Informe de Horas"
+    }
+  },
+  "hoursReport": {
+    "table": {
+      "tutorName": "Nombre del Tutor",
+      "allSessions": "Todas las Sesiones",
+      "biweeklyMeetings": "Reuniones\nQuincenales",
+      "tutorReferral": "Referido\nde Tutor",
+      "subHotline": "Línea de\nSuplencias",
+      "other": "Otro",
+      "allTimeTotal": "Total\nAcumulado",
+      "thisMonth": "Este\nMes",
+      "totals": "TOTALES"
+    },
+    "header": {
+      "allTimeTitle": "Informe de Horas de Todo el Tiempo",
+      "monthlyTitle": "Informe de Horas Mensual",
+      "allTimeSubtitle": "Resumen Integral de Desempeño",
+      "monthlySubtitleTemplate": "Informe de Desempeño - %DATE%",
+      "generatedOnTemplate": "Generado el %DATE%"
+    },
+    "stats": {
+      "title": "Estadísticas de Desempeño",
+      "activeTutors": "Tutores Activos",
+      "totalHours": "Total de Horas",
+      "avgHoursPerTutor": "Prom. Horas/Tutor",
+      "eventHours": "Horas de Eventos"
+    },
+    "insights": {
+      "title": "Datos Clave",
+      "topPerformerTemplate": "Mejor desempeño: %NAME% con %HOURS% horas",
+      "activePercentageTemplate": "%PERCENT%% de los tutores están contribuyendo horas activamente",
+      "eventPercentageTemplate": "Las actividades de eventos representan el %PERCENT%% del total de horas"
+    },
+    "footer": {
+      "title": "Connect Me Tutoring - Informe de Horas",
+      "reportPeriodTemplate": "Período del Informe: %PERIOD%",
+      "reportPeriodAllTime": "Todo el Tiempo",
+      "pageOfTemplate": "Página %PAGE% de %TOTAL%"
+    },
+    "monthAbbreviations": [
+      "ene",
+      "feb",
+      "mar",
+      "abr",
+      "may",
+      "jun",
+      "jul",
+      "ago",
+      "sep",
+      "oct",
+      "nov",
+      "dic"
+    ]
+  }
+}

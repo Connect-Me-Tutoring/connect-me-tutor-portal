@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { Session } from "@/types";
 
 interface StudentCalendarProps {
@@ -7,7 +8,8 @@ interface StudentCalendarProps {
 }
 
 export default function StudentCalendar({ sessions }: StudentCalendarProps) {
-  const daysOfWeek = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"];
+  const t = useTranslations("adminSchedule.calendar");
+  const daysOfWeekKeys = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"] as const;
   const currentDate = new Date();
 
   const [currentMonth, setCurrentMonth] = useState(currentDate.getMonth());
@@ -47,9 +49,10 @@ export default function StudentCalendar({ sessions }: StudentCalendarProps) {
             <div
               className="absolute top-1 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bottom-1 w-2 h-2 bg-orange-500 rounded-full"
               title={sessionsOnThisDay
-                .map(
-                  (session) =>
-                    `Meeting with ${session.tutor?.firstName} ${session.tutor?.lastName}`,
+                .map((session) =>
+                  t("meetingWith", {
+                    name: `${session.tutor?.firstName} ${session.tutor?.lastName}`,
+                  }),
                 )
                 .join(", ")} // Display sessionname(s) as tooltip
             ></div>
@@ -98,9 +101,9 @@ export default function StudentCalendar({ sessions }: StudentCalendarProps) {
         </div>
       </div>
       <div className="grid grid-cols-7 gap-1">
-        {daysOfWeek.map((day) => (
+        {daysOfWeekKeys.map((day) => (
           <div key={day} className="text-center font-medium text-gray-500">
-            {day}
+            {t(`daysOfWeek.${day}`)}
           </div>
         ))}
         {generateCalendarDays()}

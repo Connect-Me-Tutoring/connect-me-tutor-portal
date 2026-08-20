@@ -1,5 +1,6 @@
 "use client";
 import React, { useState, useEffect, useCallback, use, Suspense } from "react";
+import { useTranslations } from "next-intl";
 // import StudentCalendar from "../StudentCalendar";
 import { Input } from "@/components/ui/input";
 import ActiveSessionsTable from "./components/ActiveSessionsTable";
@@ -36,6 +37,7 @@ import { useLoadMore } from "@/hooks/useLoadMore";
 
 const StudentDashboard = () => {
   const SC = useDashboardContext();
+  const t = useTranslations("student.dashboard");
 
   const getUserData = useCallback(async () => {
     try {
@@ -44,7 +46,7 @@ const StudentDashboard = () => {
       if (!SC.profile) return;
     } catch (error) {
       console.error("Error fetching user data:", error);
-      SC.setError(error instanceof Error ? error.message : "An unknown error occurred");
+      SC.setError(error instanceof Error ? error.message : t("errors.unknown"));
     } finally {
       SC.setLoading(false);
     }
@@ -152,10 +154,10 @@ const StudentDashboard = () => {
       getUserData();
       SC.setSelectedSession(null);
       SC.setIsDialogOpen(false);
-      toast.success("Session updated successfully");
+      toast.success(t("toasts.sessionUpdated"));
     } catch (error) {
       console.error("Error requesting session reschedule:", error);
-      toast.error("Failed to reschedule session");
+      toast.error(t("toasts.rescheduleError"));
     }
   };
 
@@ -175,10 +177,10 @@ const StudentDashboard = () => {
         SC.sessions.map((e: Session) => (e.id === updatedSession.id ? updatedSession : e)),
       );
 
-      toast.success("Session updated successfully");
+      toast.success(t("toasts.sessionUpdated"));
     } catch (error) {
       console.error("Failed to update session:", error);
-      toast.error("Failed to update session");
+      toast.error(t("toasts.updateError"));
     }
   };
 
@@ -200,7 +202,7 @@ const StudentDashboard = () => {
       SC.setSessions(
         SC.sessions.map((e: Session) => (e.id === updatedSession.id ? updatedSession : e)),
       );
-      toast.success("Session Marked Complete");
+      toast.success(t("toasts.sessionMarkedComplete"));
       SC.setIsSessionExitFormOpen(false);
       SC.setNotes("");
       SC.setNextClassConfirmed(false);
@@ -226,13 +228,13 @@ const StudentDashboard = () => {
         const data = await response.json();
 
         if (!data.success) {
-          toast.error("Unable to record question or concern");
+          toast.error(t("toasts.questionConcernError"));
           throw new Error(data.error);
         }
       }
     } catch (error) {
       console.error("Failed to record Session Exit Form", error);
-      toast.error("Failed to record Session Exit Form");
+      toast.error(t("toasts.exitFormError"));
     }
   };
 
@@ -286,7 +288,7 @@ const StudentDashboard = () => {
   return (
     <>
       <div className="p-8">
-        <h1 className="text-3xl font-bold mb-6">This Week</h1>
+        <h1 className="text-3xl font-bold mb-6">{t("headings.thisWeek")}</h1>
         <div className="flex space-x-6">
           <div className="flex-grow bg-white rounded-lg shadow p-6">
             <Suspense fallback={<SkeletonTable />}>
@@ -296,7 +298,7 @@ const StudentDashboard = () => {
         </div>
       </div>{" "}
       <div className="p-8">
-        <h1 className="text-3xl font-bold mb-6">Active Sessions</h1>
+        <h1 className="text-3xl font-bold mb-6">{t("headings.activeSessions")}</h1>
 
         <div className="flex space-x-6">
           <div className="flex-grow bg-white rounded-lg shadow p-6">
@@ -304,7 +306,7 @@ const StudentDashboard = () => {
               <div className="flex space-x-2">
                 <Input
                   type="text"
-                  placeholder="Filter sessions..."
+                  placeholder={t("filterPlaceholder")}
                   className="w-64"
                   value={SC.filterValueActiveSessions}
                   onChange={(e) => SC.setFilterValueActiveSessions(e.target.value)}
@@ -331,7 +333,7 @@ const StudentDashboard = () => {
         </div>
       </div>
       <div className="p-8">
-        <h1 className="text-3xl font-bold mb-6">Past Sessions</h1>
+        <h1 className="text-3xl font-bold mb-6">{t("headings.pastSessions")}</h1>
 
         <div className="flex space-x-6">
           <div className="flex-grow bg-white rounded-lg shadow p-6">
@@ -339,7 +341,7 @@ const StudentDashboard = () => {
               <div className="flex space-x-2">
                 <Input
                   type="text"
-                  placeholder="Filter sessions..."
+                  placeholder={t("filterPlaceholder")}
                   className="w-64"
                   value={SC.filterValuePastSessions}
                   onChange={(e) => SC.setFilterValuePastSessions(e.target.value)}

@@ -1,0 +1,112 @@
+{
+  "dashboard": {
+    "title": "Panel de Administración",
+    "filterPlaceholder": "Filtrar sesiones...",
+    "table": {
+      "date": "Fecha",
+      "title": "Título",
+      "tutor": "Tutor",
+      "student": "Estudiante",
+      "meeting": "Reunión"
+    },
+    "sessionTitle": "Sesión de tutoría con el tutor {tutorName} y el estudiante {studentName}",
+    "viewLink": "Ver enlace",
+    "notAvailable": "N/D",
+    "reschedule": "Reprogramar",
+    "rescheduleDialogTitle": "Reprogramar sesión con {tutorName} el {date}",
+    "rowsTotal": "{count} fila(s) en total.",
+    "rowsPerPage": "Filas por página",
+    "pageOf": "Página {current} de {total}",
+    "mobileTutorLine": "Tutor: {name}",
+    "mobileStudentLine": "Estudiante: {name}"
+  },
+  "emailManager": {
+    "title": "Gestor de Correos",
+    "sendEmail": "Enviar Correo",
+    "showSchedules": "Mostrar Programaciones",
+    "toasts": {
+      "fetchError": "No se pudieron obtener las programaciones"
+    },
+    "table": {
+      "sendDate": "Fecha de Envío",
+      "recipient": "Destinatario",
+      "subject": "Asunto",
+      "content": "Contenido",
+      "status": "Estado"
+    }
+  },
+  "notifications": {
+    "title": "Centro de Notificaciones",
+    "searchPlaceholder": "Buscar notificaciones...",
+    "filterStatusPlaceholder": "Filtrar por estado",
+    "status": {
+      "active": "Activo",
+      "resolved": "Resuelto",
+      "all": "Todos"
+    },
+    "toasts": {
+      "loadError": "No se pudieron cargar las notificaciones",
+      "updateSuccess": "Estado de la notificación actualizado",
+      "updateError": "No se pudo actualizar el estado de la notificación"
+    },
+    "table": {
+      "status": "Estado",
+      "createdAt": "Fecha de Creación",
+      "summary": "Resumen",
+      "previousDate": "Fecha Anterior",
+      "suggestedDate": "Fecha Sugerida",
+      "tutorName": "Nombre del Tutor",
+      "studentName": "Nombre del Estudiante"
+    },
+    "rowsTotal": "{count} fila(s) en total.",
+    "rowsPerPage": "Filas por página",
+    "pageOf": "Página {current} de {total}",
+    "mobilePreviousDate": "Fecha anterior: {date}",
+    "mobileSuggestedDate": "Fecha sugerida: {date}",
+    "mobileTutor": "Tutor: {name}",
+    "mobileStudent": "Estudiante: {name}"
+  },
+  "conversations": {
+    "title": "Crear Nueva Conversación",
+    "subtitle": "Inicia una conversación con un miembro del equipo",
+    "detailsCardTitle": "Detalles de la Conversación",
+    "detailsCardDescription": "Completa los detalles a continuación para crear una nueva conversación",
+    "selectProfileLabel": "Seleccionar Perfil",
+    "selectProfilePlaceholder": "Selecciona un perfil...",
+    "searchProfilesPlaceholder": "Buscar perfiles...",
+    "noProfileFound": "No se encontró ningún perfil.",
+    "createButton": "Crear Conversación",
+    "clearButton": "Limpiar",
+    "previewTitle": "Vista Previa",
+    "recentTitle": "Conversaciones Recientes",
+    "recentDescription": "Tus conversaciones en curso",
+    "noConversations": "Aún no hay conversaciones",
+    "toasts": {
+      "createSuccess": "Conversación creada con éxito",
+      "createError": "No se pudo crear la conversación",
+      "creating": "Creando..."
+    }
+  },
+  "analytics": {
+    "loading": "Cargando mapa...",
+    "mapTitle": "Mapa de la Ciudad",
+    "toasts": {
+      "mapFetchError": "No se pudo obtener el mapa de la ciudad de los solicitantes"
+    }
+  },
+  "announcements": {
+    "loading": "Cargando...",
+    "roomPlaceholder": "Sala de Anuncios",
+    "roomGroupLabel": "Salas de Anuncios",
+    "rooms": {
+      "all": "Todos",
+      "tutors": "Tutores",
+      "students": "Estudiantes"
+    },
+    "roomNames": {
+      "tutor": "Tutor",
+      "student": "Estudiante",
+      "all": "Anuncios"
+    }
+  }
+}

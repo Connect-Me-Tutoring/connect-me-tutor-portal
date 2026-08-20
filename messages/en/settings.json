@@ -1,0 +1,82 @@
+{
+  "completeProfileBanner": "You must complete your profile first before using the rest of the dashboard.",
+  "profiles": {
+    "heading": "Profiles",
+    "yourProfiles": "Your Profiles",
+    "switchProfile": "Switch Profile",
+    "toasts": {
+      "switchSuccess": "Switched Profile",
+      "switchError": "Unable to switch account",
+      "fetchError": "Error fetching profiles"
+    }
+  },
+  "notifications": {
+    "heading": "Notification Settings",
+    "sessionReminders": {
+      "title": "Session Reminders",
+      "description": "Get notified about upcoming tutoring sessions"
+    },
+    "webinarReminders": {
+      "title": "Webinar Reminders",
+      "description": "Get notified about upcoming webinars and events"
+    },
+    "emailNotifications": "Email notifications",
+    "textNotifications": "Text notifications",
+    "inDevelopment": "In Development",
+    "save": "Save Notification Settings",
+    "toasts": {
+      "saveSuccess": "Saved Notification Settings",
+      "saveError": "Unable to save notification settings"
+    }
+  },
+  "account": {
+    "heading": "Account Settings",
+    "inDevelopment": "In Development",
+    "description": "Manage your information and account preferences.",
+    "status": {
+      "label": "Account Status",
+      "placeholder": "Select status",
+      "active": "Active",
+      "inactive": "Inactive"
+    },
+    "firstName": {
+      "label": "First Name",
+      "placeholder": "Enter your first name (e.g John)"
+    },
+    "lastName": {
+      "label": "Last Name",
+      "placeholder": "Enter your last name (e.g Smith)"
+    },
+    "phoneNumber": {
+      "label": "Phone Number",
+      "placeholder": "Enter your phone number (e.g (555) 123-4567)"
+    },
+    "age": {
+      "label": "Age",
+      "placeholder": "Enter your age (e.g 25)"
+    },
+    "email": {
+      "label": "Email Address",
+      "placeholder": "Enter your email (e.g john@example.com)"
+    },
+    "bio": {
+      "label": "Bio",
+      "placeholder": "Tell us about yourself (e.g What hobbies do you enjoy?)"
+    },
+    "subjects": {
+      "label": "Subjects of Interest",
+      "placeholder": "Enter your subjects of interest (e.g Mathematics, Physics, Chemistry)"
+    },
+    "languages": {
+      "label": "Languages Spoken",
+      "placeholder": "Enter languages you speak (e.g English, Spanish, French)"
+    },
+    "updating": "Updating...",
+    "update": "Update Profile",
+    "toasts": {
+      "noActiveProfile": "No active profile to update",
+      "updateSuccess": "Profile updated",
+      "updateError": "Unable to update profile"
+    }
+  }
+}

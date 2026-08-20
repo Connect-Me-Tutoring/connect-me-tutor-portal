@@ -1,0 +1,369 @@
+{
+  "page": {
+    "title": "Pairing Dashboard",
+    "description": "Find your perfect learning match or help others by sharing your knowledge.",
+    "queueHeading": "Pairing queue and matches",
+    "profileHeading": "Your Profile"
+  },
+  "chatPage": {
+    "title": "Tutoring Session"
+  },
+  "committeeGraph": {
+    "defaultTitle": "Pairing committee graph",
+    "subtitleQueue": "Click a student or tutor to show only their queue overlaps with tutors or students. Click an arrow for overlapping subjects and times.",
+    "subtitlePreview": "Click a student or tutor to show only their connections. Click an arrow for subject and time overlap. Click Clear focus to show everyone again.",
+    "showingLinksFor": "Showing links for",
+    "clearFocus": "Clear focus",
+    "nothingToGraph": "Nothing to graph yet.",
+    "noOverlapWarning": "No subject or time overlap between any student and tutor in the queue. People are still shown below; add overlaps in profiles or run a preview to see proposed matches.",
+    "graphAriaLabel": "Tutor and student connection graph",
+    "overlapDetailsAriaLabel": "Overlap details",
+    "similarityScore": "Similarity score: {score}",
+    "overlappingSubjects": "Overlapping subjects",
+    "overlappingTimes": "Overlapping times",
+    "noneListed": "None listed",
+    "close": "Close",
+    "roleStudent": "Student",
+    "roleTutor": "Tutor",
+    "roleWithPriority": "{role} · P{priority}"
+  },
+  "interface": {
+    "statusTitle": "Pairing queue status",
+    "loadingStatusDescription": "Loading your pairing status...",
+    "inQueueLabel": "In pairing queue",
+    "fetchingDescription": "We are fetching your profile and queue status.",
+    "profileErrorDescription": "We could not load your profile to show pairing status.",
+    "signInDescription": "Sign in to view and control your pairing queue status.",
+    "unavailableDescription": "Pairing status is unavailable until your account is loaded.",
+    "incomingHeading": "Incoming pairings",
+    "searchPlaceholder": "Search by name or subject...",
+    "subjects": "Subjects",
+    "languages": "Languages",
+    "studentAvailabilities": "Student Availabilities",
+    "accept": "Accept",
+    "decline": "Decline",
+    "waiting": "Waiting",
+    "noResultsForSearch": "No results for your search",
+    "noMatchingProfiles": "No matching profiles found",
+    "toasts": {
+      "accepting": "Accepting pairing...",
+      "rejecting": "Rejecting pairing...",
+      "acceptSuccess": "Pairing accepted successfully",
+      "rejectSuccess": "Pairing declined successfully",
+      "acceptError": "Failed to accept pairing: {error}",
+      "rejectError": "Failed to decline pairing: {error}"
+    }
+  },
+  "logs": {
+    "loading": "Loading pairing logs...",
+    "errors": {
+      "noPreviewRunForId": "No saved preview run found for this run id",
+      "loadSavedPreviewFailed": "Failed to load saved preview run",
+      "loadLogsFailed": "Failed to load pairing logs",
+      "reloadSavedPreviewFailed": "Failed to reload saved preview run",
+      "refreshLogsFailed": "Failed to refresh pairing logs"
+    },
+    "toasts": {
+      "noPreviewLoaded": "No preview run loaded",
+      "selectAtLeastOne": "Select at least one proposed match to save",
+      "saveSuccess": "Saved queue changes from this preview run",
+      "saveError": "Failed to save queue changes",
+      "saving": "Saving queue changes..."
+    },
+    "graphDialog": {
+      "selectedTitle": "Selected for save",
+      "completeTitle": "All proposed matches",
+      "selectedDescription": "Only checked rows in the overlap table will be sent when you save. Arrows: student → tutor.",
+      "completeDescription": "Every student → tutor pairing proposed in this preview. Compare with the selected graph before saving."
+    },
+    "retry": "Retry",
+    "previewActions": {
+      "cardTitle": "Preview Actions ({runId})",
+      "selectedGraph": "Selected graph",
+      "allProposed": "All proposed",
+      "viewProposedGraph": "View proposed graph",
+      "selectRowHint": "Select at least one row in the overlap table",
+      "queueAlreadySaved": "Queue Already Saved",
+      "saving": "Saving...",
+      "saveSelected": "Save selected ({count})",
+      "saveQueue": "Save Queue",
+      "reloadPreview": "Reload Preview",
+      "refreshing": "Refreshing..."
+    },
+    "legacyPreviewWarning": "This preview has no overlap metadata. Saving will apply all proposed matches. Run a new preview from the queue for overlap review and selective save.",
+    "overlapBeforeSave": {
+      "cardTitle": "Overlap before save",
+      "selectAll": "Select all",
+      "clearAll": "Clear all",
+      "student": "Student",
+      "tutor": "Tutor",
+      "subjects": "Subjects",
+      "times": "Times",
+      "selectRowAriaLabel": "Select {name}",
+      "none": "None",
+      "withTutor": "with {tutorName}"
+    },
+    "stats": {
+      "totalEvents": "Total Events",
+      "matchesCreated": "Matches Created",
+      "accepted": "Accepted",
+      "rejected": "Rejected",
+      "failed": "Failed"
+    },
+    "filters": {
+      "cardTitle": "Filters",
+      "refresh": "Refresh",
+      "refreshing": "Refreshing...",
+      "dateFrom": "Date From",
+      "dateTo": "Date To",
+      "eventType": "Event Type",
+      "userType": "User Type",
+      "status": "Status",
+      "allTypes": "All Types",
+      "pairingMatch": "Pairing Match",
+      "matchAccepted": "Match Accepted",
+      "matchRejected": "Match Rejected",
+      "selectionFailed": "Selection Failed",
+      "allUsers": "All Users",
+      "students": "Students",
+      "tutors": "Tutors",
+      "allStatuses": "All Statuses",
+      "clearFilters": "Clear Filters"
+    },
+    "table": {
+      "cardTitle": "Pairing Activity Logs ({count} events)",
+      "timestamp": "Timestamp",
+      "type": "Type",
+      "user": "User",
+      "status": "Status",
+      "message": "Message",
+      "loading": "Loading...",
+      "noLogsFound": "No pairing logs found",
+      "noLogsMatchFilters": "No logs match the current filters"
+    }
+  },
+  "runLogs": {
+    "cardTitle": "Pairing Run Logs",
+    "noSavedRun": "No saved preview run found for this page.",
+    "backToQueue": "Back to Pairing Queue",
+    "graphDialog": {
+      "selectedTitle": "Selected for apply",
+      "completeTitle": "All proposed matches",
+      "selectedDescription": "Only checked rows will be applied. Arrows: student → tutor.",
+      "completeDescription": "Every pairing in this preview run. Compare with your selection before applying."
+    },
+    "toasts": {
+      "selectAtLeastOne": "Select at least one proposed match to apply",
+      "applySuccess": "Applied this run's saved queue changes",
+      "applyError": "Failed to apply this run",
+      "applying": "Applying saved run..."
+    },
+    "actions": {
+      "selectedGraph": "Selected graph",
+      "allProposed": "All proposed",
+      "viewGraph": "View graph",
+      "viewGlobalLogs": "View Global Logs",
+      "selectRowHint": "Select at least one row in the overlap table",
+      "alreadyApplied": "Already Applied",
+      "applyThisRun": "Apply This Run",
+      "applySelected": "Apply selected ({count})"
+    },
+    "runIdLabel": "Run ID:",
+    "createdLabel": "Created:",
+    "appliedAt": "Applied at {date}",
+    "badges": {
+      "proposedMatches": "Proposed matches: {count}",
+      "runLogs": "Run logs: {count}",
+      "selectedToApply": "Selected to apply: {count}"
+    },
+    "legacyPreviewWarning": "This preview was saved before overlap metadata existed. Apply will insert all proposed matches. Run a new preview for overlap review and selective apply.",
+    "overlapReview": {
+      "cardTitle": "Review overlap before apply",
+      "selectRowHint": "Select at least one row in the table below",
+      "selectAllVisible": "Select all (visible)",
+      "clearAll": "Clear all",
+      "showAll": "Show all",
+      "showNoOverlapOnly": "Show no-overlap only",
+      "student": "Student",
+      "tutor": "Tutor",
+      "similarity": "Similarity",
+      "subjectOverlap": "Subject overlap",
+      "timeOverlap": "Time overlap",
+      "noMatchesInFilter": "No proposed matches in this filter.",
+      "selectMatchAriaLabel": "Select match {student} / {tutor}",
+      "none": "None",
+      "withTutor": "with {tutorName}",
+      "similarityValue": "Similarity: {value}"
+    },
+    "runLogsTable": {
+      "cardTitle": "Logs for this run only ({count})",
+      "step": "Step",
+      "type": "Type",
+      "status": "Status",
+      "message": "Message",
+      "noLogsCaptured": "No logs captured in this run.",
+      "stepLabel": "Step {number}",
+      "statusError": "error",
+      "statusOk": "ok"
+    }
+  },
+  "queue": {
+    "heading": "Pairing Queue Management",
+    "description": "Active pairing requests (tutors and students), sorted by priority",
+    "loadError": "Failed to load pairing queue",
+    "queueHeading": "Queue ({count})",
+    "countSummary": "{tutorCount, plural, one {# tutor} other {# tutors}} · {studentCount, plural, one {# student} other {# students}}",
+    "viewGraph": "View graph",
+    "saveResults": "Save Results",
+    "saving": "Saving...",
+    "saveResultsWithCount": "Save Results ({count})",
+    "toasts": {
+      "noChanges": "No pairing option changes to save",
+      "saving": "Saving pairing options...",
+      "saveSuccess": "Pairing options saved",
+      "saveError": "Failed to save pairing options"
+    },
+    "reviewDialog": {
+      "title": "Review priority changes",
+      "description": "Confirm priority updates and review how each profile overlaps (subjects and time) with top opposite-role candidates in the current queue.",
+      "priorityChange": "Priority {previous} → {next}",
+      "topOverlapHeading": "Top overlap with other queue members",
+      "noOppositeRole": "No opposite-role requests in queue to compare.",
+      "subjectOverlap": "Subject overlap",
+      "timeOverlap": "Time overlap",
+      "none": "None",
+      "cancel": "Cancel",
+      "confirmSave": "Confirm save",
+      "saving": "Saving…"
+    },
+    "table": {
+      "profile": "Profile",
+      "role": "Role",
+      "status": "Status",
+      "priority": "Priority",
+      "availability": "Availability",
+      "subjects": "Subjects",
+      "languages": "Languages",
+      "actions": "Actions",
+      "priorityBadge": "Priority {level}",
+      "moreCount": "+{count} more",
+      "moreCountShort": "+{count}"
+    },
+    "status": {
+      "pending": "Pending",
+      "accepted": "Accepted",
+      "rejected": "Rejected"
+    },
+    "role": {
+      "tutor": "tutor",
+      "student": "student"
+    },
+    "removeDialog": {
+      "title": "Remove Pairing Request for {name}",
+      "back": "Back",
+      "confirm": "Remove Pairing Request"
+    },
+    "emptyState": "No one in the pairing queue"
+  },
+  "requestCard": {
+    "loading": "Loading...",
+    "queueSwitch": {
+      "label": "In pairing queue",
+      "onDescription": "You can be matched while this is on. Turn it off to pause without losing your saved details.",
+      "archivedDescription": "You left the active queue. Turn this on to rejoin with your saved preferences.",
+      "offDescription": "Turn this on to join the queue. You can add optional notes below first."
+    },
+    "archived": {
+      "title": "Pairing queue (archived)",
+      "description": "You left the active queue. Your notes and preferences are saved; you won't be matched until you rejoin.",
+      "badge": "Archived",
+      "priorityBadge": "Priority {priority}",
+      "savedNotesLabel": "Saved notes"
+    },
+    "active": {
+      "title": "Pairing Queue",
+      "description": "You are in the pairing queue. You will be matched based on availability and compatibility.",
+      "priorityBadge": "Priority {priority}"
+    },
+    "status": {
+      "pending": "Pending",
+      "accepted": "Accepted",
+      "rejected": "Rejected"
+    },
+    "blockRejected": {
+      "label": "Block tutors who declined me in the past",
+      "description": "When on, you won't be matched with tutors who previously declined your request."
+    },
+    "newRequest": {
+      "title": "Submit Pairing Request",
+      "description": "Submit a request to be paired with a tutor or student. Your request will be reviewed and matched based on availability, subject expertise, and compatibility. The matching process typically takes 24-48 hours.",
+      "howItWorksHeading": "How It Works",
+      "step1": "Turn on <strong>In pairing queue</strong> above (add optional notes first)",
+      "step2": "Our system matches you based on availability and compatibility",
+      "step3": "You'll receive a notification when a match is found",
+      "step4": "Connect with your paired partner to begin your learning journey",
+      "notesLabel": "Additional Notes",
+      "optional": "(Optional)",
+      "notesPlaceholder": "Tell us about your learning goals, preferred subjects, availability, or any specific requirements...",
+      "charCount": "{count}/500 characters",
+      "statusExamplesHeading": "Request Status Examples",
+      "pendingReview": "Pending Review",
+      "matchFound": "Match Found",
+      "noMatchAvailable": "No Match Available"
+    },
+    "toasts": {
+      "joinSuccess": "Successfully added to pairing queue",
+      "joining": "Creating pairing request",
+      "joinError": "Failed to add to pairing queue",
+      "leaveSuccess": "Removed from active queue (your request is saved)",
+      "leaving": "Leaving queue",
+      "leaveError": "Failed to leave queue",
+      "rejoinSuccess": "You're back in the pairing queue",
+      "rejoining": "Rejoining queue",
+      "rejoinError": "Failed to rejoin",
+      "preferenceUpdating": "Updating preference",
+      "preferenceUpdated": "Preference updated",
+      "preferenceError": "Failed to update preference"
+    }
+  },
+  "testControls": {
+    "heading": "Testing Controls",
+    "previewQueueOutput": "Preview Queue Output",
+    "applySavedPreview": "Apply Saved Preview",
+    "openLatestRunLogs": "Open Latest Run Logs",
+    "resolveQueueImmediate": "Resolve Queue (Immediate)",
+    "clearQueue": "Clear Queue",
+    "logs": "Logs",
+    "resetAllPairingMatches": "Reset all pairing matches",
+    "resetDialog": {
+      "title": "Reset All Pairing Matches",
+      "description": "Remove tutors and students from pairing queue",
+      "back": "Back",
+      "confirm": "Reset all pairing matches"
+    },
+    "toasts": {
+      "runPreviewFirst": "Run a preview first",
+      "previewReady": "Preview ready. Review logs before applying.",
+      "previewError": "Failed to run pairing preview",
+      "previewLoading": "Building pairing preview...",
+      "runPreviewBeforeApply": "Run a preview before applying queue changes",
+      "applySuccess": "Applied saved queue changes",
+      "applyError": "Failed to apply saved queue changes",
+      "applyLoading": "Applying saved queue changes...",
+      "resolveSuccess": "Successfully ran pairing process",
+      "resolveError": "Failed to run pairing process",
+      "resolveLoading": "Pairing...",
+      "resetQueueSuccess": "Successfully Reset Queue",
+      "resetQueueError": "Failed to Reset Queue",
+      "resetQueueLoading": "Resetting Queue",
+      "clearQueueSuccess": "Successfully Cleared Queue",
+      "clearQueueError": "Failed to clear queue",
+      "clearQueueLoading": "Clearing..."
+    },
+    "previewSummary": "Preview generated with {matchCount, plural, one {# proposed match} other {# proposed matches}} and {logCount, plural, one {# log} other {# logs}}.",
+    "noPreviewLogs": "No preview logs were returned.",
+    "logEntry": "{status} - [{type}] {message}",
+    "statusOk": "OK",
+    "statusError": "ERROR"
+  }
+}

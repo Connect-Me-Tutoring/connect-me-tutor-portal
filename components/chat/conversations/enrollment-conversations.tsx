@@ -1,8 +1,11 @@
+"use client";
+
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { SharedEnrollment } from "@/types/enrollment";
 import Link from "next/link";
 import { useMemo } from "react";
+import { useTranslations } from "next-intl";
 
 interface ChatListProps {
   enrollments: SharedEnrollment[];
@@ -24,29 +27,32 @@ const getUnreadCount = (enrollmentId: string): number => {
 
 // Mock function to get last message
 // In a real app, this would come from your messaging system
-const getLastMessage = (enrollmentId: string): { text: string; timestamp: string } => {
+const getLastMessage = (
+  enrollmentId: string,
+  t: (key: string) => string,
+): { text: string; timestamp: string } => {
   const mockMessages: Record<string, { text: string; timestamp: string }> = {
     "c95f7af1-e531-479e-86e9-14cb22e45785": {
-      text: "Great progress on today's lesson!",
+      text: t("mock.greatProgress"),
       timestamp: "5m",
     },
     "enrollment-2": {
-      text: "Let's review the homework tomorrow",
+      text: t("mock.reviewHomework"),
       timestamp: "1h",
     },
     "enrollment-3": {
-      text: "Thanks for the explanation",
+      text: t("mock.thanksExplanation"),
       timestamp: "2h",
     },
     "enrollment-4": {
-      text: "Can we reschedule our session?",
+      text: t("mock.reschedule"),
       timestamp: "1d",
     },
   };
   return (
     mockMessages[enrollmentId] || {
-      text: "Start a conversation",
-      timestamp: "now",
+      text: t("mock.startConversation"),
+      timestamp: t("mock.now"),
     }
   );
 };
@@ -71,6 +77,7 @@ const formatDate = (dateString: string): string => {
   }
 };
 export function ChatList({ enrollments, currentUserId, role }: ChatListProps) {
+  const t = useTranslations("chat.conversations");
   const clientConversations = useMemo(
     () =>
       enrollments.map((enrollment) => {
@@ -91,10 +98,9 @@ export function ChatList({ enrollments, currentUserId, role }: ChatListProps) {
     <div className="flex flex-col h-screen">
       {/* Header */}
       <div className="p-4 border-b border-gray-100">
-        <h1 className="text-xl font-semibold text-gray-900">Messages</h1>
+        <h1 className="text-xl font-semibold text-gray-900">{t("heading")}</h1>
         <p className="text-sm text-gray-500 mt-1">
-          {enrollments.length} active tutoring session
-          {enrollments.length !== 1 ? "s" : ""}
+          {t("activeSessionsCount", { count: enrollments.length })}
         </p>
       </div>
 
@@ -117,12 +123,12 @@ export function ChatList({ enrollments, currentUserId, role }: ChatListProps) {
                 />
               </svg>
             </div>
-            <h3 className="text-lg font-medium text-gray-900 mb-2">No active sessions</h3>
-            <p className="text-gray-500">Your tutoring conversations will appear here</p>
+            <h3 className="text-lg font-medium text-gray-900 mb-2">{t("emptyState.title")}</h3>
+            <p className="text-gray-500">{t("emptyState.description")}</p>
           </div>
         ) : (
           clientConversations.map((conversation) => {
-            const lastMessage = getLastMessage(conversation.id);
+            const lastMessage = getLastMessage(conversation.id, t);
             const unreadCount = getUnreadCount(conversation.id);
             const isActive = new Date() > new Date();
 
@@ -153,7 +159,7 @@ export function ChatList({ enrollments, currentUserId, role }: ChatListProps) {
                   <div className="flex items-center justify-between mb-1">
                     <div className="flex items-center">
                       <h3 className="font-medium text-gray-900 truncate">{conversation.name}</h3>
-                      <span className="text-xs text-gray-400 ml-2">Tutor</span>
+                      <span className="text-xs text-gray-400 ml-2">{t("tutorLabel")}</span>
                     </div>
                     <span className="text-xs text-gray-500 ml-2">{lastMessage.timestamp}</span>
                   </div>

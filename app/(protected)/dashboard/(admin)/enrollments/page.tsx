@@ -5,6 +5,7 @@ import { getMeetings } from "@/lib/actions/meeting/server.actions";
 import { getAllProfiles } from "@/lib/actions/profile/server.actions";
 import { getWeeklyMeetingSchedules } from "@/lib/actions/meeting-schedule/server.actions";
 import { Suspense } from "react";
+import { getTranslations } from "next-intl/server";
 
 function MyEnrollmentsData() {
   const enrollmentsPromise = getAllEnrollments();
@@ -24,10 +25,12 @@ function MyEnrollmentsData() {
   );
 }
 
-export default function MyEnrollmentsPage() {
+export default async function MyEnrollmentsPage() {
+  const t = await getTranslations("adminEnrollments");
+
   return (
     <main className="p-8">
-      <h1 className="text-3xl font-bold mb-6">All Enrollments</h1>
+      <h1 className="text-3xl font-bold mb-6">{t("listPage.heading")}</h1>
       <Suspense fallback={<SkeletonTable />}>
         <MyEnrollmentsData />
       </Suspense>

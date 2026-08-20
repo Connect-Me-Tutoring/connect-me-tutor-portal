@@ -4,6 +4,7 @@ import Link from "next/link";
 // import { useRouter } from "next/router"; // Not used in the provided code, can be removed if not needed elsewhere
 import { useEffect, useState, useRef, use } from "react";
 // import axios, { AxiosResponse } from "axios"; // Not used, can be removed
+import { useTranslations } from "next-intl";
 import { createClient } from "@/lib/supabase/client";
 import { getMeeting } from "@/lib/actions/meeting/client.actions";
 import { Meeting } from "@/types";
@@ -26,6 +27,7 @@ const MeetingPage = (props: ParamsProps) => {
   const params = use(props.params);
   const meetingId = params.meetingId;
   // console.log("MEETING ID", meetingId);
+  const t = useTranslations("dashboardMisc.meeting");
 
   const [meeting, setMeeting] = useState<Meeting | null>(null);
   // const meetingSDKElementRef = useRef<HTMLDivElement>(null); // Not used for Zoom SDK in this version
@@ -36,7 +38,7 @@ const MeetingPage = (props: ParamsProps) => {
   useEffect(() => {
     const getThisMeeting = async () => {
       if (!meetingId) {
-        setError("Meeting ID is missing.");
+        setError(t("missingId"));
         setLoading(false);
         return;
       }
@@ -49,12 +51,12 @@ const MeetingPage = (props: ParamsProps) => {
         if (meetingData) {
           setMeeting(meetingData);
         } else {
-          setError("Meeting not found or could not be retrieved.");
+          setError(t("notFoundFetch"));
           setMeeting(null); // Ensure meeting is null if not found
         }
       } catch (err) {
         console.error("Error fetching meeting:", err);
-        setError("Failed to fetch meeting details. Please try again later.");
+        setError(t("fetchFailed"));
         setMeeting(null);
       } finally {
         setLoading(false);
@@ -73,9 +75,9 @@ const MeetingPage = (props: ParamsProps) => {
   const handleCopyLink = () => {
     if (meeting?.link) {
       navigator.clipboard.writeText(meeting.link);
-      toast.success("Meeting link copied to clipboard!");
+      toast.success(t("linkCopied"));
     } else {
-      toast.error("No meeting link available to copy.");
+      toast.error(t("noLinkToCopy"));
     }
   };
 
@@ -83,8 +85,8 @@ const MeetingPage = (props: ParamsProps) => {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 p-4 text-center">
         <Loader2 className="h-12 w-12 animate-spin text-blue-600 mb-4" />
-        <p className="text-lg font-medium text-gray-700">Loading Meeting Details...</p>
-        <p className="text-sm text-gray-500">Please wait a moment.</p>
+        <p className="text-lg font-medium text-gray-700">{t("loadingTitle")}</p>
+        <p className="text-sm text-gray-500">{t("loadingSubtitle")}</p>
       </div>
     );
   }
@@ -93,11 +95,11 @@ const MeetingPage = (props: ParamsProps) => {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-red-50 p-4 text-center">
         <AlertTriangle className="h-12 w-12 text-red-500 mb-4" />
-        <h2 className="text-xl font-semibold text-red-700 mb-2">Error Loading Meeting</h2>
+        <h2 className="text-xl font-semibold text-red-700 mb-2">{t("errorTitle")}</h2>
         <p className="text-red-600 mb-6">{error}</p>
-        <Button onClick={() => window.location.reload()}>Try Again</Button>
+        <Button onClick={() => window.location.reload()}>{t("tryAgain")}</Button>
         <Link href="/dashboard" className="mt-4">
-          <Button variant="outline">Go to Dashboard</Button>
+          <Button variant="outline">{t("goToDashboard")}</Button>
         </Link>
       </div>
     );
@@ -107,10 +109,10 @@ const MeetingPage = (props: ParamsProps) => {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 p-4 text-center">
         <AlertTriangle className="h-12 w-12 text-yellow-500 mb-4" />
-        <h2 className="text-xl font-semibold text-gray-700 mb-2">Meeting Not Found</h2>
-        <p className="text-gray-600 mb-6">The meeting you are looking for could not be found.</p>
+        <h2 className="text-xl font-semibold text-gray-700 mb-2">{t("notFoundTitle")}</h2>
+        <p className="text-gray-600 mb-6">{t("notFoundDescription")}</p>
         <Link href="/dashboard">
-          <Button variant="outline">Go to Dashboard</Button>
+          <Button variant="outline">{t("goToDashboard")}</Button>
         </Link>
       </div>
     );
@@ -189,9 +191,11 @@ const MeetingPage = (props: ParamsProps) => {
         <div className="bg-white shadow-xl rounded-lg p-6 sm:p-8 w-full max-w-lg transform transition-all hover:scale-[1.01] duration-300">
           <div className="text-center mb-6">
             <h1 className="text-2xl sm:text-3xl font-bold text-gray-800">
-              {meeting.name || "Meeting Details"}
+              {meeting.name || t("defaultTitle")}
             </h1>
-            <p className="text-sm text-gray-500 mt-1">Meeting ID: {meeting.id}</p>
+            <p className="text-sm text-gray-500 mt-1">
+              {t("meetingIdLabel", { id: meeting.id })}
+            </p>
           </div>
 
           {/* Placeholder for Zoom SDK if you re-integrate it */}
@@ -207,7 +211,7 @@ const MeetingPage = (props: ParamsProps) => {
                 size="lg"
               >
                 <ExternalLink className="h-5 w-5" />
-                Join Meeting
+                {t("joinMeeting")}
               </Button>
               <Button
                 variant="outline"
@@ -215,23 +219,21 @@ const MeetingPage = (props: ParamsProps) => {
                 className="w-full flex items-center justify-center gap-2 border-gray-300 hover:bg-gray-50"
               >
                 <Copy className="h-4 w-4" />
-                Copy Meeting Link
+                {t("copyLink")}
               </Button>
             </div>
           ) : (
             <div className="text-center py-8">
               <AlertTriangle className="h-10 w-10 text-orange-400 mx-auto mb-3" />
-              <p className="text-gray-600 font-medium">No join link available for this meeting.</p>
-              <p className="text-sm text-gray-500 mt-1">
-                Please check back later or contact support.
-              </p>
+              <p className="text-gray-600 font-medium">{t("noLinkAvailable")}</p>
+              <p className="text-sm text-gray-500 mt-1">{t("noLinkAvailableSubtitle")}</p>
             </div>
           )}
 
           <div className="mt-8 text-center">
             <Link href="/dashboard">
               <Button variant="ghost" className="text-sm text-gray-600 hover:text-gray-800">
-                &larr; Back to Dashboard
+                &larr; {t("backToDashboard")}
               </Button>
             </Link>
           </div>

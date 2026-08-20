@@ -1,0 +1,112 @@
+{
+  "dashboard": {
+    "title": "Admin Dashboard",
+    "filterPlaceholder": "Filter sessions...",
+    "table": {
+      "date": "Date",
+      "title": "Title",
+      "tutor": "Tutor",
+      "student": "Student",
+      "meeting": "Meeting"
+    },
+    "sessionTitle": "Tutoring Session with Tutor {tutorName} and Student {studentName}",
+    "viewLink": "View Link",
+    "notAvailable": "N/A",
+    "reschedule": "Reschedule",
+    "rescheduleDialogTitle": "Reschedule Session with {tutorName} on {date}",
+    "rowsTotal": "{count} row(s) total.",
+    "rowsPerPage": "Rows per page",
+    "pageOf": "Page {current} of {total}",
+    "mobileTutorLine": "Tutor: {name}",
+    "mobileStudentLine": "Student: {name}"
+  },
+  "emailManager": {
+    "title": "Email Manager",
+    "sendEmail": "Send Email",
+    "showSchedules": "Show schedules",
+    "toasts": {
+      "fetchError": "Failed to fetch schedules"
+    },
+    "table": {
+      "sendDate": "Send Date",
+      "recipient": "Recipient",
+      "subject": "Subject",
+      "content": "Content",
+      "status": "Status"
+    }
+  },
+  "notifications": {
+    "title": "Notification Center",
+    "searchPlaceholder": "Search notifications...",
+    "filterStatusPlaceholder": "Filter Status",
+    "status": {
+      "active": "Active",
+      "resolved": "Resolved",
+      "all": "All"
+    },
+    "toasts": {
+      "loadError": "Failed to load notifications",
+      "updateSuccess": "Notification status updated",
+      "updateError": "Failed to update notification status"
+    },
+    "table": {
+      "status": "Status",
+      "createdAt": "Created At",
+      "summary": "Summary",
+      "previousDate": "Previous Date",
+      "suggestedDate": "Suggested Date",
+      "tutorName": "Tutor Name",
+      "studentName": "Student Name"
+    },
+    "rowsTotal": "{count} row(s) total.",
+    "rowsPerPage": "Rows per page",
+    "pageOf": "Page {current} of {total}",
+    "mobilePreviousDate": "Previous Date: {date}",
+    "mobileSuggestedDate": "Suggested Date: {date}",
+    "mobileTutor": "Tutor: {name}",
+    "mobileStudent": "Student: {name}"
+  },
+  "conversations": {
+    "title": "Create New Conversation",
+    "subtitle": "Start a conversation with a team member",
+    "detailsCardTitle": "Conversation Details",
+    "detailsCardDescription": "Fill in the details below to create a new conversation",
+    "selectProfileLabel": "Select Profile",
+    "selectProfilePlaceholder": "Select a profile...",
+    "searchProfilesPlaceholder": "Search profiles...",
+    "noProfileFound": "No profile found.",
+    "createButton": "Create Conversation",
+    "clearButton": "Clear",
+    "previewTitle": "Preview",
+    "recentTitle": "Recent Conversations",
+    "recentDescription": "Your ongoing conversations",
+    "noConversations": "No conversations yet",
+    "toasts": {
+      "createSuccess": "Successfully created conversation",
+      "createError": "Failed to create conversation",
+      "creating": "Creating..."
+    }
+  },
+  "analytics": {
+    "loading": "Loading map...",
+    "mapTitle": "City Map",
+    "toasts": {
+      "mapFetchError": "Unable to fetch city map of applicants"
+    }
+  },
+  "announcements": {
+    "loading": "Loading...",
+    "roomPlaceholder": "Announcements Room",
+    "roomGroupLabel": "Announcement Rooms",
+    "rooms": {
+      "all": "All",
+      "tutors": "Tutors",
+      "students": "Students"
+    },
+    "roomNames": {
+      "tutor": "Tutor",
+      "student": "Student",
+      "all": "Announcements"
+    }
+  }
+}

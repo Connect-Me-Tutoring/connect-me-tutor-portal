@@ -3,6 +3,7 @@ import { config } from "@/config";
 import { getPairingFromEnrollmentId } from "@/lib/actions/pairing/server.actions";
 import { isUuidString } from "@/lib/utils";
 import { notFound } from "next/navigation";
+import { getTranslations } from "next-intl/server";
 
 interface Props {
   params: Promise<{ id: string }>;
@@ -10,6 +11,7 @@ interface Props {
 
 export default async function ChatRoomPage(props: Props) {
   const params = await props.params;
+  const t = await getTranslations("adminEnrollments.chat");
 
   const mockMessages: Message[] = [];
 
@@ -23,7 +25,7 @@ export default async function ChatRoomPage(props: Props) {
 
   return (
     <main className="container mx-auto p-4">
-      <h1 className="text-2xl font-bold mb-6">Tutoring Session</h1>
+      <h1 className="text-2xl font-bold mb-6">{t("heading")}</h1>
 
       <ChatRoom
         roomId={pairingId}

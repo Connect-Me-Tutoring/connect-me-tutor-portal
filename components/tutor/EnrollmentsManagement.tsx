@@ -1,5 +1,6 @@
 "use client";
 import { useState, useEffect, useMemo, use } from "react";
+import { useTranslations } from "next-intl";
 import { AlarmClockMinus, Copy, MessageCircleIcon, Search, Timer, TimerOff } from "lucide-react";
 import { formatDateAdmin, formatDateUTC, formatSessionDuration, timeStrToHours } from "@/lib/utils";
 import {
@@ -105,6 +106,7 @@ const EnrollmentList = ({
   meetingsPromise: Promise<Meeting[] | null>;
   studentsPromise: Promise<Profile[] | null>;
 }) => {
+  const t = useTranslations("tutorSessions.enrollments");
   const combinedPromise = useMemo(
     () => Promise.all([enrollmentsPromise, meetingsPromise, studentsPromise]),
     [enrollmentsPromise, meetingsPromise, studentsPromise],
@@ -214,7 +216,7 @@ const EnrollmentList = ({
       }
     } catch (error) {
       console.error("Failed to fetch meetings:", error);
-      toast.error("Failed to load meetings");
+      toast.error(t("toasts.loadMeetingsError"));
     }
   };
 
@@ -226,7 +228,7 @@ const EnrollmentList = ({
       if (!profile) return;
 
       const enrollmentsData = await getEnrollments(profile.id);
-      if (!enrollmentsData) throw new Error("No enrollments found");
+      if (!enrollmentsData) throw new Error(t("toasts.noEnrollmentsFound"));
 
       const sortedEnrollments = enrollmentsData.sort(
         (a, b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime(),
@@ -236,7 +238,7 @@ const EnrollmentList = ({
       setFilteredEnrollments(sortedEnrollments);
     } catch (error) {
       console.error("Error fetching enrollment data:", error);
-      setError(error instanceof Error ? error.message : "An unknown error occurred");
+      setError(error instanceof Error ? error.message : t("toasts.unknownError"));
       setIsCheckingMeetingAvailability(true); // Ensures that new enrollments are not accidentally added when unable to check for available meeting links
     } finally {
       setLoading(false);
@@ -319,11 +321,11 @@ const EnrollmentList = ({
         setSelectedTutorId(profile.id);
         setSelectedStudentId("");
         setAvailabilityList([]);
-        toast.success("Enrollment added successfully");
+        toast.success(t("toasts.addSuccess"));
       }
     } catch (error) {
       console.error("Error adding enrollment:", error);
-      toast.error("Failed to add enrollment");
+      toast.error(t("toasts.addError"));
     }
   };
 
@@ -340,11 +342,11 @@ const EnrollmentList = ({
         }
         setIsEditModalOpen(false);
         setSelectedEnrollment(null);
-        toast.success("Enrollment updated successfully");
+        toast.success(t("toasts.updateSuccess"));
         fetchEnrollments(); // reload Enrollments
       } catch (error) {
         console.error("Error updating enrollment:", error);
-        toast.error("Failed to update enrollment");
+        toast.error(t("toasts.updateError"));
       }
     }
   };
@@ -356,10 +358,10 @@ const EnrollmentList = ({
         setEnrollments(enrollments.filter((e) => e.id !== selectedEnrollment.id));
         setIsDeleteModalOpen(false);
         setSelectedEnrollment(null);
-        toast.success("Enrollment deleted successfully");
+        toast.success(t("toasts.deleteSuccess"));
       } catch (error) {
         console.error("Error deleting enrollment:", error);
-        toast.error("Failed to delete enrollment");
+        toast.error(t("toasts.deleteError"));
       }
     }
   };
@@ -390,7 +392,7 @@ const EnrollmentList = ({
       );
 
       await pauseEnrollmentOverSummer(updatedEnrollment);
-      toast.success("Enrollment summer plan changed");
+      toast.success(t("toasts.summerPlanChanged"));
     } catch (error) {
       console.error("Unable to pause pairing over summer", error);
     }
@@ -400,21 +402,21 @@ const EnrollmentList = ({
     const meeting = meetings.find((m) => String(m.id) === String(meetingId));
 
     if (!meeting) {
-      toast.error("Meeting not found");
+      toast.error(t("toasts.meetingNotFound"));
       return;
     }
 
     const url = meeting.link;
 
     if (!url) {
-      toast.error("No Zoom link available");
+      toast.error(t("toasts.noZoomLink"));
       return;
     }
 
     navigator.clipboard
       .writeText(url)
-      .then(() => toast.success("Meeting link copied!"))
-      .catch(() => toast.error("Failed to copy link"));
+      .then(() => toast.success(t("toasts.meetingLinkCopied")))
+      .catch(() => toast.error(t("toasts.copyLinkError")));
   };
 
   const renderCopyLinkButton = (enrollment: Enrollment, mobile?: boolean) => (
@@ -428,7 +430,7 @@ const EnrollmentList = ({
       }
     >
       <span className="underline text-black transition-opacity duration-150 group-hover:opacity-0">
-        Copy Link
+        {t("copyLink")}
       </span>
       <Copy
         className="
@@ -448,21 +450,21 @@ const EnrollmentList = ({
   const columns: ResponsiveListColumn<Enrollment>[] = [
     {
       key: "student",
-      header: "Student",
+      header: t("table.columns.student"),
       cell: (enrollment) => `${enrollment.student?.firstName} ${enrollment.student?.lastName}`,
       cellClassName: "whitespace-nowrap",
       mobileCell: null,
     },
     {
       key: "tutor",
-      header: "Tutor",
+      header: t("table.columns.tutor"),
       cell: (enrollment) => `${enrollment.tutor?.firstName} ${enrollment.tutor?.lastName}`,
       cellClassName: "whitespace-nowrap",
       mobileCell: null,
     },
     {
       key: "availability",
-      header: "Availability",
+      header: t("table.columns.availability"),
       cell: (enrollment) => (
         <AvailabilityFormat availability={getEnrollmentAvailability(enrollment)} card={false} />
       ),
@@ -473,36 +475,36 @@ const EnrollmentList = ({
     },
     {
       key: "summary",
-      header: "Summary",
+      header: t("table.columns.summary"),
       cell: () => null,
       showInTable: false,
-      mobileLabel: "Summary",
+      mobileLabel: t("table.columns.summary"),
     },
     {
       key: "startDate",
-      header: "Start Date",
+      header: t("table.columns.startDate"),
       cell: (enrollment) =>
         formatDateUTC(enrollment.startDate, { includeTime: false, includeDate: true }),
       cellClassName: "whitespace-nowrap",
-      mobileLabel: "Start Date",
+      mobileLabel: t("table.columns.startDate"),
     },
     {
       key: "status",
-      header: "Status",
-      cell: (enrollment) => (enrollment.paused ? "Paused" : "Ongoing"),
+      header: t("table.columns.status"),
+      cell: (enrollment) => (enrollment.paused ? t("table.statusPaused") : t("table.statusOngoing")),
       cellClassName: "whitespace-nowrap",
-      mobileLabel: "Status",
+      mobileLabel: t("table.columns.status"),
     },
     {
       key: "meetingLink",
-      header: "Meeting Link",
+      header: t("table.columns.meetingLink"),
       cell: (enrollment) => renderCopyLinkButton(enrollment),
       cellClassName: "whitespace-nowrap",
       mobileCell: null,
     },
     {
       key: "actions",
-      header: "Actions",
+      header: t("table.columns.actions"),
       cell: (enrollment) => (
         <div className="flex gap-2">
           <Button
@@ -533,13 +535,13 @@ const EnrollmentList = ({
     },
     {
       key: "chat",
-      header: "Chat",
+      header: t("table.columns.chat"),
       cell: (enrollment) => (
         <Button
           variant="outline"
           onClick={() => router.push(`/dashboard/enrollment/${enrollment.id}/chat`)}
         >
-          Chat
+          {t("table.chat")}
         </Button>
       ),
       mobileCell: null,
@@ -559,7 +561,7 @@ const EnrollmentList = ({
           setIsEditModalOpen(true);
         }}
       >
-        Edit
+        {t("table.edit")}
       </Button>
       <Button
         size="sm"
@@ -569,10 +571,10 @@ const EnrollmentList = ({
           setIsDeleteModalOpen(true);
         }}
       >
-        Delete
+        {t("table.delete")}
       </Button>
       <Button size="sm" onClick={() => router.push(`/dashboard/enrollment/${enrollment.id}/chat`)}>
-        Chat
+        {t("table.chat")}
       </Button>
     </div>
   );
@@ -585,36 +587,36 @@ const EnrollmentList = ({
             <div className="flex flex-wrap items-center gap-2">
               <Input
                 type="text"
-                placeholder="Filter enrollments..."
+                placeholder={t("filters.placeholder")}
                 className="w-full md:w-64"
                 value={filterValue}
                 onChange={(e) => setFilterValue(e.target.value)}
               />
               <Select value={timeFilterDay} onValueChange={setTimeFilterDay}>
-                <SelectTrigger className="w-[140px]" aria-label="Filter by day">
-                  <SelectValue placeholder="Any day" />
+                <SelectTrigger className="w-[140px]" aria-label={t("filters.dayAriaLabel")}>
+                  <SelectValue placeholder={t("filters.anyDay")} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">Any day</SelectItem>
+                  <SelectItem value="all">{t("filters.anyDay")}</SelectItem>
                   {DAYS_OF_WEEK.map((day) => (
                     <SelectItem key={day} value={day}>
-                      {day}
+                      {t(`filters.days.${day.toLowerCase()}`)}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
               <Input
                 type="time"
-                aria-label="Filter time from"
-                title="From time"
+                aria-label={t("filters.fromTimeAriaLabel")}
+                title={t("filters.fromTimeTitle")}
                 className="w-[120px]"
                 value={timeFilterStart}
                 onChange={(e) => setTimeFilterStart(e.target.value)}
               />
               <Input
                 type="time"
-                aria-label="Filter time to"
-                title="To time"
+                aria-label={t("filters.toTimeAriaLabel")}
+                title={t("filters.toTimeTitle")}
                 className="w-[120px]"
                 value={timeFilterEnd}
                 onChange={(e) => setTimeFilterEnd(e.target.value)}
@@ -629,13 +631,13 @@ const EnrollmentList = ({
                     setTimeFilterEnd("");
                   }}
                 >
-                  Clear
+                  {t("filters.clear")}
                 </Button>
               )}
               <Dialog open={isAddModalOpen} onOpenChange={setIsAddModalOpen}>
                 <DialogTrigger asChild>
                   <Button className="whitespace-nowrap">
-                    <Plus className="mr-2 h-4 w-4" /> Add Enrollment
+                    <Plus className="mr-2 h-4 w-4" /> {t("addButton")}
                   </Button>
                 </DialogTrigger>
                 <EnrollmentFormDialog
@@ -684,7 +686,10 @@ const EnrollmentList = ({
               `${enrollment.student?.firstName} ${enrollment.student?.lastName}`
             }
             mobileSubtitle={(enrollment) =>
-              `Tutor: ${enrollment.tutor?.firstName} ${enrollment.tutor?.lastName}`
+              t("mobileTutorPrefix", {
+                firstName: enrollment.tutor?.firstName ?? "",
+                lastName: enrollment.tutor?.lastName ?? "",
+              })
             }
             mobileCardFooter={(enrollment) => renderMobileEnrollmentFooter(enrollment)}
             mobileFooter={
@@ -694,10 +699,10 @@ const EnrollmentList = ({
 
           {/* Pagination */}
           <div className="hidden md:flex justify-between mt-4">
-            <span>{filteredEnrollments.length} row(s) total.</span>
+            <span>{t("pagination.rowsTotal", { count: filteredEnrollments.length })}</span>
 
             <div className="flex items-center space-x-2">
-              <span>Rows per page</span>
+              <span>{t("pagination.rowsPerPage")}</span>
 
               <Select value={rowsPerPage.toString()} onValueChange={handleRowsPerPageChange}>
                 <SelectTrigger className="w-[70px]">
@@ -713,7 +718,7 @@ const EnrollmentList = ({
               </Select>
               <div className="flex items-center gap-2">
                 <span className="text-sm">
-                  Page {currentPage} of {totalPages || 1}
+                  {t("pagination.page", { current: currentPage, total: totalPages || 1 })}
                 </span>
                 <div className="flex gap-1">
                   <Button
@@ -799,8 +804,13 @@ const EnrollmentList = ({
         />
       </Dialog>
 
-      {loading && <p>Loading...</p>}
-      {error && <p className="text-red-500">Error: {error}</p>}
+      {loading && <p>{t("loading")}</p>}
+      {error && (
+        <p className="text-red-500">
+          {t("errorPrefix")}
+          {error}
+        </p>
+      )}
     </>
   );
 };

@@ -1,5 +1,6 @@
 "use client";
 import React, { useState } from "react";
+import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -37,6 +38,7 @@ export default function CondensedProfileForm({
   onProfileUpdate,
   isStudent = true,
 }: CondensedProfileFormProps) {
+  const t = useTranslations("adminPeople");
   const [localProfile, setLocalProfile] = useState<Profile>(profile);
   const [newSubject, setNewSubject] = useState("");
   const [newLanguage, setNewLanguage] = useState("");
@@ -105,7 +107,7 @@ export default function CondensedProfileForm({
       {/* Profile Header */}
       <div className="text-center mb-4">
         <h3 className="text-lg font-semibold text-gray-900">
-          {isStudent ? "Student" : "Tutor"} Profile Details
+          {isStudent ? t("forms.condensedProfile.studentTitle") : t("forms.condensedProfile.tutorTitle")}
         </h3>
         <p className="text-sm text-gray-600">
           {localProfile.firstName} {localProfile.lastName} - {localProfile.email}
@@ -118,7 +120,7 @@ export default function CondensedProfileForm({
           <CardHeader className="pb-3">
             <CardTitle className="text-sm flex items-center gap-2">
               <div className="w-3 h-3 bg-blue-600 rounded-full" />
-              Availability
+              {t("forms.common.availability")}
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
@@ -128,7 +130,9 @@ export default function CondensedProfileForm({
                 className="flex flex-col sm:flex-row gap-2 p-3 border rounded-md bg-gray-50"
               >
                 <div className="flex-1">
-                  <Label className="text-xs text-gray-500">Day</Label>
+                  <Label className="text-xs text-gray-500">
+                    {t("forms.condensedProfile.day")}
+                  </Label>
                   <Select
                     value={slot.day}
                     onValueChange={(value) => updateAvailabilitySlot(index, "day", value)}
@@ -139,14 +143,16 @@ export default function CondensedProfileForm({
                     <SelectContent>
                       {DAYS_OF_WEEK.map((day) => (
                         <SelectItem key={day} value={day}>
-                          {day}
+                          {t(`forms.common.days.${day.toLowerCase()}` as any)}
                         </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
                 </div>
                 <div className="flex-1">
-                  <Label className="text-xs text-gray-500">Start</Label>
+                  <Label className="text-xs text-gray-500">
+                    {t("forms.condensedProfile.start")}
+                  </Label>
                   <Input
                     type="time"
                     value={slot.startTime}
@@ -155,7 +161,9 @@ export default function CondensedProfileForm({
                   />
                 </div>
                 <div className="flex-1">
-                  <Label className="text-xs text-gray-500">End</Label>
+                  <Label className="text-xs text-gray-500">
+                    {t("forms.condensedProfile.end")}
+                  </Label>
                   <Input
                     type="time"
                     value={slot.endTime}
@@ -183,7 +191,7 @@ export default function CondensedProfileForm({
               className="w-full h-8 text-sm"
             >
               <Plus className="h-3 w-3 mr-1" />
-              Add Time Slot
+              {t("forms.common.addTimeSlot")}
             </Button>
           </CardContent>
         </Card>
@@ -195,14 +203,14 @@ export default function CondensedProfileForm({
             <CardHeader className="pb-3">
               <CardTitle className="text-sm flex items-center gap-2">
                 <BookOpen className="h-3 w-3 text-green-600" />
-                Subjects of Interest
+                {t("forms.common.subjectsOfInterest")}
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
               <div className="flex gap-2">
                 <Input
                   type="text"
-                  placeholder="e.g., Math, Physics"
+                  placeholder={t("forms.common.subjectsPlaceholderShort")}
                   value={newSubject}
                   onChange={(e) => setNewSubject(e.target.value)}
                   onKeyPress={(e) => e.key === "Enter" && (e.preventDefault(), addSubject())}
@@ -240,14 +248,14 @@ export default function CondensedProfileForm({
             <CardHeader className="pb-3">
               <CardTitle className="text-sm flex items-center gap-2">
                 <Languages className="h-3 w-3 text-purple-600" />
-                Languages Spoken
+                {t("forms.common.languagesSpoken")}
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
               <div className="flex gap-2">
                 <Input
                   type="text"
-                  placeholder="e.g., English, Spanish"
+                  placeholder={t("forms.common.languagesPlaceholderShort")}
                   value={newLanguage}
                   onChange={(e) => setNewLanguage(e.target.value)}
                   onKeyPress={(e) => e.key === "Enter" && (e.preventDefault(), addLanguage())}

@@ -1,0 +1,189 @@
+{
+  "enrollments": {
+    "toasts": {
+      "loadMeetingsError": "Failed to load meetings",
+      "noEnrollmentsFound": "No enrollments found",
+      "unknownError": "An unknown error occurred",
+      "addSuccess": "Enrollment added successfully",
+      "addError": "Failed to add enrollment",
+      "updateSuccess": "Enrollment updated successfully",
+      "updateError": "Failed to update enrollment",
+      "deleteSuccess": "Enrollment deleted successfully",
+      "deleteError": "Failed to delete enrollment",
+      "summerPlanChanged": "Enrollment summer plan changed",
+      "meetingNotFound": "Meeting not found",
+      "noZoomLink": "No Zoom link available",
+      "meetingLinkCopied": "Meeting link copied!",
+      "copyLinkError": "Failed to copy link"
+    },
+    "copyLink": "Copy Link",
+    "filters": {
+      "placeholder": "Filter enrollments...",
+      "dayAriaLabel": "Filter by day",
+      "anyDay": "Any day",
+      "fromTimeAriaLabel": "Filter time from",
+      "fromTimeTitle": "From time",
+      "toTimeAriaLabel": "Filter time to",
+      "toTimeTitle": "To time",
+      "clear": "Clear",
+      "days": {
+        "monday": "Monday",
+        "tuesday": "Tuesday",
+        "wednesday": "Wednesday",
+        "thursday": "Thursday",
+        "friday": "Friday",
+        "saturday": "Saturday",
+        "sunday": "Sunday"
+      }
+    },
+    "addButton": "Add Enrollment",
+    "mobileTutorPrefix": "Tutor: {firstName} {lastName}",
+    "table": {
+      "columns": {
+        "student": "Student",
+        "tutor": "Tutor",
+        "availability": "Availability",
+        "summary": "Summary",
+        "startDate": "Start Date",
+        "status": "Status",
+        "meetingLink": "Meeting Link",
+        "actions": "Actions",
+        "chat": "Chat"
+      },
+      "statusPaused": "Paused",
+      "statusOngoing": "Ongoing",
+      "chat": "Chat",
+      "edit": "Edit",
+      "delete": "Delete"
+    },
+    "pagination": {
+      "rowsTotal": "{count} row(s) total.",
+      "rowsPerPage": "Rows per page",
+      "page": "Page {current} of {total}"
+    },
+    "loading": "Loading...",
+    "errorPrefix": "Error: "
+  },
+  "tables": {
+    "common": {
+      "columns": {
+        "markStatus": "Mark Status",
+        "date": "Date",
+        "title": "Title",
+        "student": "Student",
+        "duration": "Duration",
+        "meeting": "Meeting",
+        "sessionExitForm": "Session Exit Form",
+        "actions": "Actions",
+        "meetingNotes": "Meeting Notes"
+      },
+      "status": {
+        "active": "Active",
+        "complete": "Complete",
+        "cancelled": "Cancelled"
+      },
+      "sessionTitle": "Tutoring Session with {firstName} {lastName}",
+      "meetingLinkLabel": "Meeting",
+      "noMeetingLink": "N/A",
+      "noMeetingLinkMobile": "No meeting link",
+      "pagination": {
+        "rowsTotal": "{count} row(s) total.",
+        "rowsPerPage": "Rows per page",
+        "page": "Page {current} of {total}"
+      },
+      "requestSubstitute": "Request Substitute"
+    },
+    "active": {
+      "cancelDialog": {
+        "trigger": "Cancel",
+        "title": "Cancel Session?",
+        "description": "Are you sure you want to cancel this session with {name} on {date}? This action cannot be undone.",
+        "cancelButton": "Cancel",
+        "confirmButton": "Confirm Cancellation"
+      }
+    },
+    "completed": {
+      "viewSessionNotes": "View Session Notes",
+      "meetingNotesDialogTitle": "Meeting Notes",
+      "undo": "Undo"
+    },
+    "current": {
+      "requestSubstituteHover": "Request a Substitute",
+      "undoCancelHover": "Undo Cancel"
+    }
+  },
+  "forms": {
+    "cancellation": {
+      "dialogTitle": "Cancel Session",
+      "studentDescription": "Please provide a short reason for cancelling this session",
+      "studentPlaceholder": "Write your cancellation reason here...",
+      "tutorDescription": "Please provide an explanation for why this session is being cancelled",
+      "reasons": {
+        "studentWithPriorNotice": "Student cancelled with prior notice",
+        "studentWithoutPriorNotice": "Student did not attend without prior notice",
+        "tutorWithPriorNotice": "I am cancelling with prior notice",
+        "emergency": "Last Minute Emergency",
+        "other": "Other"
+      },
+      "otherPlaceholder": "Write here...",
+      "back": "Back",
+      "submit": "Submit"
+    },
+    "editSession": {
+      "dialogTitle": "Edit Session Information",
+      "dateLabel": "Date",
+      "meetingLinkLabel": "Meeting Link",
+      "meetingLinkSelectPlaceholder": "Select a meeting link",
+      "noMeetingSelected": "Select a meeting",
+      "meetingUnavailable": "Meeting unavailable, please select another",
+      "durationLabel": "Duration",
+      "durationSelectPlaceholder": "Select a time duration",
+      "hourSingular": "hour",
+      "hourPlural": "hours",
+      "minutesLabel": "minutes",
+      "updateButton": "Update Session",
+      "updating": "Updating...",
+      "checkingStatus": "Checking Status",
+      "editSessionLabel": "Edit Session",
+      "availabilityError": "Unable to check meeting availability."
+    },
+    "sessionExit": {
+      "submitByLabel": "Submit by 11:59pm EST",
+      "availabilityHint": "Session Exit Form will be available after your session",
+      "dialogTitle": "Session Exit Form",
+      "sessionDidNotHappen": "The session did not happen",
+      "questionOrConcernLabel": "I have a question or a concern",
+      "issueCategoryLabel": "Issue Category",
+      "selectCategoryPlaceholder": "Select a category...",
+      "notesPlaceholderQuestion": "What is your question or concern?",
+      "notesPlaceholderDefault": "In 2-4 sentences, What did you cover during your session?",
+      "nextClassConfirmedLabel": "My student knows about our next class",
+      "submit": "Submit",
+      "deadline": {
+        "dueToday": "SEF Due TODAY by 11:59pm EST",
+        "dueTomorrow": "SEF Due Tomorrow",
+        "dueInDays": "SEF Due in {days} days",
+        "dueOn": "SEF Due {date}"
+      }
+    },
+    "deletePairing": {
+      "removeAriaLabel": "Remove student pairing",
+      "dialogTitle": "Remove Student",
+      "dialogDescription": "Removing this student will delete the pairing and automatically remove any related enrollments and future sessions. You do not need to delete the enrollments separately.",
+      "cancel": "Cancel",
+      "confirmButton": "Remove Student",
+      "successToast": "Successfully removed student and deleted related enrollments",
+      "errorToast": "Failed to remove student"
+    }
+  },
+  "rescheduleDialog": {
+    "title": "Reschedule Session with {firstName} {lastName}",
+    "meetingLinkLabel": "Meeting Link",
+    "meetingLinkSelectPlaceholder": "Select a meeting link",
+    "noMeetingSelected": "Select a meeting",
+    "selectAvailableLink": "Please select an available link",
+    "submitButton": "Send Reschedule Request",
+    "checkingAvailability": "Checking Meeting Link Availability",
+    "availabilityError": "Unable to find available meeting links"
+  }
+}

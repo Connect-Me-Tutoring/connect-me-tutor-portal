@@ -1,5 +1,8 @@
+"use client";
+
 import React, { useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import { useLocale, useTranslations } from "next-intl";
 import { Session } from "@/types";
 
 interface StudentCalendarProps {
@@ -7,13 +10,23 @@ interface StudentCalendarProps {
 }
 
 export default function StudentCalendar({ sessions }: StudentCalendarProps) {
-  const daysOfWeek = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"];
+  const t = useTranslations("student.calendar");
+  const locale = useLocale();
+  const daysOfWeek = [
+    t("days.su"),
+    t("days.mo"),
+    t("days.tu"),
+    t("days.we"),
+    t("days.th"),
+    t("days.fr"),
+    t("days.sa"),
+  ];
   const currentDate = new Date();
 
   const [currentMonth, setCurrentMonth] = useState(currentDate.getMonth());
   const [currentYear, setCurrentYear] = useState(currentDate.getFullYear());
 
-  const monthName = new Date(currentYear, currentMonth).toLocaleString("default", {
+  const monthName = new Date(currentYear, currentMonth).toLocaleString(locale, {
     month: "long",
   });
 
@@ -47,9 +60,11 @@ export default function StudentCalendar({ sessions }: StudentCalendarProps) {
             <div
               className="absolute top-1 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bottom-1 w-2 h-2 bg-orange-500 rounded-full"
               title={sessionsOnThisDay
-                .map(
-                  (session) =>
-                    `Meeting with ${session.tutor?.firstName} ${session.tutor?.lastName}`,
+                .map((session) =>
+                  t("meetingWith", {
+                    firstName: session.tutor?.firstName ?? "",
+                    lastName: session.tutor?.lastName ?? "",
+                  }),
                 )
                 .join(", ")} // Display sessionname(s) as tooltip
             ></div>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { useTranslations } from "next-intl";
 import { Clock, Search, UserRound } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -27,6 +28,7 @@ import { updatePairingMatchStatus } from "@/lib/actions/pairing/client.actions";
 import toast from "react-hot-toast";
 
 export function PairingInterface() {
+  const t = useTranslations("pairing.interface");
   const [searchQuery, setSearchQuery] = useState("");
 
   const { profile, loading: isProfileLoading, error: profileError } = useFetchProfile();
@@ -57,11 +59,15 @@ export function PairingInterface() {
     if (!profile) return;
 
     const promise = updatePairingMatchStatus(profile.id, matchId, status);
+    const isAccepting = status === "accepted";
 
     toast.promise(promise, {
-      loading: `${status === "accepted" ? "Accepting" : "Rejecting"} pairing...`,
-      success: `Successfully ${status} pairing`,
-      error: (err) => `Failed to ${status.slice(0, -2)} pairing: ${err.message}`,
+      loading: isAccepting ? t("toasts.accepting") : t("toasts.rejecting"),
+      success: isAccepting ? t("toasts.acceptSuccess") : t("toasts.rejectSuccess"),
+      error: (err) =>
+        isAccepting
+          ? t("toasts.acceptError", { error: err.message })
+          : t("toasts.rejectError", { error: err.message }),
     });
 
     promise.then(() => {
@@ -74,16 +80,14 @@ export function PairingInterface() {
       {isProfileLoading && (
         <Card className="border-0 shadow-none">
           <CardHeader>
-            <CardTitle>Pairing queue status</CardTitle>
-            <CardDescription>Loading your pairing status...</CardDescription>
+            <CardTitle>{t("statusTitle")}</CardTitle>
+            <CardDescription>{t("loadingStatusDescription")}</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="rounded-xl bg-muted/50 p-4 flex items-center justify-between gap-4">
               <div className="space-y-1 min-w-0">
-                <Label className="text-base font-semibold">In pairing queue</Label>
-                <p className="text-sm text-muted-foreground">
-                  We are fetching your profile and queue status.
-                </p>
+                <Label className="text-base font-semibold">{t("inQueueLabel")}</Label>
+                <p className="text-sm text-muted-foreground">{t("fetchingDescription")}</p>
               </div>
               <Switch checked={false} disabled />
             </div>
@@ -94,20 +98,16 @@ export function PairingInterface() {
       {!isProfileLoading && !profile && (
         <Card className="border-0 shadow-none">
           <CardHeader>
-            <CardTitle>Pairing queue status</CardTitle>
+            <CardTitle>{t("statusTitle")}</CardTitle>
             <CardDescription>
-              {profileError?.message
-                ? "We could not load your profile to show pairing status."
-                : "Sign in to view and control your pairing queue status."}
+              {profileError?.message ? t("profileErrorDescription") : t("signInDescription")}
             </CardDescription>
           </CardHeader>
           <CardContent>
             <div className="rounded-xl bg-muted/50 p-4 flex items-center justify-between gap-4">
               <div className="space-y-1 min-w-0">
-                <Label className="text-base font-semibold">In pairing queue</Label>
-                <p className="text-sm text-muted-foreground">
-                  Pairing status is unavailable until your account is loaded.
-                </p>
+                <Label className="text-base font-semibold">{t("inQueueLabel")}</Label>
+                <p className="text-sm text-muted-foreground">{t("unavailableDescription")}</p>
               </div>
               <Switch checked={false} disabled />
             </div>
@@ -125,12 +125,12 @@ export function PairingInterface() {
 
       {profile && (
         <div className="space-y-4">
-          <h3 className="text-lg font-semibold">Incoming pairings</h3>
+          <h3 className="text-lg font-semibold">{t("incomingHeading")}</h3>
           <div className="flex flex-col gap-4 sm:flex-row">
             <div className="relative flex-1">
               <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Search by name or subject..."
+                placeholder={t("searchPlaceholder")}
                 className="pl-8"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
@@ -159,7 +159,7 @@ export function PairingInterface() {
                     <CardContent className="pb-2">
                       <div className="space-y-2">
                         <div>
-                          <p className="text-xs text-muted-foreground">Subjects</p>
+                          <p className="text-xs text-muted-foreground">{t("subjects")}</p>
                           <div className="flex flex-wrap gap-1 mt-1">
                             {matchedProfile.subjectsOfInterest?.map((subject, i) => (
                               <Badge key={i} variant="secondary">
@@ -169,7 +169,7 @@ export function PairingInterface() {
                           </div>
                         </div>
                         <div>
-                          <p className="text-xs text-muted-foreground">Languages</p>
+                          <p className="text-xs text-muted-foreground">{t("languages")}</p>
                           <div className="flex flex-wrap gap-1 mt-1">
                             {matchedProfile.languagesSpoken?.map((language, i) => (
                               <Badge key={i} variant="outline">
@@ -179,7 +179,9 @@ export function PairingInterface() {
                           </div>
                         </div>
                         <div>
-                          <p className="text-xs text-muted-foreground">Student Availabilites</p>
+                          <p className="text-xs text-muted-foreground">
+                            {t("studentAvailabilities")}
+                          </p>
                           <div className="flex flex-wrap gap-1 mt-1">
                             <UserAvailabilityList profile={matchedProfile} isBadge={true} />
                           </div>
@@ -195,7 +197,7 @@ export function PairingInterface() {
                               handleAcceptPairingMatch(match.pairing_match_id, "accepted")
                             }
                           >
-                            Accept
+                            {t("accept")}
                           </Button>
                           <Button
                             className="w-full bg-red-500"
@@ -203,14 +205,14 @@ export function PairingInterface() {
                               handleAcceptPairingMatch(match.pairing_match_id, "rejected")
                             }
                           >
-                            Decline
+                            {t("decline")}
                           </Button>
                         </div>
                       )}
                       {profile.role === "Student" && (
                         <Button className="w-full gap-2 p-4">
                           <Clock />
-                          Waiting
+                          {t("waiting")}
                         </Button>
                       )}
                     </CardFooter>
@@ -220,9 +222,7 @@ export function PairingInterface() {
             ) : (
               <div className="col-span-2 text-center py-8">
                 <p className="text-muted-foreground">
-                  {matchedPairings.length > 0
-                    ? "No results for your search"
-                    : "No matching profiles found"}
+                  {matchedPairings.length > 0 ? t("noResultsForSearch") : t("noMatchingProfiles")}
                 </p>
               </div>
             )}

@@ -15,6 +15,7 @@ import { Suspense } from "react";
 import { DashboardContextProvider } from "@/lib/contexts/dashboardContext";
 import { getProfile } from "@/lib/actions/profile/server.actions";
 import { logEvent } from "@/lib/posthog";
+import { getTranslations } from "next-intl/server";
 
 async function TutorDashboardPage({
   profile,
@@ -123,7 +124,10 @@ export default async function DashboardPage() {
     redirect("/");
   }
   const profile = await cachedGetProfile(user.id);
-  if (!profile) throw new Error("No Profile found");
+  if (!profile) {
+    const t = await getTranslations("dashboardMisc.dashboardHome");
+    throw new Error(t("noProfileFound"));
+  }
   const meetings = getMeetings({ omit: ["Zoom Link HQ"] });
 
   return (

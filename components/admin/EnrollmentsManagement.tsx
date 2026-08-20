@@ -1,5 +1,6 @@
 "use client";
 import React, { useState, useEffect, useMemo } from "react";
+import { useTranslations } from "next-intl";
 import {
   AlarmClockMinus,
   MessageCircleIcon,
@@ -71,24 +72,18 @@ import {
 import { Label } from "@/components/ui/label";
 import {
   getAllEnrollments,
-  pauseEnrollmentOverSummer
-} from "@/lib/actions/enrollment.server.actions";
-
-import {
-  getAllProfiles
-} from "@/lib/actions/profile.server.actions";
-
-import {
-  getMeetings
-} from "@/lib/actions/meeting.actions";
-
-import { addEnrollment } from "@/lib/actions/enrollment.server.actions";
+  getAllProfiles,
+  getMeetings,
+  pauseEnrollmentOverSummer,
+} from "@/lib/actions/admin.actions";
+import { addEnrollment } from "@/lib/actions/enrollment/server.actions";
 import {
   removeEnrollment,
   updateEnrollment,
-} from "@/lib/actions/enrollment.server.actions";
+} from "@/lib/actions/enrollment/server.actions";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import { Enrollment, Profile, Event, Meeting, Availability } from "@/types";
+import type { Database } from "@/types/database.types";
 import toast from "react-hot-toast";
 import AvailabilityFormat from "@/components/student/AvailabilityFormat";
 import AvailabilityForm from "@/components/ui/availability-form";
@@ -98,18 +93,10 @@ import { areIntervalsOverlapping, previousDay, set } from "date-fns";
 import { z } from "zod";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { checkAvailableMeetingForEnrollments } from "@/lib/actions/meeting.actions";
+import { checkAvailableMeetingForEnrollments } from "@/lib/actions/meeting/client.actions";
 import { formatDateServer } from "@/lib/actions/utils.server.actions";
 import { QueryClient } from "@tanstack/react-query";
 // import Availability from "@/components/student/AvailabilityFormat";
-
-const durationSchema = z.object({
-  duration: z.coerce
-    .number()
-    .int()
-    .positive("Duration must be a positive number")
-    .min(0, "Duration must be at least 0"),
-});
 
 const EnrollmentList = ({
   initialEnrollments,
@@ -117,6 +104,17 @@ const EnrollmentList = ({
   initialStudents,
   initialTutors,
 }: any) => {
+  const t = useTranslations("adminEnrollments");
+  const tFrequency = useTranslations("adminEnrollments.frequency");
+
+  const durationSchema = z.object({
+    duration: z.coerce
+      .number()
+      .int()
+      .positive(t("validation.durationPositive"))
+      .min(0, t("validation.durationMin")),
+  });
+
   // data is awaited in server component now, no use() needed
   const [enrollments, setEnrollments] =
     useState<Enrollment[]>(initialEnrollments);
@@ -290,7 +288,7 @@ const EnrollmentList = ({
     try {
       const now = new Date();
       const new_enrollment_date = new Date(
-        `${enroll.availability[0].day} ${enroll.availability[0].endTime}`,
+        `${enroll.availability?.[0]?.day} ${enroll.availability?.[0]?.endTime}`,
       );
       return !enrollments.some((enrollment) => {
         // Skip sessions without dates or meeting IDs
@@ -298,7 +296,7 @@ const EnrollmentList = ({
 
         try {
           const sessionEndTime = new Date(
-            `${enrollment.availability[0].day}, ${enrollment.availability[0].endTime}`,
+            `${enrollment.availability?.[0]?.day}, ${enrollment.availability?.[0]?.endTime}`,
           );
           sessionEndTime.setHours(sessionEndTime.getHours() + 1.5);
           return (
@@ -324,7 +322,7 @@ const EnrollmentList = ({
       }
     } catch (error) {
       console.error("Failed to fetch meetings:", error);
-      toast.error("Failed to load meetings");
+      toast.error(t("toasts.meetingsLoadError"));
     }
   };
 
@@ -334,7 +332,7 @@ const EnrollmentList = ({
       setError(null);
 
       const enrollmentsData = await getAllEnrollments();
-      if (!enrollmentsData) throw new Error("No enrollments found");
+      if (!enrollmentsData) throw new Error(t("toasts.noEnrollmentsFound"));
 
       const sortedEnrollments = enrollmentsData.sort(
         (a, b) =>
@@ -346,7 +344,7 @@ const EnrollmentList = ({
     } catch (error) {
       console.error("Error fetching enrollment data:", error);
       setError(
-        error instanceof Error ? error.message : "An unknown error occurred",
+        error instanceof Error ? error.message : t("toasts.fetchEnrollmentsUnknownError"),
       );
       setIsCheckingMeetingAvailability(true); // Ensures that new enrollments are not accidentally added when unable to check for available meeting links
     } finally {
@@ -408,7 +406,7 @@ const EnrollmentList = ({
       return true;
     } catch (error) {
       if (error instanceof z.ZodError) {
-        const errorMessage = error.errors[0]?.message || "Invalid duration";
+        const errorMessage = error.errors[0]?.message || t("validation.durationInvalid");
         if (isEdit) {
           unit == "hours"
             ? setEditHoursError(errorMessage)
@@ -501,7 +499,10 @@ const EnrollmentList = ({
     }
   };
 
-  const handleInputSelectionChange = (value: string, type: "add" | "edit") => {
+  const handleInputSelectionChange = (
+    value: Database["public"]["Enums"]["session_frequency"],
+    type: "add" | "edit",
+  ) => {
     {
       type === "add"
         ? setNewEnrollment((prev) => ({ ...prev, frequency: value }))
@@ -521,7 +522,7 @@ const EnrollmentList = ({
         setSelectedTutorId("");
         setSelectedStudentId("");
         setAvailabilityList([]);
-        toast.success("Enrollment added successfully");
+        toast.success(t("toasts.addSuccess"));
       }
     } catch (error) {
       console.error("Error adding enrollment:", error);
@@ -542,11 +543,11 @@ const EnrollmentList = ({
         }
         setIsEditModalOpen(false);
         setSelectedEnrollment(null);
-        toast.success("Enrollment updated successfully");
+        toast.success(t("toasts.updateSuccess"));
         fetchEnrollments(); // reload Enrollments
       } catch (error) {
         console.error("Error updating enrollment:", error);
-        toast.error("Failed to update enrollment");
+        toast.error(t("toasts.updateError"));
       }
     }
   };
@@ -560,10 +561,10 @@ const EnrollmentList = ({
         );
         setIsDeleteModalOpen(false);
         setSelectedEnrollment(null);
-        toast.success("Enrollment deleted successfully");
+        toast.success(t("toasts.deleteSuccess"));
       } catch (error) {
         console.error("Error deleting enrollment:", error);
-        toast.error("Failed to delete enrollment");
+        toast.error(t("toasts.deleteError"));
       }
     }
   };
@@ -575,6 +576,9 @@ const EnrollmentList = ({
       summary: "",
       startDate: "",
       endDate: null,
+      day: null,
+      startTime: null,
+      endTime: null,
       availability: [{ day: "", startTime: "", endTime: "" }],
       meetingId: "",
       paused: false,
@@ -596,7 +600,7 @@ const EnrollmentList = ({
       );
 
       await pauseEnrollmentOverSummer(updatedEnrollment);
-      toast.success("Enrollment summer plan changed");
+      toast.success(t("toasts.summerPlanChanged"));
     } catch (error) {
       console.error("Unable to pause pairing over summer", error);
     }
@@ -605,21 +609,21 @@ const EnrollmentList = ({
     const meeting = meetings.find((m) => String(m.id) === String(meetingId));
 
     if (!meeting) {
-      toast.error("Meeting not found");
+      toast.error(t("toasts.meetingNotFound"));
       return;
     }
 
     const url = meeting.link;
 
     if (!url) {
-      toast.error("No Zoom link available");
+      toast.error(t("toasts.noZoomLink"));
       return;
     }
 
     navigator.clipboard
       .writeText(url)
-      .then(() => toast.success("Meeting link copied!"))
-      .catch(() => toast.error("Failed to copy link"));
+      .then(() => toast.success(t("toasts.meetingLinkCopied")))
+      .catch(() => toast.error(t("toasts.copyLinkFailed")));
   };
 
   return (
@@ -631,7 +635,7 @@ const EnrollmentList = ({
             <div className="flex space-x-2">
               <Input
                 type="text"
-                placeholder="Filter enrollments..."
+                placeholder={t("filters.searchPlaceholder")}
                 className="w-64"
                 value={filterValue}
                 onChange={(e) => setFilterValue(e.target.value)}
@@ -639,14 +643,14 @@ const EnrollmentList = ({
               <Dialog open={isAddModalOpen} onOpenChange={setIsAddModalOpen}>
                 <DialogTrigger asChild>
                   <Button>
-                    <Plus className="mr-2 h-4 w-4" /> Add Enrollment
+                    <Plus className="mr-2 h-4 w-4" /> {t("actions.addEnrollment")}
                   </Button>
                 </DialogTrigger>
                 <DialogContent className="sm:max-w-[500px]">
                   <DialogHeader>
-                    <DialogTitle>Add New Enrollment</DialogTitle>
+                    <DialogTitle>{t("dialogs.add.title")}</DialogTitle>
                     <DialogDescription className="sr-only">
-                      add a new enrollment
+                      {t("dialogs.add.description")}
                     </DialogDescription>
                   </DialogHeader>
                   <ScrollArea className="max-h-[calc(80vh-120px)] pr-4">
@@ -655,7 +659,7 @@ const EnrollmentList = ({
                       <div className="grid grid-cols-4 items-center gap-4">
                         {" "}
                         <Label htmlFor="tutor" className="text-right">
-                          Student
+                          {t("dialogs.form.studentLabel")}
                         </Label>
                         <Popover
                           open={openStudentOptions}
@@ -671,19 +675,19 @@ const EnrollmentList = ({
                               {selectedStudentId &&
                               studentsMap[selectedStudentId]
                                 ? `${studentsMap[selectedStudentId].firstName} ${studentsMap[selectedStudentId].lastName}`
-                                : "Select a student"}
+                                : t("dialogs.form.selectStudentPlaceholder")}
                               <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                             </Button>
                           </PopoverTrigger>
                           <PopoverContent className="">
                             <Command>
                               <CommandInput
-                                placeholder="Search student..."
+                                placeholder={t("dialogs.form.searchStudentPlaceholder")}
                                 value={studentSearch}
                                 onValueChange={setStudentSearch}
                               />
                               <CommandList>
-                                <CommandEmpty>No student found.</CommandEmpty>
+                                <CommandEmpty>{t("dialogs.form.noStudentFound")}</CommandEmpty>
                                 <CommandGroup>
                                   {students.map((student) => (
                                     <CommandItem
@@ -726,7 +730,7 @@ const EnrollmentList = ({
                       <div className="grid grid-cols-4 items-center gap-4">
                         {" "}
                         <Label htmlFor="tutor" className="text-right">
-                          Tutor
+                          {t("dialogs.form.tutorLabel")}
                         </Label>
                         <Popover
                           open={openTutorOptions}
@@ -753,7 +757,7 @@ const EnrollmentList = ({
                                   }
                                 </>
                               ) : (
-                                "Select a tutor"
+                                t("dialogs.form.selectTutorPlaceholder")
                               )}
                               <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                             </Button>
@@ -761,12 +765,12 @@ const EnrollmentList = ({
                           <PopoverContent className="">
                             <Command>
                               <CommandInput
-                                placeholder="Search Tutor..."
+                                placeholder={t("dialogs.form.searchTutorPlaceholder")}
                                 value={tutorSearch}
                                 onValueChange={setTutorSearch}
                               />
                               <CommandList>
-                                <CommandEmpty>No Tutor found.</CommandEmpty>
+                                <CommandEmpty>{t("dialogs.form.noTutorFound")}</CommandEmpty>
                                 <CommandGroup>
                                   {tutors.map((tutor) => (
                                     <CommandItem
@@ -848,30 +852,33 @@ const EnrollmentList = ({
                         {/* </div> */}
 
                         <Label htmlFor="frequency" className="text-right">
-                          Frequency
+                          {t("dialogs.form.frequencyLabel")}
                         </Label>
                         <div className="flex items-center gap-2">
                           <Select
                             name="timeZone"
                             value={newEnrollment.frequency}
                             onValueChange={(value) =>
-                              handleInputSelectionChange(value, "add")
+                              handleInputSelectionChange(
+                                value as Database["public"]["Enums"]["session_frequency"],
+                                "add",
+                              )
                             }
                           >
                             <SelectTrigger className="w-full">
-                              <SelectValue placeholder="weekly" />
+                              <SelectValue placeholder={tFrequency("weekly")} />
                             </SelectTrigger>
                             <SelectContent>
                               {/* Add time zone options here */}
-                              <SelectItem value="weekly">Weekly</SelectItem>
-                              <SelectItem value="biweekly">Biweekly</SelectItem>
+                              <SelectItem value="weekly">{tFrequency("weekly")}</SelectItem>
+                              <SelectItem value="biweekly">{tFrequency("biweekly")}</SelectItem>
                               {/* <SelectItem value="MT">Monthy</SelectItem> */}
                             </SelectContent>
                           </Select>
                         </div>
 
                         <Label htmlFor="summary" className="text-right">
-                          Summary
+                          {t("dialogs.form.summaryLabel")}
                         </Label>
                         <Input
                           id="summary"
@@ -880,7 +887,7 @@ const EnrollmentList = ({
                           onChange={handleInputChange}
                         />
                         <Label htmlFor="startDate" className="text-right">
-                          Start Date
+                          {t("dialogs.form.startDateLabel")}
                         </Label>
                         <Input
                           id="startDate"
@@ -892,7 +899,7 @@ const EnrollmentList = ({
                         />
                       </div>
                       <div>
-                        <Label>Meeting Link</Label>
+                        <Label>{t("dialogs.form.meetingLinkLabel")}</Label>
                         <Select
                           name="meetingId"
                           value={newEnrollment.meetingId}
@@ -908,10 +915,10 @@ const EnrollmentList = ({
                           }
                         >
                           <SelectTrigger>
-                            <SelectValue placeholder="Select a meeting link">
+                            <SelectValue placeholder={t("dialogs.form.selectMeetingLinkPlaceholder")}>
                               {isCheckingMeetingAvailability ? (
                                 <>
-                                  Checking meeting availabilites
+                                  {t("dialogs.form.checkingAvailability")}
                                   <Loader2 className="mx-2 h-4 w-4 animate-spin" />
                                 </>
                               ) : newEnrollment.meetingId ? (
@@ -920,7 +927,7 @@ const EnrollmentList = ({
                                     meeting.id === newEnrollment.meetingId,
                                 )?.name
                               ) : (
-                                "Select a meeting"
+                                t("dialogs.form.selectMeetingPlaceholder")
                               )}
                             </SelectValue>
                           </SelectTrigger>
@@ -954,7 +961,7 @@ const EnrollmentList = ({
                     </div>
                   </ScrollArea>
 
-                  <Button onClick={handleAddEnrollment}>Add Enrollment</Button>
+                  <Button onClick={handleAddEnrollment}>{t("dialogs.add.submit")}</Button>
                 </DialogContent>
               </Dialog>
             </div>
@@ -963,17 +970,17 @@ const EnrollmentList = ({
             <TableHeader>
               <TableRow>
                 {[
-                  "Student",
-                  "Tutor",
-                  "Availability",
-                  "Summary",
-                  "Start Date",
-                  "Meeting Link",
-                  "Duration",
-                  "Frequency",
-                  "Actions",
-                  "Status",
-                  "Chat",
+                  t("table.columns.student"),
+                  t("table.columns.tutor"),
+                  t("table.columns.availability"),
+                  t("table.columns.summary"),
+                  t("table.columns.startDate"),
+                  t("table.columns.meetingLink"),
+                  t("table.columns.duration"),
+                  t("table.columns.frequency"),
+                  t("table.columns.actions"),
+                  t("table.columns.status"),
+                  t("table.columns.chat"),
                 ].map((header) => (
                   <TableHead key={header}>{header}</TableHead>
                 ))}
@@ -991,7 +998,7 @@ const EnrollmentList = ({
                   </TableCell>
                   <TableCell className="colspan-[40px]">
                     <AvailabilityFormat
-                      availability={enrollment.availability}
+                      availability={enrollment.availability || []}
                       card={false}
                     />{" "}
                   </TableCell>
@@ -1012,7 +1019,7 @@ const EnrollmentList = ({
                         (m) => String(m.id) === String(enrollment.meetingId),
                       );
 
-                      if (!meeting) return "No Meeting Link";
+                      if (!meeting) return t("table.noMeetingLink");
 
                       return (
                         <button
@@ -1043,9 +1050,13 @@ const EnrollmentList = ({
                     })()}
                   </TableCell>
                   <TableCell>
-                    {formatSessionDuration(enrollment.duration)} hr(s)
+                    {formatSessionDuration(enrollment.duration)} {t("table.durationUnit")}
                   </TableCell>
-                  <TableCell>{enrollment.frequency}</TableCell>
+                  <TableCell>
+                    {enrollment.frequency === "biweekly"
+                      ? tFrequency("biweekly")
+                      : tFrequency("weekly")}
+                  </TableCell>
                   <TableCell>
                     <Button
                       variant="ghost"
@@ -1083,12 +1094,12 @@ const EnrollmentList = ({
                       {enrollment.paused ? (
                         <span className="px-3 py-1 inline-flex items-center rounded-full bg-red-100 text-red-800 border border-red-200">
                           <TimerOff size={14} className="mr-1" />
-                          Paused
+                          {t("table.statusPaused")}
                         </span>
                       ) : (
                         <span className="px-3 py-1 inline-flex items-center rounded-full bg-connect-me-blue-1 text-connect-me-black border border-connect-me-blue-3">
                           <Timer size={14} className="mr-1" />
-                          Ongoing
+                          {t("table.statusOngoing")}
                         </span>
                       )}
                     </Button>
@@ -1103,7 +1114,7 @@ const EnrollmentList = ({
                       }
                       variant="outline"
                     >
-                      View Chat
+                      {t("table.viewChat")}
                       <MessageCircleIcon />
                     </Button>
                   </TableCell>
@@ -1112,9 +1123,9 @@ const EnrollmentList = ({
             </TableBody>
           </Table>
           <div className="flex justify-between mt-4">
-            <span>{filteredEnrollments.length} row(s) total.</span>
+            <span>{t("table.rowsTotal", { count: filteredEnrollments.length })}</span>
             <div className="flex items-center space-x-2">
-              <span>Rows per page</span>
+              <span>{t("table.rowsPerPage")}</span>
               <Select
                 value={rowsPerPage.toString()}
                 onValueChange={handleRowsPerPageChange}
@@ -1130,9 +1141,7 @@ const EnrollmentList = ({
                   ))}
                 </SelectContent>
               </Select>
-              <span>
-                Page {currentPage} of {totalPages}
-              </span>
+              <span>{t("table.pageOf", { current: currentPage, total: totalPages })}</span>
               <div className="flex space-x-1">
                 <Button
                   variant="ghost"
@@ -1175,9 +1184,9 @@ const EnrollmentList = ({
       <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
         <DialogContent className="sm:max-w-[500px]">
           <DialogHeader>
-            <DialogTitle>Edit Enrollment</DialogTitle>
+            <DialogTitle>{t("dialogs.edit.title")}</DialogTitle>
             <DialogDescription className="sr-only">
-              edit enrollment details
+              {t("dialogs.edit.description")}
             </DialogDescription>
           </DialogHeader>
           <ScrollArea className="max-h-[calc(80vh-120px)] pr-4">
@@ -1186,7 +1195,7 @@ const EnrollmentList = ({
               <div className="grid gap-4 py-4">
                 <div className="grid grid-cols-4 items-center gap-4">
                   <Label htmlFor="studentId" className="text-right">
-                    Student
+                    {t("dialogs.form.studentLabel")}
                   </Label>
 
                   <Popover
@@ -1216,7 +1225,7 @@ const EnrollmentList = ({
                             }
                           </>
                         ) : (
-                          "Select a student"
+                          t("dialogs.form.selectStudentPlaceholder")
                         )}
                         <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                       </Button>
@@ -1224,12 +1233,12 @@ const EnrollmentList = ({
                     <PopoverContent className="">
                       <Command>
                         <CommandInput
-                          placeholder="Search Student..."
+                          placeholder={t("dialogs.form.searchStudentPlaceholder")}
                           value={studentSearch}
                           onValueChange={setStudentSearch}
                         />
                         <CommandList>
-                          <CommandEmpty>No student found.</CommandEmpty>
+                          <CommandEmpty>{t("dialogs.form.noStudentFound")}</CommandEmpty>
                           <CommandGroup>
                             {students.map((student) => (
                               <CommandItem
@@ -1270,7 +1279,7 @@ const EnrollmentList = ({
                 </div>
                 <div className="grid grid-cols-4 items-center gap-4">
                   <Label htmlFor="tutorId" className="text-right">
-                    Tutor
+                    {t("dialogs.form.tutorLabel")}
                   </Label>
 
                   <Popover
@@ -1300,7 +1309,7 @@ const EnrollmentList = ({
                             }
                           </>
                         ) : (
-                          "Select a tutor"
+                          t("dialogs.form.selectTutorPlaceholder")
                         )}
                         <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                       </Button>
@@ -1308,12 +1317,12 @@ const EnrollmentList = ({
                     <PopoverContent className="">
                       <Command>
                         <CommandInput
-                          placeholder="Search Tutor..."
+                          placeholder={t("dialogs.form.searchTutorPlaceholder")}
                           value={tutorSearch}
                           onValueChange={setTutorSearch}
                         />
                         <CommandList>
-                          <CommandEmpty>No Tutor found.</CommandEmpty>
+                          <CommandEmpty>{t("dialogs.form.noTutorFound")}</CommandEmpty>
                           <CommandGroup>
                             {tutors.map((tutor) => (
                               <CommandItem
@@ -1391,24 +1400,27 @@ const EnrollmentList = ({
                   </div> */}
 
                   <Label htmlFor="frequency" className="text-right">
-                    Frequency
+                    {t("dialogs.form.frequencyLabel")}
                   </Label>
                   <div className="flex items-center gap-2">
                     <Select
                       name="timeZone"
                       value={selectedEnrollment.frequency}
                       onValueChange={(value) =>
-                        handleInputSelectionChange(value, "edit")
+                        handleInputSelectionChange(
+                          value as Database["public"]["Enums"]["session_frequency"],
+                          "edit",
+                        )
                       }
                     >
                       <SelectTrigger className="w-full">
-                        <SelectValue placeholder="weekly" />
+                        <SelectValue placeholder={tFrequency("weekly")} />
                       </SelectTrigger>
                       <SelectContent>
                         {/* Add time zone options here */}
-                        <SelectItem value="weekly">Weekly</SelectItem>
+                        <SelectItem value="weekly">{tFrequency("weekly")}</SelectItem>
                         <SelectItem value="biweekly" disabled={true}>
-                          Biweekly
+                          {tFrequency("biweekly")}
                         </SelectItem>
                         {/* <SelectItem value="MT">Monthy</SelectItem> */}
                       </SelectContent>
@@ -1416,7 +1428,7 @@ const EnrollmentList = ({
                   </div>
 
                   <Label htmlFor="summary" className="text-right">
-                    Summary
+                    {t("dialogs.form.summaryLabel")}
                   </Label>
                   <Input
                     id="summary"
@@ -1428,7 +1440,7 @@ const EnrollmentList = ({
                 </div>
                 <div className="grid grid-cols-4 items-center gap-4">
                   <Label htmlFor="startDate" className="text-right">
-                    Start Date
+                    {t("dialogs.form.startDateLabel")}
                   </Label>
                   <Input
                     id="startDate"
@@ -1440,7 +1452,7 @@ const EnrollmentList = ({
                   />
                 </div>
                 <div>
-                  <Label>Meeting Link</Label>
+                  <Label>{t("dialogs.form.meetingLinkLabel")}</Label>
                   <Select
                     name="meetingId"
                     value={selectedEnrollment.meetingId}
@@ -1456,13 +1468,13 @@ const EnrollmentList = ({
                     }
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder="Select a meeting link">
+                      <SelectValue placeholder={t("dialogs.form.selectMeetingLinkPlaceholder")}>
                         {selectedEnrollment.meetingId
                           ? meetings.find(
                               (meeting) =>
                                 meeting.id === selectedEnrollment.meetingId,
                             )?.name
-                          : "Select a meeting"}
+                          : t("dialogs.form.selectMeetingPlaceholder")}
                       </SelectValue>
                     </SelectTrigger>
                     <SelectContent>
@@ -1491,21 +1503,21 @@ const EnrollmentList = ({
             )}
           </ScrollArea>
 
-          <Button onClick={handleUpdateEnrollment}>Update Enrollment</Button>
+          <Button onClick={handleUpdateEnrollment}>{t("dialogs.edit.submit")}</Button>
         </DialogContent>
       </Dialog>
       {/* SEF Warning Modal */}
       <Dialog open={isSEFWarningOpen} onOpenChange={setIsSEFWarningOpen}>
         <DialogContent className="sm:max-w-[500px]">
           <DialogHeader>
-            <DialogTitle>⚠️ SEF Warning</DialogTitle>
+            <DialogTitle>{t("dialogs.sefWarning.title")}</DialogTitle>
             <DialogDescription>
-              Please confirm before deleting this enrollment.
+              {t("dialogs.sefWarning.description")}
             </DialogDescription>
           </DialogHeader>
           <div className="py-4">
             <p className="text-yellow-600 font-medium">
-              Have you ensured that all Session Exit Forms (SEF) have been submitted for this enrollment?
+              {t("dialogs.sefWarning.message")}
             </p>
           </div>
           <div className="flex justify-end space-x-2">
@@ -1513,7 +1525,7 @@ const EnrollmentList = ({
               variant="outline"
               onClick={() => setIsSEFWarningOpen(false)}
             >
-              No, go back
+              {t("dialogs.sefWarning.goBack")}
             </Button>
             <Button
               onClick={() => {
@@ -1521,7 +1533,7 @@ const EnrollmentList = ({
                 setIsDeleteModalOpen(true);
               }}
             >
-              Yes, continue
+              {t("dialogs.sefWarning.continue")}
             </Button>
           </div>
         </DialogContent>
@@ -1530,18 +1542,15 @@ const EnrollmentList = ({
       <Dialog open={isDeleteModalOpen} onOpenChange={setIsDeleteModalOpen}>
         <DialogContent className="sm:max-w-[500px]">
           <DialogHeader>
-            <DialogTitle>Delete Enrollment</DialogTitle>
+            <DialogTitle>{t("dialogs.delete.title")}</DialogTitle>
             <DialogDescription className="sr-only">
-              confirm enrollment deletion
+              {t("dialogs.delete.description")}
             </DialogDescription>
           </DialogHeader>
           <div className="py-4 space-y-3">
-            <p>
-              Are you sure you want to delete this enrollment? This action
-              cannot be undone.
-            </p>
+            <p>{t("dialogs.delete.confirmMessage")}</p>
             <p className="text-yellow-600 font-medium">
-              ⚠️ Warning: Please ensure all Session Exit Forms (SEF) have been submitted before deleting this enrollment.
+              {t("dialogs.delete.sefWarningMessage")}
             </p>
           </div>
           <div className="flex justify-end space-x-2">
@@ -1549,16 +1558,16 @@ const EnrollmentList = ({
               variant="outline"
               onClick={() => setIsDeleteModalOpen(false)}
             >
-              Cancel
+              {t("dialogs.delete.cancel")}
             </Button>
             <Button variant="destructive" onClick={handleDeleteEnrollment}>
-              Delete
+              {t("dialogs.delete.confirm")}
             </Button>
           </div>
         </DialogContent>
       </Dialog>
-      {loading && <p>Loading...</p>}
-      {error && <p className="text-red-500">Error: {error}</p>}
+      {loading && <p>{t("table.loading")}</p>}
+      {error && <p className="text-red-500">{t("table.errorPrefix", { message: error })}</p>}
     </>
   );
 };

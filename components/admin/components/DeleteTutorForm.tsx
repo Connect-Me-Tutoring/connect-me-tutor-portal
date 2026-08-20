@@ -1,4 +1,6 @@
+"use client";
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -34,19 +36,20 @@ const DeleteTutorForm = ({
   handleDeleteTutor,
 }: DeleteTutorFormProps) => {
   const [isDeactivateModalOpen, setIsDeactivateModalOpen] = useState(false);
+  const t = useTranslations("adminPeople.forms.deleteTutor");
 
   return (
     <Dialog open={isDeactivateModalOpen} onOpenChange={setIsDeactivateModalOpen}>
       <DialogTrigger asChild>
-        <Button className="bg-connect-me-blue-3">Delete Tutor</Button>
+        <Button className="bg-connect-me-blue-3">{t("trigger")}</Button>
       </DialogTrigger>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle>Select a Tutor to Delete</DialogTitle>
+          <DialogTitle>{t("dialogTitle")}</DialogTitle>
         </DialogHeader>
         <div className="grid gap-4 py-4">
           <Label htmlFor="tutorSelect" className="text-right">
-            Tutor
+            {t("tutorLabel")}
           </Label>
           <div className="relative">
             <Combobox
@@ -62,7 +65,7 @@ const DeleteTutorForm = ({
           </div>
         </div>
         <Button onClick={handleDeleteTutor} disabled={!selectedTutorId}>
-          Confirm Deletion
+          {t("confirm")}
         </Button>
       </DialogContent>
     </Dialog>

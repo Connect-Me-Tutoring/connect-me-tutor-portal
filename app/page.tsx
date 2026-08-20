@@ -4,6 +4,7 @@ import Logo from "@/components/ui/logo";
 import { selectRandomLoginQuote } from "@/lib/login/select-random-login-quote";
 import type { Metadata } from "next";
 import { connection } from "next/server";
+import { getTranslations } from "next-intl/server";
 
 export const metadata: Metadata = {
   title: "Log in | Connect Me",
@@ -13,6 +14,7 @@ export const metadata: Metadata = {
 export default async function LoginPage() {
   await connection();
   const quote = selectRandomLoginQuote();
+  const t = await getTranslations("auth.login");
 
   return (
     <section className="flex flex-col md:flex-row ">
@@ -29,10 +31,8 @@ export default async function LoginPage() {
       <section className="w-full h-full lg:w-1/2 flex flex-col items-center justify-center p-4 lg:p-20">
         <div className="w-full h-full flex flex-col items-center justify-center gap-8 px-5 lg:px-20 py-20 rounded-xl">
           <div className="flex flex-col gap-1 w-full">
-            <h1 className="text-4xl text-center font-bold">Welcome Back</h1>
-            <p className="text-sm text-center opacity-50">
-              Enter your email and password to continue.
-            </p>
+            <h1 className="text-4xl text-center font-bold">{t("welcomeBack")}</h1>
+            <p className="text-sm text-center opacity-50">{t("subtitle")}</p>
           </div>
 
           <LoginForm />

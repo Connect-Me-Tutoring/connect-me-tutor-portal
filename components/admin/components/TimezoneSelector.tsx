@@ -1,3 +1,5 @@
+"use client";
+import { useTranslations } from "next-intl";
 import {
   Select,
   SelectContent,
@@ -13,31 +15,33 @@ interface TimeZoneSelectorProps {
 }
 
 const TimeZoneSelector = ({ profile, handleTimeZone }: TimeZoneSelectorProps) => {
+  const t = useTranslations("adminPeople.timezoneSelector");
+
   return (
     <Select name="timeZone" value={profile?.timeZone} onValueChange={handleTimeZone}>
       <SelectTrigger className="w-full">
         <SelectValue placeholder="" />
       </SelectTrigger>
       <SelectContent>
-        <SelectItem value="UTC-10">Hawaiian Standard Time (UTC-10)</SelectItem>
-        <SelectItem value="UTC-09">Alaskan Time (UTC-9)</SelectItem>
-        <SelectItem value="UTC-08">Pacific Time (UTC-8)</SelectItem>
-        <SelectItem value="UTC-07">Mountain Time (UTC-7)</SelectItem>
-        <SelectItem value="UTC-06">Central Time (UTC-6)</SelectItem>
-        <SelectItem value="UTC-05">Eastern Time (UTC-5)</SelectItem>
-        <SelectItem value="UTC-04">Puerto Rican Time (UTC-4)</SelectItem>
-        <SelectItem value="UTC">Greenwich Mean Time (UTC)</SelectItem>
-        <SelectItem value="UTC+01">Central European Time (UTC+1)</SelectItem>
-        <SelectItem value="UTC+02">Eastern European Time (UTC+2)</SelectItem>
-        <SelectItem value="UTC+03">Eastern European Summer Time (UTC+3)</SelectItem>
-        <SelectItem value="UTC+04">Moscow Standard Time (UTC+4)</SelectItem>
-        <SelectItem value="UTC+05">Pakistan Standard Time (UTC+5)</SelectItem>
-        <SelectItem value="UTC+05:30">Indian Standard Time (UTC+5:30)</SelectItem>
-        <SelectItem value="UTC+06">Bangladesh Standard Time (UTC+6)</SelectItem>
-        <SelectItem value="UTC+07">Indochina Time (UTC+7)</SelectItem>
-        <SelectItem value="UTC+8">China Standard Time (UTC+8)</SelectItem>
-        <SelectItem value="UTC+9">Japan Standard Time (UTC+9)</SelectItem>
-        <SelectItem value="UTC+10">Australian Eastern Standard Time (UTC+10)</SelectItem>
+        <SelectItem value="UTC-10">{t("hawaiian")}</SelectItem>
+        <SelectItem value="UTC-09">{t("alaskan")}</SelectItem>
+        <SelectItem value="UTC-08">{t("pacific")}</SelectItem>
+        <SelectItem value="UTC-07">{t("mountain")}</SelectItem>
+        <SelectItem value="UTC-06">{t("central")}</SelectItem>
+        <SelectItem value="UTC-05">{t("eastern")}</SelectItem>
+        <SelectItem value="UTC-04">{t("puertoRican")}</SelectItem>
+        <SelectItem value="UTC">{t("gmt")}</SelectItem>
+        <SelectItem value="UTC+01">{t("centralEuropean")}</SelectItem>
+        <SelectItem value="UTC+02">{t("easternEuropean")}</SelectItem>
+        <SelectItem value="UTC+03">{t("easternEuropeanSummer")}</SelectItem>
+        <SelectItem value="UTC+04">{t("moscow")}</SelectItem>
+        <SelectItem value="UTC+05">{t("pakistan")}</SelectItem>
+        <SelectItem value="UTC+05:30">{t("indian")}</SelectItem>
+        <SelectItem value="UTC+06">{t("bangladesh")}</SelectItem>
+        <SelectItem value="UTC+07">{t("indochina")}</SelectItem>
+        <SelectItem value="UTC+8">{t("china")}</SelectItem>
+        <SelectItem value="UTC+9">{t("japan")}</SelectItem>
+        <SelectItem value="UTC+10">{t("australianEastern")}</SelectItem>
       </SelectContent>
     </Select>
   );

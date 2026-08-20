@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, Suspense } from "react";
+import { useTranslations } from "next-intl";
 import { useParams, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import type { EnrollmentActivitySessionRow } from "@/lib/actions/session/server.actions";
@@ -53,6 +54,7 @@ interface ParticipantSummary {
 }
 
 function MeetingParticipationInner() {
+  const t = useTranslations("profileSessions.participation");
   const params = useParams();
   const searchParams = useSearchParams();
   const sessionId = params.sessionID as string;
@@ -96,7 +98,7 @@ function MeetingParticipationInner() {
       const data = await getParticipationData(sessionId, enrollmentIdParam);
 
       if (!data) {
-        throw new Error("Session not found");
+        throw new Error(t("errors.sessionNotFound"));
       }
 
       setEnrollmentBreakdown(data.enrollmentBreakdown ?? null);
@@ -107,7 +109,7 @@ function MeetingParticipationInner() {
         sessionId: data.session.id,
         enrollmentId: data.session.enrollmentId,
         meetingId: data.session.meetingId || "N/A",
-        meetingTitle: data.session.meetingTitle || "Tutoring Session",
+        meetingTitle: data.session.meetingTitle || t("defaultMeetingTitle"),
         startTime: new Date(data.session.startTime),
         endTime: data.session.endTime ? new Date(data.session.endTime) : null,
         totalDuration: data.session.totalDuration || 0,
@@ -144,7 +146,7 @@ function MeetingParticipationInner() {
       setParticipantSummaries(transformedSummaries);
     } catch (err) {
       console.error("Error fetching participation data:", err);
-      setError(err instanceof Error ? err.message : "Failed to load participation data");
+      setError(err instanceof Error ? err.message : t("errors.loadFailed"));
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -331,15 +333,15 @@ function MeetingParticipationInner() {
             <div className="flex items-center gap-2 text-destructive">
               <AlertCircle className="w-5 h-5" />
               <div>
-                <h3 className="font-semibold">Error Loading Data</h3>
+                <h3 className="font-semibold">{t("errorCard.title")}</h3>
                 <p className="text-sm text-muted-foreground">
-                  {error || "Failed to load participation data"}
+                  {error || t("errors.loadFailed")}
                 </p>
               </div>
             </div>
             <Button onClick={handleRefresh} variant="outline" className="mt-4">
               <RefreshCw className="w-4 h-4 mr-2" />
-              Retry
+              {t("errorCard.retry")}
             </Button>
           </CardContent>
         </Card>
@@ -365,12 +367,14 @@ function MeetingParticipationInner() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold">{meetingData.meetingTitle}</h1>
-          <p className="text-muted-foreground mt-1">Meeting ID: {meetingData.meetingId}</p>
+          <p className="text-muted-foreground mt-1">
+            {t("header.meetingId", { id: meetingData.meetingId })}
+          </p>
         </div>
         <div className="flex gap-2">
           <Button variant="outline" className="gap-2" onClick={handleRefresh} disabled={refreshing}>
             <RefreshCw className={`w-4 h-4 ${refreshing ? "animate-spin" : ""}`} />
-            Refresh
+            {t("header.refresh")}
           </Button>
           <Button
             variant="outline"
@@ -379,7 +383,7 @@ function MeetingParticipationInner() {
             disabled={!meetingData || events.length === 0}
           >
             <Download className="w-4 h-4" />
-            Export Report
+            {t("header.exportReport")}
           </Button>
         </div>
       </div>
@@ -390,7 +394,7 @@ function MeetingParticipationInner() {
             <Button variant="link" className="h-auto p-0 gap-1" asChild>
               <Link href={`/dashboard/enrollments/${meetingData.enrollmentId}/activity`}>
                 <Layers className="h-4 w-4 shrink-0" />
-                Enrollment activity
+                {t("enrollment.activityLink")}
                 <ExternalLink className="h-3 w-3 shrink-0 opacity-70" />
               </Link>
             </Button>
@@ -399,26 +403,24 @@ function MeetingParticipationInner() {
                 <Link
                   href={`/dashboard/session/${meetingData.sessionId}/participation?enrollmentId=${meetingData.enrollmentId}`}
                 >
-                  Show enrollment session list with Zoom
+                  {t("enrollment.showSessionList")}
                 </Link>
               </Button>
             )}
           </>
         ) : (
-          <span className="text-muted-foreground">
-            This session is not linked to an enrollment.
-          </span>
+          <span className="text-muted-foreground">{t("enrollment.notLinked")}</span>
         )}
       </div>
 
       {enrollmentQueryMismatch && (
         <Alert variant="destructive">
           <AlertCircle className="h-4 w-4" />
-          <AlertTitle>Enrollment mismatch</AlertTitle>
+          <AlertTitle>{t("enrollmentMismatch.title")}</AlertTitle>
           <AlertDescription>
-            The <code className="text-xs">enrollmentId</code> in the URL does not match this
-            session&apos;s enrollment, or the enrollment could not be loaded. Remove the query
-            parameter or open attendance from the enrollment activity page.
+            {t.rich("enrollmentMismatch.description", {
+              code: (chunks) => <code className="text-xs">{chunks}</code>,
+            })}
           </AlertDescription>
         </Alert>
       )}
@@ -426,10 +428,10 @@ function MeetingParticipationInner() {
       {enrollmentBreakdown && (
         <Card>
           <CardHeader>
-            <CardTitle>Enrollment Zoom context</CardTitle>
+            <CardTitle>{t("enrollmentContext.title")}</CardTitle>
             <CardDescription>
               {enrollmentBreakdown.enrollment.studentName} ↔{" "}
-              {enrollmentBreakdown.enrollment.tutorName} · Frequency{" "}
+              {enrollmentBreakdown.enrollment.tutorName} · {t("enrollmentContext.frequency")}{" "}
               <Badge variant="secondary" className="font-normal">
                 {enrollmentBreakdown.enrollment.frequency}
               </Badge>
@@ -442,8 +444,7 @@ function MeetingParticipationInner() {
           </CardHeader>
           <CardContent>
             <p className="text-sm text-muted-foreground mb-3">
-              All sessions on this enrollment. Open another session to see its Zoom join/leave log;
-              this page shows the log for the current session only.
+              {t("enrollmentContext.description")}
             </p>
             <div className="rounded-md border max-h-72 overflow-y-auto divide-y">
               {enrollmentBreakdown.sessions.map((s) => {
@@ -463,10 +464,15 @@ function MeetingParticipationInner() {
                               timeStyle: "short",
                             })
                           : "—"}
-                        {isCurrent && <Badge className="ml-2 align-middle">This session</Badge>}
+                        {isCurrent && (
+                          <Badge className="ml-2 align-middle">
+                            {t("enrollmentContext.thisSession")}
+                          </Badge>
+                        )}
                       </div>
                       <div className="text-muted-foreground text-xs mt-0.5">
-                        {s.meetingTitle} · {s.status || "—"} · {s.zoomEventCount} Zoom events
+                        {s.meetingTitle} · {s.status || "—"} ·{" "}
+                        {t("enrollmentContext.zoomEvents", { count: s.zoomEventCount })}
                       </div>
                     </div>
                     {!isCurrent ? (
@@ -474,11 +480,11 @@ function MeetingParticipationInner() {
                         <Link
                           href={`/dashboard/session/${s.id}/participation?enrollmentId=${enrollmentBreakdown.enrollment.id}`}
                         >
-                          Open
+                          {t("enrollmentContext.open")}
                         </Link>
                       </Button>
                     ) : (
-                      <Badge variant="outline">Viewing</Badge>
+                      <Badge variant="outline">{t("enrollmentContext.viewing")}</Badge>
                     )}
                   </div>
                 );
@@ -491,13 +497,9 @@ function MeetingParticipationInner() {
       {showNormalizationCallout && (
         <Alert>
           <Info className="h-4 w-4" />
-          <AlertTitle>Adjusted attendance</AlertTitle>
+          <AlertTitle>{t("normalization.title")}</AlertTitle>
           <AlertDescription className="text-muted-foreground">
-            Logs are aggregated per person (email when available, otherwise Zoom user id or display
-            name). Duplicate back-to-back events from Zoom are merged. If someone was already in the
-            meeting before the portal could log a join, an estimated join may appear. Joins before
-            the scheduled start time are labeled; minutes in the summary count from scheduled start
-            through leave, or through the scheduled end if they stayed on.
+            {t("normalization.description")}
           </AlertDescription>
         </Alert>
       )}
@@ -508,7 +510,7 @@ function MeetingParticipationInner() {
           <CardContent className="p-4">
             <div className="flex items-center gap-2">
               <Calendar className="w-4 h-4 text-muted-foreground" />
-              <div className="text-sm text-muted-foreground">Duration</div>
+              <div className="text-sm text-muted-foreground">{t("stats.duration")}</div>
             </div>
             <div className="text-2xl font-bold mt-1">
               {formatDuration(meetingData.totalDuration)}
@@ -520,7 +522,7 @@ function MeetingParticipationInner() {
           <CardContent className="p-4">
             <div className="flex items-center gap-2">
               <Users className="w-4 h-4 text-muted-foreground" />
-              <div className="text-sm text-muted-foreground">Total Participants</div>
+              <div className="text-sm text-muted-foreground">{t("stats.totalParticipants")}</div>
             </div>
             <div className="text-2xl font-bold mt-1">{participantSummaries.length}</div>
           </CardContent>
@@ -530,7 +532,7 @@ function MeetingParticipationInner() {
           <CardContent className="p-4">
             <div className="flex items-center gap-2">
               <UserCheck className="w-4 h-4 text-muted-foreground" />
-              <div className="text-sm text-muted-foreground">Currently Active</div>
+              <div className="text-sm text-muted-foreground">{t("stats.currentlyActive")}</div>
             </div>
             <div className="text-2xl font-bold mt-1">
               {participantSummaries.filter((p) => p.currentlyInMeeting).length}
@@ -542,7 +544,7 @@ function MeetingParticipationInner() {
           <CardContent className="p-4">
             <div className="flex items-center gap-2">
               <Clock className="w-4 h-4 text-muted-foreground" />
-              <div className="text-sm text-muted-foreground">Avg. Duration</div>
+              <div className="text-sm text-muted-foreground">{t("stats.avgDuration")}</div>
             </div>
             <div className="text-2xl font-bold mt-1">{formatDuration(avgDuration)}</div>
           </CardContent>
@@ -553,12 +555,14 @@ function MeetingParticipationInner() {
         {/* Participant Summary */}
         <Card>
           <CardHeader>
-            <CardTitle>Participant Summary</CardTitle>
-            <CardDescription>Total time spent by each participant</CardDescription>
+            <CardTitle>{t("participantSummary.title")}</CardTitle>
+            <CardDescription>{t("participantSummary.description")}</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             {participantSummaries.length === 0 ? (
-              <p className="text-center text-muted-foreground py-8">No participants yet</p>
+              <p className="text-center text-muted-foreground py-8">
+                {t("participantSummary.empty")}
+              </p>
             ) : (
               participantSummaries.map((participant) => (
                 <div
@@ -586,22 +590,23 @@ function MeetingParticipationInner() {
                   <div className="text-right">
                     <div className="flex items-center gap-2">
                       <Badge variant={participant.currentlyInMeeting ? "default" : "secondary"}>
-                        {participant.currentlyInMeeting ? "Active" : "Left"}
+                        {participant.currentlyInMeeting ? t("status.active") : t("status.left")}
                       </Badge>
                     </div>
                     <div className="text-sm text-muted-foreground mt-1">
-                      {formatDuration(participant.totalDuration)} • {participant.joinCount} joins
+                      {formatDuration(participant.totalDuration)} •{" "}
+                      {t("participantSummary.joinsCount", { count: participant.joinCount })}
                     </div>
                     {(participant.hadInferredJoin || participant.joinedBeforeScheduledStart) && (
                       <div className="flex flex-wrap gap-1 justify-end mt-2">
                         {participant.hadInferredJoin && (
                           <Badge variant="outline" className="text-xs font-normal">
-                            Estimated join
+                            {t("participantSummary.estimatedJoin")}
                           </Badge>
                         )}
                         {participant.joinedBeforeScheduledStart && (
                           <Badge variant="outline" className="text-xs font-normal">
-                            Early join
+                            {t("participantSummary.earlyJoin")}
                           </Badge>
                         )}
                       </div>
@@ -616,13 +621,15 @@ function MeetingParticipationInner() {
         {/* Activity Timeline */}
         <Card>
           <CardHeader>
-            <CardTitle>Activity Timeline</CardTitle>
-            <CardDescription>Complete history of joins and leaves</CardDescription>
+            <CardTitle>{t("activityTimeline.title")}</CardTitle>
+            <CardDescription>{t("activityTimeline.description")}</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-4 max-h-96 overflow-y-auto">
               {events.length === 0 ? (
-                <p className="text-center text-muted-foreground py-8">No activity yet</p>
+                <p className="text-center text-muted-foreground py-8">
+                  {t("activityTimeline.empty")}
+                </p>
               ) : (
                 events.map((event, index) => (
                   <div key={event.id}>
@@ -647,22 +654,22 @@ function MeetingParticipationInner() {
                           >
                             {event.action === "joined" ? (
                               <>
-                                <UserCheck className="w-3 h-3 mr-1" /> Joined
+                                <UserCheck className="w-3 h-3 mr-1" /> {t("status.joined")}
                               </>
                             ) : (
                               <>
-                                <UserX className="w-3 h-3 mr-1" /> Left
+                                <UserX className="w-3 h-3 mr-1" /> {t("status.left")}
                               </>
                             )}
                           </Badge>
                           {event.inferred && (
                             <Badge variant="outline" className="text-xs font-normal">
-                              Estimated
+                              {t("activityTimeline.estimated")}
                             </Badge>
                           )}
                           {event.joinedBeforeScheduledStart && (
                             <Badge variant="outline" className="text-xs font-normal">
-                              Before start
+                              {t("activityTimeline.beforeStart")}
                             </Badge>
                           )}
                         </div>
@@ -677,7 +684,9 @@ function MeetingParticipationInner() {
                             event.action === "joined" &&
                             event.timestamp < meetingData.startTime && (
                               <span className="block text-xs mt-0.5">
-                                Before scheduled session start ({formatTime(meetingData.startTime)})
+                                {t("activityTimeline.beforeScheduledStart", {
+                                  time: formatTime(meetingData.startTime),
+                                })}
                               </span>
                             )}
                         </div>

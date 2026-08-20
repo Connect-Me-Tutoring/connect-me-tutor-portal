@@ -3,6 +3,7 @@ import { config } from "@/config";
 import { isUuidString } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/server";
 import { notFound } from "next/navigation";
+import { getTranslations } from "next-intl/server";
 
 interface Props {
   params: Promise<{ id: string }>;
@@ -22,9 +23,11 @@ export default async function PairingChatRoomPage(props: Props) {
     return null;
   }
 
+  const t = await getTranslations("pairing.chatPage");
+
   return (
     <main className="container mx-auto p-4">
-      <h1 className="text-2xl font-bold mb-6">Tutoring Session</h1>
+      <h1 className="text-2xl font-bold mb-6">{t("title")}</h1>
 
       <ChatRoom
         type="pairing"

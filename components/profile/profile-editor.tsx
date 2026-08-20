@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useTranslations } from "next-intl";
 import { X, Plus, Save } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -48,6 +49,7 @@ const COMMON_LANGUAGES = [
 ];
 
 export function ProfileEditor() {
+  const t = useTranslations("profileSessions");
   const { toast } = useToast();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -78,8 +80,8 @@ export function ProfileEditor() {
       } catch (error) {
         console.error("Failed to load profile:", error);
         toast({
-          title: "Error",
-          description: "Failed to load profile data",
+          title: t("profileEditor.toasts.loadErrorTitle"),
+          description: t("profileEditor.toasts.loadErrorDescription"),
           variant: "destructive",
         });
       } finally {
@@ -95,8 +97,8 @@ export function ProfileEditor() {
       setSaving(true);
       await updateProfileData(profile);
       toast({
-        title: "Success",
-        description: "Profile updated successfully",
+        title: t("profileEditor.toasts.saveSuccessTitle"),
+        description: t("profileEditor.toasts.saveSuccessDescription"),
       });
 
       // Notify the opener window to refresh if it exists
@@ -106,8 +108,8 @@ export function ProfileEditor() {
     } catch (error) {
       console.error("Failed to save profile:", error);
       toast({
-        title: "Error",
-        description: "Failed to save profile data",
+        title: t("profileEditor.toasts.saveErrorTitle"),
+        description: t("profileEditor.toasts.saveErrorDescription"),
         variant: "destructive",
       });
     } finally {
@@ -118,8 +120,8 @@ export function ProfileEditor() {
   const addAvailability = () => {
     if (!newAvailability.day || !newAvailability.startTime || !newAvailability.endTime) {
       toast({
-        title: "Missing information",
-        description: "Please fill in all availability fields",
+        title: t("profileEditor.toasts.missingInfoTitle"),
+        description: t("profileEditor.toasts.missingInfoDescription"),
         variant: "destructive",
       });
       return;
@@ -184,7 +186,7 @@ export function ProfileEditor() {
     return (
       <div className="flex justify-center py-8">
         <div className="animate-pulse text-center">
-          <p className="text-muted-foreground">Loading profile data...</p>
+          <p className="text-muted-foreground">{t("profileEditor.loading")}</p>
         </div>
       </div>
     );
@@ -193,9 +195,9 @@ export function ProfileEditor() {
   return (
     <div className="space-y-6">
       <div className="space-y-4">
-        <h2 className="text-xl font-semibold">Availability</h2>
+        <h2 className="text-xl font-semibold">{t("profileEditor.availability.title")}</h2>
         <p className="text-sm text-muted-foreground">
-          Set your available time slots for tutoring or learning sessions.
+          {t("profileEditor.availability.description")}
         </p>
 
         <div className="space-y-4">
@@ -207,37 +209,39 @@ export function ProfileEditor() {
                   className="flex items-center gap-2 p-2 rounded-md border bg-muted/50"
                 >
                   <div className="flex-1 grid grid-cols-3 gap-2">
-                    <div className="text-sm">{slot.day}</div>
+                    <div className="text-sm">{t(`days.${slot.day}`)}</div>
                     <div className="text-sm">{slot.startTime}</div>
                     <div className="text-sm">{slot.endTime}</div>
                   </div>
                   <Button variant="ghost" size="icon" onClick={() => removeAvailability(index)}>
                     <X className="h-4 w-4" />
-                    <span className="sr-only">Remove</span>
+                    <span className="sr-only">{t("profileEditor.availability.removeSr")}</span>
                   </Button>
                 </div>
               ))}
             </div>
           ) : (
             <div className="text-center py-4 border rounded-md bg-muted/50">
-              <p className="text-sm text-muted-foreground">No availability set</p>
+              <p className="text-sm text-muted-foreground">
+                {t("profileEditor.availability.empty")}
+              </p>
             </div>
           )}
 
           <div className="grid gap-4 sm:grid-cols-[1fr_1fr_1fr_auto]">
             <div className="space-y-2">
-              <Label htmlFor="day">Day</Label>
+              <Label htmlFor="day">{t("profileEditor.availability.dayLabel")}</Label>
               <Select
                 value={newAvailability.day}
                 onValueChange={(value) => setNewAvailability((prev) => ({ ...prev, day: value }))}
               >
                 <SelectTrigger id="day">
-                  <SelectValue placeholder="Select day" />
+                  <SelectValue placeholder={t("profileEditor.availability.dayPlaceholder")} />
                 </SelectTrigger>
                 <SelectContent>
                   {DAYS_OF_WEEK.map((day) => (
                     <SelectItem key={day} value={day}>
-                      {day}
+                      {t(`days.${day}`)}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -245,7 +249,7 @@ export function ProfileEditor() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="start-time">Start Time</Label>
+              <Label htmlFor="start-time">{t("profileEditor.availability.startTimeLabel")}</Label>
               <Input
                 id="start-time"
                 type="time"
@@ -260,7 +264,7 @@ export function ProfileEditor() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="end-time">End Time</Label>
+              <Label htmlFor="end-time">{t("profileEditor.availability.endTimeLabel")}</Label>
               <Input
                 id="end-time"
                 type="time"
@@ -277,7 +281,7 @@ export function ProfileEditor() {
             <div className="flex items-end">
               <Button onClick={addAvailability}>
                 <Plus className="h-4 w-4 mr-1" />
-                Add
+                {t("profileEditor.availability.add")}
               </Button>
             </div>
           </div>
@@ -287,9 +291,9 @@ export function ProfileEditor() {
       <Separator />
 
       <div className="space-y-4">
-        <h2 className="text-xl font-semibold">Subjects of Interest</h2>
+        <h2 className="text-xl font-semibold">{t("profileEditor.subjects.title")}</h2>
         <p className="text-sm text-muted-foreground">
-          {"  Add subjects you're interested in teaching or learning."}
+          {t("profileEditor.subjects.description")}
         </p>
 
         <div className="flex flex-wrap gap-2 mb-4">
@@ -302,13 +306,15 @@ export function ProfileEditor() {
                   onClick={() => removeSubject(subject)}
                 >
                   <X className="h-3 w-3" />
-                  <span className="sr-only">Remove {subject}</span>
+                  <span className="sr-only">
+                    {t("profileEditor.subjects.removeSr", { subject })}
+                  </span>
                 </button>
               </Badge>
             ))
           ) : (
             <div className="w-full text-center py-4 border rounded-md bg-muted/50">
-              <p className="text-sm text-muted-foreground">No subjects added</p>
+              <p className="text-sm text-muted-foreground">{t("profileEditor.subjects.empty")}</p>
             </div>
           )}
         </div>
@@ -317,14 +323,14 @@ export function ProfileEditor() {
           <div className="flex-1">
             <Select value={newSubject} onValueChange={setNewSubject}>
               <SelectTrigger>
-                <SelectValue placeholder="Select or type a subject" />
+                <SelectValue placeholder={t("profileEditor.subjects.placeholder")} />
               </SelectTrigger>
               <SelectContent>
                 {COMMON_SUBJECTS.filter(
                   (subject) => !profile.subjectsOfInterest?.includes(subject),
                 ).map((subject) => (
                   <SelectItem key={subject} value={subject}>
-                    {subject}
+                    {t(`profileEditor.subjectOptions.${subject}`)}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -332,7 +338,7 @@ export function ProfileEditor() {
           </div>
           <Button onClick={addSubject}>
             <Plus className="h-4 w-4 mr-1" />
-            Add
+            {t("profileEditor.subjects.add")}
           </Button>
         </div>
       </div>
@@ -340,8 +346,10 @@ export function ProfileEditor() {
       <Separator />
 
       <div className="space-y-4">
-        <h2 className="text-xl font-semibold">Languages Spoken</h2>
-        <p className="text-sm text-muted-foreground">Add languages you can communicate in.</p>
+        <h2 className="text-xl font-semibold">{t("profileEditor.languages.title")}</h2>
+        <p className="text-sm text-muted-foreground">
+          {t("profileEditor.languages.description")}
+        </p>
 
         <div className="flex flex-wrap gap-2 mb-4">
           {profile.languagesSpoken && profile.languagesSpoken.length > 0 ? (
@@ -353,13 +361,15 @@ export function ProfileEditor() {
                   onClick={() => removeLanguage(language)}
                 >
                   <X className="h-3 w-3" />
-                  <span className="sr-only">Remove {language}</span>
+                  <span className="sr-only">
+                    {t("profileEditor.languages.removeSr", { language })}
+                  </span>
                 </button>
               </Badge>
             ))
           ) : (
             <div className="w-full text-center py-4 border rounded-md bg-muted/50">
-              <p className="text-sm text-muted-foreground">No languages added</p>
+              <p className="text-sm text-muted-foreground">{t("profileEditor.languages.empty")}</p>
             </div>
           )}
         </div>
@@ -368,14 +378,14 @@ export function ProfileEditor() {
           <div className="flex-1">
             <Select value={newLanguage} onValueChange={setNewLanguage}>
               <SelectTrigger>
-                <SelectValue placeholder="Select or type a language" />
+                <SelectValue placeholder={t("profileEditor.languages.placeholder")} />
               </SelectTrigger>
               <SelectContent>
                 {COMMON_LANGUAGES.filter(
                   (language) => !profile.languagesSpoken?.includes(language),
                 ).map((language) => (
                   <SelectItem key={language} value={language}>
-                    {language}
+                    {t(`profileEditor.languageOptions.${language}`)}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -383,7 +393,7 @@ export function ProfileEditor() {
           </div>
           <Button onClick={addLanguage}>
             <Plus className="h-4 w-4 mr-1" />
-            Add
+            {t("profileEditor.languages.add")}
           </Button>
         </div>
       </div>
@@ -414,12 +424,12 @@ export function ProfileEditor() {
                   d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
                 ></path>
               </svg>
-              Saving...
+              {t("profileEditor.save.saving")}
             </span>
           ) : (
             <>
               <Save className="h-4 w-4 mr-1" />
-              Save Profile
+              {t("profileEditor.save.save")}
             </>
           )}
         </Button>

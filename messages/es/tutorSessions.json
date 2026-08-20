@@ -1,0 +1,189 @@
+{
+  "enrollments": {
+    "toasts": {
+      "loadMeetingsError": "No se pudieron cargar las reuniones",
+      "noEnrollmentsFound": "No se encontraron inscripciones",
+      "unknownError": "Ocurrió un error desconocido",
+      "addSuccess": "Inscripción agregada correctamente",
+      "addError": "No se pudo agregar la inscripción",
+      "updateSuccess": "Inscripción actualizada correctamente",
+      "updateError": "No se pudo actualizar la inscripción",
+      "deleteSuccess": "Inscripción eliminada correctamente",
+      "deleteError": "No se pudo eliminar la inscripción",
+      "summerPlanChanged": "Se cambió el plan de verano de la inscripción",
+      "meetingNotFound": "Reunión no encontrada",
+      "noZoomLink": "No hay enlace de Zoom disponible",
+      "meetingLinkCopied": "¡Enlace de la reunión copiado!",
+      "copyLinkError": "No se pudo copiar el enlace"
+    },
+    "copyLink": "Copiar Enlace",
+    "filters": {
+      "placeholder": "Filtrar inscripciones...",
+      "dayAriaLabel": "Filtrar por día",
+      "anyDay": "Cualquier día",
+      "fromTimeAriaLabel": "Filtrar desde la hora",
+      "fromTimeTitle": "Hora de inicio",
+      "toTimeAriaLabel": "Filtrar hasta la hora",
+      "toTimeTitle": "Hora de fin",
+      "clear": "Limpiar",
+      "days": {
+        "monday": "Lunes",
+        "tuesday": "Martes",
+        "wednesday": "Miércoles",
+        "thursday": "Jueves",
+        "friday": "Viernes",
+        "saturday": "Sábado",
+        "sunday": "Domingo"
+      }
+    },
+    "addButton": "Agregar Inscripción",
+    "mobileTutorPrefix": "Tutor: {firstName} {lastName}",
+    "table": {
+      "columns": {
+        "student": "Estudiante",
+        "tutor": "Tutor",
+        "availability": "Disponibilidad",
+        "summary": "Resumen",
+        "startDate": "Fecha de Inicio",
+        "status": "Estado",
+        "meetingLink": "Enlace de la Reunión",
+        "actions": "Acciones",
+        "chat": "Chat"
+      },
+      "statusPaused": "Pausada",
+      "statusOngoing": "En curso",
+      "chat": "Chat",
+      "edit": "Editar",
+      "delete": "Eliminar"
+    },
+    "pagination": {
+      "rowsTotal": "{count} fila(s) en total.",
+      "rowsPerPage": "Filas por página",
+      "page": "Página {current} de {total}"
+    },
+    "loading": "Cargando...",
+    "errorPrefix": "Error: "
+  },
+  "tables": {
+    "common": {
+      "columns": {
+        "markStatus": "Marcar Estado",
+        "date": "Fecha",
+        "title": "Título",
+        "student": "Estudiante",
+        "duration": "Duración",
+        "meeting": "Reunión",
+        "sessionExitForm": "Formulario de Cierre de Sesión",
+        "actions": "Acciones",
+        "meetingNotes": "Notas de la Reunión"
+      },
+      "status": {
+        "active": "Activa",
+        "complete": "Completada",
+        "cancelled": "Cancelada"
+      },
+      "sessionTitle": "Sesión de tutoría con {firstName} {lastName}",
+      "meetingLinkLabel": "Reunión",
+      "noMeetingLink": "N/D",
+      "noMeetingLinkMobile": "Sin enlace de reunión",
+      "pagination": {
+        "rowsTotal": "{count} fila(s) en total.",
+        "rowsPerPage": "Filas por página",
+        "page": "Página {current} de {total}"
+      },
+      "requestSubstitute": "Solicitar Sustituto"
+    },
+    "active": {
+      "cancelDialog": {
+        "trigger": "Cancelar",
+        "title": "¿Cancelar Sesión?",
+        "description": "¿Estás seguro de que deseas cancelar esta sesión con {name} el {date}? Esta acción no se puede deshacer.",
+        "cancelButton": "Cancelar",
+        "confirmButton": "Confirmar Cancelación"
+      }
+    },
+    "completed": {
+      "viewSessionNotes": "Ver Notas de la Sesión",
+      "meetingNotesDialogTitle": "Notas de la Reunión",
+      "undo": "Deshacer"
+    },
+    "current": {
+      "requestSubstituteHover": "Solicitar un Sustituto",
+      "undoCancelHover": "Deshacer Cancelación"
+    }
+  },
+  "forms": {
+    "cancellation": {
+      "dialogTitle": "Cancelar Sesión",
+      "studentDescription": "Proporciona un breve motivo para cancelar esta sesión",
+      "studentPlaceholder": "Escribe aquí el motivo de la cancelación...",
+      "tutorDescription": "Proporciona una explicación de por qué se cancela esta sesión",
+      "reasons": {
+        "studentWithPriorNotice": "El estudiante canceló con aviso previo",
+        "studentWithoutPriorNotice": "El estudiante no asistió sin aviso previo",
+        "tutorWithPriorNotice": "Estoy cancelando con aviso previo",
+        "emergency": "Emergencia de último momento",
+        "other": "Otro"
+      },
+      "otherPlaceholder": "Escribe aquí...",
+      "back": "Volver",
+      "submit": "Enviar"
+    },
+    "editSession": {
+      "dialogTitle": "Editar Información de la Sesión",
+      "dateLabel": "Fecha",
+      "meetingLinkLabel": "Enlace de la Reunión",
+      "meetingLinkSelectPlaceholder": "Selecciona un enlace de reunión",
+      "noMeetingSelected": "Selecciona una reunión",
+      "meetingUnavailable": "Reunión no disponible, selecciona otra",
+      "durationLabel": "Duración",
+      "durationSelectPlaceholder": "Selecciona una duración",
+      "hourSingular": "hora",
+      "hourPlural": "horas",
+      "minutesLabel": "minutos",
+      "updateButton": "Actualizar Sesión",
+      "updating": "Actualizando...",
+      "checkingStatus": "Verificando Estado",
+      "editSessionLabel": "Editar Sesión",
+      "availabilityError": "No se pudo verificar la disponibilidad de la reunión."
+    },
+    "sessionExit": {
+      "submitByLabel": "Enviar antes de las 11:59pm EST",
+      "availabilityHint": "El Formulario de Cierre de Sesión estará disponible después de tu sesión",
+      "dialogTitle": "Formulario de Cierre de Sesión",
+      "sessionDidNotHappen": "La sesión no se llevó a cabo",
+      "questionOrConcernLabel": "Tengo una pregunta o inquietud",
+      "issueCategoryLabel": "Categoría del Problema",
+      "selectCategoryPlaceholder": "Selecciona una categoría...",
+      "notesPlaceholderQuestion": "¿Cuál es tu pregunta o inquietud?",
+      "notesPlaceholderDefault": "En 2-4 oraciones, ¿qué cubriste durante tu sesión?",
+      "nextClassConfirmedLabel": "Mi estudiante sabe sobre nuestra próxima clase",
+      "submit": "Enviar",
+      "deadline": {
+        "dueToday": "El FCS vence HOY antes de las 11:59pm EST",
+        "dueTomorrow": "El FCS vence Mañana",
+        "dueInDays": "El FCS vence en {days} días",
+        "dueOn": "El FCS vence el {date}"
+      }
+    },
+    "deletePairing": {
+      "removeAriaLabel": "Eliminar la asignación del estudiante",
+      "dialogTitle": "Eliminar Estudiante",
+      "dialogDescription": "Al eliminar este estudiante se eliminará la asignación y, automáticamente, las inscripciones y sesiones futuras relacionadas. No es necesario eliminar las inscripciones por separado.",
+      "cancel": "Cancelar",
+      "confirmButton": "Eliminar Estudiante",
+      "successToast": "Estudiante eliminado y las inscripciones relacionadas fueron eliminadas correctamente",
+      "errorToast": "No se pudo eliminar al estudiante"
+    }
+  },
+  "rescheduleDialog": {
+    "title": "Reprogramar Sesión con {firstName} {lastName}",
+    "meetingLinkLabel": "Enlace de la Reunión",
+    "meetingLinkSelectPlaceholder": "Selecciona un enlace de reunión",
+    "noMeetingSelected": "Selecciona una reunión",
+    "selectAvailableLink": "Selecciona un enlace disponible",
+    "submitButton": "Enviar Solicitud de Reprogramación",
+    "checkingAvailability": "Verificando Disponibilidad del Enlace de Reunión",
+    "availabilityError": "No se pudieron encontrar enlaces de reunión disponibles"
+  }
+}

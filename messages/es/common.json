@@ -1,0 +1,46 @@
+{
+  "save": "Guardar",
+  "cancel": "Cancelar",
+  "loading": "Cargando...",
+  "nav": {
+    "dashboard": "Panel",
+    "settings": "Configuración",
+    "logout": "Cerrar sesión",
+    "reportIssue": "Reportar un problema",
+    "tutorPortalManual": "Manual del portal de tutores"
+  },
+  "toasts": {
+    "logoutSuccess": "Sesión cerrada con éxito",
+    "switchProfileSuccess": "Perfil cambiado",
+    "switchProfileError": "No se pudo cambiar de perfil"
+  },
+  "languageSwitcher": {
+    "label": "Idioma",
+    "english": "Inglés",
+    "spanish": "Español"
+  },
+  "sidebar": {
+    "announcements": "Anuncios",
+    "chats": "Chats",
+    "pairings": "Emparejamientos",
+    "profile": "Perfil",
+    "myStudents": "Mis Estudiantes",
+    "myEnrollments": "Mis Inscripciones",
+    "myHours": "Mis Horas",
+    "resources": "Recursos",
+    "worksheets": "Hojas de Trabajo",
+    "notifications": "Notificaciones",
+    "schedule": "Horario",
+    "enrollments": "Inscripciones",
+    "meetingSchedule": "Horario de Reuniones",
+    "hoursManager": "Gestor de Horas",
+    "allTutors": "Todos los Tutores",
+    "allStudents": "Todos los Estudiantes",
+    "emailManager": "Gestor de Correos",
+    "pairingQueue": "Cola de Emparejamiento",
+    "conversations": "Conversaciones",
+    "analytics": "Analítica",
+    "completeYourAccount": "Completa tu cuenta",
+    "manageAccountSettings": "Administra la configuración y preferencias de tu cuenta."
+  }
+}

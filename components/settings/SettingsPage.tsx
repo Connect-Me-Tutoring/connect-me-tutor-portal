@@ -1,6 +1,7 @@
 "use client";
 
 import { use, useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -46,6 +47,7 @@ export default function SettingsPage({
   const supabase = createClient();
   const router = useRouter();
   const searchParams = useSearchParams();
+  const t = useTranslations("settings");
   const { profile, setProfile } = useProfile();
   const showCompleteProfileBanner = searchParams.get("completeProfile") === "1";
   // changed to initialize from context so current profile is available at render time
@@ -149,7 +151,7 @@ export default function SettingsPage({
     try {
       return await getUserProfiles(userId);
     } catch (error) {
-      toast.error("Error fetching profiles");
+      toast.error(t("profiles.toasts.fetchError"));
       console.error("Error fetching other profiles", error);
     }
   };
@@ -188,7 +190,7 @@ export default function SettingsPage({
     e.preventDefault();
     try {
       if (!profile?.id) {
-        toast.error("No active profile to update");
+        toast.error(t("account.toasts.noActiveProfile"));
         return;
       }
 
@@ -218,10 +220,10 @@ export default function SettingsPage({
       const refreshed = await getProfileWithProfileId(profile.id);
       if (refreshed) setProfile(refreshed);
 
-      toast.success("Profile updated");
+      toast.success(t("account.toasts.updateSuccess"));
     } catch (error) {
       console.error("Error updating profile:", error);
-      toast.error("Unable to update profile");
+      toast.error(t("account.toasts.updateError"));
     } finally {
       setIsSavingProfile(false);
     }
@@ -244,10 +246,10 @@ export default function SettingsPage({
         .throwOnError();
 
       await fetchNotificationSettings();
-      toast.success("Saved Notification Settings");
+      toast.success(t("notifications.toasts.saveSuccess"));
     } catch (error) {
       console.error("Error saving notification settings:", error);
-      toast.error("Unable to save notification settings");
+      toast.error(t("notifications.toasts.saveError"));
     }
   };
 
@@ -261,10 +263,10 @@ export default function SettingsPage({
         setProfile(newProfileData);
         router.refresh();
       }
-      toast.success("Switched Profile");
+      toast.success(t("profiles.toasts.switchSuccess"));
     } catch (error) {
       console.error("Unable to switch account", error);
-      toast.error("Unable to switch account");
+      toast.error(t("profiles.toasts.switchError"));
     }
   };
 
@@ -275,20 +277,18 @@ export default function SettingsPage({
         <div className="space-y-12">
           {showCompleteProfileBanner && (
             <Alert className="border-amber-200 bg-amber-50 text-amber-900">
-              <AlertDescription>
-                You must complete your profile first before using the rest of the dashboard.
-              </AlertDescription>
+              <AlertDescription>{t("completeProfileBanner")}</AlertDescription>
             </Alert>
           )}
 
           {/* Switch Profiles Section */}
           <section className="bg-white rounded-lg border p-6">
-            <h1 className="text-2xl font-bold mb-6">Profiles</h1>
+            <h1 className="text-2xl font-bold mb-6">{t("profiles.heading")}</h1>
             <div className="space-y-8">
               {/* Profiles */}
               <div>
                 <div className="flex items-center justify-between pb-3 border-b">
-                  <h3 className="text-lg font-semibold">Your Profiles</h3>
+                  <h3 className="text-lg font-semibold">{t("profiles.yourProfiles")}</h3>
                 </div>
                 <Select onValueChange={setLastActiveProfileId}>
                   <SelectTrigger className="h-12">
@@ -298,7 +298,7 @@ export default function SettingsPage({
                   </SelectTrigger>
                   <SelectContent>
                     <SelectGroup>
-                      <SelectLabel>Profiles</SelectLabel>
+                      <SelectLabel>{t("profiles.heading")}</SelectLabel>
                       {userProfiles.map((profile) => (
                         <SelectItem key={profile.id} value={profile.id || ""}>
                           {profile.firstName} {profile.lastName}
@@ -312,21 +312,23 @@ export default function SettingsPage({
             </div>
 
             <Button onClick={handleSwitchProfile} className="mt-6 w-full sm:w-auto">
-              Switch Profile
+              {t("profiles.switchProfile")}
             </Button>
           </section>
           {/* Notifications Section */}
           <section className="bg-white rounded-lg border p-6">
-            <h1 className="text-2xl font-bold mb-6">Notification Settings</h1>
+            <h1 className="text-2xl font-bold mb-6">{t("notifications.heading")}</h1>
 
             <div className="space-y-8">
               {/* Session Reminders */}
               <div>
                 <div className="flex items-center justify-between pb-3 border-b">
                   <div>
-                    <h3 className="text-lg font-semibold">Session Reminders</h3>
+                    <h3 className="text-lg font-semibold">
+                      {t("notifications.sessionReminders.title")}
+                    </h3>
                     <p className="text-sm text-gray-600">
-                      Get notified about upcoming tutoring sessions
+                      {t("notifications.sessionReminders.description")}
                     </p>
                   </div>
                   <Switch
@@ -341,7 +343,7 @@ export default function SettingsPage({
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
                         <Label htmlFor="session-email" className="text-base">
-                          Email notifications
+                          {t("notifications.emailNotifications")}
                         </Label>
                       </div>
 
@@ -355,10 +357,10 @@ export default function SettingsPage({
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
                         <Label htmlFor="session-text" className="text-base">
-                          Text notifications
+                          {t("notifications.textNotifications")}
                         </Label>
                         <span className="px-2 py-0.5 text-xs font-medium bg-yellow-100 text-yellow-800 rounded-full border border-yellow-200">
-                          In Development
+                          {t("notifications.inDevelopment")}
                         </span>
                       </div>
                       <Switch
@@ -376,9 +378,11 @@ export default function SettingsPage({
               <div>
                 <div className="flex items-center justify-between pb-3 border-b">
                   <div>
-                    <h3 className="text-lg font-semibold">Webinar Reminders</h3>
+                    <h3 className="text-lg font-semibold">
+                      {t("notifications.webinarReminders.title")}
+                    </h3>
                     <p className="text-sm text-gray-600">
-                      Get notified about upcoming webinars and events
+                      {t("notifications.webinarReminders.description")}
                     </p>
                   </div>
                   <Switch
@@ -392,7 +396,7 @@ export default function SettingsPage({
                   <div className="mt-4 ml-4 space-y-3">
                     <div className="flex items-center justify-between">
                       <Label htmlFor="webinar-email" className="text-base">
-                        Email notifications
+                        {t("notifications.emailNotifications")}
                       </Label>
                       <Switch
                         id="webinar-email"
@@ -404,10 +408,10 @@ export default function SettingsPage({
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
                         <Label htmlFor="webinar-text" className="text-base">
-                          Text notifications
+                          {t("notifications.textNotifications")}
                         </Label>
                         <span className="px-2 py-0.5 text-xs font-medium bg-yellow-100 text-yellow-800 rounded-full border border-yellow-200">
-                          In Development
+                          {t("notifications.inDevelopment")}
                         </span>
                       </div>
                       <Switch
@@ -422,34 +426,34 @@ export default function SettingsPage({
               </div>
             </div>
             <Button onClick={handleSaveNotifications} className="mt-6 w-full sm:w-auto">
-              Save Notification Settings
+              {t("notifications.save")}
             </Button>
           </section>
           <section className="bg-white rounded-lg border p-6">
             <div className="flex items-center gap-3 mb-4">
-              <h2 className="text-2xl font-bold">Account Settings</h2>
+              <h2 className="text-2xl font-bold">{t("account.heading")}</h2>
               <span className="px-3 py-1 text-xs font-medium bg-yellow-100 text-yellow-800 rounded-full border border-yellow-200">
-                In Development
+                {t("account.inDevelopment")}
               </span>
             </div>
-            <p className="text-gray-600 mb-6">Manage your information and account preferences.</p>
+            <p className="text-gray-600 mb-6">{t("account.description")}</p>
             <form onSubmit={handleProfileSubmit} className="space-y-6">
               {/* students can toggle their own active inactive status here without needing admin intervention to deactivate account */}
               {profile?.role === "Student" && (
                 <div>
                   <Label htmlFor="account-status" className="text-sm font-medium">
-                    Account Status
+                    {t("account.status.label")}
                   </Label>
                   <Select
                     value={accountStatus}
                     onValueChange={(value) => setAccountStatus(value as Profile["status"])}
                   >
                     <SelectTrigger id="account-status" className="mt-1">
-                      <SelectValue placeholder="Select status" />
+                      <SelectValue placeholder={t("account.status.placeholder")} />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="Active">Active</SelectItem>
-                      <SelectItem value="Inactive">Inactive</SelectItem>
+                      <SelectItem value="Active">{t("account.status.active")}</SelectItem>
+                      <SelectItem value="Inactive">{t("account.status.inactive")}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -457,11 +461,11 @@ export default function SettingsPage({
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <Label htmlFor="first-name" className="text-sm font-medium">
-                    First Name
+                    {t("account.firstName.label")}
                   </Label>
                   <Input
                     id="first-name"
-                    placeholder="Enter your first name (e.g John)"
+                    placeholder={t("account.firstName.placeholder")}
                     className="mt-1 placeholder:text-gray-300"
                     value={accountForm.firstName}
                     onChange={(e) =>
@@ -474,11 +478,11 @@ export default function SettingsPage({
                 </div>
                 <div>
                   <Label htmlFor="last-name" className="text-sm font-medium">
-                    Last Name
+                    {t("account.lastName.label")}
                   </Label>
                   <Input
                     id="last-name"
-                    placeholder="Enter your last name (e.g Smith)"
+                    placeholder={t("account.lastName.placeholder")}
                     className="mt-1 placeholder:text-gray-300"
                     value={accountForm.lastName}
                     onChange={(e) =>
@@ -493,12 +497,12 @@ export default function SettingsPage({
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <Label htmlFor="phone-number" className="text-sm font-medium">
-                    Phone Number
+                    {t("account.phoneNumber.label")}
                   </Label>
                   <Input
                     id="phone-number"
                     type="tel"
-                    placeholder="Enter your phone number (e.g (555) 123-4567)"
+                    placeholder={t("account.phoneNumber.placeholder")}
                     className="mt-1 placeholder:text-gray-300"
                     value={accountForm.phoneNumber}
                     onChange={(e) =>
@@ -511,12 +515,12 @@ export default function SettingsPage({
                 </div>
                 <div>
                   <Label htmlFor="age" className="text-sm font-medium">
-                    Age
+                    {t("account.age.label")}
                   </Label>
                   <Input
                     id="age"
                     type="number"
-                    placeholder="Enter your age (e.g 25)"
+                    placeholder={t("account.age.placeholder")}
                     className="mt-1 placeholder:text-gray-300"
                     value={accountForm.age}
                     onChange={(e) =>
@@ -530,12 +534,12 @@ export default function SettingsPage({
               </div>
               <div>
                 <Label htmlFor="email" className="text-sm font-medium">
-                  Email Address
+                  {t("account.email.label")}
                 </Label>
                 <Input
                   id="email"
                   type="email"
-                  placeholder="Enter your email (e.g john@example.com)"
+                  placeholder={t("account.email.placeholder")}
                   className="mt-1 placeholder:text-gray-300"
                   value={accountForm.email}
                   onChange={(e) =>
@@ -548,11 +552,11 @@ export default function SettingsPage({
               </div>
               <div>
                 <Label htmlFor="bio" className="text-sm font-medium">
-                  Bio
+                  {t("account.bio.label")}
                 </Label>
                 <Textarea
                   id="bio"
-                  placeholder="Tell us about yourself (e.g What hobbies do you enjoy?)"
+                  placeholder={t("account.bio.placeholder")}
                   className="mt-1 placeholder:text-gray-300"
                   rows={4}
                   disabled
@@ -560,11 +564,11 @@ export default function SettingsPage({
               </div>
               <div>
                 <Label htmlFor="subjects" className="text-sm font-medium">
-                  Subjects of Interest
+                  {t("account.subjects.label")}
                 </Label>
                 <Textarea
                   id="subjects"
-                  placeholder="Enter your subjects of interest (e.g Mathematics, Physics, Chemistry)"
+                  placeholder={t("account.subjects.placeholder")}
                   className="mt-1 placeholder:text-gray-300"
                   rows={4}
                   value={accountForm.subjectsOfInterest}
@@ -578,13 +582,12 @@ export default function SettingsPage({
               </div>
 
               <div>
-                {/* hi */}
                 <Label htmlFor="languages" className="text-sm font-medium">
-                  Languages Spoken
+                  {t("account.languages.label")}
                 </Label>
                 <Textarea
                   id="languages"
-                  placeholder="Enter languages you speak (e.g English, Spanish, French)"
+                  placeholder={t("account.languages.placeholder")}
                   className="mt-1 placeholder:text-gray-300"
                   rows={4}
                   value={accountForm.languagesSpoken}
@@ -602,7 +605,7 @@ export default function SettingsPage({
                 disabled={!profile || isSavingProfile}
                 className="w-full sm:w-auto"
               >
-                {isSavingProfile ? "Updating..." : "Update Profile"}
+                {isSavingProfile ? t("account.updating") : t("account.update")}
               </Button>
             </form>
           </section>

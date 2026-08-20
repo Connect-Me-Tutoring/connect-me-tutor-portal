@@ -1,5 +1,6 @@
 "use client";
 import React, { useState, useEffect, use } from "react";
+import { useTranslations } from "next-intl";
 import { Input } from "@/components/ui/input";
 import ActiveSessionsTable from "../components/ActiveSessionsTable";
 import CurrentSessionsTable from "../components/CurrentSessionsTable";
@@ -24,6 +25,7 @@ import { format } from "date-fns";
 import { useLoadMore } from "@/hooks/useLoadMore";
 
 const TutorDashboard = () => {
+  const t = useTranslations("tutorPages.dashboard");
   const TC = useDashboardContext();
 
   useEffect(() => {
@@ -113,10 +115,10 @@ const TutorDashboard = () => {
       }
       TC.setSelectedSession(null);
       TC.setIsDialogOpen(false);
-      toast.success("Session updated successfully");
+      toast.success(t("toasts.sessionUpdated"));
     } catch (error) {
       console.error("Error requesting session reschedule:", error);
-      toast.error("Failed to reschedule session");
+      toast.error(t("toasts.rescheduleError"));
     }
   };
 
@@ -134,10 +136,10 @@ const TutorDashboard = () => {
         TC.sessions.map((e: Session) => (e.id === updatedSession.id ? updatedSession : e)),
       );
 
-      toast.success("Session updated successfully");
+      toast.success(t("toasts.sessionUpdated"));
     } catch (error) {
       console.error("Failed to update session:", error);
-      toast.error("Failed to update session");
+      toast.error(t("toasts.updateError"));
     }
   };
 
@@ -166,7 +168,7 @@ const TutorDashboard = () => {
       TC.setSessions(
         TC.sessions.map((e: Session) => (e.id === updatedSession.id ? updatedSession : e)),
       );
-      toast.success("Session Marked Complete");
+      toast.success(t("toasts.sessionMarkedComplete"));
       TC.setIsSessionExitFormOpen(false);
       TC.setNotes("");
       TC.setNextClassConfirmed(false);
@@ -193,13 +195,13 @@ const TutorDashboard = () => {
         const data = await response.json();
 
         if (!data.success) {
-          toast.error("Unable to record question or concern");
+          toast.error(t("toasts.questionConcernError"));
           throw new Error(data.error);
         }
       }
     } catch (error) {
       console.error("Failed to record Session Exit Form", error);
-      toast.error("Failed to record Session Exit Form");
+      toast.error(t("toasts.sefRecordError"));
     }
   };
 
@@ -219,14 +221,14 @@ const TutorDashboard = () => {
       TC.setPastSessions((prev) => prev.filter((s) => s.id !== sessionId));
       TC.setCurrentSessions((prev) => [session, ...prev.filter((s) => s.id !== sessionId)]);
 
-      toast.success("Session exit form undone");
+      toast.success(t("toasts.sefUndone"));
     } catch (error) {
       const err = error as Error;
       console.error("Undo exit form failed:", err);
       if ((err.message = "Undo Expired")) {
-        toast.error("Time To Undo Expired");
+        toast.error(t("toasts.undoExpired"));
       } else {
-        toast.error("Could not undo session exit form");
+        toast.error(t("toasts.undoSefError"));
       }
     }
   };
@@ -240,10 +242,10 @@ const TutorDashboard = () => {
       );
       TC.setPastSessions(TC.pastSessions.filter((s) => s.id !== sessionId));
       TC.setFilteredPastSessions(TC.filteredPastSessions.filter((s) => s.id !== sessionId));
-      toast.success("Session cancellation undone");
+      toast.success(t("toasts.cancellationUndone"));
     } catch (error) {
       console.error("Failed to undo session cancellation", error);
-      toast.error("Failed to undo session cancellation");
+      toast.error(t("toasts.undoCancelError"));
     }
   };
 
@@ -297,7 +299,7 @@ const TutorDashboard = () => {
   return (
     <>
       <div className="p-8">
-        <h1 className="text-3xl font-bold mb-6">This Week</h1>
+        <h1 className="text-3xl font-bold mb-6">{t("thisWeek")}</h1>
         <div className="flex space-x-6">
           <div className="flex-grow bg-white rounded-lg shadow p-6">
             <CurrentSessionsTable
@@ -315,7 +317,7 @@ const TutorDashboard = () => {
         </div>
       </div>{" "}
       <div className="p-8">
-        <h1 className="text-3xl font-bold mb-6">Active Sessions</h1>
+        <h1 className="text-3xl font-bold mb-6">{t("activeSessions")}</h1>
 
         <div className="flex space-x-6">
           <div className="flex-grow bg-white rounded-lg shadow p-6">
@@ -323,7 +325,7 @@ const TutorDashboard = () => {
               <div className="flex space-x-2">
                 <Input
                   type="text"
-                  placeholder="Filter sessions..."
+                  placeholder={t("filterSessionsPlaceholder")}
                   className="w-64"
                   value={TC.filterValueActiveSessions}
                   onChange={(e) => TC.setFilterValueActiveSessions(e.target.value)}
@@ -349,7 +351,7 @@ const TutorDashboard = () => {
         </div>
       </div>
       <div className="p-8">
-        <h1 className="text-3xl font-bold mb-6">Past Sessions</h1>
+        <h1 className="text-3xl font-bold mb-6">{t("pastSessions")}</h1>
 
         <div className="flex space-x-6">
           <div className="flex-grow bg-white rounded-lg shadow p-6">
@@ -357,7 +359,7 @@ const TutorDashboard = () => {
               <div className="flex space-x-2">
                 <Input
                   type="text"
-                  placeholder="Filter sessions..."
+                  placeholder={t("filterSessionsPlaceholder")}
                   className="w-64"
                   value={TC.filterValuePastSessions}
                   onChange={(e) => TC.setFilterValuePastSessions(e.target.value)}

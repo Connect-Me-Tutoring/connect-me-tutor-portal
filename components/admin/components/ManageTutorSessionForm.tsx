@@ -1,5 +1,6 @@
 "use client";
 import React, { useState, useEffect } from "react";
+import { useTranslations } from "next-intl";
 import {
   Dialog,
   DialogContent,
@@ -26,6 +27,7 @@ import { Loader2 } from "lucide-react";
 import { Combobox } from "@/components/ui/combobox";
 
 export default function ManageTutorSessions({ tutors }: { tutors: Profile[] }) {
+  const t = useTranslations("adminPeople.forms.manageTutorSessions");
   const [open, setOpen] = useState(false);
   const [selectedTutorId, setSelectedTutorId] = useState<string>("");
   const [sessions, setSessions] = useState<Session[]>([]);
@@ -40,7 +42,7 @@ export default function ManageTutorSessions({ tutors }: { tutors: Profile[] }) {
       setSessions(data);
     } catch (error) {
       console.error(error);
-      toast.error("Failed to load sessions");
+      toast.error(t("toasts.loadError"));
     } finally {
       setLoading(false);
     }
@@ -75,11 +77,16 @@ export default function ManageTutorSessions({ tutors }: { tutors: Profile[] }) {
     setLoading(true);
     try {
       await updateSessionsStatus(selectedIds, status);
-      toast.success(`Marked ${selectedIds.length} session(s) as ${status}`);
+      toast.success(
+        t("toasts.updateSuccess", {
+          count: selectedIds.length,
+          status: status === "Cancelled" ? t("statusCancelled") : t("statusComplete"),
+        }),
+      );
       setSelectedIds([]);
       await fetchSessions(selectedTutorId);
     } catch (error) {
-      toast.error(`Failed to update sessions`);
+      toast.error(t("toasts.updateError"));
     } finally {
       setLoading(false);
     }
@@ -88,11 +95,11 @@ export default function ManageTutorSessions({ tutors }: { tutors: Profile[] }) {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button className="bg-connect-me-blue-5">Manage Sessions</Button>
+        <Button className="bg-connect-me-blue-5">{t("trigger")}</Button>
       </DialogTrigger>
       <DialogContent className="max-w-4xl max-h-[80vh] flex flex-col">
         <DialogHeader>
-          <DialogTitle>Manage Tutor Sessions</DialogTitle>
+          <DialogTitle>{t("dialogTitle")}</DialogTitle>
         </DialogHeader>
 
         <div className="py-4">
@@ -129,16 +136,16 @@ export default function ManageTutorSessions({ tutors }: { tutors: Profile[] }) {
                           }}
                         />
                       </TableHead>
-                      <TableHead>Date</TableHead>
-                      <TableHead>Student</TableHead>
-                      <TableHead>Status</TableHead>
+                      <TableHead>{t("table.date")}</TableHead>
+                      <TableHead>{t("table.student")}</TableHead>
+                      <TableHead>{t("table.status")}</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {sessions.length === 0 ? (
                       <TableRow>
                         <TableCell colSpan={4} className="text-center">
-                          No sessions found.
+                          {t("noSessions")}
                         </TableCell>
                       </TableRow>
                     ) : (
@@ -166,21 +173,23 @@ export default function ManageTutorSessions({ tutors }: { tutors: Profile[] }) {
             </div>
 
             <div className="flex justify-between items-center pt-4 border-t">
-              <div className="text-sm text-gray-500">{selectedIds.length} selected</div>
+              <div className="text-sm text-gray-500">
+                {t("selectedCount", { count: selectedIds.length })}
+              </div>
               <div className="space-x-2">
                 <Button
                   variant="outline"
                   onClick={() => handleUpdate("Cancelled")}
                   disabled={selectedIds.length === 0 || loading}
                 >
-                  Mark Cancelled
+                  {t("markCancelled")}
                 </Button>
                 <Button
                   onClick={() => handleUpdate("Complete")}
                   disabled={selectedIds.length === 0 || loading}
                   className="bg-connect-me-blue-2"
                 >
-                  Mark Complete
+                  {t("markComplete")}
                 </Button>
               </div>
             </div>

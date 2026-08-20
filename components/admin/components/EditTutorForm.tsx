@@ -1,4 +1,6 @@
+"use client";
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -61,6 +63,7 @@ const EditTutorForm = ({
   handleComplexFieldsForEdit,
   handleTimeZoneForEdit,
 }: EditTutorFormProps) => {
+  const t = useTranslations("adminPeople");
   const [activeTab, setActiveTab] = useState("basic");
   const [newSubject, setNewSubject] = useState<string[]>([]);
   const [newLanguage, setNewLanguage] = useState<string[]>([]);
@@ -138,15 +141,15 @@ const EditTutorForm = ({
   return (
     <Dialog open={isReactivateModalOpen} onOpenChange={setIsReactivateModalOpen}>
       <DialogTrigger asChild>
-        <Button className="bg-connect-me-blue-4">Edit Tutor</Button>
+        <Button className="bg-connect-me-blue-4">{t("forms.editTutor.trigger")}</Button>
       </DialogTrigger>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle>Select a Tutor to Edit</DialogTitle>
+          <DialogTitle>{t("forms.editTutor.dialogTitleSelect")}</DialogTitle>
         </DialogHeader>
         <div className="grid gap-4 py-4">
           <Label htmlFor="tutorSelect" className="text-right">
-            Tutor
+            {t("forms.editTutor.tutorLabel")}
           </Label>
           <div className="relative">
             <Combobox
@@ -166,12 +169,12 @@ const EditTutorForm = ({
               disabled={!selectedTutorId}
               onClick={() => handleGetSelectedTutor(selectedTutorId)}
             >
-              Select Tutor to edit
+              {t("forms.editTutor.selectToEdit")}
             </Button>
           </DialogTrigger>
           <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
-              <DialogTitle>Edit Tutor</DialogTitle>
+              <DialogTitle>{t("forms.editTutor.dialogTitleEdit")}</DialogTitle>
             </DialogHeader>
 
             {/* Tab Navigation */}
@@ -185,7 +188,7 @@ const EditTutorForm = ({
                     : "border-transparent text-gray-500 hover:text-gray-700"
                 }`}
               >
-                Basic Info
+                {t("forms.editTutor.tabs.basic")}
               </button>
               <button
                 type="button"
@@ -196,7 +199,7 @@ const EditTutorForm = ({
                     : "border-transparent text-gray-500 hover:text-gray-700"
                 }`}
               >
-                Extended Profile
+                {t("forms.editTutor.tabs.extended")}
               </button>
             </div>
 
@@ -206,7 +209,7 @@ const EditTutorForm = ({
                 <div className="space-y-4">
                   <div className="grid grid-cols-4 items-center gap-4">
                     <Label htmlFor="firstName" className="text-right">
-                      First Name
+                      {t("forms.common.firstName.label")}
                     </Label>
                     <Input
                       id="firstName"
@@ -218,7 +221,7 @@ const EditTutorForm = ({
                   </div>
                   <div className="grid grid-cols-4 items-center gap-4">
                     <Label htmlFor="lastName" className="text-right">
-                      Last Name
+                      {t("forms.common.lastName.label")}
                     </Label>
                     <Input
                       id="lastName"
@@ -230,7 +233,7 @@ const EditTutorForm = ({
                   </div>
                   <div className="grid grid-cols-4 items-center gap-4">
                     <Label htmlFor="email" className="text-right">
-                      Email
+                      {t("forms.common.email.label")}
                     </Label>
                     <Input
                       id="email"
@@ -243,7 +246,7 @@ const EditTutorForm = ({
                   </div>
                   <div className="grid grid-cols-4 items-center gap-4">
                     <Label htmlFor="phoneNumber" className="text-right">
-                      Phone Number
+                      {t("forms.common.phoneNumber.label")}
                     </Label>
                     <Input
                       id="phoneNumber"
@@ -256,7 +259,7 @@ const EditTutorForm = ({
                   </div>
                   <div className="grid grid-cols-4 items-center gap-4">
                     <Label htmlFor="startDate" className="text-right">
-                      Start Date
+                      {t("forms.common.startDate.label")}
                     </Label>
                     <Input
                       id="startDate"
@@ -269,7 +272,7 @@ const EditTutorForm = ({
                   </div>
                   <div className="grid grid-cols-4 items-center gap-4">
                     <Label htmlFor="timeZone" className="text-right">
-                      Time Zone
+                      {t("forms.common.timeZone.label")}
                     </Label>
                     <div className="col-span-3">
                       <TimeZoneSelector
@@ -285,7 +288,9 @@ const EditTutorForm = ({
               {activeTab === "extended" && (
                 <div className="space-y-6">
                   <div className="space-y-4">
-                    <h3 className="text-lg font-semibold">Status</h3>
+                    <h3 className="text-lg font-semibold">
+                      {t("forms.editTutor.statusSectionTitle")}
+                    </h3>
                     <Select
                       value={selectedTutor?.status ?? "Active"}
                       onValueChange={(value) =>
@@ -293,18 +298,20 @@ const EditTutorForm = ({
                       }
                     >
                       <SelectTrigger className="w-full">
-                        <SelectValue placeholder="Select status" />
+                        <SelectValue placeholder={t("forms.common.status.placeholder")} />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="Active">Active</SelectItem>
-                        <SelectItem value="Inactive">Inactive</SelectItem>
+                        <SelectItem value="Active">{t("forms.common.status.active")}</SelectItem>
+                        <SelectItem value="Inactive">
+                          {t("forms.common.status.inactive")}
+                        </SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
 
                   {/* Availability Section */}
                   <div className="space-y-4">
-                    <h3 className="text-lg font-semibold">Availability</h3>
+                    <h3 className="text-lg font-semibold">{t("forms.common.availability")}</h3>
                     {selectedTutor &&
                       selectedTutor.availability &&
                       selectedTutor.availability.map((slot, index) => (
@@ -320,7 +327,7 @@ const EditTutorForm = ({
                               <SelectContent>
                                 {DAYS_OF_WEEK.map((day) => (
                                   <SelectItem key={day} value={day}>
-                                    {day}
+                                    {t(`forms.common.days.${day.toLowerCase()}` as any)}
                                   </SelectItem>
                                 ))}
                               </SelectContent>
@@ -361,17 +368,19 @@ const EditTutorForm = ({
                       className="w-full"
                     >
                       <Plus className="h-4 w-4 mr-2" />
-                      Add Time Slot
+                      {t("forms.common.addTimeSlot")}
                     </Button>
                   </div>
 
                   {/* Subjects Section */}
                   <div className="space-y-4">
-                    <h3 className="text-lg font-semibold">Subjects of Interest</h3>
+                    <h3 className="text-lg font-semibold">
+                      {t("forms.common.subjectsOfInterest")}
+                    </h3>
                     <div className="flex gap-2">
                       <Input
                         type="text"
-                        placeholder="e.g., Mathematics, Physics"
+                        placeholder={t("forms.common.subjectsPlaceholderShort")}
                         value={subjectInput}
                         onChange={(e) => setSubjectInput(e.target.value)}
                         onKeyPress={(e) => e.key === "Enter" && (e.preventDefault(), addSubject())}
@@ -406,11 +415,13 @@ const EditTutorForm = ({
 
                   {/* Languages Section */}
                   <div className="space-y-4">
-                    <h3 className="text-lg font-semibold">Languages Spoken</h3>
+                    <h3 className="text-lg font-semibold">
+                      {t("forms.common.languagesSpoken")}
+                    </h3>
                     <div className="flex gap-2">
                       <Input
                         type="text"
-                        placeholder="e.g., English, Spanish"
+                        placeholder={t("forms.common.languagesPlaceholderShort")}
                         value={languageInput}
                         onChange={(e) => setLanguageInput(e.target.value)}
                         onKeyPress={(e) => e.key === "Enter" && (e.preventDefault(), addLanguage())}
@@ -444,7 +455,9 @@ const EditTutorForm = ({
                   </div>
 
                   <div className="space-y-4">
-                    <h3 className="text-lg font-semibold">Gender</h3>
+                    <h3 className="text-lg font-semibold">
+                      {t("forms.editTutor.genderSectionTitle")}
+                    </h3>
                     <div className="flex gap-2">
                       <Select
                         name="timeZone"
@@ -462,9 +475,9 @@ const EditTutorForm = ({
                           <SelectValue placeholder="" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="male">Male</SelectItem>
-                          <SelectItem value="female">Female</SelectItem>
-                          <SelectItem value="other">Other</SelectItem>
+                          <SelectItem value="male">{t("forms.common.gender.male")}</SelectItem>
+                          <SelectItem value="female">{t("forms.common.gender.female")}</SelectItem>
+                          <SelectItem value="other">{t("forms.common.gender.other")}</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
@@ -474,7 +487,7 @@ const EditTutorForm = ({
               )}
             </div>
 
-            <Button onClick={handleEditTutor}>Finish editing tutor</Button>
+            <Button onClick={handleEditTutor}>{t("forms.editTutor.finish")}</Button>
           </DialogContent>
         </Dialog>
       </DialogContent>

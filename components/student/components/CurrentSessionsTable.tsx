@@ -1,5 +1,8 @@
+"use client";
+
 import React from "react";
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import { formatSessionDate, formatDateAdmin } from "@/lib/utils";
 import { Session, Meeting } from "@/types";
 import { Button } from "@/components/ui/button";
@@ -100,6 +103,7 @@ const CurrentSessionsTable = ({
   handleStatusChange: (session: Session) => void;
 }) => {
   const SC = useDashboardContext();
+  const t = useTranslations("student.tables.common");
 
   return (
     <>
@@ -107,13 +111,13 @@ const CurrentSessionsTable = ({
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Mark Status</TableHead>
-              <TableHead>Date</TableHead>
-              <TableHead>Title</TableHead>
-              <TableHead>Tutor</TableHead>
-              <TableHead>Meeting</TableHead>
-              <TableHead>Feedback</TableHead>
-              <TableHead>Actions</TableHead>
+              <TableHead>{t("headers.markStatus")}</TableHead>
+              <TableHead>{t("headers.date")}</TableHead>
+              <TableHead>{t("headers.title")}</TableHead>
+              <TableHead>{t("headers.tutor")}</TableHead>
+              <TableHead>{t("headers.meeting")}</TableHead>
+              <TableHead>{t("headers.feedback")}</TableHead>
+              <TableHead>{t("headers.actions")}</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -123,17 +127,17 @@ const CurrentSessionsTable = ({
                   {session.status === "Active" ? (
                     <span className="px-3 py-1 inline-flex items-center rounded-full bg-blue-100 text-blue-800 border border-blue-200">
                       <Clock size={14} className="mr-1" />
-                      Active
+                      {t("status.active")}
                     </span>
                   ) : session.status === "Complete" ? (
                     <span className="px-3 py-1 inline-flex items-center rounded-full bg-green-100 text-green-800 border border-green-200">
                       <CircleCheckBig size={14} className="mr-1" />
-                      Complete
+                      {t("status.complete")}
                     </span>
                   ) : session.status === "Cancelled" ? (
                     <span className="px-3 py-1 inline-flex items-center rounded-full bg-red-100 text-red-800 border border-red-200">
                       <CircleX size={14} className="mr-1" />
-                      Cancelled
+                      {t("status.cancelled")}
                     </span>
                   ) : (
                     ""
@@ -141,7 +145,10 @@ const CurrentSessionsTable = ({
                 </TableCell>
                 <TableCell>{formatSessionDate(session.date)}</TableCell>
                 <TableCell className="font-medium">
-                  Tutoring Session with {session.tutor?.firstName} {session.tutor?.lastName}
+                  {t("sessionTitle", {
+                    firstName: session.tutor?.firstName ?? "",
+                    lastName: session.tutor?.lastName ?? "",
+                  })}
                 </TableCell>
                 <TableCell>
                   {session.tutor?.firstName} {session.tutor?.lastName}
@@ -153,10 +160,10 @@ const CurrentSessionsTable = ({
                       className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-connect-me-blue-2 transition-colors"
                     >
                       <Video className="h-4 w-4" />
-                      Meeting
+                      {t("headers.meeting")}
                     </button>
                   ) : (
-                    <span className="text-sm text-muted-foreground/50">N/A</span>
+                    <span className="text-sm text-muted-foreground/50">{t("notAvailable")}</span>
                   )}
                 </TableCell>
                 <TableCell>
@@ -167,7 +174,7 @@ const CurrentSessionsTable = ({
                     className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-connect-me-blue-2 transition-colors"
                   >
                     <MessageSquare className="h-4 w-4" />
-                    Feedback
+                    {t("headers.feedback")}
                   </a>
                 </TableCell>
                 <TableCell>
@@ -178,10 +185,10 @@ const CurrentSessionsTable = ({
                           variant="ghost"
                           size="sm"
                           className="text-red-500 hover:text-red-600 hover:bg-red-50"
-                          title="Cancel session"
+                          title={t("cancelSessionTooltip")}
                         >
                           <CalendarX className="h-4 w-4 mr-1.5" />
-                          Cancel
+                          {t("cancel")}
                         </Button>
                       </AlertDialogTrigger>
                       <CancellationForm
@@ -204,22 +211,25 @@ const CurrentSessionsTable = ({
           <MobileCard key={index}>
             <div className="flex justify-between items-start gap-2">
               <div className="font-medium text-sm">
-                Tutoring Session with {session.tutor?.firstName} {session.tutor?.lastName}
+                {t("sessionTitle", {
+                  firstName: session.tutor?.firstName ?? "",
+                  lastName: session.tutor?.lastName ?? "",
+                })}
               </div>
               {session.status === "Active" ? (
                 <span className="px-3 py-1 inline-flex items-center rounded-full bg-blue-100 text-blue-800 border border-blue-200 whitespace-nowrap">
                   <Clock size={14} className="mr-1" />
-                  Active
+                  {t("status.active")}
                 </span>
               ) : session.status === "Complete" ? (
                 <span className="px-3 py-1 inline-flex items-center rounded-full bg-green-100 text-green-800 border border-green-200 whitespace-nowrap">
                   <CircleCheckBig size={14} className="mr-1" />
-                  Complete
+                  {t("status.complete")}
                 </span>
               ) : session.status === "Cancelled" ? (
                 <span className="px-3 py-1 inline-flex items-center rounded-full bg-red-100 text-red-800 border border-red-200 whitespace-nowrap">
                   <CircleX size={14} className="mr-1" />
-                  Cancelled
+                  {t("status.cancelled")}
                 </span>
               ) : (
                 ""
@@ -233,10 +243,10 @@ const CurrentSessionsTable = ({
                   className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-connect-me-blue-2 transition-colors"
                 >
                   <Video className="h-4 w-4" />
-                  Meeting
+                  {t("headers.meeting")}
                 </button>
               ) : (
-                <span className="text-sm text-muted-foreground/50">No meeting link</span>
+                <span className="text-sm text-muted-foreground/50">{t("noMeetingLink")}</span>
               )}
             </div>
             <div className="flex flex-wrap items-center gap-2">
@@ -247,7 +257,7 @@ const CurrentSessionsTable = ({
                 className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-connect-me-blue-2 transition-colors"
               >
                 <MessageSquare className="h-4 w-4" />
-                Feedback
+                {t("headers.feedback")}
               </a>
               {session.status === "Active" ? (
                 <AlertDialog>
@@ -256,10 +266,10 @@ const CurrentSessionsTable = ({
                       variant="ghost"
                       size="sm"
                       className="text-red-500 hover:text-red-600 hover:bg-red-50"
-                      title="Cancel session"
+                      title={t("cancelSessionTooltip")}
                     >
                       <CalendarX className="h-4 w-4 mr-1.5" />
-                      Cancel
+                      {t("cancel")}
                     </Button>
                   </AlertDialogTrigger>
                   <CancellationForm

@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useTranslations } from "next-intl";
 import { Session, Meeting } from "@/types";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -39,6 +40,7 @@ export default function EditSessionForm({
   handleStatusChange,
   isDropdownItem = false,
 }: EditSessionFormProps) {
+  const t = useTranslations("tutorSessions.forms.editSession");
   const [open, setOpen] = useState(false);
   const [editedSession, setEditedSession] = useState<Session>(session);
   const [isChecking, setIsChecking] = useState(false);
@@ -80,7 +82,7 @@ export default function EditSessionForm({
       });
       setMeetingAvailability(updatedAvail);
     } catch {
-      toast.error("Unable to check meeting availability.");
+      toast.error(t("availabilityError"));
     } finally {
       setIsChecking(false);
     }
@@ -116,7 +118,7 @@ export default function EditSessionForm({
       }}
     >
       <Edit className="h-4 w-4 mr-2" />
-      Edit Session
+      {t("editSessionLabel")}
     </DropdownMenuItem>
   ) : (
     <HoverCard>
@@ -126,7 +128,7 @@ export default function EditSessionForm({
         </Button>
       </HoverCardTrigger>
       <HoverCardContent>
-        <center>Edit Session</center>
+        <center>{t("editSessionLabel")}</center>
       </HoverCardContent>
     </HoverCard>
   );
@@ -137,11 +139,11 @@ export default function EditSessionForm({
       <Dialog open={open} onOpenChange={handleOpenChange}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Edit Session Information</DialogTitle>
+            <DialogTitle>{t("dialogTitle")}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div>
-              <Label>Date</Label>
+              <Label>{t("dateLabel")}</Label>
               <Input
                 type="datetime-local"
                 value={format(parseISO(editedSession.date), "yyyy-MM-dd'T'HH:mm")}
@@ -160,7 +162,7 @@ export default function EditSessionForm({
               />
             </div>
             <div>
-              <Label>Meeting Link</Label>
+              <Label>{t("meetingLinkLabel")}</Label>
               <Select
                 value={editedSession.meeting?.id || ""}
                 onValueChange={(val) => {
@@ -170,12 +172,12 @@ export default function EditSessionForm({
                 disabled={isChecking || isUpdating}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Select a meeting link">
+                  <SelectValue placeholder={t("meetingLinkSelectPlaceholder")}>
                     {editedSession.meeting?.id
                       ? meetingAvailability[editedSession.meeting.id]
                         ? meetings.find((m) => m.id === editedSession.meeting?.id)?.name
-                        : "Meeting unavilable, please select another"
-                      : "Select a meeting"}
+                        : t("meetingUnavailable")
+                      : t("noMeetingSelected")}
                   </SelectValue>
                 </SelectTrigger>
                 <SelectContent>
@@ -198,7 +200,7 @@ export default function EditSessionForm({
               </Select>
             </div>
             <div>
-              <Label>Duration</Label>
+              <Label>{t("durationLabel")}</Label>
               <Select
                 value={editedSession.duration.toString()}
                 onValueChange={(value) => {
@@ -212,7 +214,7 @@ export default function EditSessionForm({
                 disabled={isChecking || isUpdating}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Select a time duration" />
+                  <SelectValue placeholder={t("durationSelectPlaceholder")} />
                 </SelectTrigger>
                 <SelectContent>
                   {durationOptions.map((duration) => {
@@ -221,7 +223,8 @@ export default function EditSessionForm({
 
                     return (
                       <SelectItem key={duration} value={duration.toString()}>
-                        {hours} {hours === 1 ? "hour" : "hours"} {minutes} minutes
+                        {hours} {hours === 1 ? t("hourSingular") : t("hourPlural")} {minutes}{" "}
+                        {t("minutesLabel")}
                       </SelectItem>
                     );
                   })}
@@ -241,10 +244,10 @@ export default function EditSessionForm({
               {isUpdating || isChecking ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  {isChecking ? "Checking Status" : "Updating..."}
+                  {isChecking ? t("checkingStatus") : t("updating")}
                 </>
               ) : (
-                "Update Session"
+                t("updateButton")
               )}
             </Button>
           </div>

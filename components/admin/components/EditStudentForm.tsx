@@ -1,4 +1,6 @@
+"use client";
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -59,6 +61,7 @@ const EditStudentForm = ({
   getOrdinalSuffix,
   handleEditStudent,
 }: EditStudentFormProps) => {
+  const t = useTranslations("adminPeople");
   const [isReactivateModalOpen, setIsReactivateModalOpen] = useState<boolean>(false);
 
   const [activeTab, setActiveTab] = useState("basic");
@@ -138,16 +141,16 @@ const EditStudentForm = ({
   return (
     <Dialog open={isReactivateModalOpen} onOpenChange={setIsReactivateModalOpen}>
       <DialogTrigger asChild>
-        <Button className="bg-connect-me-blue-4">Edit Student</Button>
+        <Button className="bg-connect-me-blue-4">{t("forms.editStudent.trigger")}</Button>
       </DialogTrigger>
       <DialogContent className="max-w-md overflow-auto">
         <DialogHeader>
-          <DialogTitle>Select a Student to Edit</DialogTitle>
+          <DialogTitle>{t("forms.editStudent.dialogTitleSelect")}</DialogTitle>
         </DialogHeader>
 
         <div className="grid gap-4 py-4">
           <Label htmlFor="studentSelect" className="text-right">
-            Student
+            {t("forms.editStudent.studentLabel")}
           </Label>
           <div className="relative">
             <Combobox
@@ -168,13 +171,13 @@ const EditStudentForm = ({
               disabled={!selectedStudentId}
               onClick={() => handleGetSelectedStudent(selectedStudentId)}
             >
-              Select Student to edit
+              {t("forms.editStudent.selectToEdit")}
             </Button>
           </DialogTrigger>
 
           <DialogContent className="max-w-lg">
             <DialogHeader>
-              <DialogTitle>Edit Student</DialogTitle>
+              <DialogTitle>{t("forms.editStudent.dialogTitleEdit")}</DialogTitle>
             </DialogHeader>
 
             <div className="flex border-b mb-4">
@@ -187,7 +190,7 @@ const EditStudentForm = ({
                     : "border-transparent text-gray-500 hover:text-gray-700"
                 }`}
               >
-                Basic Info
+                {t("forms.editStudent.tabs.basic")}
               </button>
               <button
                 type="button"
@@ -198,7 +201,7 @@ const EditStudentForm = ({
                     : "border-transparent text-gray-500 hover:text-gray-700"
                 }`}
               >
-                Extended Profile
+                {t("forms.editStudent.tabs.extended")}
               </button>
             </div>
 
@@ -209,7 +212,7 @@ const EditStudentForm = ({
                   <div className="grid gap-4 py-4">
                     <div className="grid grid-cols-4 items-center gap-4">
                       <Label htmlFor="studentNumber" className="text-right">
-                        Student #
+                        {t("forms.editStudent.studentNumber")}
                       </Label>
                       <Input
                         id="studentNumber"
@@ -221,7 +224,7 @@ const EditStudentForm = ({
                     </div>
                     <div className="grid grid-cols-4 items-center gap-4">
                       <Label htmlFor="firstName" className="text-right">
-                        First Name
+                        {t("forms.common.firstName.label")}
                       </Label>
                       <Input
                         id="firstName"
@@ -233,7 +236,7 @@ const EditStudentForm = ({
                     </div>
                     <div className="grid grid-cols-4 items-center gap-4">
                       <Label htmlFor="lastName" className="text-right">
-                        Last Name
+                        {t("forms.common.lastName.label")}
                       </Label>
                       <Input
                         id="lastName"
@@ -245,7 +248,7 @@ const EditStudentForm = ({
                     </div>
                     <div className="grid grid-cols-8 items-center gap-4">
                       <Label htmlFor="age" className="text-right col-span-2">
-                        Age
+                        {t("forms.common.age.label")}
                       </Label>
                       <div className="col-span-2">
                         <Input
@@ -257,7 +260,7 @@ const EditStudentForm = ({
                         ></Input>
                       </div>
                       <Label htmlFor="grade" className="text-right">
-                        Grade
+                        {t("forms.common.grade.label")}
                       </Label>
                       <div className="col-span-3">
                         <Select
@@ -269,13 +272,15 @@ const EditStudentForm = ({
                             <SelectValue placeholder="" />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="Kindergarten">Kindergarten</SelectItem>
+                            <SelectItem value="Kindergarten">
+                              {t("forms.common.grades.kindergarten")}
+                            </SelectItem>
                             {Array.from({ length: 12 }, (_, i) => (
                               <SelectItem
                                 key={i}
                                 value={`${i + 1}${getOrdinalSuffix(i + 1)}-grade`}
                               >
-                                {`${i + 1}${getOrdinalSuffix(i + 1)}`}
+                                {t(`forms.common.grades.grade${i + 1}` as any)}
                               </SelectItem>
                             ))}
                           </SelectContent>
@@ -284,7 +289,7 @@ const EditStudentForm = ({
                     </div>
                     <div className="grid grid-cols-4 items-center gap-4">
                       <Label htmlFor="gender" className="text-right">
-                        Gender
+                        {t("forms.common.gender.label")}
                       </Label>
                       <div className="col-span-3">
                         {" "}
@@ -297,16 +302,18 @@ const EditStudentForm = ({
                             <SelectValue placeholder="" />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="male">Male</SelectItem>
-                            <SelectItem value="female">Female</SelectItem>
-                            <SelectItem value="other">Other</SelectItem>
+                            <SelectItem value="male">{t("forms.common.gender.male")}</SelectItem>
+                            <SelectItem value="female">
+                              {t("forms.common.gender.female")}
+                            </SelectItem>
+                            <SelectItem value="other">{t("forms.common.gender.other")}</SelectItem>
                           </SelectContent>
                         </Select>
                       </div>
                     </div>
                     <div className="grid grid-cols-4 items-center gap-4">
                       <Label htmlFor="email" className="text-right">
-                        Email
+                        {t("forms.common.email.label")}
                       </Label>
                       <Input
                         id="email"
@@ -320,7 +327,7 @@ const EditStudentForm = ({
 
                     <div className="grid grid-cols-4 items-center gap-4">
                       <Label htmlFor="startDate" className="text-right">
-                        Start Date
+                        {t("forms.common.startDate.label")}
                       </Label>
                       <Input
                         id="startDate"
@@ -333,7 +340,7 @@ const EditStudentForm = ({
                     </div>
                     <div className="grid grid-cols-4 items-center gap-4">
                       <Label htmlFor="parentName" className="text-right">
-                        Parent Name
+                        {t("forms.editStudent.parentName")}
                       </Label>
                       <Input
                         id="parentName"
@@ -345,7 +352,7 @@ const EditStudentForm = ({
                     </div>
                     <div className="grid grid-cols-4 items-center gap-4">
                       <Label htmlFor="parentPhone" className="text-right">
-                        Parent Phone
+                        {t("forms.editStudent.parentPhone")}
                       </Label>
                       <Input
                         id="parentPhone"
@@ -358,7 +365,7 @@ const EditStudentForm = ({
                     </div>
                     <div className="grid grid-cols-4 items-center gap-4">
                       <Label htmlFor="parentEmail" className="text-right">
-                        Parent Email
+                        {t("forms.editStudent.parentEmail")}
                       </Label>
                       <Input
                         id="parentEmail"
@@ -371,7 +378,7 @@ const EditStudentForm = ({
                     </div>
                     <div className="grid grid-cols-4 items-center gap-4">
                       <Label htmlFor="timeZone" className="text-right">
-                        Time Zone
+                        {t("forms.common.timeZone.label")}
                       </Label>
                       <div className="col-span-3">
                         <TimeZoneSelector
@@ -407,7 +414,7 @@ const EditStudentForm = ({
                   <div className="space-y-6">
                     {/* Availability Section */}
                     <div className="space-y-4">
-                      <h3 className="text-lg font-semibold">Availability</h3>
+                      <h3 className="text-lg font-semibold">{t("forms.common.availability")}</h3>
                       {selectedStudent &&
                         selectedStudent.availability &&
                         selectedStudent.availability.map((slot, index) => (
@@ -425,7 +432,7 @@ const EditStudentForm = ({
                                 <SelectContent>
                                   {DAYS_OF_WEEK.map((day) => (
                                     <SelectItem key={day} value={day}>
-                                      {day}
+                                      {t(`forms.common.days.${day.toLowerCase()}` as any)}
                                     </SelectItem>
                                   ))}
                                 </SelectContent>
@@ -466,17 +473,19 @@ const EditStudentForm = ({
                         className="w-full"
                       >
                         <Plus className="h-4 w-4 mr-2" />
-                        Add Time Slot
+                        {t("forms.common.addTimeSlot")}
                       </Button>
                     </div>
 
                     {/* Subjects Section */}
                     <div className="space-y-4">
-                      <h3 className="text-lg font-semibold">Subjects of Interest</h3>
+                      <h3 className="text-lg font-semibold">
+                        {t("forms.common.subjectsOfInterest")}
+                      </h3>
                       <div className="flex gap-2">
                         <Input
                           type="text"
-                          placeholder="e.g., Mathematics, Physics"
+                          placeholder={t("forms.common.subjectsPlaceholderShort")}
                           value={subjectInput}
                           onChange={(e) => setSubjectInput(e.target.value)}
                           onKeyPress={(e) =>
@@ -513,11 +522,13 @@ const EditStudentForm = ({
 
                     {/* Languages Section */}
                     <div className="space-y-4">
-                      <h3 className="text-lg font-semibold">Languages Spoken</h3>
+                      <h3 className="text-lg font-semibold">
+                        {t("forms.common.languagesSpoken")}
+                      </h3>
                       <div className="flex gap-2">
                         <Input
                           type="text"
-                          placeholder="e.g., English, Spanish"
+                          placeholder={t("forms.common.languagesPlaceholderShort")}
                           value={languageInput}
                           onChange={(e) => setLanguageInput(e.target.value)}
                           onKeyPress={(e) =>
@@ -555,7 +566,7 @@ const EditStudentForm = ({
                 </ScrollArea>
               )}
 
-              <Button onClick={handleEditStudent}>Finish editing student</Button>
+              <Button onClick={handleEditStudent}>{t("forms.editStudent.finish")}</Button>
             </div>
           </DialogContent>
         </Dialog>
