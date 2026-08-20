@@ -64,7 +64,7 @@ const SessionCompletionChart = () => {
           "get_period_session_completion_stats",
           {
             p_granularity: g,
-          }
+          },
         );
         if (error) throw error;
         const rows: PeriodStat[] = data ?? [];
@@ -86,7 +86,7 @@ const SessionCompletionChart = () => {
         setIsRefreshing(false);
       }
     },
-    []
+    [],
   );
 
   useEffect(() => {
@@ -108,7 +108,7 @@ const SessionCompletionChart = () => {
         ...(long ? { year: "numeric" } : {}),
       });
     },
-    [granularity]
+    [granularity],
   );
 
   // Filtering is client-side: one fetch per granularity, then filter in memory
@@ -121,14 +121,14 @@ const SessionCompletionChart = () => {
         if (rangeEnd && k > rangeEnd) return false;
         return true;
       }),
-    [data, rangeStart, rangeEnd, granularity]
+    [data, rangeStart, rangeEnd, granularity],
   );
 
   // Recharts reads every series off the same row objects, so the active value
   // and its trend get folded in here rather than passed as separate arrays.
   const chartData = useMemo(() => {
     const values = filtered.map((d) =>
-      metric === "completed" ? d.total_completed : d.pct_completed
+      metric === "completed" ? d.total_completed : d.pct_completed,
     );
     const trend =
       showTrendline && values.length >= 2 ? linearTrend(values) : null;
@@ -364,7 +364,9 @@ const SessionCompletionChart = () => {
             <tbody>
               {chartData.map((d) => (
                 <tr key={d.period} className="border-b last:border-0">
-                  <td className="py-2 pr-4">{formatPeriod(d.period, true)}</td>
+                  <td className="py-2 pr-4">
+                    {formatPeriod(d.period, true)}
+                  </td>
                   <td className="py-2 pr-4">
                     {d.total_completed.toLocaleString()}
                   </td>
