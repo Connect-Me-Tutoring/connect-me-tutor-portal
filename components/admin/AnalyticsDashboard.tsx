@@ -46,7 +46,7 @@ const AnalyticsDashboard = () => {
 
   return (
     <div className="p-6">
-    <div className="mb-6">
+      <div className="mb-6">
         <AnalyticsCard
           title="Session Completion"
           subtitle="Completed vs. cancelled sessions over time"
