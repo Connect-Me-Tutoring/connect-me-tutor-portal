@@ -130,7 +130,8 @@ const SessionCompletionChart = () => {
     const values = filtered.map((d) =>
       metric === "completed" ? d.total_completed : d.pct_completed
     );
-    const trend = showTrendline && values.length >= 2 ? linearTrend(values) : null;
+    const trend =
+      showTrendline && values.length >= 2 ? linearTrend(values) : null;
     return filtered.map((d, i) => ({
       ...d,
       label: formatPeriod(d.period),
@@ -180,7 +181,7 @@ const SessionCompletionChart = () => {
 
   return (
     <div>
-      <div className="flex items-center justify-end mb-3">
+      <div className="mb-3 flex items-center justify-end">
         <button
           onClick={() => fetchStats(granularity, true)}
           disabled={isRefreshing}
@@ -191,13 +192,13 @@ const SessionCompletionChart = () => {
       </div>
 
       {/* Granularity + metric toggles */}
-      <div className="flex flex-wrap items-center gap-4 mb-3">
+      <div className="mb-3 flex flex-wrap items-center gap-4">
         <div className="flex items-center gap-1">
           <button
             onClick={() => setGranularity("month")}
-            className={`text-xs px-3 py-1 rounded border ${
+            className={`rounded border px-3 py-1 text-xs ${
               granularity === "month"
-                ? "bg-gray-800 text-white border-gray-800"
+                ? "border-gray-800 bg-gray-800 text-white"
                 : "text-gray-600"
             }`}
           >
@@ -205,9 +206,9 @@ const SessionCompletionChart = () => {
           </button>
           <button
             onClick={() => setGranularity("week")}
-            className={`text-xs px-3 py-1 rounded border ${
+            className={`rounded border px-3 py-1 text-xs ${
               granularity === "week"
-                ? "bg-gray-800 text-white border-gray-800"
+                ? "border-gray-800 bg-gray-800 text-white"
                 : "text-gray-600"
             }`}
           >
@@ -218,9 +219,9 @@ const SessionCompletionChart = () => {
         <div className="flex items-center gap-1">
           <button
             onClick={() => setMetric("completed")}
-            className={`text-xs px-3 py-1 rounded border ${
+            className={`rounded border px-3 py-1 text-xs ${
               metric === "completed"
-                ? "bg-blue-600 text-white border-blue-600"
+                ? "border-blue-600 bg-blue-600 text-white"
                 : "text-gray-600"
             }`}
           >
@@ -228,9 +229,9 @@ const SessionCompletionChart = () => {
           </button>
           <button
             onClick={() => setMetric("pct")}
-            className={`text-xs px-3 py-1 rounded border ${
+            className={`rounded border px-3 py-1 text-xs ${
               metric === "pct"
-                ? "bg-blue-600 text-white border-blue-600"
+                ? "border-blue-600 bg-blue-600 text-white"
                 : "text-gray-600"
             }`}
           >
@@ -240,7 +241,7 @@ const SessionCompletionChart = () => {
       </div>
 
       {/* Range + display options */}
-      <div className="flex flex-wrap items-center gap-4 mb-4 text-sm">
+      <div className="mb-4 flex flex-wrap items-center gap-4 text-sm">
         <label className="flex items-center gap-2">
           <span className="text-gray-500">From</span>
           <input
@@ -248,7 +249,7 @@ const SessionCompletionChart = () => {
             value={rangeStart}
             max={rangeEnd || undefined}
             onChange={(e) => setRangeStart(e.target.value)}
-            className="border rounded px-2 py-1 text-sm"
+            className="rounded border px-2 py-1 text-sm"
           />
         </label>
         <label className="flex items-center gap-2">
@@ -258,7 +259,7 @@ const SessionCompletionChart = () => {
             value={rangeEnd}
             min={rangeStart || undefined}
             onChange={(e) => setRangeEnd(e.target.value)}
-            className="border rounded px-2 py-1 text-sm"
+            className="rounded border px-2 py-1 text-sm"
           />
         </label>
         <button
@@ -268,7 +269,7 @@ const SessionCompletionChart = () => {
           Reset range
         </button>
 
-        <label className="flex items-center gap-2 ml-auto">
+        <label className="ml-auto flex items-center gap-2">
           <input
             type="checkbox"
             checked={showTrendline}
@@ -287,7 +288,7 @@ const SessionCompletionChart = () => {
       </div>
 
       {chartData.length === 0 ? (
-        <div className="text-sm text-gray-500 py-8 text-center">
+        <div className="py-8 text-center text-sm text-gray-500">
           No {granularity === "week" ? "weeks" : "months"} in the selected
           range.
         </div>
@@ -349,9 +350,9 @@ const SessionCompletionChart = () => {
 
       {showTable && chartData.length > 0 && (
         <div className="mt-4 overflow-auto" style={{ maxHeight: 400 }}>
-          <table className="w-full text-sm border-collapse">
+          <table className="w-full border-collapse text-sm">
             <thead>
-              <tr className="text-left text-gray-500 border-b">
+              <tr className="border-b text-left text-gray-500">
                 <th className="py-2 pr-4 font-medium">
                   {granularity === "week" ? "Week of" : "Month"}
                 </th>
