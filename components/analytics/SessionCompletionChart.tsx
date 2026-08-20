@@ -240,3 +240,99 @@ const SessionCompletionChart = () => {
           <span className="text-gray-500">From</span>
           <input
             type={granularity === "month" ? "month" : "date"}
+            value={rangeStart}
+            onChange={(e) => setRangeStart(e.target.value)}
+            className="border rounded px-2 py-1"
+          />
+        </label>
+        <label className="flex items-center gap-2">
+          <span className="text-gray-500">To</span>
+          <input
+            type={granularity === "month" ? "month" : "date"}
+            value={rangeEnd}
+            onChange={(e) => setRangeEnd(e.target.value)}
+            className="border rounded px-2 py-1"
+          />
+        </label>
+        <button
+          onClick={resetRange}
+          className="text-xs text-blue-600 hover:underline"
+        >
+          Reset
+        </button>
+
+        <label className="flex items-center gap-2">
+          <input
+            type="checkbox"
+            checked={showTrendline}
+            onChange={(e) => setShowTrendline(e.target.checked)}
+          />
+          <span>Trend</span>
+        </label>
+        <label className="flex items-center gap-2">
+          <input
+            type="checkbox"
+            checked={showTable}
+            onChange={(e) => setShowTable(e.target.checked)}
+          />
+          <span>Table</span>
+        </label>
+      </div>
+
+      {/* Chart */}
+      <ResponsiveContainer width="100%" height={350}>
+        <ComposedChart data={chartData}>
+          <CartesianGrid strokeDasharray="3 3" />
+          <XAxis dataKey="label" />
+          <YAxis yAxisId="left" label={{ value: axisTitle, angle: -90, position: "insideLeft" }} />
+          {showTrendline && <YAxis yAxisId="right" orientation="right" />}
+          <Tooltip content={renderTooltip} />
+          <Bar yAxisId="left" dataKey="value" fill="#3b82f6" name={axisTitle} />
+          {showTrendline && (
+            <Line
+              yAxisId="right"
+              type="monotone"
+              dataKey="trend"
+              stroke="#ef4444"
+              dot={false}
+              name="Trend"
+              strokeDasharray="5 5"
+            />
+          )}
+        </ComposedChart>
+      </ResponsiveContainer>
+
+      {/* Table */}
+      {showTable && (
+        <div className="mt-6 overflow-x-auto">
+          <table className="w-full border-collapse text-xs">
+            <thead>
+              <tr className="bg-gray-100">
+                <th className="border px-2 py-1 text-left">Period</th>
+                <th className="border px-2 py-1 text-right">Completed</th>
+                <th className="border px-2 py-1 text-right">Resolved</th>
+                <th className="border px-2 py-1 text-right">% Completed</th>
+              </tr>
+            </thead>
+            <tbody>
+              {chartData.map((row) => (
+                <tr key={row.period} className="hover:bg-gray-50">
+                  <td className="border px-2 py-1">{row.label}</td>
+                  <td className="border px-2 py-1 text-right">
+                    {row.total_completed.toLocaleString()}
+                  </td>
+                  <td className="border px-2 py-1 text-right">
+                    {row.total_resolved.toLocaleString()}
+                  </td>
+                  <td className="border px-2 py-1 text-right">{row.pct_completed}%</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default SessionCompletionChart;
