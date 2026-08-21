@@ -35,7 +35,7 @@ export interface Session {
   date: string;
   meeting?: Meeting | null;
   duration: number;
-  status: "Active" | "Complete" | "Cancelled" | "Rescheduled";
+  status: "Active" | "Complete" | "Cancelled" | "Rescheduled" | "Unconfirmed";
   session_exit_form: string;
   summary: string;
   isQuestionOrConcern: boolean;
