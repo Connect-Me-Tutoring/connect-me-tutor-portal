@@ -443,7 +443,10 @@ export const getEnrollmentsWithMissingSEF = async (timeProvided: Date, weeksMiss
         )
         `,
       )
-      .in("sessions.status", ["Active", "Cancelled"])
+      // Unconfirmed is exactly "the tutor never submitted an exit form", so it is the only
+      // status that counts toward inactivity. Cancelled means the session was called off
+      // deliberately and must not push an enrollment toward deletion.
+      .in("sessions.status", ["Unconfirmed"])
       .gte("sessions.date", timeProvided.toISOString())
       .lte("sessions.date", now)
       .throwOnError();
