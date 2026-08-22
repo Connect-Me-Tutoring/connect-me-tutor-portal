@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { cancelUnsubmittedSEFCron } from "@/lib/actions/session/server.actions";
+import { markUnconfirmedSEFCron } from "@/lib/actions/session/server.actions";
 import {
   deleteInactiveEnrollments,
   warnInactiveEnrollments,
@@ -18,9 +18,9 @@ export async function GET(req: NextRequest) {
   }
 
   const results = {
-    cancelUnsubmittedSEF: {
+    markUnconfirmedSEF: {
       success: false,
-      cancelled: 0,
+      unconfirmed: 0,
       error: undefined as string | undefined,
     },
     warnInactiveEnrollments: {
@@ -34,9 +34,9 @@ export async function GET(req: NextRequest) {
     },
   };
 
-  // Task 1: Cancel unsubmitted SEFs
-  const cancelResult = await cancelUnsubmittedSEFCron();
-  results.cancelUnsubmittedSEF = cancelResult;
+  // Task 1: Mark sessions with unsubmitted SEFs as Unconfirmed
+  const unconfirmedResult = await markUnconfirmedSEFCron();
+  results.markUnconfirmedSEF = unconfirmedResult;
 
   // Task 2: Warn inactive enrollments (5+ weeks missing SEF)
   const warnResult = await warnInactiveEnrollments();
@@ -50,7 +50,7 @@ export async function GET(req: NextRequest) {
   results.deleteInactiveEnrollments = deleteResult;
 
   const hasErrors =
-    !results.cancelUnsubmittedSEF.success || !results.deleteInactiveEnrollments.success;
+    !results.markUnconfirmedSEF.success || !results.deleteInactiveEnrollments.success;
 
   return NextResponse.json(
     {

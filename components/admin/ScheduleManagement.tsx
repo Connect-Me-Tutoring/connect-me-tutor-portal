@@ -612,9 +612,11 @@ const Schedule = () => {
           ? "bg-green-50 border-l-green-500 text-green-900"
           : session.status === "Cancelled"
             ? "bg-red-50 border-l-red-500 text-red-900"
-            : session.isStandalone == true
-              ? "bg-purple-50  border-l-purple-500 text-purple-900"
-              : "bg-blue-50 border-l-blue-500 text-blue-900",
+            : session.status === "Unconfirmed"
+              ? "bg-amber-50 border-l-amber-500 text-amber-900"
+              : session.isStandalone == true
+                ? "bg-purple-50  border-l-purple-500 text-purple-900"
+                : "bg-blue-50 border-l-blue-500 text-blue-900",
       )}
     >
       <p className="font-medium truncate">
@@ -677,6 +679,7 @@ const Schedule = () => {
                 {[
                   { color: "bg-green-500", label: "Complete" },
                   { color: "bg-red-500", label: "Cancelled" },
+                  { color: "bg-amber-500", label: "Unconfirmed" },
                   { color: "bg-blue-500", label: "Active" },
                   { color: "bg-purple-500", label: "Standalone" },
                 ].map(({ color, label }) => (
@@ -1070,9 +1073,11 @@ const Schedule = () => {
                                     ? "bg-green-100 text-green-800"
                                     : session.status === "Cancelled"
                                       ? "bg-red-100 text-red-800"
-                                      : session.isStandalone
-                                        ? "bg-purple-100 text-purple-800"
-                                        : "bg-blue-100 text-blue-800",
+                                      : session.status === "Unconfirmed"
+                                        ? "bg-amber-100 text-amber-800"
+                                        : session.isStandalone
+                                          ? "bg-purple-100 text-purple-800"
+                                          : "bg-blue-100 text-blue-800",
                                 )}
                               >
                                 {session.tutor?.firstName} / {session.student?.firstName}
@@ -1252,6 +1257,7 @@ const Schedule = () => {
                     sefFlags.push("question/concern");
                   if ((selectedSession as any)?.isFirstSession) sefFlags.push("first session");
                   if (selectedSession.status === "Cancelled") sefFlags.push("cancelled");
+                  if (selectedSession.status === "Unconfirmed") sefFlags.push("unconfirmed");
                   let sefReasonText = rawSef ?? "";
                   if (rawSef && rawSef.trim().startsWith("{")) {
                     try {
