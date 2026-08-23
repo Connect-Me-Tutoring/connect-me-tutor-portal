@@ -39,8 +39,10 @@ interface AccountFormType {
 }
 
 export default function SettingsPage({
+  orientationEnabled,
   profilePromise,
 }: {
+  orientationEnabled: boolean;
   profilePromise: Promise<Profile | null>;
 }) {
   //   const profile = use(profilePromise);
@@ -427,7 +429,7 @@ export default function SettingsPage({
               Save Notification Settings
             </Button>
           </section>
-          {profile?.role === "Tutor" && (
+          {orientationEnabled && profile?.role === "Tutor" && (
             <section className="rounded-lg border bg-white p-6">
               <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
                 <div className="flex items-start gap-3">

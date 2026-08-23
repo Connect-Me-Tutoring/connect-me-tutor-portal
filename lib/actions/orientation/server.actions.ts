@@ -17,8 +17,8 @@ interface SubmitQuizPayload {
  * to a Discord channel via webhook.
  */
 export async function submitQuizCompletion(payload: SubmitQuizPayload) {
-  if (process.env.ORIENTATION_QUIZ_ENABLED !== "true") {
-    throw new Error("The orientation quiz is not enabled.");
+  if (process.env.TUTOR_ORIENTATION_ENABLED !== "true") {
+    throw new Error("Tutor orientation is not enabled.");
   }
 
   const { profile } = await requireAuthenticatedProfile();

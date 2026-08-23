@@ -31,13 +31,7 @@ const MODULES = [
   },
 ] as const;
 
-interface OrientationLandingProps {
-  quizEnabled: boolean;
-}
-
-export function OrientationLanding({ quizEnabled }: OrientationLandingProps) {
-  const modules = quizEnabled ? MODULES : MODULES.filter((module) => module.key !== "quiz");
-
+export function OrientationLanding() {
   return (
     <div className="p-8">
       <header className="mb-8">
@@ -56,7 +50,7 @@ export function OrientationLanding({ quizEnabled }: OrientationLandingProps) {
         </h2>
 
         <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
-          {modules.map((module, index) => {
+          {MODULES.map((module, index) => {
             const Icon = module.icon;
 
             return (

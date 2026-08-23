@@ -8,7 +8,5 @@ export const metadata: Metadata = {
 };
 
 export default function TutorOrientationPage() {
-  const quizEnabled = process.env.ORIENTATION_QUIZ_ENABLED === "true";
-
-  return <OrientationLanding quizEnabled={quizEnabled} />;
+  return <OrientationLanding />;
 }

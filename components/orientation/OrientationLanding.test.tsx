@@ -4,8 +4,8 @@ import { describe, expect, it } from "vitest";
 import { OrientationLanding } from "@/components/orientation/OrientationLanding";
 
 describe("OrientationLanding", () => {
-  it("renders all orientation modules when the quiz is enabled", () => {
-    const markup = renderToStaticMarkup(<OrientationLanding quizEnabled />);
+  it("renders all orientation modules", () => {
+    const markup = renderToStaticMarkup(<OrientationLanding />);
 
     expect(markup).toContain("Orientation slideshow");
     expect(markup).toContain("Portal walkthrough");
@@ -16,14 +16,5 @@ describe("OrientationLanding", () => {
     expect(markup).not.toContain("Coming soon");
     expect(markup).not.toContain("completed");
     expect(markup).not.toContain("does not save any changes");
-  });
-
-  it("hides the knowledge check when the quiz is disabled", () => {
-    const markup = renderToStaticMarkup(<OrientationLanding quizEnabled={false} />);
-
-    expect(markup).toContain("Orientation slideshow");
-    expect(markup).toContain("Portal walkthrough");
-    expect(markup).not.toContain("Knowledge check");
-    expect(markup).not.toContain('href="/orientation/quiz"');
   });
 });

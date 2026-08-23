@@ -19,8 +19,8 @@ export default async function Layout({ children }: { children: React.ReactNode }
 
   const profile = await cachedGetProfile(user.id);
 
-  const orientationQuizEnabled = process.env.ORIENTATION_QUIZ_ENABLED === "true";
-  if (orientationQuizEnabled && profile?.role === "Tutor" && !profile.orientationCompletedAt) {
+  const orientationEnabled = process.env.TUTOR_ORIENTATION_ENABLED === "true";
+  if (orientationEnabled && profile?.role === "Tutor" && !profile.orientationCompletedAt) {
     redirect("/orientation");
   }
 
@@ -30,7 +30,11 @@ export default async function Layout({ children }: { children: React.ReactNode }
     <>
       <DashboardProviders initialProfile={profile}>
         {" "}
-        <DashboardLayout profile={profile} userProfilesPromise={userProfiles}>
+        <DashboardLayout
+          orientationEnabled={orientationEnabled}
+          profile={profile}
+          userProfilesPromise={userProfiles}
+        >
           {children}
         </DashboardLayout>
       </DashboardProviders>

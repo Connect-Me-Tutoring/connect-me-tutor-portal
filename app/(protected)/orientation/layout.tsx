@@ -14,6 +14,8 @@ export const metadata = {
 export const dynamic = "force-dynamic";
 
 export default async function OrientationLayout({ children }: { children: React.ReactNode }) {
+  if (process.env.TUTOR_ORIENTATION_ENABLED !== "true") redirect("/dashboard");
+
   const user = await cachedGetUser().catch(() => null);
   if (!user) redirect("/");
 
@@ -24,7 +26,7 @@ export default async function OrientationLayout({ children }: { children: React.
 
   return (
     <DashboardProviders initialProfile={profile}>
-      <DashboardLayout profile={profile} userProfilesPromise={userProfiles}>
+      <DashboardLayout orientationEnabled profile={profile} userProfilesPromise={userProfiles}>
         {children}
       </DashboardLayout>
     </DashboardProviders>

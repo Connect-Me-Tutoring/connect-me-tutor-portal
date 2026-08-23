@@ -9,6 +9,7 @@ export default async function Display() {
     redirect("/");
   }
   const profile = cachedGetProfile(user.id);
+  const orientationEnabled = process.env.TUTOR_ORIENTATION_ENABLED === "true";
 
-  return <SettingsPage profilePromise={profile} />;
+  return <SettingsPage orientationEnabled={orientationEnabled} profilePromise={profile} />;
 }
