@@ -10,12 +10,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Session } from "@/types";
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
-import {
-  AlertDialog,
-  AlertDialogHeader,
-  AlertDialogContent,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
+import { AlertDialog, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Trash } from "lucide-react";
 import { addDays, isAfter, parseISO, differenceInDays, isToday, isTomorrow } from "date-fns";
 import { Checkbox } from "@/components/ui/checkbox";
