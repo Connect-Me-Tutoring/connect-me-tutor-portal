@@ -58,7 +58,6 @@ export default function PolicyQuiz() {
   const [phase, setPhase] = useState<Phase>("answering");
   const [wasCorrect, setWasCorrect] = useState(false);
   const [totalAttempts, setTotalAttempts] = useState(0);
-  const [correctCount, setCorrectCount] = useState(0);
   const [slideDir, setSlideDir] = useState<"in" | "out" | "idle">("idle");
   const [shake, setShake] = useState(false);
   const [mounted, setMounted] = useState(false);
@@ -123,9 +122,7 @@ export default function PolicyQuiz() {
     setTotalAttempts((a) => a + 1);
     setWasCorrect(correct);
 
-    if (correct) {
-      setCorrectCount((c) => c + 1);
-    } else {
+    if (!correct) {
       setShake(true);
       setTimeout(() => setShake(false), 500);
     }
@@ -201,7 +198,6 @@ export default function PolicyQuiz() {
     setSelectedMulti(new Set());
     setPhase("answering");
     setTotalAttempts(0);
-    setCorrectCount(0);
     setQuestionsText("");
   }, []);
 
@@ -226,7 +222,7 @@ export default function PolicyQuiz() {
             </div>
             <div className="h-3 overflow-hidden rounded-full bg-gray-100">
               <div
-                className="h-full rounded-full bg-gradient-to-r from-green-400 to-green-500 transition-all duration-500 ease-out"
+                className="h-full rounded-full bg-green-500 transition-all duration-500 ease-out"
                 style={{ width: "100%" }}
               />
             </div>
@@ -294,15 +290,14 @@ export default function PolicyQuiz() {
       <main className="relative min-h-screen p-8 backdrop-blur-sm">
         <div className="mx-auto max-w-2xl">
           <Card className="overflow-hidden border-0 bg-white shadow-lg">
-            {/* celebration banner */}
-            <div className="bg-gradient-to-br from-connect-me-blue-3 to-connect-me-blue-5 px-8 py-12 text-center text-white">
+            <div className="border-b bg-gray-50 px-8 py-12 text-center">
               <div className="mb-4 flex justify-center">
-                <div className="rounded-full bg-white/20 p-4 backdrop-blur-sm">
-                  <Trophy className="h-12 w-12 text-yellow-300" />
+                <div className="rounded-full bg-white p-4">
+                  <Trophy className="h-12 w-12 text-yellow-500" />
                 </div>
               </div>
               <h1 className="mb-2 text-3xl font-bold">Wahoo! Quiz Completed</h1>
-              <p className="text-lg text-blue-100">
+              <p className="text-lg text-muted-foreground">
                 You&apos;ve mastered all the policies &amp; FAQs
               </p>
             </div>
@@ -352,7 +347,7 @@ export default function PolicyQuiz() {
                 </p>
               </div>
 
-              <div className="rounded-xl border-2 border-connect-me-blue-2 bg-gradient-to-r from-connect-me-blue-1/40 to-blue-50 p-5">
+              <div className="rounded-xl border-2 border-connect-me-blue-2 bg-blue-50 p-5">
                 <div className="flex items-center gap-2 mb-2">
                   <span className="text-xl">🎉</span>
                   <p className="text-base font-bold text-connect-me-blue-5">
@@ -414,7 +409,7 @@ export default function PolicyQuiz() {
           </div>
           <div className="h-3 overflow-hidden rounded-full bg-gray-100">
             <div
-              className="h-full rounded-full bg-gradient-to-r from-connect-me-blue-2 to-connect-me-blue-3 transition-all duration-500 ease-out"
+              className="h-full rounded-full bg-connect-me-blue-3 transition-all duration-500 ease-out"
               style={{ width: `${progress * 100}%` }}
             />
           </div>
@@ -483,7 +478,6 @@ export default function PolicyQuiz() {
                         key={idx}
                         htmlFor={`option-multi-${idx}`}
                         className={`flex cursor-pointer items-start gap-3 rounded-lg border p-4 transition-all hover:bg-gray-50 ${optionStyle}`}
-                        onClick={() => toggleMultiOption(idx)}
                       >
                         <Checkbox
                           id={`option-multi-${idx}`}

@@ -1,8 +1,10 @@
-import { Inter } from "next/font/google";
-import { cachedGetUser } from "@/lib/actions/user/actions";
 import { redirect } from "next/navigation";
 
-const inter = Inter({ subsets: ["latin"] });
+import DashboardLayout from "@/components/dashboard/dashboard-layout";
+import { cachedGetProfile } from "@/lib/actions/cache";
+import { getUserProfiles } from "@/lib/actions/profile/server.actions";
+import { cachedGetUser } from "@/lib/actions/user/actions";
+import DashboardProviders from "../dashboard/dashboardprovider";
 
 export const metadata = {
   title: "Orientation | Connect Me",
@@ -12,17 +14,19 @@ export const metadata = {
 export const dynamic = "force-dynamic";
 
 export default async function OrientationLayout({ children }: { children: React.ReactNode }) {
-  // Ensure user is logged in
-  const user = await cachedGetUser().catch(() => {
-    redirect("/");
-  });
+  const user = await cachedGetUser().catch(() => null);
   if (!user) redirect("/");
 
+  const profile = await cachedGetProfile(user.id);
+  if (!profile || profile.role !== "Tutor") redirect("/dashboard");
+
+  const userProfiles = profile.userId ? getUserProfiles(profile.userId) : Promise.resolve([]);
+
   return (
-    <div
-      className={`min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50 ${inter.className}`}
-    >
-      {children}
-    </div>
+    <DashboardProviders initialProfile={profile}>
+      <DashboardLayout profile={profile} userProfilesPromise={userProfiles}>
+        {children}
+      </DashboardLayout>
+    </DashboardProviders>
   );
 }

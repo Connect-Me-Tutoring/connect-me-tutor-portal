@@ -43,6 +43,7 @@ import {
   FileText,
   Sparkles,
   Flag,
+  GraduationCap,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -140,6 +141,11 @@ export default function DashboardLayout({
       title: "Dashboard",
       href: "/dashboard",
       icon: <LayoutDashboardIcon className="h-5 w-5" />,
+    },
+    {
+      title: "Orientation",
+      href: "/orientation",
+      icon: <GraduationCap className="h-5 w-5" />,
     },
     {
       title: "Announcements",

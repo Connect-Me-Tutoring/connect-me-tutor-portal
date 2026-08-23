@@ -17,7 +17,15 @@ interface SubmitQuizPayload {
  * to a Discord channel via webhook.
  */
 export async function submitQuizCompletion(payload: SubmitQuizPayload) {
+  if (process.env.ORIENTATION_QUIZ_ENABLED !== "true") {
+    throw new Error("The orientation quiz is not enabled.");
+  }
+
   const { profile } = await requireAuthenticatedProfile();
+  if (profile.role !== "Tutor") {
+    throw new Error("Only tutors can complete the orientation quiz.");
+  }
+
   const supabase = await createClient();
 
   const tutorName = `${profile.firstName ?? ""} ${profile.lastName ?? ""}`.trim() || "A tutor";
@@ -32,17 +40,13 @@ export async function submitQuizCompletion(payload: SubmitQuizPayload) {
 
   if (updateError) {
     console.error("Failed to update profile orientation status:", updateError);
+    throw new Error("Unable to save orientation completion.");
   }
 
-  const hasQuestions = payload.questionsText && payload.questionsText.trim().length > 0;
-
-  if (hasQuestions) {
-    await sendDiscordWebhook(tutorName, payload.questionsText!.trim(), payload);
+  const questionsText = payload.questionsText?.trim().slice(0, 4000);
+  if (questionsText) {
+    await sendDiscordWebhook(tutorName, questionsText, payload);
   }
-
-  console.log(
-    `[Orientation Quiz] ${tutorName} completed quiz — ${payload.totalQuestions} questions, ${payload.retries} retries${hasQuestions ? ", submitted a question" : ""}`,
-  );
 
   return { success: true };
 }

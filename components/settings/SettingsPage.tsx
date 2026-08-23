@@ -1,7 +1,9 @@
 "use client";
 
 import { use, useEffect, useState } from "react";
+import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
+import { GraduationCap } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -425,6 +427,26 @@ export default function SettingsPage({
               Save Notification Settings
             </Button>
           </section>
+          {profile?.role === "Tutor" && (
+            <section className="rounded-lg border bg-white p-6">
+              <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
+                <div className="flex items-start gap-3">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md border bg-gray-50 text-gray-600">
+                    <GraduationCap aria-hidden="true" className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <h2 className="text-lg font-semibold text-gray-900">Help and training</h2>
+                    <p className="mt-1 text-sm text-gray-600">
+                      Practice common tutor portal tasks with sample data.
+                    </p>
+                  </div>
+                </div>
+                <Button asChild className="shrink-0" variant="outline">
+                  <Link href="/orientation/walkthrough">Open portal walkthrough</Link>
+                </Button>
+              </div>
+            </section>
+          )}
           <section className="bg-white rounded-lg border p-6">
             <div className="flex items-center gap-3 mb-4">
               <h2 className="text-2xl font-bold">Account Settings</h2>

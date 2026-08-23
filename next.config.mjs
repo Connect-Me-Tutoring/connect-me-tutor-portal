@@ -1,6 +1,9 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   outputFileTracingRoot: process.cwd(),
+  outputFileTracingIncludes: {
+    "/api/orientation/slides/*": ["./private/orientation/slides/**/*"],
+  },
   output: "standalone",
   serverExternalPackages: ["sharp", "onnxruntime-node", "twilio"],
 
