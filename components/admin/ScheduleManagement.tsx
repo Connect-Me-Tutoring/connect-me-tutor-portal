@@ -50,9 +50,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
 import {
   Select,
   SelectContent,
-  SelectGroup,
   SelectItem,
-  SelectLabel,
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
@@ -178,14 +176,40 @@ const Schedule = () => {
     summary: "",
   });
 
-  const formatDateForInput = (isoDate: string | undefined): string => {
-    if (!isoDate) return "";
-    try {
-      return format(parseISO(isoDate), "yyyy-MM-dd'T'HH:mm");
-    } catch (e) {
-      console.error("Invalid date:", e);
-      return "";
+  const formatDurationLabel = (hours: number): string => {
+    const totalMinutes = Math.round(hours * 60);
+    const h = Math.floor(totalMinutes / 60);
+    const m = totalMinutes % 60;
+    if (h === 0) return `${m} min`;
+    if (m === 0) return `${h} ${h === 1 ? "hour" : "hours"}`;
+    return `${h} ${h === 1 ? "hour" : "hours"} ${m} min`;
+  };
+
+  // Add Session dialog: day/start/end time inputs, from which date + duration
+  // are derived (mirrors the day/startTime/endTime pattern in AvailabilityForm).
+  const [newSessionDay, setNewSessionDay] = useState(format(new Date(), "yyyy-MM-dd"));
+  const [newSessionStartTime, setNewSessionStartTime] = useState("");
+  const [newSessionEndTime, setNewSessionEndTime] = useState("");
+
+  const updateSessionDateAndDuration = async (day: string, startTime: string, endTime: string) => {
+    if (!day || !startTime || !endTime) return;
+    const start = new Date(`${day}T${startTime}`);
+    const end = new Date(`${day}T${endTime}`);
+    if (!isValid(start) || !isValid(end)) return;
+    if (end <= start) {
+      toast.error("End time must be after start time");
+      return;
     }
+
+    const durationMinutes = Math.round((end.getTime() - start.getTime()) / (1000 * 60));
+    const duration = Math.round((durationMinutes / 60) * 100) / 100;
+    const updatedSession: Partial<Session> = {
+      ...newSession,
+      date: start.toISOString(),
+      duration,
+    };
+    await checkMeetingAvailabilites(updatedSession as Session);
+    setNewSession(updatedSession);
   };
 
   // useEffect(() => {
@@ -761,70 +785,80 @@ const Schedule = () => {
                           placeholder="Select a tutor"
                         />
                         <div className="grid grid-cols-4 items-center gap-4">
-                          <Label htmlFor="startDate" className="text-right">
-                            Date
+                          <Label htmlFor="sessionDay" className="text-right">
+                            Day
                           </Label>
                           <Input
-                            id="startDate"
-                            name="startDate"
-                            type="datetime-local"
-                            defaultValue={formatDateForInput(newSession.date)}
-                            onBlur={async (e) => {
-                              const scheduledDate = new Date(e.target.value);
-                              const updatedSession: Partial<Session> = {
-                                ...newSession,
-                                date: scheduledDate.toISOString(),
-                              };
-                              await checkMeetingAvailabilites(updatedSession as Session);
-                              setNewSession(updatedSession);
+                            id="sessionDay"
+                            name="sessionDay"
+                            type="date"
+                            value={newSessionDay}
+                            onChange={(e) => {
+                              setNewSessionDay(e.target.value);
+                              updateSessionDateAndDuration(
+                                e.target.value,
+                                newSessionStartTime,
+                                newSessionEndTime,
+                              );
                             }}
                             disabled={isCheckingMeetingAvailability}
                             className="col-span-3"
                           />
                         </div>
                         <div className="grid grid-cols-4 items-center gap-4">
-                          <Label htmlFor="duration" className="text-right">
-                            Duration
+                          <Label htmlFor="sessionStartTime" className="text-right">
+                            Start Time (EST)
                           </Label>
-                          <div className="col-span-3">
-                            <Select
-                              onValueChange={(value) => {
-                                const duration = parseFloat(value);
-                                const updatedSession: Partial<Session> = {
-                                  ...newSession,
-                                  duration,
-                                };
-                                checkMeetingAvailabilites(updatedSession as Session);
-                                setNewSession(updatedSession);
-                              }}
-                            >
-                              <SelectTrigger className="w-full">
-                                <SelectValue placeholder="Select a time duration" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectGroup>
-                                  <SelectLabel>Duration</SelectLabel>
-                                  {Array.from({ length: 12 }, (_, i) => (i + 1) * 0.25).map(
-                                    (duration) => {
-                                      const minutes = (duration % 1) * 60;
-                                      const hours = Math.floor(duration);
-                                      return (
-                                        <SelectItem key={duration} value={duration.toString()}>
-                                          {hours} {hours > 1 ? "hours" : "hour"} {minutes} minutes
-                                        </SelectItem>
-                                      );
-                                    },
-                                  )}
-                                </SelectGroup>
-                              </SelectContent>
-                            </Select>
-                          </div>
+                          <Input
+                            id="sessionStartTime"
+                            name="sessionStartTime"
+                            type="time"
+                            value={newSessionStartTime}
+                            onChange={(e) => {
+                              setNewSessionStartTime(e.target.value);
+                              updateSessionDateAndDuration(
+                                newSessionDay,
+                                e.target.value,
+                                newSessionEndTime,
+                              );
+                            }}
+                            disabled={isCheckingMeetingAvailability}
+                            className="col-span-3"
+                          />
                         </div>
+                        <div className="grid grid-cols-4 items-center gap-4">
+                          <Label htmlFor="sessionEndTime" className="text-right">
+                            End Time (EST)
+                          </Label>
+                          <Input
+                            id="sessionEndTime"
+                            name="sessionEndTime"
+                            type="time"
+                            value={newSessionEndTime}
+                            onChange={(e) => {
+                              setNewSessionEndTime(e.target.value);
+                              updateSessionDateAndDuration(
+                                newSessionDay,
+                                newSessionStartTime,
+                                e.target.value,
+                              );
+                            }}
+                            disabled={isCheckingMeetingAvailability}
+                            className="col-span-3"
+                          />
+                        </div>
+                        {newSession.date && newSession.duration ? (
+                          <p className="col-span-4 -mt-2 text-xs text-muted-foreground">
+                            {getSessionTimespan(newSession.date, newSession.duration)} EST (
+                            {formatDurationLabel(newSession.duration)})
+                          </p>
+                        ) : null}
                         <div className="grid grid-cols-4 items-center gap-4">
                           <Label className="text-right">Meeting Link</Label>
                           <div className="col-span-3">
                             <Select
                               value={newSession?.meeting?.id || ""}
+                              disabled={!newSession.duration || isCheckingMeetingAvailability}
                               onValueChange={async (value) => {
                                 setNewSession({
                                   ...newSession,
@@ -834,7 +868,9 @@ const Schedule = () => {
                             >
                               <SelectTrigger>
                                 <SelectValue>
-                                  {newSession?.meeting?.name || "Select a meeting"}
+                                  {!newSession.duration
+                                    ? "Set a start and end time first"
+                                    : newSession?.meeting?.name || "Select a meeting"}
                                 </SelectValue>
                               </SelectTrigger>
                               <SelectContent>
@@ -860,7 +896,11 @@ const Schedule = () => {
                         </div>
                         <Button
                           onClick={handleAddSession}
-                          disabled={isCheckingMeetingAvailability}
+                          disabled={
+                            isCheckingMeetingAvailability ||
+                            !newSession.duration ||
+                            !newSession.meeting?.id
+                          }
                           className="bg-connect-me-blue-3"
                         >
                           {isCheckingMeetingAvailability ? (
