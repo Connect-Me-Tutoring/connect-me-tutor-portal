@@ -16,7 +16,9 @@ import { getMeeting } from "../meeting/server.actions";
 import { fromZonedTime } from "date-fns-tz";
 import { Resend } from "resend";
 import InactiveEnrollmentWarning from "@/components/emails/enrollments/inactve-enrollment-warning";
+import InactiveEnrollmentEarlyWarning from "@/components/emails/enrollments/inactive-enrollment-early-warning";
 import InactiveEnrollmentDeletion from "@/components/emails/enrollments/inactive-enrollment-deletion";
+import TutorProbationEmail from "@/components/emails/tutor-probation-email";
 import { getEnrollmentSchedule } from "../../enrollment-schedule";
 import {
   requireAdmin,
@@ -612,11 +614,11 @@ export const sessionTimeFromEnrollment = async (
 };
 
 export async function deleteInactiveEnrollments() {
-  const sixWeeksAgo = subWeeks(new Date(), 6);
+  const fiveWeeksAgo = subWeeks(new Date(), 5);
 
   const enrollments = await inactiveEnrollmentsHelper({
-    deadline: sixWeeksAgo,
-    weeksMissing: 6,
+    deadline: fiveWeeksAgo,
+    weeksMissing: 5,
     emailFn: sendDeleteEnrollmentEmail,
   });
 
@@ -636,15 +638,46 @@ export async function deleteInactiveEnrollments() {
     return { success: false, error: deleteError.message, deleted: 0 };
   }
 
+  const tutors = new Map<string, Profile>();
+  enrollments.forEach((e) => {
+    if (e.tutor) tutors.set(e.tutor.id, e.tutor);
+  });
+
+  await Promise.all(
+    Array.from(tutors.values()).map(async (tutor) => {
+      try {
+        await sendTutorProbationEmail(
+          tutor,
+          "not submitted Session Exit Forms (SEFs) for 5 consecutive weeks, resulting in the deactivation of your enrollment",
+        );
+      } catch (error) {
+        await logError(
+          error,
+          { function: "deleteInactiveEnrollments", tutorId: tutor.id },
+          "enrollment_error",
+        );
+      }
+    }),
+  );
+
   return { success: true, error: undefined, deleted: enrollmentIds.length };
 }
 
 export async function warnInactiveEnrollments() {
-  const fiveWeeksAgo = subWeeks(new Date(), 5);
+  const fourWeeksAgo = subWeeks(new Date(), 4);
   return await inactiveEnrollmentsHelper({
-    deadline: fiveWeeksAgo,
-    weeksMissing: 5,
+    deadline: fourWeeksAgo,
+    weeksMissing: 4,
     emailFn: sendInactiveEnrollmentWarning,
+  });
+}
+
+export async function warnInactiveEnrollmentsEarly() {
+  const threeWeeksAgo = subWeeks(new Date(), 3);
+  return await inactiveEnrollmentsHelper({
+    deadline: threeWeeksAgo,
+    weeksMissing: 3,
+    emailFn: sendInactiveEnrollmentEarlyWarning,
   });
 }
 
@@ -712,12 +745,31 @@ export async function sendInactiveEnrollmentWarning(params: {
   await sendEmailHelper(params, InactiveEnrollmentWarning);
 }
 
+export async function sendInactiveEnrollmentEarlyWarning(params: {
+  tutor: Profile;
+  student: Profile;
+  enrollment: Enrollment;
+}) {
+  await sendEmailHelper(params, InactiveEnrollmentEarlyWarning);
+}
+
 export async function sendDeleteEnrollmentEmail(params: {
   tutor: Profile;
   student: Profile;
   enrollment: Enrollment;
 }) {
   await sendEmailHelper(params, InactiveEnrollmentDeletion);
+}
+
+async function sendTutorProbationEmail(tutor: Profile, reason: string) {
+  const resend = new Resend(process.env.RESEND_API_KEY);
+  await resend.emails.send({
+    from: "Connect Me Free Tutoring & mentoring <reminder@connectmego.app>",
+    to: tutor.email,
+    cc: [process.env.INTERNAL_VP_EMAIL!],
+    subject: "Connect Me Membership Status: Probation",
+    react: TutorProbationEmail({ tutor, reason }),
+  });
 }
 
 async function sendEmailHelper(
