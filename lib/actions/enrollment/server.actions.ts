@@ -14,6 +14,7 @@ import { addDays, format, subWeeks } from "date-fns";
 import { addStandaloneSession } from "../session/server.actions";
 import { getMeeting } from "../meeting/server.actions";
 import { fromZonedTime } from "date-fns-tz";
+import { computeSessionDateForSchedule } from "../../utils/timezone";
 import { Resend } from "resend";
 import InactiveEnrollmentWarning from "@/components/emails/enrollments/inactve-enrollment-warning";
 import InactiveEnrollmentEarlyWarning from "@/components/emails/enrollments/inactive-enrollment-early-warning";
@@ -416,17 +417,35 @@ export const updateEnrollment = async (enrollment: Enrollment) => {
 const updateFutureSessions = async (enrollment: Enrollment) => {
   const now = new Date().toISOString();
   const supabase = await createAdminClient();
-  const { error } = await supabase
-    .from("Sessions")
-    .update({
+
+  const schedule = getEnrollmentSchedule(enrollment);
+  if (!schedule.day || !schedule.startTime) {
+    throw new Error("Please add an enrollment schedule");
+  }
+
+  const { data: futureSessions, error: fetchError } = await supabase
+    .from(Table.Sessions)
+    .select("id, date")
+    .eq("enrollment_id", enrollment.id)
+    .gte("date", now)
+    .not("status", "in", "(Cancelled,Rescheduled)");
+
+  if (fetchError) throw fetchError;
+  if (!futureSessions || futureSessions.length === 0) return;
+
+  const rows = futureSessions
+    .filter((session): session is { id: string; date: string } => Boolean(session.date))
+    .map((session) => ({
+      id: session.id,
       student_id: enrollment.student?.id,
       tutor_id: enrollment.tutor?.id,
       meeting_id: enrollment.meetingId,
       duration: enrollment.duration,
-    })
-    .eq("enrollment_id", enrollment.id)
-    .gte("date", now);
-  if (error) throw error;
+      date: computeSessionDateForSchedule(session.date, schedule.day!, schedule.startTime!),
+    }));
+
+  const { error: updateError } = await supabase.from(Table.Sessions).upsert(rows);
+  if (updateError) throw updateError;
 };
 
 export const getEnrollmentsWithMissingSEF = async (timeProvided: Date, weeksMissingSEF: number) => {
