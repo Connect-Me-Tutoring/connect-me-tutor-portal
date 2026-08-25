@@ -1,7 +1,8 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 
 const mockSelect = vi.fn();
-const mockFrom = vi.fn(() => ({ select: mockSelect }));
+const mockUpdate = vi.fn();
+const mockFrom = vi.fn(() => ({ select: mockSelect, update: mockUpdate }));
 
 vi.mock("@/lib/supabase/server", () => ({
   createClient: vi.fn().mockResolvedValue({ from: mockFrom }),
@@ -25,7 +26,8 @@ vi.mock("@/lib/posthog", () => ({
   logEvent: vi.fn().mockResolvedValue(undefined),
 }));
 
-const { getCompletedSessionsCount } = await import("../session/server.actions");
+const { getCompletedSessionsCount, markUnconfirmedSEFCron } =
+  await import("../session/server.actions");
 
 const START = "2026-08-02T04:00:00.000Z";
 const END = "2026-08-09T03:59:59.999Z";
@@ -96,5 +98,96 @@ describe("getCompletedSessionsCount", () => {
     mockCountQuery({ count: null, error: new Error("connection reset") });
 
     await expect(getCompletedSessionsCount(START, END)).rejects.toThrow("connection reset");
+  });
+});
+
+/** Records every filter the action chains onto a builder, in order. */
+const mockChain = (result: unknown) => {
+  const calls: Array<[string, unknown[]]> = [];
+  const builder: Record<string, any> = {};
+
+  for (const method of ["eq", "lt", "gte", "lte", "in"]) {
+    builder[method] = vi.fn((...args: unknown[]) => {
+      calls.push([method, args]);
+      return builder;
+    });
+  }
+  builder.then = (resolve: (value: unknown) => unknown) => Promise.resolve(result).then(resolve);
+
+  return { builder, calls };
+};
+
+describe("markUnconfirmedSEFCron", () => {
+  const NOW = new Date("2026-08-20T12:00:00.000Z");
+  const FORTY_EIGHT_HOURS_AGO = "2026-08-18T12:00:00.000Z";
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.useFakeTimers();
+    vi.setSystemTime(NOW);
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it("marks stale sessions Unconfirmed instead of cancelling them", async () => {
+    const fetch = mockChain({ data: [{ id: "s1" }, { id: "s2" }], error: null });
+    const update = mockChain({ error: null });
+    mockSelect.mockReturnValue(fetch.builder);
+    mockUpdate.mockReturnValue(update.builder);
+
+    const result = await markUnconfirmedSEFCron();
+
+    expect(mockUpdate).toHaveBeenCalledWith({ status: "Unconfirmed" });
+    expect(result).toEqual({ success: true, error: undefined, unconfirmed: 2 });
+  });
+
+  it("only touches non-standalone Active sessions past the 48-hour cutoff", async () => {
+    const fetch = mockChain({ data: [{ id: "s1" }], error: null });
+    const update = mockChain({ error: null });
+    mockSelect.mockReturnValue(fetch.builder);
+    mockUpdate.mockReturnValue(update.builder);
+
+    await markUnconfirmedSEFCron();
+
+    expect(update.calls).toEqual([
+      ["eq", ["status", "Active"]],
+      ["eq", ["is_standalone", false]],
+      ["lt", ["date", FORTY_EIGHT_HOURS_AGO]],
+    ]);
+    expect(fetch.calls).toEqual([
+      ["eq", ["status", "Active"]],
+      ["lt", ["date", FORTY_EIGHT_HOURS_AGO]],
+    ]);
+  });
+
+  it("skips the update entirely when nothing is stale", async () => {
+    mockSelect.mockReturnValue(mockChain({ data: [], error: null }).builder);
+
+    const result = await markUnconfirmedSEFCron();
+
+    expect(mockUpdate).not.toHaveBeenCalled();
+    expect(result).toEqual({ success: true, error: undefined, unconfirmed: 0 });
+  });
+
+  it("reports failure without updating when the fetch fails", async () => {
+    mockSelect.mockReturnValue(
+      mockChain({ data: null, error: { message: "connection reset" } }).builder,
+    );
+
+    const result = await markUnconfirmedSEFCron();
+
+    expect(mockUpdate).not.toHaveBeenCalled();
+    expect(result).toEqual({ success: false, error: "connection reset", unconfirmed: 0 });
+  });
+
+  it("reports failure when the update fails", async () => {
+    mockSelect.mockReturnValue(mockChain({ data: [{ id: "s1" }], error: null }).builder);
+    mockUpdate.mockReturnValue(mockChain({ error: { message: "deadlock detected" } }).builder);
+
+    const result = await markUnconfirmedSEFCron();
+
+    expect(result).toEqual({ success: false, error: "deadlock detected", unconfirmed: 0 });
   });
 });

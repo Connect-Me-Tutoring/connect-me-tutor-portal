@@ -49,14 +49,12 @@ import {
   ChevronRight,
   CalendarDays,
   UserRoundPlus,
-  Clock,
-  CircleCheckBig,
-  CircleX,
   Copy,
   MessageSquare,
   CalendarX,
   Video,
 } from "lucide-react";
+import { SessionStatusBadge } from "@/components/sessions/SessionStatusBadge";
 import { format, parseISO, isAfter } from "date-fns";
 import { AlertDialogTrigger } from "@radix-ui/react-alert-dialog";
 import CancellationForm from "../../tutor/components/CancellationForm";
@@ -151,24 +149,7 @@ const ActiveSessionsTable = ({
             {paginatedSessions.map((session: any, index: number) => (
               <TableRow key={index}>
                 <TableCell>
-                  {session.status === "Active" ? (
-                    <span className="px-3 py-1 inline-flex items-center rounded-full bg-blue-100 text-blue-800 border border-blue-200">
-                      <Clock size={14} className="mr-1" />
-                      Active
-                    </span>
-                  ) : session.status === "Complete" ? (
-                    <span className="px-3 py-1 inline-flex items-center rounded-full bg-green-100 text-green-800 border border-green-200">
-                      <CircleCheckBig size={14} className="mr-1" />
-                      Complete
-                    </span>
-                  ) : session.status === "Cancelled" ? (
-                    <span className="px-3 py-1 inline-flex items-center rounded-full bg-red-100 text-red-800 border border-red-200">
-                      <CircleX size={14} className="mr-1" />
-                      Cancelled
-                    </span>
-                  ) : (
-                    ""
-                  )}
+                  <SessionStatusBadge status={session.status} />
                 </TableCell>
                 <TableCell>{formatSessionDate(session.date)}</TableCell>
                 <TableCell className="font-medium">
@@ -312,24 +293,7 @@ const ActiveSessionsTable = ({
               <div className="font-medium text-sm">
                 Tutoring Session with {session.tutor?.firstName} {session.tutor?.lastName}
               </div>
-              {session.status === "Active" ? (
-                <span className="px-3 py-1 inline-flex items-center rounded-full bg-blue-100 text-blue-800 border border-blue-200 whitespace-nowrap">
-                  <Clock size={14} className="mr-1" />
-                  Active
-                </span>
-              ) : session.status === "Complete" ? (
-                <span className="px-3 py-1 inline-flex items-center rounded-full bg-green-100 text-green-800 border border-green-200 whitespace-nowrap">
-                  <CircleCheckBig size={14} className="mr-1" />
-                  Complete
-                </span>
-              ) : session.status === "Cancelled" ? (
-                <span className="px-3 py-1 inline-flex items-center rounded-full bg-red-100 text-red-800 border border-red-200 whitespace-nowrap">
-                  <CircleX size={14} className="mr-1" />
-                  Cancelled
-                </span>
-              ) : (
-                ""
-              )}
+              <SessionStatusBadge status={session.status} className="whitespace-nowrap" />
             </div>
             <div className="text-sm text-muted-foreground">{formatSessionDate(session.date)}</div>
             <div className="text-sm">

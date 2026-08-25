@@ -1071,6 +1071,15 @@ export type Database = {
         Args: { end_date: string; start_date: string };
         Returns: Json;
       };
+      get_monthly_session_completion_stats: {
+        Args: never;
+        Returns: {
+          month: string;
+          pct_completed: number;
+          total_completed: number;
+          total_resolved: number;
+        }[];
+      };
       get_overlapping_availabilities_array: {
         Args: { a: Json[]; b: Json[] };
         Returns: Json;
@@ -1132,6 +1141,15 @@ export type Database = {
           student_id: string;
           tutor: Json;
           tutor_id: string;
+        }[];
+      };
+      get_period_session_completion_stats: {
+        Args: { p_granularity?: string };
+        Returns: {
+          pct_completed: number;
+          period: string;
+          total_completed: number;
+          total_resolved: number;
         }[];
       };
       get_session_completion_stats: {

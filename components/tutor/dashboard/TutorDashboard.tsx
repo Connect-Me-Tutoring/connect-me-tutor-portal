@@ -7,6 +7,7 @@ import CompletedSessionsTable from "../components/CompletedSessionsTable";
 import { updateSession } from "@/lib/actions/session/server.actions";
 import { undoCancelSession } from "@/lib/actions/tutor/actions";
 import { rescheduleSession, cancelSession } from "@/lib/actions/session/server.actions";
+import { getTutorEnrollmentsMissingSEF } from "@/lib/actions/enrollment/server.actions";
 import { Session, Profile, Meeting } from "@/types";
 import toast from "react-hot-toast";
 import { useDashboardContext } from "@/lib/contexts/dashboardContext";
@@ -25,6 +26,32 @@ import { useLoadMore } from "@/hooks/useLoadMore";
 
 const TutorDashboard = () => {
   const TC = useDashboardContext();
+
+  useEffect(() => {
+    if (!TC.profile?.id) return;
+
+    getTutorEnrollmentsMissingSEF(TC.profile.id, 3)
+      .then((enrollments) => {
+        if (enrollments.length === 0) return;
+
+        const studentNames = enrollments
+          .map((enrollment) =>
+            enrollment.student
+              ? `${enrollment.student.first_name} ${enrollment.student.last_name}`
+              : null,
+          )
+          .filter((name): name is string => Boolean(name))
+          .join(", ");
+
+        toast.error(
+          `You have missing Session Exit Forms for: ${studentNames}. Please submit them soon to avoid your enrollment being deactivated.`,
+          { duration: 8000 },
+        );
+      })
+      .catch((error) => {
+        console.error("Failed to check for missing Session Exit Forms:", error);
+      });
+  }, [TC.profile?.id]);
 
   useEffect(() => {
     const filtered = TC.sessions.filter(
