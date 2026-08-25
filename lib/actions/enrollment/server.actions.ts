@@ -469,6 +469,47 @@ export const getEnrollmentsWithMissingSEF = async (timeProvided: Date, weeksMiss
   }
 };
 
+export const getTutorEnrollmentsMissingSEF = async (
+  tutorId: string,
+  weeksMissingSEF: number = 3,
+) => {
+  await requireTutorProfileAccess(tutorId);
+  const supabase = await createAdminClient();
+  const deadline = subWeeks(new Date(), weeksMissingSEF);
+  try {
+    const now = new Date().toISOString();
+    const { data: enrollments } = await supabase
+      .from("Enrollments")
+      .select(
+        `
+        id,
+        student:Profiles!student_id(first_name, last_name),
+        sessions:Sessions!enrollment_id!inner(
+          id,
+          date,
+          status
+        )
+        `,
+      )
+      .eq("tutor_id", tutorId)
+      .in("sessions.status", ["Unconfirmed"])
+      .gte("sessions.date", deadline.toISOString())
+      .lte("sessions.date", now)
+      .throwOnError();
+
+    return (enrollments ?? []).filter(
+      (enrollment) => enrollment.sessions.length >= weeksMissingSEF,
+    );
+  } catch (error) {
+    await logError(
+      error,
+      { function: "getTutorEnrollmentsMissingSEF", tutorId, weeks_missing_sef: weeksMissingSEF },
+      "enrollment_error",
+    );
+    throw error;
+  }
+};
+
 export const addEnrollment = async (
   enrollment: Omit<Enrollment, "id" | "createdAt">,
   sendEmail?: boolean,
