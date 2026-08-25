@@ -1,5 +1,5 @@
 "use client";
-import React, { useEffect, useState, useCallback, useMemo } from "react";
+import React, { useEffect, useState, useCallback, useMemo, useRef } from "react";
 import {
   ComposedChart,
   Bar,
@@ -55,13 +55,20 @@ const SessionCompletionChart = () => {
   const [rangeStart, setRangeStart] = useState("");
   const [rangeEnd, setRangeEnd] = useState("");
 
+  // Guards against out-of-order responses: only the most recently issued
+  // request is allowed to apply its result (e.g. rapidly switching
+  // Monthly -> Weekly can resolve out of order).
+  const latestRequestIdRef = useRef(0);
+
   const fetchStats = useCallback(async (g: Granularity, isManualRefresh = false) => {
+    const requestId = ++latestRequestIdRef.current;
     if (isManualRefresh) setIsRefreshing(true);
     else setIsLoading(true);
     try {
       const { data, error } = await supabase.rpc("get_period_session_completion_stats", {
         p_granularity: g,
       });
+      if (requestId !== latestRequestIdRef.current) return;
       if (error) throw error;
       const rows: PeriodStat[] = data ?? [];
       setData(rows);
@@ -75,11 +82,14 @@ const SessionCompletionChart = () => {
         setRangeEnd("");
       }
     } catch (error) {
+      if (requestId !== latestRequestIdRef.current) return;
       console.error(error);
       toast.error("Unable to load session completion stats");
     } finally {
-      setIsLoading(false);
-      setIsRefreshing(false);
+      if (requestId === latestRequestIdRef.current) {
+        setIsLoading(false);
+        setIsRefreshing(false);
+      }
     }
   }, []);
 
