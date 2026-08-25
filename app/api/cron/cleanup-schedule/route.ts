@@ -3,6 +3,7 @@ import { markUnconfirmedSEFCron } from "@/lib/actions/session/server.actions";
 import {
   deleteInactiveEnrollments,
   warnInactiveEnrollments,
+  warnInactiveEnrollmentsEarly,
 } from "@/lib/actions/enrollment/server.actions";
 import { isCronRequestAuthorized } from "@/lib/security/cron";
 
@@ -23,6 +24,10 @@ export async function GET(req: NextRequest) {
       unconfirmed: 0,
       error: undefined as string | undefined,
     },
+    warnInactiveEnrollmentsEarly: {
+      warned: 0,
+      error: undefined as string | undefined,
+    },
     warnInactiveEnrollments: {
       warned: 0,
       error: undefined as string | undefined,
@@ -38,14 +43,21 @@ export async function GET(req: NextRequest) {
   const unconfirmedResult = await markUnconfirmedSEFCron();
   results.markUnconfirmedSEF = unconfirmedResult;
 
-  // Task 2: Warn inactive enrollments (5+ weeks missing SEF)
+  // Task 2a: Early-warn inactive enrollments (3+ weeks missing SEF)
+  const earlyWarnResult = await warnInactiveEnrollmentsEarly();
+  results.warnInactiveEnrollmentsEarly = {
+    warned: earlyWarnResult.length,
+    error: undefined,
+  };
+
+  // Task 2b: Warn inactive enrollments (4+ weeks missing SEF)
   const warnResult = await warnInactiveEnrollments();
   results.warnInactiveEnrollments = {
     warned: warnResult.length,
     error: undefined,
   };
 
-  // Task 3: Delete inactive enrollments (6+ weeks missing SEF)
+  // Task 3: Delete inactive enrollments (5+ weeks missing SEF)
   const deleteResult = await deleteInactiveEnrollments();
   results.deleteInactiveEnrollments = deleteResult;
 
