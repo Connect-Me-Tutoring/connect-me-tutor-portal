@@ -1,4 +1,5 @@
 import { createAdminClient } from "@/lib/supabase/server";
+import { ChatEmailDebounceSeconds } from "@/constants/chat";
 import { sendChatMessageNotificationEmail } from "@/lib/actions/email/server.actions";
 import {
   buildChatRoomUrl,
@@ -27,6 +28,22 @@ export async function dispatchChatMessageEmails({
 }: DispatchArgs): Promise<void> {
   try {
     const admin = await createAdminClient();
+
+    // The message being dispatched is already inserted, so a count above one
+    // means this sender already triggered emails for this room within the
+    // debounce window. Announcements are exempt: admin-only and intentional.
+    if (roomType !== "announcements") {
+      const debounceStart = new Date(Date.now() - ChatEmailDebounceSeconds * 1000).toISOString();
+      const { count, error } = await admin
+        .from("messages")
+        .select("id", { count: "exact", head: true })
+        .eq("room_id", roomId)
+        .eq("user_id", senderProfileId)
+        .gte("created_at", debounceStart);
+
+      if (!error && (count ?? 0) > 1) return;
+    }
+
     const recipients = await resolveChatRecipientProfiles(admin, roomId, roomType);
 
     const senderName = `${senderFirstName} ${senderLastName}`.trim() || "Someone";
