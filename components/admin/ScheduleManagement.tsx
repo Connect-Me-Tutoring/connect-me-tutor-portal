@@ -542,7 +542,9 @@ const Schedule = () => {
     if (!newSession.meeting?.id) missingFields.push("Meeting Link");
 
     if (missingFields.length > 0) {
-      toast.error(`Missing required field${missingFields.length > 1 ? "s" : ""}: ${missingFields.join(", ")}`);
+      toast.error(
+        `Missing required field${missingFields.length > 1 ? "s" : ""}: ${missingFields.join(", ")}`,
+      );
       return;
     }
 
