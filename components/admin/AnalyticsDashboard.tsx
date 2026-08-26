@@ -4,6 +4,7 @@ import { supabase } from "@/lib/supabase/client";
 import toast from "react-hot-toast";
 import AnalyticsCard from "@/components/analytics/AnalyticsCard";
 import UserGrowthChart from "@/components/analytics/UserGrowthChart";
+import SessionCompletionChart from "@/components/analytics/SessionCompletionChart";
 
 const AnalyticsDashboard = () => {
   const [mapUrl, setMapUrl] = useState<string>("");

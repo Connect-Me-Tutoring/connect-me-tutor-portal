@@ -1,7 +1,17 @@
-import { endOfWeek, startOfWeek } from "date-fns";
+import { addDays, endOfWeek, format, startOfWeek } from "date-fns";
 import { fromZonedTime, toZonedTime } from "date-fns-tz";
 
 export const EASTERN_TIMEZONE = "America/New_York";
+
+export const DAY_NAME_TO_INDEX: Record<string, number> = {
+  sunday: 0,
+  monday: 1,
+  tuesday: 2,
+  wednesday: 3,
+  thursday: 4,
+  friday: 5,
+  saturday: 6,
+};
 
 /**
  * Start/end (as real UTC instants) of the school week containing `referenceDate`,
@@ -19,6 +29,23 @@ export function getEasternWeekBounds(
     weekStart: fromZonedTime(startOfWeek(zonedReference, { weekStartsOn }), EASTERN_TIMEZONE),
     weekEnd: fromZonedTime(endOfWeek(zonedReference, { weekStartsOn }), EASTERN_TIMEZONE),
   };
+}
+
+/**
+ * Moves `oldDateISO` to the given day/time within the same America/New_York school week
+ * (per getEasternWeekBounds), for re-anchoring an existing session's date when an
+ * enrollment's recurring schedule changes.
+ */
+export function computeSessionDateForSchedule(
+  oldDateISO: string,
+  day: string,
+  startTime: string,
+): string {
+  const { weekStart } = getEasternWeekBounds(new Date(oldDateISO));
+  const dayIndex = DAY_NAME_TO_INDEX[day.toLowerCase()];
+  const newLocalDate = addDays(toZonedTime(weekStart, EASTERN_TIMEZONE), dayIndex);
+  const dateString = `${format(newLocalDate, "yyyy-MM-dd")}T${startTime}:00`;
+  return fromZonedTime(dateString, EASTERN_TIMEZONE).toISOString();
 }
 
 export function formatSessionDate(dateString: string): string {
