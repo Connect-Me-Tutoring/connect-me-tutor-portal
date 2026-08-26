@@ -127,6 +127,7 @@ const Schedule = () => {
   const [allSessions, setAllSessions] = useState<Session[]>([]);
 
   const initialMount = useRef(true);
+  const [isAddSessionOpen, setIsAddSessionOpen] = useState(false);
   const [openStudentOptions, setOpenStudentOptions] = useState(false);
   const [openTutorOptions, setOpentTutorOptions] = useState(false);
   const [selectedStudentId, setSelectedStudentId] = useState("");
@@ -534,12 +535,22 @@ const Schedule = () => {
   };
 
   const handleAddSession = async () => {
+    const missingFields: string[] = [];
+    if (!newSession.student?.id) missingFields.push("Student");
+    if (!newSession.tutor?.id) missingFields.push("Tutor");
+    if (!newSession.date || !newSession.duration) missingFields.push("Day/Start/End Time");
+    if (!newSession.meeting?.id) missingFields.push("Meeting Link");
+
+    if (missingFields.length > 0) {
+      toast.error(`Missing required field${missingFields.length > 1 ? "s" : ""}: ${missingFields.join(", ")}`);
+      return;
+    }
+
     try {
-      if (newSession) {
-        await addStandaloneSession(newSession as Session);
-      }
+      await addStandaloneSession(newSession as Session);
       fetchSessions(weekStart, weekEnd);
       toast.success("Added Session");
+      setIsAddSessionOpen(false);
     } catch (error) {
       toast.error("Unable to add session");
     }
@@ -748,7 +759,7 @@ const Schedule = () => {
                   )}
                 </Button>
 
-                <Dialog>
+                <Dialog open={isAddSessionOpen} onOpenChange={setIsAddSessionOpen}>
                   <DialogTrigger asChild>
                     <Button size="sm" className="bg-connect-me-blue-4 hover:bg-connect-me-blue-5">
                       Add Session
@@ -784,10 +795,8 @@ const Schedule = () => {
                           }}
                           placeholder="Select a tutor"
                         />
-                        <div className="grid grid-cols-4 items-center gap-4">
-                          <Label htmlFor="sessionDay" className="text-right">
-                            Day
-                          </Label>
+                        <div className="grid gap-1.5">
+                          <Label htmlFor="sessionDay">Day</Label>
                           <Input
                             id="sessionDay"
                             name="sessionDay"
@@ -802,13 +811,10 @@ const Schedule = () => {
                               );
                             }}
                             disabled={isCheckingMeetingAvailability}
-                            className="col-span-3"
                           />
                         </div>
-                        <div className="grid grid-cols-4 items-center gap-4">
-                          <Label htmlFor="sessionStartTime" className="text-right">
-                            Start Time (EST)
-                          </Label>
+                        <div className="grid gap-1.5">
+                          <Label htmlFor="sessionStartTime">Start Time (EST)</Label>
                           <Input
                             id="sessionStartTime"
                             name="sessionStartTime"
@@ -823,13 +829,10 @@ const Schedule = () => {
                               );
                             }}
                             disabled={isCheckingMeetingAvailability}
-                            className="col-span-3"
                           />
                         </div>
-                        <div className="grid grid-cols-4 items-center gap-4">
-                          <Label htmlFor="sessionEndTime" className="text-right">
-                            End Time (EST)
-                          </Label>
+                        <div className="grid gap-1.5">
+                          <Label htmlFor="sessionEndTime">End Time (EST)</Label>
                           <Input
                             id="sessionEndTime"
                             name="sessionEndTime"
@@ -844,18 +847,17 @@ const Schedule = () => {
                               );
                             }}
                             disabled={isCheckingMeetingAvailability}
-                            className="col-span-3"
                           />
                         </div>
                         {newSession.date && newSession.duration ? (
-                          <p className="col-span-4 -mt-2 text-xs text-muted-foreground">
+                          <p className="-mt-2 text-xs text-muted-foreground">
                             {getSessionTimespan(newSession.date, newSession.duration)} EST (
                             {formatDurationLabel(newSession.duration)})
                           </p>
                         ) : null}
-                        <div className="grid grid-cols-4 items-center gap-4">
-                          <Label className="text-right">Meeting Link</Label>
-                          <div className="col-span-3">
+                        <div className="grid gap-1.5">
+                          <Label>Meeting Link</Label>
+                          <div>
                             <Select
                               value={newSession?.meeting?.id || ""}
                               disabled={!newSession.duration || isCheckingMeetingAvailability}
