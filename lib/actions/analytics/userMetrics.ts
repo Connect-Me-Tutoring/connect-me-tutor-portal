@@ -33,7 +33,10 @@ export async function getUserGrowthMetrics(interval: TimeInterval = "30d") {
     }
 
     const isLongRange = interval === "1y" || interval === "all";
-    const counts: Record<string, { tutorsAdded: number; studentsAdded: number; studentsRemoved: number }> = {};
+    const counts: Record<
+      string,
+      { tutorsAdded: number; studentsAdded: number; studentsRemoved: number }
+    > = {};
 
     let totalTutors = 0;
     let totalStudents = 0;
@@ -43,7 +46,7 @@ export async function getUserGrowthMetrics(interval: TimeInterval = "30d") {
       for (const p of profiles) {
         if (!p.created_at) continue;
         const d = new Date(p.created_at);
-        
+
         const key = isLongRange
           ? `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`
           : `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;

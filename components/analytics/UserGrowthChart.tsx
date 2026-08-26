@@ -14,15 +14,7 @@ import {
 import { Line } from "react-chartjs-2";
 import { getUserGrowthMetrics, TimeInterval } from "@/lib/actions/analytics/userMetrics";
 
-ChartJS.register(
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  LineElement,
-  Title,
-  Tooltip,
-  Legend
-);
+ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend);
 
 export default function UserGrowthChart() {
   const [range, setRange] = useState<TimeInterval>("30d");
