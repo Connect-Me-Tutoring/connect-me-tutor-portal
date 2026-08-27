@@ -934,6 +934,10 @@ export type Database = {
           start_ts: string;
         }[];
       };
+      data_portal_overview: {
+        Args: { p_date_range: string; p_tz?: string };
+        Returns: Json;
+      };
       get_admin_conversations: {
         Args: never;
         Returns: {

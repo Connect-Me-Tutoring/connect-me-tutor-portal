@@ -7,10 +7,10 @@ import type {
   FunnelResult,
   MetricResult,
   SeriesResult,
-} from "@/lib/data-portal/response-schemas";
+} from "@/lib/data-portal/results";
 
 /**
- * Renderers for the closed set of result shapes the analysis service returns.
+ * Renderers for the closed set of result shapes the data portal renders.
  * Ported from the standalone data portal
  * (`dataPortalWebsite/frontend/src/components/data-analysis/analysis-result.tsx`)
  * and restyled with Tailwind.
