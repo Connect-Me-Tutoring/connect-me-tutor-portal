@@ -211,7 +211,15 @@ export default function DashboardLayout({
       href: "/dashboard",
       icon: <LayoutDashboardIcon className="h-5 w-5" />,
     },
-
+    ...(orientationEnabled
+      ? [
+          {
+            title: "Tutor Orientation",
+            href: "/orientation",
+            icon: <GraduationCap className="h-5 w-5" />,
+          },
+        ]
+      : []),
     {
       title: "Notifications",
       href: "/dashboard/notifications",

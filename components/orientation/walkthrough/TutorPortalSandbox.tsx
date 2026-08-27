@@ -35,7 +35,14 @@ import {
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
-import { useMemo, useState, type MouseEvent as ReactMouseEvent, type ReactNode } from "react";
+import {
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type MouseEvent as ReactMouseEvent,
+  type ReactNode,
+} from "react";
 import { STATUS, type Step, useJoyride } from "react-joyride";
 
 import { Button } from "@/components/ui/button";
@@ -296,10 +303,32 @@ export function TutorPortalSandbox() {
     },
   });
 
+  const activeStepIdRef = useRef(step?.id);
+  const tourStatusRef = useRef(state.status);
+  const advancePendingRef = useRef(false);
+
+  useEffect(() => {
+    activeStepIdRef.current = step?.id;
+    tourStatusRef.current = state.status;
+    advancePendingRef.current = false;
+  }, [state.status, step?.id]);
+
   const advanceIfActive = (stepId: string) => {
-    if (state.status === STATUS.RUNNING && step?.id === stepId) {
-      window.setTimeout(() => controls.next(), 0);
-    }
+    if (
+      tourStatusRef.current !== STATUS.RUNNING ||
+      activeStepIdRef.current !== stepId ||
+      advancePendingRef.current
+    )
+      return;
+
+    advancePendingRef.current = true;
+    window.setTimeout(() => {
+      if (tourStatusRef.current === STATUS.RUNNING && activeStepIdRef.current === stepId) {
+        controls.next();
+      } else {
+        advancePendingRef.current = false;
+      }
+    }, 0);
   };
 
   const selectView = (nextView: SandboxView) => {
@@ -351,6 +380,12 @@ export function TutorPortalSandbox() {
       onClickCapture={handleSandboxClick}
     >
       {Tour}
+      <div
+        className="pointer-events-none fixed left-4 top-4 z-[150] max-w-xs rounded-md border bg-background/95 px-3 py-2 text-xs font-medium shadow-sm lg:hidden"
+        role="note"
+      >
+        This desktop-style walkthrough is best viewed on a larger screen.
+      </div>
       <div className="flex h-full min-w-[1180px]">
         <PortalSidebar activeView={view} onSelect={selectView} />
         <div className="flex-1 overflow-auto">

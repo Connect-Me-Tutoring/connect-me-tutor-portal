@@ -2,7 +2,14 @@
 
 import { ChevronLeft, ChevronRight, Maximize2, Minimize2, RotateCcw } from "lucide-react";
 import Image from "next/image";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type KeyboardEvent as ReactKeyboardEvent,
+} from "react";
 
 import { ORIENTATION_SLIDES } from "@/constants/orientation-slides";
 import { cn } from "@/lib/utils";
@@ -17,6 +24,7 @@ function clampSlideIndex(index: number) {
 }
 
 export function OrientationSlideshow({ className }: OrientationSlideshowProps) {
+  const router = useRouter();
   const slideshowRef = useRef<HTMLElement>(null);
   const [slideIndex, setSlideIndex] = useState(0);
   const [isNativeFullscreen, setIsNativeFullscreen] = useState(false);
@@ -37,12 +45,12 @@ export function OrientationSlideshow({ className }: OrientationSlideshowProps) {
 
   const goForward = useCallback(() => {
     if (isLastSlide) {
-      window.location.assign("/orientation");
+      router.push("/orientation");
       return;
     }
 
     goToSlide(slideIndex + 1);
-  }, [goToSlide, isLastSlide, slideIndex]);
+  }, [goToSlide, isLastSlide, router, slideIndex]);
 
   useEffect(() => {
     const previousSlide = ORIENTATION_SLIDES[slideIndex - 1];
@@ -54,6 +62,10 @@ export function OrientationSlideshow({ className }: OrientationSlideshowProps) {
       image.src = adjacentSlide;
     }
   }, [slideIndex]);
+
+  useEffect(() => {
+    slideshowRef.current?.focus({ preventScroll: true });
+  }, []);
 
   useEffect(() => {
     const handleFullscreenChange = () => {
@@ -87,9 +99,15 @@ export function OrientationSlideshow({ className }: OrientationSlideshowProps) {
     setIsFallbackFullscreen(true);
   }, [isFallbackFullscreen]);
 
-  useEffect(() => {
-    const handleKeyDown = (event: KeyboardEvent) => {
+  const handleKeyDown = useCallback(
+    (event: ReactKeyboardEvent<HTMLElement>) => {
+      const target = event.target as HTMLElement;
+      if (target.closest("input, textarea, select, [contenteditable='true']")) return;
+
+      if (event.key === " " && target.closest("button, a")) return;
+
       if (event.key === "ArrowLeft") {
+        event.preventDefault();
         goBack();
       }
 
@@ -101,18 +119,18 @@ export function OrientationSlideshow({ className }: OrientationSlideshowProps) {
       if (event.key === "Escape" && isFallbackFullscreen) {
         setIsFallbackFullscreen(false);
       }
-    };
-
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [goBack, goForward, isFallbackFullscreen]);
+    },
+    [goBack, goForward, isFallbackFullscreen],
+  );
 
   return (
     <section
       aria-label="New tutor orientation"
       ref={slideshowRef}
+      onKeyDown={handleKeyDown}
+      tabIndex={0}
       className={cn(
-        "w-full overflow-hidden text-white",
+        "w-full overflow-hidden focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
         isFullscreen
           ? "fixed inset-0 z-[100] grid h-screen h-dvh grid-rows-[minmax(0,1fr)_3.25rem] bg-white"
           : "flex flex-col rounded-lg border border-black bg-white",
@@ -158,7 +176,7 @@ export function OrientationSlideshow({ className }: OrientationSlideshowProps) {
 
       <nav
         aria-label="Orientation slide controls"
-        className="relative z-20 flex h-[3.25rem] items-center justify-center border-t border-white/10 bg-zinc-950 px-4"
+        className="relative z-20 flex h-[3.25rem] items-center justify-center border-t border-white/10 bg-zinc-950 px-4 text-white"
       >
         <div className="flex items-center gap-1">
           <button

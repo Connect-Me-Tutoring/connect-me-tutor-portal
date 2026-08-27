@@ -31,7 +31,7 @@ const MODULES = [
   },
 ] as const;
 
-export function OrientationLanding() {
+export function OrientationLanding({ previewMode = false }: { previewMode?: boolean }) {
   return (
     <div className="p-8">
       <header className="mb-8">
@@ -40,7 +40,9 @@ export function OrientationLanding() {
           <h1 className="text-3xl font-bold">New Tutor Orientation</h1>
         </div>
         <p className="max-w-3xl text-muted-foreground">
-          Complete each module before your first tutoring session.
+          {previewMode
+            ? "Preview the orientation experience available to tutors."
+            : "Complete each module before your first tutoring session."}
         </p>
       </header>
 

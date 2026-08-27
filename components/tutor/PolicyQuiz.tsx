@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useCallback, useEffect } from "react";
+import Link from "next/link";
 import {
   Card,
   CardContent,
@@ -47,7 +48,7 @@ function shuffle<T>(arr: T[]): T[] {
 /* ------------------------------------------------------------------ */
 type Phase = "answering" | "feedback" | "questions" | "complete";
 
-export default function PolicyQuiz() {
+export default function PolicyQuiz({ previewMode = false }: { previewMode?: boolean }) {
   /* ---- state ---- */
   const [queue, setQueue] = useState<QuizQuestion[]>(policyQuizQuestions);
   const [completed, setCompleted] = useState<Set<string>>(new Set());
@@ -173,13 +174,15 @@ export default function PolicyQuiz() {
     async (skipQuestions = false) => {
       setIsSubmitting(true);
       try {
-        await submitQuizCompletion({
-          totalQuestions: total,
-          totalAttempts: totalAttempts,
-          retries: totalAttempts - total,
-          questionsText: skipQuestions ? null : questionsText,
-        });
-        toast.success("Quiz submitted successfully!");
+        if (!previewMode) {
+          await submitQuizCompletion({
+            totalQuestions: total,
+            totalAttempts: totalAttempts,
+            retries: totalAttempts - total,
+            questionsText: skipQuestions ? null : questionsText,
+          });
+        }
+        toast.success(previewMode ? "Quiz preview completed." : "Quiz submitted successfully!");
         setPhase("complete");
       } catch (err) {
         console.error("Failed to submit quiz:", err);
@@ -188,7 +191,7 @@ export default function PolicyQuiz() {
         setIsSubmitting(false);
       }
     },
-    [total, totalAttempts, questionsText],
+    [previewMode, total, totalAttempts, questionsText],
   );
 
   const handleRestart = useCallback(() => {
@@ -235,8 +238,9 @@ export default function PolicyQuiz() {
                 <CardTitle className="text-lg">Do you have any questions?</CardTitle>
               </div>
               <CardDescription className="mt-2">
-                If you have any questions about policies, your role, or anything else, write them
-                below and our Operations team will get back to you.
+                {previewMode
+                  ? "Preview mode does not save completion or send questions to Operations."
+                  : "If you have any questions about policies, your role, or anything else, write them below and our Operations team will get back to you."}
               </CardDescription>
             </CardHeader>
 
@@ -248,6 +252,7 @@ export default function PolicyQuiz() {
                 rows={5}
                 className="resize-none"
                 disabled={isSubmitting}
+                maxLength={4000}
               />
             </CardContent>
 
@@ -264,7 +269,7 @@ export default function PolicyQuiz() {
                   </>
                 ) : (
                   <>
-                    Submit & Finish
+                    {previewMode ? "Finish preview" : "Submit & Finish"}
                     <ChevronRight className="h-4 w-4" />
                   </>
                 )}
@@ -274,7 +279,9 @@ export default function PolicyQuiz() {
                 disabled={isSubmitting}
                 className="text-sm text-muted-foreground underline hover:text-foreground"
               >
-                Skip — I don&apos;t have any questions
+                {previewMode
+                  ? "Finish without a question"
+                  : "Skip — I don&apos;t have any questions"}
               </button>
             </CardFooter>
           </Card>
@@ -351,12 +358,13 @@ export default function PolicyQuiz() {
                 <div className="flex items-center gap-2 mb-2">
                   <span className="text-xl">🎉</span>
                   <p className="text-base font-bold text-connect-me-blue-5">
-                    Portal Access Unlocked
+                    {previewMode ? "Preview Complete" : "Portal Access Unlocked"}
                   </p>
                 </div>
                 <p className="text-sm text-connect-me-blue-5/80">
-                  You&apos;ve completed the orientation quiz and now have full access to the Tutor
-                  Portal — including your students, sessions, resources, and chat.
+                  {previewMode
+                    ? "No profile or completion data was changed during this admin preview."
+                    : "You've completed the orientation quiz and now have full access to the Tutor Portal — including your students, sessions, resources, and chat."}
                 </p>
               </div>
             </CardContent>
@@ -366,10 +374,10 @@ export default function PolicyQuiz() {
                 asChild
                 className="w-full gap-2 bg-connect-me-blue-3 hover:bg-connect-me-blue-4"
               >
-                <a href="/dashboard">
-                  Go to Dashboard
+                <Link href={previewMode ? "/orientation" : "/dashboard"}>
+                  {previewMode ? "Return to Orientation" : "Go to Dashboard"}
                   <ChevronRight className="h-4 w-4" />
-                </a>
+                </Link>
               </Button>
               <Button variant="outline" onClick={handleRestart} className="w-full gap-2">
                 <RotateCcw className="h-4 w-4" />

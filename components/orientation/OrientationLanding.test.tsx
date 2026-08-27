@@ -17,4 +17,11 @@ describe("OrientationLanding", () => {
     expect(markup).not.toContain("completed");
     expect(markup).not.toContain("does not save any changes");
   });
+
+  it("labels the admin experience as a preview", () => {
+    const markup = renderToStaticMarkup(<OrientationLanding previewMode />);
+
+    expect(markup).toContain("Preview the orientation experience available to tutors.");
+    expect(markup).not.toContain("before your first tutoring session");
+  });
 });

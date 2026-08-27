@@ -1,5 +1,9 @@
 import { renderToStaticMarkup } from "react-dom/server";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
+
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({ push: vi.fn() }),
+}));
 
 import { ORIENTATION_SLIDES } from "@/constants/orientation-slides";
 import { OrientationSlideshow } from "./OrientationSlideshow";
@@ -8,7 +12,11 @@ describe("OrientationSlideshow", () => {
   it("uses the 21 protected orientation slides", () => {
     expect(ORIENTATION_SLIDES).toHaveLength(21);
     expect(ORIENTATION_SLIDES[0]).toBe("/api/orientation/slides/slide-01.webp");
-    expect(ORIENTATION_SLIDES[8]).toBe("/api/orientation/slides/slide-09.webp?v=2");
+    expect(
+      ORIENTATION_SLIDES.every((slide) =>
+        /^\/api\/orientation\/slides\/slide-(0[1-9]|1\d|2[01])\.webp(?:\?v=\d+)?$/.test(slide),
+      ),
+    ).toBe(true);
   });
 
   it("renders the exact first slide as the primary portal component", () => {

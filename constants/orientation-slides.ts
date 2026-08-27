@@ -1,24 +1,11 @@
 /** Approved, non-hidden slides from the Connect Me orientation deck. */
-export const ORIENTATION_SLIDES = [
-  "/api/orientation/slides/slide-01.webp",
-  "/api/orientation/slides/slide-02.webp",
-  "/api/orientation/slides/slide-03.webp",
-  "/api/orientation/slides/slide-04.webp",
-  "/api/orientation/slides/slide-05.webp",
-  "/api/orientation/slides/slide-06.webp",
-  "/api/orientation/slides/slide-07.webp",
-  "/api/orientation/slides/slide-08.webp",
-  "/api/orientation/slides/slide-09.webp?v=2",
-  "/api/orientation/slides/slide-10.webp",
-  "/api/orientation/slides/slide-11.webp",
-  "/api/orientation/slides/slide-12.webp",
-  "/api/orientation/slides/slide-13.webp",
-  "/api/orientation/slides/slide-14.webp",
-  "/api/orientation/slides/slide-15.webp",
-  "/api/orientation/slides/slide-16.webp",
-  "/api/orientation/slides/slide-17.webp",
-  "/api/orientation/slides/slide-18.webp",
-  "/api/orientation/slides/slide-19.webp",
-  "/api/orientation/slides/slide-20.webp",
-  "/api/orientation/slides/slide-21.webp",
-] as const;
+const SLIDE_COUNT = 21;
+const SLIDE_CACHE_VERSIONS: Readonly<Partial<Record<number, number>>> = { 9: 2 };
+
+export const ORIENTATION_SLIDES = Array.from({ length: SLIDE_COUNT }, (_, index) => {
+  const slideNumber = index + 1;
+  const filename = `slide-${String(slideNumber).padStart(2, "0")}.webp`;
+  const cacheVersion = SLIDE_CACHE_VERSIONS[slideNumber];
+
+  return `/api/orientation/slides/${filename}${cacheVersion ? `?v=${cacheVersion}` : ""}`;
+});

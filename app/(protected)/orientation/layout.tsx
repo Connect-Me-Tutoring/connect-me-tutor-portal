@@ -4,6 +4,10 @@ import DashboardLayout from "@/components/dashboard/dashboard-layout";
 import { cachedGetProfile } from "@/lib/actions/cache";
 import { getUserProfiles } from "@/lib/actions/profile/server.actions";
 import { cachedGetUser } from "@/lib/actions/user/actions";
+import {
+  canViewTutorOrientation,
+  isTutorOrientationEnabled,
+} from "@/lib/orientation/config.server";
 import DashboardProviders from "../dashboard/dashboardprovider";
 
 export const metadata = {
@@ -14,13 +18,13 @@ export const metadata = {
 export const dynamic = "force-dynamic";
 
 export default async function OrientationLayout({ children }: { children: React.ReactNode }) {
-  if (process.env.TUTOR_ORIENTATION_ENABLED !== "true") redirect("/dashboard");
+  if (!isTutorOrientationEnabled()) redirect("/dashboard");
 
   const user = await cachedGetUser().catch(() => null);
   if (!user) redirect("/");
 
   const profile = await cachedGetProfile(user.id);
-  if (!profile || profile.role !== "Tutor") redirect("/dashboard");
+  if (!profile || !canViewTutorOrientation(profile.role)) redirect("/dashboard");
 
   const userProfiles = profile.userId ? getUserProfiles(profile.userId) : Promise.resolve([]);
 

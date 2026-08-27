@@ -13,6 +13,7 @@ describe("TutorPortalSandbox", () => {
     expect(markup).toContain('data-tour="practice-sidebar"');
     expect(markup).toContain('data-tour="session-actions"');
     expect(markup).toContain("Session Exit Form");
+    expect(markup).toContain("best viewed on a larger screen");
     expect(markup).not.toContain("bg-connect-me-blue-5");
     expect(markup).toContain('href="/orientation"');
     expect(markup).not.toContain("supabase");
