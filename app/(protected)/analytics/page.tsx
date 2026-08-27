@@ -1,5 +1,6 @@
 import React from "react";
 import AnalyticsCard from "@/components/analytics/AnalyticsCard";
+import UserGrowthChart from "@/components/analytics/UserGrowthChart";
 
 export default function AnalyticsPage() {
   return (
@@ -10,6 +11,15 @@ export default function AnalyticsPage() {
       </div>
 
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
+        <div className="md:col-span-2 xl:col-span-3">
+          <AnalyticsCard
+            title="User Growth Metrics"
+            subtitle="Tutors added and students added / removed over given intervals"
+          >
+            <UserGrowthChart />
+          </AnalyticsCard>
+        </div>
+
         <AnalyticsCard
           title="Tutor Attendance"
           subtitle="Attendance over time for tutors"

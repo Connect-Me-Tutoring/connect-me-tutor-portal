@@ -3,6 +3,8 @@ import React, { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase/client";
 import toast from "react-hot-toast";
 import AnalyticsCard from "@/components/analytics/AnalyticsCard";
+import UserGrowthChart from "@/components/analytics/UserGrowthChart";
+import SessionCompletionChart from "@/components/analytics/SessionCompletionChart";
 
 const AnalyticsDashboard = () => {
   const [mapUrl, setMapUrl] = useState<string>("");
@@ -45,7 +47,16 @@ const AnalyticsDashboard = () => {
 
   return (
     <div className="p-6">
-      <div className="grid grid-cols-1 gap-6 md:grid-cols-2 mb-6">
+      <div className="mb-6">
+        <AnalyticsCard
+          title="User Growth Metrics"
+          subtitle="Tutors added and students added / removed over given intervals"
+        >
+          <UserGrowthChart />
+        </AnalyticsCard>
+      </div>
+
+      {/* <div className="grid grid-cols-1 gap-6 md:grid-cols-2 mb-6">
         <AnalyticsCard
           title="Tutor Attendance (preview)"
           subtitle="Placeholder"
@@ -61,7 +72,7 @@ const AnalyticsDashboard = () => {
             Placeholder chart
           </div>
         </AnalyticsCard>
-      </div>
+      </div> */}
 
       <div className="rounded-lg border bg-white overflow-hidden">
         <div className="h-[60vh] md:h-[70vh] w-full">
