@@ -47,6 +47,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import Logo from "@/components/ui/logo";
+import { DataPortalTrigger } from "@/components/admin/data-portal/data-portal-trigger";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -522,6 +523,10 @@ export default function DashboardLayout({
                         )}
                       </Tooltip>
                     ))}
+
+                    {/* Opens the analysis workspace in a side panel; the API
+                        route re-checks the admin role on every request. */}
+                    <DataPortalTrigger isOpen={isOpen} />
                   </>
                 )}
               </nav>
