@@ -8,17 +8,16 @@ import type {
   MetricResult,
   SeriesResult,
 } from "@/lib/data-portal/results";
+import styles from "./data-portal.module.css";
 
 /**
- * Renderers for the closed set of result shapes the data portal renders.
- * Ported from the standalone data portal
- * (`dataPortalWebsite/frontend/src/components/data-analysis/analysis-result.tsx`)
- * and restyled with Tailwind.
+ * Renderers for the closed set of result shapes the data portal renders,
+ * ported — structure and styling both — from the standalone data portal
+ * (`dataPortalWebsite`: analysis-result.tsx and data-analysis.css).
  *
- * The `never` case in `renderResult` is load-bearing: adding a shape to
- * `analysisResponseSchema` without a renderer here is a type error, so
- * "render only known structures" cannot be satisfied on one side and
- * forgotten on the other.
+ * The `never` case in `renderResult` is load-bearing: adding a shape to the
+ * result union without a renderer here is a type error, so "render only known
+ * structures" cannot be satisfied on one side and forgotten on the other.
  *
  * Nothing here interpolates HTML. Every value arrives as a React child and is
  * escaped, and every number has already been checked finite by the schema.
@@ -37,9 +36,9 @@ function formatValue(value: number, unit: string | null, signed = false): string
 
 function Metric({ result }: { result: MetricResult }) {
   return (
-    <div className="rounded-md border bg-muted/30 px-3 py-2">
-      <span className="block text-xs text-muted-foreground">{result.label}</span>
-      <strong className="text-base font-semibold tabular-nums">
+    <div className={styles.metric}>
+      <span className={styles.metricLabel}>{result.label}</span>
+      <strong className={styles.metricValue}>
         {formatValue(result.value, result.unit, result.delta !== null)}
       </strong>
     </div>
@@ -50,28 +49,26 @@ function Series({ result }: { result: SeriesResult }) {
   const peak = Math.max(...result.points.map((point) => point.value), 0);
 
   return (
-    <figure className="rounded-md border p-3">
-      <figcaption className="mb-2 text-xs font-medium text-muted-foreground">
-        {result.label}
-      </figcaption>
+    <figure className={styles.figure}>
+      <figcaption className={styles.figcaption}>{result.label}</figcaption>
 
-      <div className="flex h-28 items-end gap-1 overflow-x-auto" aria-hidden="true">
-        {result.points.map((point, index) => (
-          <div
-            className="flex min-w-6 flex-1 flex-col items-center gap-1 self-stretch"
-            key={`${point.label}-${index}`}
-          >
-            <div className="flex w-full flex-1 items-end rounded-sm bg-muted/40">
-              <div
-                className="w-full rounded-sm bg-blue-500/80"
-                style={{ height: `${peak > 0 ? (point.value / peak) * 100 : 0}%` }}
-              />
+      <div className={styles.series} aria-hidden="true">
+        {result.points.map((point, index) => {
+          const partial = point.label.endsWith("(partial)");
+          return (
+            <div className={styles.seriesColumn} key={`${point.label}-${index}`}>
+              <div className={styles.seriesTrack}>
+                <div
+                  className={
+                    partial ? `${styles.seriesBar} ${styles.seriesBarPartial}` : styles.seriesBar
+                  }
+                  style={{ height: `${peak > 0 ? (point.value / peak) * 100 : 0}%` }}
+                />
+              </div>
+              <span className={styles.seriesLabel}>{point.label}</span>
             </div>
-            <span className="max-w-full truncate text-[10px] leading-tight text-muted-foreground">
-              {point.label}
-            </span>
-          </div>
-        ))}
+          );
+        })}
       </div>
 
       {/* The bars are decorative; this is the actual reading of the data. */}
@@ -88,20 +85,18 @@ function Series({ result }: { result: SeriesResult }) {
 
 function Breakdown({ result }: { result: BreakdownResult }) {
   return (
-    <figure className="rounded-md border p-3">
-      <figcaption className="mb-2 text-xs font-medium text-muted-foreground">
-        {result.label}
-      </figcaption>
+    <figure className={styles.figure}>
+      <figcaption className={styles.figcaption}>{result.label}</figcaption>
 
-      <div className="overflow-x-auto">
-        <table className="w-full text-sm">
+      <div className={styles.tableScroll}>
+        <table className={styles.table}>
           <thead>
-            <tr className="border-b text-left text-xs text-muted-foreground">
-              <th scope="col" className="py-1 pr-3 font-medium">
+            <tr>
+              <th scope="col">
                 <span className="sr-only">Item</span>
               </th>
               {result.columns.map((column) => (
-                <th scope="col" key={column} className="py-1 pr-3 text-right font-medium">
+                <th scope="col" key={column}>
                   {column}
                 </th>
               ))}
@@ -109,19 +104,14 @@ function Breakdown({ result }: { result: BreakdownResult }) {
           </thead>
           <tbody>
             {result.rows.map((row, index) => (
-              <tr key={`${row.label}-${index}`} className="border-b last:border-0">
-                <th scope="row" className="py-1 pr-3 text-left font-normal">
-                  {row.label}
-                </th>
+              <tr key={`${row.label}-${index}`}>
+                <th scope="row">{row.label}</th>
                 {row.values.map((value, valueIndex) => (
-                  <td
-                    key={result.columns[valueIndex] ?? valueIndex}
-                    className="py-1 pr-3 text-right tabular-nums"
-                  >
+                  <td key={result.columns[valueIndex] ?? valueIndex}>
                     {value === null ? (
                       // Undefined, not zero. A ratio with no denominator has
                       // no value, and printing 0 would read as a measurement.
-                      <span className="text-muted-foreground" title="No value for this row">
+                      <span className={styles.undefinedCell} title="No value for this row">
                         —<span className="sr-only">not applicable</span>
                       </span>
                     ) : (
@@ -142,12 +132,10 @@ function Funnel({ result }: { result: FunnelResult }) {
   const entered = result.stages[0]?.count ?? 0;
 
   return (
-    <figure className="rounded-md border p-3">
-      <figcaption className="mb-2 text-xs font-medium text-muted-foreground">
-        {result.label}
-      </figcaption>
+    <figure className={styles.figure}>
+      <figcaption className={styles.figcaption}>{result.label}</figcaption>
 
-      <ol className="space-y-2">
+      <ol className={styles.funnel}>
         {result.stages.map((stage, index) => {
           const previous = index > 0 ? result.stages[index - 1].count : null;
           const lost = previous === null ? null : previous - stage.count;
@@ -155,20 +143,20 @@ function Funnel({ result }: { result: FunnelResult }) {
 
           return (
             <li key={`${stage.label}-${index}`}>
-              <div className="flex items-baseline justify-between gap-2 text-sm">
+              <div className={styles.funnelHead}>
                 <span>{stage.label}</span>
-                <strong className="tabular-nums">{numberFormat.format(stage.count)}</strong>
+                <strong>{numberFormat.format(stage.count)}</strong>
               </div>
 
-              <div className="mt-1 h-2 rounded-full bg-muted/40" aria-hidden="true">
+              <div className={styles.funnelTrack} aria-hidden="true">
                 <div
-                  className="h-full rounded-full bg-blue-500/80"
+                  className={styles.funnelFill}
                   style={{ width: `${entered > 0 ? (stage.count / entered) * 100 : 0}%` }}
                 />
               </div>
 
               {lost !== null && lostShare !== null ? (
-                <span className="text-xs text-muted-foreground">
+                <span className={styles.funnelDrop}>
                   {numberFormat.format(lost)} lost ({Math.round(lostShare * 100)}%)
                 </span>
               ) : null}
@@ -205,9 +193,9 @@ export function AnalysisResults({ results }: { results: AnalysisResult[] }) {
   const figures = results.filter((result) => result.kind !== "metric");
 
   return (
-    <div className="mt-3 space-y-3">
+    <div className={styles.results}>
       {metrics.length > 0 ? (
-        <div className="grid grid-cols-2 gap-2">
+        <div className={styles.metrics}>
           {metrics.map((result, index) => (
             <Metric result={result} key={`${result.label}-${index}`} />
           ))}

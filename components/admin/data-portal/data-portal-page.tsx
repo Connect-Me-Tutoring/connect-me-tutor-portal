@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { getDataPortalOverview } from "@/lib/actions/data-portal/server.actions";
 import { DataPortalOverview, type OverviewState } from "./data-portal-overview";
+import styles from "./data-portal.module.css";
 
 /**
  * Client half of /dashboard/data-portal: loads everything on arrival — one
@@ -44,20 +45,20 @@ export function DataPortalPage() {
   };
 
   return (
-    <div className="space-y-4 p-6">
-      <div>
-        <h1 className="text-2xl font-bold">Data Portal</h1>
-        <p className="text-sm text-muted-foreground">
+    <div className="p-4 md:p-6">
+      <div className={styles.root}>
+        <h1 className={styles.title}>Data Portal</h1>
+        <p className={styles.subtitle}>
           Read-only aggregates over Connect Me&apos;s operational data.
         </p>
-      </div>
 
-      <DataPortalOverview
-        state={state}
-        dateRange={dateRange}
-        onDateRangeChange={handleRangeChange}
-        onReload={() => void load(dateRange)}
-      />
+        <DataPortalOverview
+          state={state}
+          dateRange={dateRange}
+          onDateRangeChange={handleRangeChange}
+          onReload={() => void load(dateRange)}
+        />
+      </div>
     </div>
   );
 }

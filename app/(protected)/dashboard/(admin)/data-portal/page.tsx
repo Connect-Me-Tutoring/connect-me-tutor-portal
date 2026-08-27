@@ -1,6 +1,13 @@
+import { Newsreader } from "next/font/google";
 import { redirect } from "next/navigation";
 import { requireAdmin } from "@/lib/actions/auth/authz.server";
 import { DataPortalPage } from "@/components/admin/data-portal/data-portal-page";
+
+/** Display face of the ported data-portal design system (see DESIGN notes). */
+const newsreader = Newsreader({
+  subsets: ["latin"],
+  variable: "--font-dp-display",
+});
 
 export const metadata = {
   title: "Data Portal | Connect Me",
@@ -21,5 +28,9 @@ export default async function Page() {
     redirect("/dashboard");
   }
 
-  return <DataPortalPage />;
+  return (
+    <div className={newsreader.variable}>
+      <DataPortalPage />
+    </div>
+  );
 }
