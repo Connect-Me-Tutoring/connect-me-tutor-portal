@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/lib/supabase/client";
 import { ChevronLeft, Download, ExternalLink, FileText, FolderOpen, Search } from "lucide-react";
+import { usePostHog } from "posthog-js/react";
 
 const allCategories = "All categories";
 const allCollections = "All grades";
@@ -82,6 +83,7 @@ const PickerScreen = ({
 );
 
 const WorksheetsList = ({ worksheets }: { worksheets: WorksheetResource[] }) => {
+  const posthog = usePostHog();
   const [searchQuery, setSearchQuery] = useState("");
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const [activeCollection, setActiveCollection] = useState<string | null>(null);
@@ -145,8 +147,19 @@ const WorksheetsList = ({ worksheets }: { worksheets: WorksheetResource[] }) => 
       });
   }, [activeCategory, activeCollection, searchQuery, worksheets]);
 
-  const openWorksheet = (path: string) => {
-    const { data } = supabase.storage.from("worksheets").getPublicUrl(path);
+  const worksheetProperties = (worksheet: WorksheetResource) => ({
+    worksheet_name: worksheet.name,
+    worksheet_path: worksheet.path,
+    category: worksheet.category,
+    collection: worksheet.collection,
+  });
+
+  const openWorksheet = (worksheet: WorksheetResource, clickSource: "title" | "open_button") => {
+    const { data } = supabase.storage.from("worksheets").getPublicUrl(worksheet.path);
+    posthog.capture("worksheet opened", {
+      ...worksheetProperties(worksheet),
+      click_source: clickSource,
+    });
     window.open(data.publicUrl, "_blank", "noopener,noreferrer");
   };
 
@@ -164,6 +177,7 @@ const WorksheetsList = ({ worksheets }: { worksheets: WorksheetResource[] }) => 
     download.download = worksheet.name;
     download.click();
     URL.revokeObjectURL(url);
+    posthog.capture("worksheet downloaded", worksheetProperties(worksheet));
   };
 
   // Step through subject then grade on the way in; the sidebar takes over once a grade is picked.
@@ -291,7 +305,7 @@ const WorksheetsList = ({ worksheets }: { worksheets: WorksheetResource[] }) => 
                 >
                   <button
                     type="button"
-                    onClick={() => openWorksheet(worksheet.path)}
+                    onClick={() => openWorksheet(worksheet, "title")}
                     className="min-w-0 rounded-md px-3 py-3 text-left transition-colors hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-900"
                   >
                     <div className="flex min-w-0 items-start gap-3">
@@ -314,7 +328,7 @@ const WorksheetsList = ({ worksheets }: { worksheets: WorksheetResource[] }) => 
                     <Button
                       type="button"
                       variant="outline"
-                      onClick={() => openWorksheet(worksheet.path)}
+                      onClick={() => openWorksheet(worksheet, "open_button")}
                       className="h-11 justify-center gap-2 text-base sm:w-28"
                     >
                       <ExternalLink className="h-5 w-5" />
