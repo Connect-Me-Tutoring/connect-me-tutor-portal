@@ -49,3 +49,6 @@ types/database.types.ts.new
 .unlighthouse
 unlighthouse.config.mjs
 .env*
+
+#mcp
+.mcp.json
