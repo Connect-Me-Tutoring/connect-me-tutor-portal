@@ -73,13 +73,13 @@
     "jsonwebtoken": "^9.0.2",
     "jsrsasign": ">=11.1.1",
     "lucide-react": "^0.424.0",
-    "next": "16.2.7",
+    "next": "16.3.3",
     "node-schedule": "^2.1.1",
     "openai": "^4.71.1",
     "papaparse": "^5.4.1",
     "posthog-js": "^1.298.1",
     "posthog-node": "^5.14.1",
-    "puppeteer": "^24.35.0",
+    "puppeteer": "^25.9.0",
     "react": "19.2.6",
     "react-chartjs-2": "^5.3.1",
     "react-dom": "19.2.6",
@@ -128,12 +128,12 @@
     "vitest": "^4.1.9"
   },
   "overrides": {
-    "brace-expansion": "5.0.6",
+    "brace-expansion": "5.0.9",
     "minimatch": "^10.0.3",
     "glob": "^11.0.0",
     "ip-address": "^10.2.0",
     "file-type": "^21.3.2",
-    "axios": "1.17.0",
+    "axios": "1.20.0",
     "basic-ftp": "^6.0.1",
     "defu": "^6.1.7",
     "fast-xml-builder": "^1.2.0",
@@ -145,7 +145,7 @@
     "uuid": "^11.1.1",
     "unhead": "^2.1.13",
     "markdown-it": "^14.2.0",
-    "js-yaml": "4.2.0",
+    "js-yaml": "4.3.2",
     "piscina": "^4.9.3",
     "qs": "6.15.2",
     "tmp": "0.2.7",
@@ -153,7 +153,7 @@
     "@types/react": "19.2.15",
     "@types/react-dom": "19.2.3",
     "gray-matter": {
-      "js-yaml": "4.2.0"
+      "js-yaml": "4.3.2"
     },
     "@mastra/core": {
       "@ai-sdk/provider-utils-v5": "npm:@ai-sdk/provider-utils@4.0.30",
