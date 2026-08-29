@@ -71,15 +71,15 @@ const ProfileSelector: React.FC<ProfileSelectorProps> = ({
   }, [profiles, search]);
 
   return (
-    <div className="grid grid-cols-4 items-center gap-4">
-      <Label className="text-right">{label}</Label>
+    <div className="grid gap-1.5">
+      <Label>{label}</Label>
       <Popover open={open} onOpenChange={setOpen}>
         <PopoverTrigger asChild>
           <Button
             variant="outline"
             role="combobox"
             aria-expanded={open}
-            className="col-span-3 justify-between text-left"
+            className="w-full justify-between text-left"
           >
             <span className="truncate">
               {selectedId && profilesMap[selectedId]
