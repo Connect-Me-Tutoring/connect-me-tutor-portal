@@ -30,8 +30,11 @@ export async function dispatchChatMessageEmails({
     const admin = await createAdminClient();
 
     // The message being dispatched is already inserted, so a count above one
-    // means this sender already triggered emails for this room within the
-    // debounce window. Announcements are exempt: admin-only and intentional.
+    // means this sender already triggered an email round for this room within
+    // the debounce window. Keyed off message rows, not delivered emails: if a
+    // round fully fails despite the per-send retries below, it is not retried
+    // until the window lapses — accepted, since messages stay visible in-app.
+    // Announcements are exempt: admin-only and intentional.
     if (roomType !== "announcements") {
       const debounceStart = new Date(Date.now() - ChatEmailDebounceSeconds * 1000).toISOString();
       const { count, error } = await admin
@@ -56,16 +59,27 @@ export async function dispatchChatMessageEmails({
       if (r.id === senderProfileId) continue;
       if (!r.email) continue;
 
-      const muted = await isChatRoomEmailMuted(admin, r.id, roomId);
-      if (muted) continue;
+      // One recipient's failure must not abandon the rest of the round: the
+      // debounce above would suppress a retry for the whole window.
+      try {
+        const muted = await isChatRoomEmailMuted(admin, r.id, roomId);
+        if (muted) continue;
 
-      await sendChatMessageNotificationEmail({
-        to: r.email,
-        recipientName: `${r.first_name} ${r.last_name}`.trim(),
-        senderName,
-        messagePreview: preview,
-        chatRoomUrl,
-      });
+        await sendChatMessageNotificationEmail({
+          to: r.email,
+          recipientName: `${r.first_name} ${r.last_name}`.trim(),
+          senderName,
+          messagePreview: preview,
+          chatRoomUrl,
+        });
+      } catch (recipientError) {
+        console.error("dispatchChatMessageEmails recipient", recipientError);
+        await logError(
+          recipientError,
+          { roomId, roomType, recipientId: r.id },
+          "chat_dispatch_email_error",
+        );
+      }
     }
   } catch (e) {
     console.error("dispatchChatMessageEmails", e);
