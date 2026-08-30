@@ -561,7 +561,7 @@ export type Database = {
           role: string | null;
           settings_id: string;
           start_date: string | null;
-          status: string | null;
+          status: Database["public"]["Enums"]["profile_status"];
           student_number: string | null;
           subject_embed: string | null;
           subjects_of_interest: string[] | null;
@@ -591,7 +591,7 @@ export type Database = {
           role?: string | null;
           settings_id: string;
           start_date?: string | null;
-          status?: string | null;
+          status: Database["public"]["Enums"]["profile_status"];
           student_number?: string | null;
           subject_embed?: string | null;
           subjects_of_interest?: string[] | null;
@@ -621,7 +621,7 @@ export type Database = {
           role?: string | null;
           settings_id?: string;
           start_date?: string | null;
-          status?: string | null;
+          status?: Database["public"]["Enums"]["profile_status"];
           student_number?: string | null;
           subject_embed?: string | null;
           subjects_of_interest?: string[] | null;
@@ -1315,6 +1315,7 @@ export type Database = {
         | "Biweekly Meeting"
         | "Other";
       pairing_status: "pending" | "accepted" | "rejected";
+      profile_status: "Active" | "Inactive";
       session_frequency: "weekly" | "biweekly" | "monthly";
       session_status:
         | "Active"
@@ -1467,6 +1468,7 @@ export const Constants = {
         "Other",
       ],
       pairing_status: ["pending", "accepted", "rejected"],
+      profile_status: ["Active", "Inactive"],
       session_frequency: ["weekly", "biweekly", "monthly"],
       session_status: [
         "Active",
