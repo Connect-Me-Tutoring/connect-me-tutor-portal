@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, type ReactNode } from "react";
 import type { WorksheetResource } from "@/app/(protected)/dashboard/(tutor)/worksheets/page";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,6 +9,8 @@ import { ChevronLeft, Download, ExternalLink, FileText, FolderOpen, Search } fro
 
 const allCategories = "All categories";
 const allCollections = "All grades";
+
+const submitWorksheetFormUrl = "https://forms.gle/yXht2JBQ7dBiKpZr6";
 
 const gradeOrder = [
   "Kindergarten",
@@ -41,11 +43,13 @@ const PickerScreen = ({
   options,
   onSelect,
   onBack,
+  action,
 }: {
   title: string;
   options: { name: string; count: number }[];
   onSelect: (name: string) => void;
   onBack?: () => void;
+  action?: ReactNode;
 }) => (
   <section className="mx-auto flex w-full max-w-6xl flex-col gap-6">
     <div className="flex flex-col gap-2">
@@ -59,7 +63,10 @@ const PickerScreen = ({
           Back
         </button>
       ) : null}
-      <h1 className="text-4xl font-semibold tracking-tight text-gray-900">{title}</h1>
+      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+        <h1 className="text-4xl font-semibold tracking-tight text-gray-900">{title}</h1>
+        {action}
+      </div>
     </div>
 
     <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -168,7 +175,21 @@ const WorksheetsList = ({ worksheets }: { worksheets: WorksheetResource[] }) => 
 
   // Step through subject then grade on the way in; the sidebar takes over once a grade is picked.
   if (!activeCategory) {
-    return <PickerScreen title="Worksheets" options={categories} onSelect={setActiveCategory} />;
+    return (
+      <PickerScreen
+        title="Worksheets"
+        options={categories}
+        onSelect={setActiveCategory}
+        action={
+          <Button asChild variant="outline" className="h-11 w-fit justify-center gap-2 text-base">
+            <a href={submitWorksheetFormUrl} target="_blank" rel="noopener noreferrer">
+              <ExternalLink className="h-5 w-5" />
+              Submit your worksheet
+            </a>
+          </Button>
+        }
+      />
+    );
   }
 
   if (!activeCollection) {

@@ -54,6 +54,12 @@ const AnalyticsDashboard = () => {
         >
           <UserGrowthChart />
         </AnalyticsCard>
+        <AnalyticsCard
+          title="Session Completion"
+          subtitle="Completed vs. cancelled sessions over time"
+        >
+          <SessionCompletionChart />
+        </AnalyticsCard>
       </div>
 
       {/* <div className="grid grid-cols-1 gap-6 md:grid-cols-2 mb-6">
