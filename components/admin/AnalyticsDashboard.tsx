@@ -54,9 +54,15 @@ const AnalyticsDashboard = () => {
         >
           <UserGrowthChart />
         </AnalyticsCard>
+        <AnalyticsCard
+          title="Session Completion"
+          subtitle="Completed vs. cancelled sessions over time"
+        >
+          <SessionCompletionChart />
+        </AnalyticsCard>
       </div>
 
-      <div className="grid grid-cols-1 gap-6 md:grid-cols-2 mb-6">
+      {/* <div className="grid grid-cols-1 gap-6 md:grid-cols-2 mb-6">
         <AnalyticsCard
           title="Tutor Attendance (preview)"
           subtitle="Placeholder"
@@ -72,7 +78,7 @@ const AnalyticsDashboard = () => {
             Placeholder chart
           </div>
         </AnalyticsCard>
-      </div>
+      </div> */}
 
       <div className="rounded-lg border bg-white overflow-hidden">
         <div className="h-[60vh] md:h-[70vh] w-full">
