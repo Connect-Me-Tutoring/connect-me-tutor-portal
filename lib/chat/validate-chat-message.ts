@@ -1,6 +1,7 @@
 import {
   ChatAllowedFileMimeTypes,
   ChatFileMaxBytes,
+  ChatFileMaxMegabytes,
   ChatFileNameMaxLength,
   ChatMessageMaxLength,
 } from "@/constants/chat";
@@ -19,8 +20,6 @@ export type ChatMessageValidation =
 // characters are invisible in the UI, so they are stripped rather than stored.
 // Newlines and tabs are kept.
 const ControlCharacters = new RegExp("[\\u0000-\\u0008\\u000B\\u000C\\u000E-\\u001F\\u007F]", "g");
-
-export const ChatFileMaxMegabytes = Math.floor(ChatFileMaxBytes / (1024 * 1024));
 
 export function isAllowedChatFileType(mimeType: string): boolean {
   return (ChatAllowedFileMimeTypes as readonly string[]).includes(mimeType);
