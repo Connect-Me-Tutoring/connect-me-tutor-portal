@@ -155,6 +155,7 @@ export type Database = {
           end_time: string | null;
           frequency: Database["public"]["Enums"]["session_frequency"];
           id: string;
+          inactivity_warning_sent_at: string | null;
           meetingId: string | null;
           pairing_id: string | null;
           paused: boolean;
@@ -173,6 +174,7 @@ export type Database = {
           end_time?: string | null;
           frequency?: Database["public"]["Enums"]["session_frequency"];
           id?: string;
+          inactivity_warning_sent_at?: string | null;
           meetingId?: string | null;
           pairing_id?: string | null;
           paused?: boolean;
@@ -191,6 +193,7 @@ export type Database = {
           end_time?: string | null;
           frequency?: Database["public"]["Enums"]["session_frequency"];
           id?: string;
+          inactivity_warning_sent_at?: string | null;
           meetingId?: string | null;
           pairing_id?: string | null;
           paused?: boolean;
@@ -550,6 +553,7 @@ export type Database = {
           id: string;
           languages_spoken: string[] | null;
           last_name: string;
+          orientation_completed_at: string | null;
           parent_email: string | null;
           parent_name: string | null;
           parent_phone: string | null;
@@ -557,7 +561,7 @@ export type Database = {
           role: string | null;
           settings_id: string;
           start_date: string | null;
-          status: string | null;
+          status: Database["public"]["Enums"]["profile_status"];
           student_number: string | null;
           subject_embed: string | null;
           subjects_of_interest: string[] | null;
@@ -579,6 +583,7 @@ export type Database = {
           id?: string;
           languages_spoken?: string[] | null;
           last_name: string;
+          orientation_completed_at?: string | null;
           parent_email?: string | null;
           parent_name?: string | null;
           parent_phone?: string | null;
@@ -586,7 +591,7 @@ export type Database = {
           role?: string | null;
           settings_id: string;
           start_date?: string | null;
-          status?: string | null;
+          status: Database["public"]["Enums"]["profile_status"];
           student_number?: string | null;
           subject_embed?: string | null;
           subjects_of_interest?: string[] | null;
@@ -608,6 +613,7 @@ export type Database = {
           id?: string;
           languages_spoken?: string[] | null;
           last_name?: string;
+          orientation_completed_at?: string | null;
           parent_email?: string | null;
           parent_name?: string | null;
           parent_phone?: string | null;
@@ -615,7 +621,7 @@ export type Database = {
           role?: string | null;
           settings_id?: string;
           start_date?: string | null;
-          status?: string | null;
+          status?: Database["public"]["Enums"]["profile_status"];
           student_number?: string | null;
           subject_embed?: string | null;
           subjects_of_interest?: string[] | null;
@@ -1065,6 +1071,15 @@ export type Database = {
         Args: { end_date: string; start_date: string };
         Returns: Json;
       };
+      get_monthly_session_completion_stats: {
+        Args: never;
+        Returns: {
+          month: string;
+          pct_completed: number;
+          total_completed: number;
+          total_resolved: number;
+        }[];
+      };
       get_overlapping_availabilities_array: {
         Args: { a: Json[]; b: Json[] };
         Returns: Json;
@@ -1126,6 +1141,23 @@ export type Database = {
           student_id: string;
           tutor: Json;
           tutor_id: string;
+        }[];
+      };
+      get_period_session_completion_stats: {
+        Args: { p_granularity?: string };
+        Returns: {
+          pct_completed: number;
+          period: string;
+          total_completed: number;
+          total_resolved: number;
+        }[];
+      };
+      get_session_completion_stats: {
+        Args: never;
+        Returns: {
+          pct_completed: number;
+          total_completed: number;
+          total_resolved: number;
         }[];
       };
       get_session_hours_by_student: {
@@ -1283,6 +1315,7 @@ export type Database = {
         | "Biweekly Meeting"
         | "Other";
       pairing_status: "pending" | "accepted" | "rejected";
+      profile_status: "Active" | "Inactive";
       session_frequency: "weekly" | "biweekly" | "monthly";
       session_status:
         | "Active"
@@ -1292,7 +1325,8 @@ export type Database = {
         | "Sub-Request"
         | "Expired"
         | "Standalone"
-        | "Unsubmitted";
+        | "Unsubmitted"
+        | "Unconfirmed";
       timezone: "EST" | "CST" | "PST" | "MST" | "MT" | "Other";
     };
     CompositeTypes: {
@@ -1434,6 +1468,7 @@ export const Constants = {
         "Other",
       ],
       pairing_status: ["pending", "accepted", "rejected"],
+      profile_status: ["Active", "Inactive"],
       session_frequency: ["weekly", "biweekly", "monthly"],
       session_status: [
         "Active",
@@ -1444,6 +1479,7 @@ export const Constants = {
         "Expired",
         "Standalone",
         "Unsubmitted",
+        "Unconfirmed",
       ],
       timezone: ["EST", "CST", "PST", "MST", "MT", "Other"],
     },
