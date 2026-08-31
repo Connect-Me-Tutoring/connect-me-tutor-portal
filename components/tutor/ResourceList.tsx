@@ -25,6 +25,9 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { MobileCard } from "@/components/ui/mobile-card";
+import { LoadMoreButton } from "@/components/ui/load-more-button";
+import { useLoadMore } from "@/hooks/useLoadMore";
 
 interface Resource {
   title: string;
@@ -66,6 +69,12 @@ const ResourceList = () => {
     currentPage * rowsPerPage,
   );
 
+  const {
+    visibleItems: visibleResources,
+    hasMore: hasMoreResources,
+    loadMore: loadMoreResources,
+  } = useLoadMore(filteredResources);
+
   return (
     <main className="relative p-8">
       <div className="lg:flex lg:top-8 h-fit">
@@ -73,7 +82,7 @@ const ResourceList = () => {
       </div>
 
       <h1 className="text-3xl font-bold mb-6">Tutor Resources</h1>
-      <div className="flex space-x-6">
+      <div className="flex flex-col lg:flex-row gap-6">
         <div className="flex-grow bg-white rounded-lg shadow p-6">
           <div className="flex justify-between items-center mb-4">
             <input
@@ -85,85 +94,111 @@ const ResourceList = () => {
             />
           </div>
 
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Title</TableHead>
-                <TableHead>Description</TableHead>
-                <TableHead>Link</TableHead>
-                <TableHead>Type</TableHead>
-                <TableHead>Subject</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {paginatedResources.map((resource, index) => (
-                <TableRow key={index}>
-                  <TableCell>{resource.title}</TableCell>
-                  <TableCell>{resource.description}</TableCell>
-                  <TableCell>
-                    <Button variant="outline" onClick={() => window.open(resource.link, "_blank")}>
-                      Open Resource
-                    </Button>
-                  </TableCell>
-                  <TableCell>{resource.type}</TableCell>
-                  <TableCell>{resource.subject}</TableCell>
+          <div className="hidden md:block w-full">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Title</TableHead>
+                  <TableHead>Description</TableHead>
+                  <TableHead>Link</TableHead>
+                  <TableHead>Type</TableHead>
+                  <TableHead>Subject</TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody>
+                {paginatedResources.map((resource, index) => (
+                  <TableRow key={index}>
+                    <TableCell>{resource.title}</TableCell>
+                    <TableCell>{resource.description}</TableCell>
+                    <TableCell>
+                      <Button
+                        variant="outline"
+                        onClick={() => window.open(resource.link, "_blank")}
+                      >
+                        Open Resource
+                      </Button>
+                    </TableCell>
+                    <TableCell>{resource.type}</TableCell>
+                    <TableCell>{resource.subject}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
 
-          <div className="mt-4 flex justify-between items-center">
-            <span>{filteredResources.length} resource(s) total.</span>
-            <div className="flex items-center space-x-2">
-              <span>Rows per page</span>
-              <Select value={rowsPerPage.toString()} onValueChange={handleRowsPerPageChange}>
-                <SelectTrigger className="w-[70px]">
-                  <SelectValue placeholder={rowsPerPage.toString()} />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="10">10</SelectItem>
-                  <SelectItem value="20">20</SelectItem>
-                  <SelectItem value="50">50</SelectItem>
-                </SelectContent>
-              </Select>
-              <span>
-                Page {currentPage} of {totalPages}
-              </span>
-              <div className="flex space-x-1">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => handlePageChange(1)}
-                  disabled={currentPage === 1}
-                >
-                  «
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => handlePageChange(currentPage - 1)}
-                  disabled={currentPage === 1}
-                >
-                  ‹
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => handlePageChange(currentPage + 1)}
-                  disabled={currentPage === totalPages}
-                >
-                  ›
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => handlePageChange(totalPages)}
-                  disabled={currentPage === totalPages}
-                >
-                  »
-                </Button>
+            <div className="mt-4 hidden md:flex justify-between items-center">
+              <span>{filteredResources.length} resource(s) total.</span>
+              <div className="flex items-center space-x-2">
+                <span>Rows per page</span>
+                <Select value={rowsPerPage.toString()} onValueChange={handleRowsPerPageChange}>
+                  <SelectTrigger className="w-[70px]">
+                    <SelectValue placeholder={rowsPerPage.toString()} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="10">10</SelectItem>
+                    <SelectItem value="20">20</SelectItem>
+                    <SelectItem value="50">50</SelectItem>
+                  </SelectContent>
+                </Select>
+                <span>
+                  Page {currentPage} of {totalPages}
+                </span>
+                <div className="flex space-x-1">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => handlePageChange(1)}
+                    disabled={currentPage === 1}
+                  >
+                    «
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => handlePageChange(currentPage - 1)}
+                    disabled={currentPage === 1}
+                  >
+                    ‹
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => handlePageChange(currentPage + 1)}
+                    disabled={currentPage === totalPages}
+                  >
+                    ›
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => handlePageChange(totalPages)}
+                    disabled={currentPage === totalPages}
+                  >
+                    »
+                  </Button>
+                </div>
               </div>
             </div>
+          </div>
+
+          <div className="md:hidden space-y-4">
+            {visibleResources.map((resource, index) => (
+              <MobileCard key={index}>
+                <div className="font-semibold text-base">{resource.title}</div>
+                <div className="text-sm text-muted-foreground">{resource.description}</div>
+                <div className="text-sm space-y-1">
+                  <div>Type: {resource.type}</div>
+                  <div>Subject: {resource.subject}</div>
+                </div>
+                <Button
+                  variant="outline"
+                  className="w-full"
+                  onClick={() => window.open(resource.link, "_blank")}
+                >
+                  Open Resource
+                </Button>
+              </MobileCard>
+            ))}
+            <LoadMoreButton hasMore={hasMoreResources} onClick={loadMoreResources} />
           </div>
         </div>
 

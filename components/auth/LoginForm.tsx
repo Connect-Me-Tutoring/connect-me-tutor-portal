@@ -9,7 +9,7 @@ import toast, { Toaster, ValueFunction } from "react-hot-toast";
 import { useState, Suspense } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { startNavigationProgress } from "@/components/ui/navigation-progress";
-import { X, ExternalLink } from "lucide-react";
+import { Eye, EyeOff, X, ExternalLink } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -22,7 +22,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { getProfileRole } from "@/lib/actions/user/actions";
+import { getProfileRole } from "@/lib/actions/user/client.actions";
 
 const formSchema = z.object({
   email: z.string().email({
@@ -36,6 +36,7 @@ const formSchema = z.object({
 export default function LoginForm() {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const supabase = createClient();
 
   const form = useForm<z.infer<typeof formSchema>>({
@@ -168,7 +169,22 @@ export default function LoginForm() {
                   </div>
 
                   <FormControl>
-                    <Input type="password" placeholder="Enter your password" {...field} />
+                    <div className="relative">
+                      <Input
+                        type={showPassword ? "text" : "password"}
+                        placeholder="Enter your password"
+                        className="pr-10"
+                        {...field}
+                      />
+                      <button
+                        type="button"
+                        aria-label={showPassword ? "Hide password" : "Show password"}
+                        onClick={() => setShowPassword((visible) => !visible)}
+                        className="text-muted-foreground hover:text-foreground absolute inset-y-0 right-0 flex items-center px-3"
+                      >
+                        {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+                      </button>
+                    </div>
                   </FormControl>
                   <FormMessage />
                 </FormItem>

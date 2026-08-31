@@ -1,7 +1,7 @@
 import { Profile } from "@/types";
 import { User } from "@supabase/supabase-js";
 import { createClient } from "../../supabase/server";
-import { cachedGetUser } from "../user/server.actions";
+import { cachedGetUser } from "../user/actions";
 import { tableToInterfaceProfiles } from "../../utils/type-utils";
 
 function authzError(message = "Unauthorized"): never {
@@ -32,7 +32,8 @@ const ACTIVE_PROFILE_SELECT = `
   languages_spoken,
   age,
   grade,
-  gender
+  gender,
+  orientation_completed_at
 `;
 
 async function fetchActiveProfile(userId: string): Promise<Profile | null> {

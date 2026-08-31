@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import ActiveSessionsTable from "./components/ActiveSessionsTable";
 import CurrentSessionsTable from "./components/CurrentSessionsTable";
 import CompletedSessionsTable from "./components/CompletedSessionsTable";
-import { getProfile } from "@/lib/actions/user/actions";
+import { getProfile } from "@/lib/actions/user/client.actions";
 import { getMeetings } from "@/lib/actions/admin.actions";
 import { getTutorSessions, recordSessionExitForm } from "@/lib/actions/tutor/actions";
 import { getAllSessions } from "@/lib/actions/session/client.actions";
@@ -32,6 +32,7 @@ import { getStudentSessions } from "@/lib/actions/student/actions";
 import { useProfile } from "@/lib/contexts/profileContext";
 import SkeletonTable, { Skeleton } from "../ui/skeleton";
 import { useDashboardContext } from "@/lib/contexts/dashboardContext";
+import { useLoadMore } from "@/hooks/useLoadMore";
 
 const StudentDashboard = () => {
   const SC = useDashboardContext();
@@ -245,6 +246,18 @@ const StudentDashboard = () => {
     SC.currentPagePastSessions * SC.rowsPerPagePastSessions,
   );
 
+  const {
+    visibleItems: visibleActiveSessions,
+    hasMore: hasMoreActiveSessions,
+    loadMore: loadMoreActiveSessions,
+  } = useLoadMore(SC.filteredSessions);
+
+  const {
+    visibleItems: visiblePastSessions,
+    hasMore: hasMorePastSessions,
+    loadMore: loadMorePastSessions,
+  } = useLoadMore(SC.filteredPastSessions);
+
   const handleInputChange = (e: { target: { name: string; value: string } }) => {
     const { name, value } = e.target;
 
@@ -302,6 +315,9 @@ const StudentDashboard = () => {
               <ActiveSessionsTable
                 paginatedSessions={paginatedSessions}
                 filteredSessions={SC.filteredSessions}
+                visibleSessions={visibleActiveSessions}
+                hasMore={hasMoreActiveSessions}
+                loadMore={loadMoreActiveSessions}
                 totalPages={totalActiveSessionsPages}
                 handleStatusChange={handleStatusChange}
                 handleReschedule={handleReschedule}
@@ -335,6 +351,9 @@ const StudentDashboard = () => {
               {" "}
               <CompletedSessionsTable
                 paginatedSessions={paginatedPastSessions}
+                visibleSessions={visiblePastSessions}
+                hasMore={hasMorePastSessions}
+                loadMore={loadMorePastSessions}
                 totalPages={totalPastSessionsPages}
                 handlePageChange={handlePastSessionsPageChange}
                 handleRowsPerPageChange={handlePastSessionsRowsPerPageChange}

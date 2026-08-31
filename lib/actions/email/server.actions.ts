@@ -212,7 +212,7 @@ export async function sendStudentPairingConfirmationEmail(
       resend.emails.send({
         from: "Connect Me Free Tutoring & Mentoring <pairings@connectmego.app>",
         to: process.env.DEV_EMAIL!,
-        cc: [process.env.DEV_EMAIL!, process.env.OPERATIONS_EMAIL!],
+        cc: [process.env.OPERATIONS_EMAIL!],
         subject: "You Have Been Matched!",
         html: emailHtml,
       }),
@@ -238,7 +238,7 @@ export async function sendPairingRequestEmail(
       resend.emails.send({
         from: "reminder@connectmego.app",
         to: process.env.DEV_EMAIL!,
-        cc: [process.env.DEV_EMAIL!, "aaronmarsh755@gmail.com", process.env.OPERATIONS_EMAIL!],
+        cc: [process.env.OPERATIONS_EMAIL!],
         subject: "Connect Me Pairing Request",
         html: emailHtml,
       }),
@@ -262,7 +262,7 @@ export async function sendTutorPairingConfirmationEmail(
       resend.emails.send({
         from: "Connect Me Free Tutoring & Mentoring <confirmation@connectmego.app>",
         to: process.env.DEV_EMAIL!,
-        cc: ["", process.env.DEV_EMAIL!, process.env.OPERATIONS_EMAIL!],
+        cc: [process.env.OPERATIONS_EMAIL!],
         subject: "Confirmed for Tutoring",
         html: emailHtml,
       }),
@@ -288,7 +288,7 @@ export async function sendSessionRescheduleEmail(
       resend.emails.send({
         from: "Connect Me Free Tutoring & Mentoring <notifications@connectmego.app>",
         to: emailTo,
-        cc: ["", process.env.DEV_EMAIL!, process.env.OPERATIONS_EMAIL!], // keeping consistent with other email methods for visibility
+        cc: [process.env.OPERATIONS_EMAIL!], // keeping consistent with other email methods for visibility
         subject: "Your Tutoring Session Has Been Rescheduled",
         html: emailHtml,
       }),
@@ -316,7 +316,7 @@ export async function sendStudentSessionCancellationEmail(
       resend.emails.send({
         from: "Connect Me Free Tutoring & Mentoring <notifications@connectmego.app>",
         to: emailTo,
-        cc: ["", process.env.DEV_EMAIL!, process.env.OPERATIONS_EMAIL!], // keeping consistent with other email methods for visibility
+        cc: [process.env.OPERATIONS_EMAIL!], // keeping consistent with other email methods for visibility
         subject: "Your Tutoring Session Has Been Cancelled",
         html: emailHtml,
       }),
@@ -344,7 +344,7 @@ export async function sendTutorSessionCancellationEmail(
       resend.emails.send({
         from: "Connect Me Free Tutoring & Mentoring <notifications@connectmego.app>",
         to: emailTo,
-        cc: ["", process.env.DEV_EMAIL!, process.env.OPERATIONS_EMAIL!], // keeping consistent with other email methods for visibility
+        cc: [process.env.OPERATIONS_EMAIL!], // keeping consistent with other email methods for visibility
         subject: "A Tutoring Session Has Been Cancelled",
         html: emailHtml,
       }),
@@ -382,7 +382,6 @@ export async function sendChatMessageNotificationEmail(
       resend.emails.send({
         from: "Connect Me Free Tutoring & Mentoring <notifications@connectmego.app>",
         to: params.to,
-        cc: [process.env.DEV_EMAIL!],
         subject: "New message on Connect Me",
         html: emailHtml,
       }),
@@ -493,9 +492,7 @@ export async function sendEarlySessionCheckInEmails(now = new Date()) {
         resend.emails.send({
           from: "Connect Me Free Tutoring & Mentoring <reminder@connectmego.app>",
           to: recipient.email,
-          cc: [process.env.DEV_EMAIL, process.env.OPERATIONS_EMAIL].filter(
-            (value): value is string => Boolean(value),
-          ),
+          cc: [process.env.OPERATIONS_EMAIL].filter((value): value is string => Boolean(value)),
           subject: EARLY_SESSION_CHECK_IN_SUBJECT,
           html: emailHtml,
         }),
@@ -544,7 +541,7 @@ export async function sendMonthlyCheckInEmail(
       resend.emails.send({
         from: "Connect Me Free Tutoring & Mentoring <notifications@connectmego.app>",
         to: emailTo,
-        cc: [process.env.DEV_EMAIL!, process.env.OPERATIONS_EMAIL!],
+        cc: [process.env.OPERATIONS_EMAIL!],
         subject: "Your Monthly Connect Me Check-In",
         html: emailHtml,
       }),
@@ -567,7 +564,7 @@ export const sendEmail = async (from: string, to: string, subject: string, body:
         resend.emails.send({
           from: from,
           to: to,
-          cc: [process.env.DEV_EMAIL!, process.env.OPERATIONS_EMAIL!],
+          cc: [process.env.OPERATIONS_EMAIL!],
           subject: subject,
           html: body,
         }),

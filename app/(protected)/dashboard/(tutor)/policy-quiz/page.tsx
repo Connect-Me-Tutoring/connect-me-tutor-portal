@@ -1,5 +1,5 @@
-import PolicyQuiz from "@/components/tutor/PolicyQuiz";
+import { redirect } from "next/navigation";
 
 export default function PolicyQuizPage() {
-  return <PolicyQuiz />;
+  redirect("/orientation/quiz");
 }

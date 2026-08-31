@@ -50,9 +50,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
 import {
   Select,
   SelectContent,
-  SelectGroup,
   SelectItem,
-  SelectLabel,
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
@@ -69,6 +67,7 @@ import {
 } from "@/lib/actions/admin.actions";
 import {
   addStandaloneSession,
+  getCompletedSessionsCount,
   removeSessionServer,
   updateSession,
 } from "@/lib/actions/session/server.actions";
@@ -76,7 +75,7 @@ import { addHours, areIntervalsOverlapping } from "date-fns";
 
 import { getAllSessions } from "@/lib/actions/session/client.actions";
 import { addSessions } from "@/lib/actions/session/client.actions";
-import { getProfileWithProfileId } from "@/lib/actions/user/actions";
+import { getProfileWithProfileId } from "@/lib/actions/user/client.actions";
 import { toast, Toaster } from "react-hot-toast";
 import { Session, Enrollment, Meeting, Profile } from "@/types";
 import { getSessionTimespan } from "@/lib/utils";
@@ -128,6 +127,7 @@ const Schedule = () => {
   const [allSessions, setAllSessions] = useState<Session[]>([]);
 
   const initialMount = useRef(true);
+  const [isAddSessionOpen, setIsAddSessionOpen] = useState(false);
   const [openStudentOptions, setOpenStudentOptions] = useState(false);
   const [openTutorOptions, setOpentTutorOptions] = useState(false);
   const [selectedStudentId, setSelectedStudentId] = useState("");
@@ -177,14 +177,40 @@ const Schedule = () => {
     summary: "",
   });
 
-  const formatDateForInput = (isoDate: string | undefined): string => {
-    if (!isoDate) return "";
-    try {
-      return format(parseISO(isoDate), "yyyy-MM-dd'T'HH:mm");
-    } catch (e) {
-      console.error("Invalid date:", e);
-      return "";
+  const formatDurationLabel = (hours: number): string => {
+    const totalMinutes = Math.round(hours * 60);
+    const h = Math.floor(totalMinutes / 60);
+    const m = totalMinutes % 60;
+    if (h === 0) return `${m} min`;
+    if (m === 0) return `${h} ${h === 1 ? "hour" : "hours"}`;
+    return `${h} ${h === 1 ? "hour" : "hours"} ${m} min`;
+  };
+
+  // Add Session dialog: day/start/end time inputs, from which date + duration
+  // are derived (mirrors the day/startTime/endTime pattern in AvailabilityForm).
+  const [newSessionDay, setNewSessionDay] = useState(format(new Date(), "yyyy-MM-dd"));
+  const [newSessionStartTime, setNewSessionStartTime] = useState("");
+  const [newSessionEndTime, setNewSessionEndTime] = useState("");
+
+  const updateSessionDateAndDuration = async (day: string, startTime: string, endTime: string) => {
+    if (!day || !startTime || !endTime) return;
+    const start = new Date(`${day}T${startTime}`);
+    const end = new Date(`${day}T${endTime}`);
+    if (!isValid(start) || !isValid(end)) return;
+    if (end <= start) {
+      toast.error("End time must be after start time");
+      return;
     }
+
+    const durationMinutes = Math.round((end.getTime() - start.getTime()) / (1000 * 60));
+    const duration = Math.round((durationMinutes / 60) * 100) / 100;
+    const updatedSession: Partial<Session> = {
+      ...newSession,
+      date: start.toISOString(),
+      duration,
+    };
+    await checkMeetingAvailabilites(updatedSession as Session);
+    setNewSession(updatedSession);
   };
 
   // useEffect(() => {
@@ -235,15 +261,24 @@ const Schedule = () => {
         queryKey: ["meetings"],
         queryFn: () => getMeetings(),
       },
+      {
+        // counted in the database rather than derived from `sessions` so the number stays
+        // right even if the session fetch above is ever capped. Keyed under "sessions" so
+        // the existing broad invalidations refresh it too.
+        queryKey: ["sessions", "completed", queryStart, queryEnd],
+        queryFn: () => getCompletedSessionsCount(queryStart, queryEnd),
+      },
     ],
   });
 
-  const [sessionsResult, studentsResult, tutorsResult, meetingsResult] = query;
+  const [sessionsResult, studentsResult, tutorsResult, meetingsResult, completedSessionsResult] =
+    query;
 
   const sessions = sessionsResult.data || [];
   const students = studentsResult.data || [];
   const tutors = tutorsResult.data || [];
   const meetings = meetingsResult.data || [];
+  const completedSessions = completedSessionsResult.data ?? 0;
 
   let isLoading = sessionsResult.isLoading;
 
@@ -490,7 +525,9 @@ const Schedule = () => {
       await updateSession(updatedSession);
       toast.success("Session updated successfully");
       setIsModalOpen(false);
-      fetchSessions(queryStart, queryEnd);
+      // the old call refetched into a discarded promise, so changing a status here never
+      // repainted the grid or the counts. Invalidate instead, like the remove flow does.
+      queryClient.invalidateQueries({ queryKey: ["sessions"] });
     } catch (error) {
       console.error("Failed to update session:", error);
       toast.error("Failed to update session");
@@ -498,12 +535,24 @@ const Schedule = () => {
   };
 
   const handleAddSession = async () => {
+    const missingFields: string[] = [];
+    if (!newSession.student?.id) missingFields.push("Student");
+    if (!newSession.tutor?.id) missingFields.push("Tutor");
+    if (!newSession.date || !newSession.duration) missingFields.push("Day/Start/End Time");
+    if (!newSession.meeting?.id) missingFields.push("Meeting Link");
+
+    if (missingFields.length > 0) {
+      toast.error(
+        `Missing required field${missingFields.length > 1 ? "s" : ""}: ${missingFields.join(", ")}`,
+      );
+      return;
+    }
+
     try {
-      if (newSession) {
-        await addStandaloneSession(newSession as Session);
-      }
+      await addStandaloneSession(newSession as Session);
       fetchSessions(weekStart, weekEnd);
       toast.success("Added Session");
+      setIsAddSessionOpen(false);
     } catch (error) {
       toast.error("Unable to add session");
     }
@@ -580,11 +629,12 @@ const Schedule = () => {
   const sessionStats = useMemo(
     () => ({
       totalSessions: sessions.length,
+      completedSessions,
       tutorsInvolved: new Set(sessions.map((s) => s?.tutor?.id)).size,
       studentsThisWeek: new Set(sessions.map((s) => s?.student?.id)).size,
       totalStudents: students.length,
     }),
-    [sessions, students],
+    [sessions, students, completedSessions],
   );
 
   const SessionCard = ({ session }: { session: Session }) => (
@@ -599,9 +649,11 @@ const Schedule = () => {
           ? "bg-green-50 border-l-green-500 text-green-900"
           : session.status === "Cancelled"
             ? "bg-red-50 border-l-red-500 text-red-900"
-            : session.isStandalone == true
-              ? "bg-purple-50  border-l-purple-500 text-purple-900"
-              : "bg-blue-50 border-l-blue-500 text-blue-900",
+            : session.status === "Unconfirmed"
+              ? "bg-amber-50 border-l-amber-500 text-amber-900"
+              : session.isStandalone == true
+                ? "bg-purple-50  border-l-purple-500 text-purple-900"
+                : "bg-blue-50 border-l-blue-500 text-blue-900",
       )}
     >
       <p className="font-medium truncate">
@@ -664,6 +716,7 @@ const Schedule = () => {
                 {[
                   { color: "bg-green-500", label: "Complete" },
                   { color: "bg-red-500", label: "Cancelled" },
+                  { color: "bg-amber-500", label: "Unconfirmed" },
                   { color: "bg-blue-500", label: "Active" },
                   { color: "bg-purple-500", label: "Standalone" },
                 ].map(({ color, label }) => (
@@ -708,7 +761,7 @@ const Schedule = () => {
                   )}
                 </Button>
 
-                <Dialog>
+                <Dialog open={isAddSessionOpen} onOpenChange={setIsAddSessionOpen}>
                   <DialogTrigger asChild>
                     <Button size="sm" className="bg-connect-me-blue-4 hover:bg-connect-me-blue-5">
                       Add Session
@@ -744,71 +797,72 @@ const Schedule = () => {
                           }}
                           placeholder="Select a tutor"
                         />
-                        <div className="grid grid-cols-4 items-center gap-4">
-                          <Label htmlFor="startDate" className="text-right">
-                            Date
-                          </Label>
+                        <div className="grid gap-1.5">
+                          <Label htmlFor="sessionDay">Day</Label>
                           <Input
-                            id="startDate"
-                            name="startDate"
-                            type="datetime-local"
-                            defaultValue={formatDateForInput(newSession.date)}
-                            onBlur={async (e) => {
-                              const scheduledDate = new Date(e.target.value);
-                              const updatedSession: Partial<Session> = {
-                                ...newSession,
-                                date: scheduledDate.toISOString(),
-                              };
-                              await checkMeetingAvailabilites(updatedSession as Session);
-                              setNewSession(updatedSession);
+                            id="sessionDay"
+                            name="sessionDay"
+                            type="date"
+                            value={newSessionDay}
+                            onChange={(e) => {
+                              setNewSessionDay(e.target.value);
+                              updateSessionDateAndDuration(
+                                e.target.value,
+                                newSessionStartTime,
+                                newSessionEndTime,
+                              );
                             }}
                             disabled={isCheckingMeetingAvailability}
-                            className="col-span-3"
                           />
                         </div>
-                        <div className="grid grid-cols-4 items-center gap-4">
-                          <Label htmlFor="duration" className="text-right">
-                            Duration
-                          </Label>
-                          <div className="col-span-3">
-                            <Select
-                              onValueChange={(value) => {
-                                const duration = parseFloat(value);
-                                const updatedSession: Partial<Session> = {
-                                  ...newSession,
-                                  duration,
-                                };
-                                checkMeetingAvailabilites(updatedSession as Session);
-                                setNewSession(updatedSession);
-                              }}
-                            >
-                              <SelectTrigger className="w-full">
-                                <SelectValue placeholder="Select a time duration" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectGroup>
-                                  <SelectLabel>Duration</SelectLabel>
-                                  {Array.from({ length: 12 }, (_, i) => (i + 1) * 0.25).map(
-                                    (duration) => {
-                                      const minutes = (duration % 1) * 60;
-                                      const hours = Math.floor(duration);
-                                      return (
-                                        <SelectItem key={duration} value={duration.toString()}>
-                                          {hours} {hours > 1 ? "hours" : "hour"} {minutes} minutes
-                                        </SelectItem>
-                                      );
-                                    },
-                                  )}
-                                </SelectGroup>
-                              </SelectContent>
-                            </Select>
-                          </div>
+                        <div className="grid gap-1.5">
+                          <Label htmlFor="sessionStartTime">Start Time (EST)</Label>
+                          <Input
+                            id="sessionStartTime"
+                            name="sessionStartTime"
+                            type="time"
+                            value={newSessionStartTime}
+                            onChange={(e) => {
+                              setNewSessionStartTime(e.target.value);
+                              updateSessionDateAndDuration(
+                                newSessionDay,
+                                e.target.value,
+                                newSessionEndTime,
+                              );
+                            }}
+                            disabled={isCheckingMeetingAvailability}
+                          />
                         </div>
-                        <div className="grid grid-cols-4 items-center gap-4">
-                          <Label className="text-right">Meeting Link</Label>
-                          <div className="col-span-3">
+                        <div className="grid gap-1.5">
+                          <Label htmlFor="sessionEndTime">End Time (EST)</Label>
+                          <Input
+                            id="sessionEndTime"
+                            name="sessionEndTime"
+                            type="time"
+                            value={newSessionEndTime}
+                            onChange={(e) => {
+                              setNewSessionEndTime(e.target.value);
+                              updateSessionDateAndDuration(
+                                newSessionDay,
+                                newSessionStartTime,
+                                e.target.value,
+                              );
+                            }}
+                            disabled={isCheckingMeetingAvailability}
+                          />
+                        </div>
+                        {newSession.date && newSession.duration ? (
+                          <p className="-mt-2 text-xs text-muted-foreground">
+                            {getSessionTimespan(newSession.date, newSession.duration)} EST (
+                            {formatDurationLabel(newSession.duration)})
+                          </p>
+                        ) : null}
+                        <div className="grid gap-1.5">
+                          <Label>Meeting Link</Label>
+                          <div>
                             <Select
                               value={newSession?.meeting?.id || ""}
+                              disabled={!newSession.duration || isCheckingMeetingAvailability}
                               onValueChange={async (value) => {
                                 setNewSession({
                                   ...newSession,
@@ -818,7 +872,9 @@ const Schedule = () => {
                             >
                               <SelectTrigger>
                                 <SelectValue>
-                                  {newSession?.meeting?.name || "Select a meeting"}
+                                  {!newSession.duration
+                                    ? "Set a start and end time first"
+                                    : newSession?.meeting?.name || "Select a meeting"}
                                 </SelectValue>
                               </SelectTrigger>
                               <SelectContent>
@@ -844,7 +900,11 @@ const Schedule = () => {
                         </div>
                         <Button
                           onClick={handleAddSession}
-                          disabled={isCheckingMeetingAvailability}
+                          disabled={
+                            isCheckingMeetingAvailability ||
+                            !newSession.duration ||
+                            !newSession.meeting?.id
+                          }
                           className="bg-connect-me-blue-3"
                         >
                           {isCheckingMeetingAvailability ? (
@@ -868,6 +928,10 @@ const Schedule = () => {
             <span>
               <span className="font-medium text-gray-700">{sessionStats.totalSessions}</span>{" "}
               sessions
+            </span>
+            <span>
+              <span className="font-medium text-gray-700">{sessionStats.completedSessions}</span>{" "}
+              completed
             </span>
             <span>
               <span className="font-medium text-gray-700">{sessionStats.tutorsInvolved}</span>{" "}
@@ -1053,9 +1117,11 @@ const Schedule = () => {
                                     ? "bg-green-100 text-green-800"
                                     : session.status === "Cancelled"
                                       ? "bg-red-100 text-red-800"
-                                      : session.isStandalone
-                                        ? "bg-purple-100 text-purple-800"
-                                        : "bg-blue-100 text-blue-800",
+                                      : session.status === "Unconfirmed"
+                                        ? "bg-amber-100 text-amber-800"
+                                        : session.isStandalone
+                                          ? "bg-purple-100 text-purple-800"
+                                          : "bg-blue-100 text-blue-800",
                                 )}
                               >
                                 {session.tutor?.firstName} / {session.student?.firstName}
@@ -1235,6 +1301,7 @@ const Schedule = () => {
                     sefFlags.push("question/concern");
                   if ((selectedSession as any)?.isFirstSession) sefFlags.push("first session");
                   if (selectedSession.status === "Cancelled") sefFlags.push("cancelled");
+                  if (selectedSession.status === "Unconfirmed") sefFlags.push("unconfirmed");
                   let sefReasonText = rawSef ?? "";
                   if (rawSef && rawSef.trim().startsWith("{")) {
                     try {

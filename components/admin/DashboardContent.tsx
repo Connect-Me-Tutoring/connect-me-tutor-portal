@@ -41,6 +41,9 @@ import { getSupabase } from "@/lib/supabase/client";
 import { Session, Profile } from "@/types";
 import { formatSessionDate, formatDateAdmin } from "@/lib/utils";
 import { time } from "console";
+import { MobileCard } from "@/components/ui/mobile-card";
+import { LoadMoreButton } from "@/components/ui/load-more-button";
+import { useLoadMore } from "@/hooks/useLoadMore";
 
 const AdminDashboard = () => {
   const supabase = getSupabase();
@@ -118,6 +121,12 @@ const AdminDashboard = () => {
     currentPage * rowsPerPage,
   );
 
+  const {
+    visibleItems: visibleSessions,
+    hasMore: hasMoreSessions,
+    loadMore: loadMoreSessions,
+  } = useLoadMore(filteredSessions);
+
   return (
     <main className="p-8">
       <h1 className="text-3xl font-bold mb-6">Admin Dashboard</h1>
@@ -136,162 +145,259 @@ const AdminDashboard = () => {
             </div>
           </div>
 
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Date</TableHead>
-                <TableHead>Title</TableHead>
-                <TableHead>Tutor</TableHead>
-                <TableHead>Student</TableHead>
-                <TableHead>Meeting</TableHead>
-                <TableHead className="w-[50px]"></TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {paginatedSessions.map((session, index) => (
-                <TableRow
-                  key={index}
-                  className={
-                    session.status === "Active"
-                      ? ""
-                      : session.status === "Complete"
-                        ? "bg-green-200 opacity-25 pointer-events-none"
-                        : session.status === "Cancelled"
-                          ? "bg-red-100 opacity-25 pointer-events-none"
-                          : ""
-                  }
-                >
-                  <TableCell>
-                    {formatDateAdmin(session.date, {
-                      includeTime: true,
-                      includeDate: true,
-                    })}
-                  </TableCell>
-                  <TableCell className="font-medium">
-                    Tutoring Session with Tutor {session.tutor?.firstName} {session.tutor?.lastName}{" "}
-                    and Student {session.student?.firstName} {session.student?.lastName}
-                  </TableCell>
-                  <TableCell>
-                    {session.tutor?.firstName} {session.tutor?.lastName}
-                  </TableCell>
-                  <TableCell>
-                    {session.student?.firstName} {session.student?.lastName}
-                  </TableCell>
-                  <TableCell>
-                    {session?.meeting?.meetingId ? (
-                      <button
-                        onClick={() => (window.location.href = `/meeting/${session?.meeting?.id}`)}
-                        className="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600"
-                      >
-                        View Link
-                      </button>
-                    ) : (
-                      <button className="text-black px-3 py-1 border border-gray-200 rounded">
-                        N/A
-                      </button>
-                    )}
-                  </TableCell>
-                  <TableCell>
-                    <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-                      <DialogTrigger asChild>
-                        <Button
-                          variant="outline"
-                          onClick={() => {
-                            setSelectedSession(session);
-                            setIsDialogOpen(true);
-                          }}
+          <div className="hidden md:block w-full">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Date</TableHead>
+                  <TableHead>Title</TableHead>
+                  <TableHead>Tutor</TableHead>
+                  <TableHead>Student</TableHead>
+                  <TableHead>Meeting</TableHead>
+                  <TableHead className="w-[50px]"></TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {paginatedSessions.map((session, index) => (
+                  <TableRow
+                    key={index}
+                    className={
+                      session.status === "Active"
+                        ? ""
+                        : session.status === "Complete"
+                          ? "bg-green-200 opacity-25 pointer-events-none"
+                          : session.status === "Cancelled"
+                            ? "bg-red-100 opacity-25 pointer-events-none"
+                            : session.status === "Unconfirmed"
+                              ? "bg-amber-100 opacity-25 pointer-events-none"
+                              : ""
+                    }
+                  >
+                    <TableCell>
+                      {formatDateAdmin(session.date, {
+                        includeTime: true,
+                        includeDate: true,
+                      })}
+                    </TableCell>
+                    <TableCell className="font-medium">
+                      Tutoring Session with Tutor {session.tutor?.firstName}{" "}
+                      {session.tutor?.lastName} and Student {session.student?.firstName}{" "}
+                      {session.student?.lastName}
+                    </TableCell>
+                    <TableCell>
+                      {session.tutor?.firstName} {session.tutor?.lastName}
+                    </TableCell>
+                    <TableCell>
+                      {session.student?.firstName} {session.student?.lastName}
+                    </TableCell>
+                    <TableCell>
+                      {session?.meeting?.meetingId ? (
+                        <button
+                          onClick={() =>
+                            (window.location.href = `/meeting/${session?.meeting?.id}`)
+                          }
+                          className="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600"
                         >
-                          Reschedule
-                        </Button>
-                      </DialogTrigger>
-                      <DialogContent>
-                        <DialogHeader>
-                          <DialogTitle>
-                            Reschedule Session with {session.tutor?.firstName}{" "}
-                            {session.tutor?.lastName} on {formatSessionDate(session.date)}
-                          </DialogTitle>
-                        </DialogHeader>
-                        <div className="py-4 space-y-6">
-                          <Input
-                            type="datetime-local"
-                            defaultValue={selectedSession?.date}
-                            onChange={(e) => {
-                              if (selectedSession) {
-                                setSelectedSessionDate(e.target.value);
-                              }
-                            }}
-                          />
+                          View Link
+                        </button>
+                      ) : (
+                        <button className="text-black px-3 py-1 border border-gray-200 rounded">
+                          N/A
+                        </button>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+                        <DialogTrigger asChild>
                           <Button
-                            variant="destructive"
-                            onClick={() =>
-                              selectedSession &&
-                              selectedSessionDate &&
-                              handleReschedule(selectedSession?.id, selectedSessionDate)
-                            }
+                            variant="outline"
+                            onClick={() => {
+                              setSelectedSession(session);
+                              setIsDialogOpen(true);
+                            }}
                           >
                             Reschedule
                           </Button>
-                        </div>
-                      </DialogContent>
-                    </Dialog>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+                        </DialogTrigger>
+                        <DialogContent>
+                          <DialogHeader>
+                            <DialogTitle>
+                              Reschedule Session with {session.tutor?.firstName}{" "}
+                              {session.tutor?.lastName} on {formatSessionDate(session.date)}
+                            </DialogTitle>
+                          </DialogHeader>
+                          <div className="py-4 space-y-6">
+                            <Input
+                              type="datetime-local"
+                              defaultValue={selectedSession?.date}
+                              onChange={(e) => {
+                                if (selectedSession) {
+                                  setSelectedSessionDate(e.target.value);
+                                }
+                              }}
+                            />
+                            <Button
+                              variant="destructive"
+                              onClick={() =>
+                                selectedSession &&
+                                selectedSessionDate &&
+                                handleReschedule(selectedSession?.id, selectedSessionDate)
+                              }
+                            >
+                              Reschedule
+                            </Button>
+                          </div>
+                        </DialogContent>
+                      </Dialog>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
 
-          <div className="mt-4 flex justify-between items-center">
-            <span>{filteredSessions.length} row(s) total.</span>
-            <div className="flex items-center space-x-2">
-              <span>Rows per page</span>
-              <Select value={rowsPerPage.toString()} onValueChange={handleRowsPerPageChange}>
-                <SelectTrigger className="w-[70px]">
-                  <SelectValue placeholder={rowsPerPage.toString()} />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="10">10</SelectItem>
-                  <SelectItem value="20">20</SelectItem>
-                  <SelectItem value="50">50</SelectItem>
-                </SelectContent>
-              </Select>
-              <span>
-                Page {currentPage} of {totalPages}
-              </span>
-              <div className="flex space-x-1">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => handlePageChange(1)}
-                  disabled={currentPage === 1}
-                >
-                  <ChevronsLeft className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => handlePageChange(currentPage - 1)}
-                  disabled={currentPage === 1}
-                >
-                  <ChevronLeft className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => handlePageChange(currentPage + 1)}
-                  disabled={currentPage === totalPages}
-                >
-                  <ChevronRight className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => handlePageChange(totalPages)}
-                  disabled={currentPage === totalPages}
-                >
-                  <ChevronsRight className="h-4 w-4" />
-                </Button>
+            <div className="mt-4 hidden md:flex justify-between items-center">
+              <span>{filteredSessions.length} row(s) total.</span>
+              <div className="flex items-center space-x-2">
+                <span>Rows per page</span>
+                <Select value={rowsPerPage.toString()} onValueChange={handleRowsPerPageChange}>
+                  <SelectTrigger className="w-[70px]">
+                    <SelectValue placeholder={rowsPerPage.toString()} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="10">10</SelectItem>
+                    <SelectItem value="20">20</SelectItem>
+                    <SelectItem value="50">50</SelectItem>
+                  </SelectContent>
+                </Select>
+                <span>
+                  Page {currentPage} of {totalPages}
+                </span>
+                <div className="flex space-x-1">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => handlePageChange(1)}
+                    disabled={currentPage === 1}
+                  >
+                    <ChevronsLeft className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => handlePageChange(currentPage - 1)}
+                    disabled={currentPage === 1}
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => handlePageChange(currentPage + 1)}
+                    disabled={currentPage === totalPages}
+                  >
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => handlePageChange(totalPages)}
+                    disabled={currentPage === totalPages}
+                  >
+                    <ChevronsRight className="h-4 w-4" />
+                  </Button>
+                </div>
               </div>
             </div>
+          </div>
+
+          <div className="md:hidden space-y-4">
+            {visibleSessions.map((session, index) => (
+              <MobileCard
+                key={index}
+                className={
+                  session.status === "Complete"
+                    ? "bg-green-200 opacity-25 pointer-events-none"
+                    : session.status === "Cancelled"
+                      ? "bg-red-100 opacity-25 pointer-events-none"
+                      : session.status === "Unconfirmed"
+                        ? "bg-amber-100 opacity-25 pointer-events-none"
+                        : undefined
+                }
+              >
+                <div className="font-medium text-sm">
+                  Tutoring Session with Tutor {session.tutor?.firstName} {session.tutor?.lastName}{" "}
+                  and Student {session.student?.firstName} {session.student?.lastName}
+                </div>
+                <div className="text-sm text-muted-foreground">
+                  {formatDateAdmin(session.date, { includeTime: true, includeDate: true })}
+                </div>
+                <div className="text-sm space-y-1">
+                  <div>
+                    Tutor: {session.tutor?.firstName} {session.tutor?.lastName}
+                  </div>
+                  <div>
+                    Student: {session.student?.firstName} {session.student?.lastName}
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  {session?.meeting?.meetingId ? (
+                    <button
+                      onClick={() => (window.location.href = `/meeting/${session?.meeting?.id}`)}
+                      className="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600"
+                    >
+                      View Link
+                    </button>
+                  ) : (
+                    <button className="text-black px-3 py-1 border border-gray-200 rounded">
+                      N/A
+                    </button>
+                  )}
+                  <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+                    <DialogTrigger asChild>
+                      <Button
+                        variant="outline"
+                        onClick={() => {
+                          setSelectedSession(session);
+                          setIsDialogOpen(true);
+                        }}
+                      >
+                        Reschedule
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent>
+                      <DialogHeader>
+                        <DialogTitle>
+                          Reschedule Session with {session.tutor?.firstName}{" "}
+                          {session.tutor?.lastName} on {formatSessionDate(session.date)}
+                        </DialogTitle>
+                      </DialogHeader>
+                      <div className="py-4 space-y-6">
+                        <Input
+                          type="datetime-local"
+                          defaultValue={selectedSession?.date}
+                          onChange={(e) => {
+                            if (selectedSession) {
+                              setSelectedSessionDate(e.target.value);
+                            }
+                          }}
+                        />
+                        <Button
+                          variant="destructive"
+                          onClick={() =>
+                            selectedSession &&
+                            selectedSessionDate &&
+                            handleReschedule(selectedSession?.id, selectedSessionDate)
+                          }
+                        >
+                          Reschedule
+                        </Button>
+                      </div>
+                    </DialogContent>
+                  </Dialog>
+                </div>
+              </MobileCard>
+            ))}
+            <LoadMoreButton hasMore={hasMoreSessions} onClick={loadMoreSessions} />
           </div>
         </div>
       </div>

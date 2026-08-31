@@ -71,7 +71,7 @@ export async function getAllProfiles(
   role: "Student" | "Tutor" | "Admin",
   orderBy?: string | null,
   ascending?: boolean | null,
-  status?: Profile["status"] | null,
+  status?: NonNullable<"Active" | "Inactive">,
 ): Promise<Profile[] | null> {
   await requireAdmin();
   const supabase = await createClient();
@@ -176,7 +176,8 @@ export const getProfileFromUserSettings = async (userId: string): Promise<Profil
           status,
           student_number,
           settings_id,
-          languages_spoken
+          languages_spoken,
+          orientation_completed_at
         )
       `,
       )

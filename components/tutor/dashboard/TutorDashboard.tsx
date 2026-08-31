@@ -7,6 +7,7 @@ import CompletedSessionsTable from "../components/CompletedSessionsTable";
 import { updateSession } from "@/lib/actions/session/server.actions";
 import { undoCancelSession } from "@/lib/actions/tutor/actions";
 import { rescheduleSession, cancelSession } from "@/lib/actions/session/server.actions";
+import { getTutorEnrollmentsMissingSEF } from "@/lib/actions/enrollment/server.actions";
 import { Session, Profile, Meeting } from "@/types";
 import toast from "react-hot-toast";
 import { useDashboardContext } from "@/lib/contexts/dashboardContext";
@@ -21,9 +22,36 @@ import {
 } from "@/lib/actions/email/server.actions";
 import { StudentAnnouncementsRoomId } from "@/constants/chat";
 import { format } from "date-fns";
+import { useLoadMore } from "@/hooks/useLoadMore";
 
 const TutorDashboard = () => {
   const TC = useDashboardContext();
+
+  useEffect(() => {
+    if (!TC.profile?.id) return;
+
+    getTutorEnrollmentsMissingSEF(TC.profile.id, 3)
+      .then((enrollments) => {
+        if (enrollments.length === 0) return;
+
+        const studentNames = enrollments
+          .map((enrollment) =>
+            enrollment.student
+              ? `${enrollment.student.first_name} ${enrollment.student.last_name}`
+              : null,
+          )
+          .filter((name): name is string => Boolean(name))
+          .join(", ");
+
+        toast.error(
+          `You have missing Session Exit Forms for: ${studentNames}. Please submit them soon to avoid your enrollment being deactivated.`,
+          { duration: 8000 },
+        );
+      })
+      .catch((error) => {
+        console.error("Failed to check for missing Session Exit Forms:", error);
+      });
+  }, [TC.profile?.id]);
 
   useEffect(() => {
     const filtered = TC.sessions.filter(
@@ -153,8 +181,12 @@ const TutorDashboard = () => {
       updatedSession.status = "Complete";
       updatedSession.isQuestionOrConcern = isQuestionOrConcern;
       updatedSession.isFirstSession = isFirstSession;
-      await sendStudentSEFFeedbackEmail(session);
       await updateSession(updatedSession);
+      try {
+        await sendStudentSEFFeedbackEmail(session);
+      } catch (error) {
+        console.error("Failed to send student SEF feedback email:", error);
+      }
       TC.setCurrentSessions(
         TC.currentSessions.map((e: Session) => (e.id === updatedSession.id ? updatedSession : e)),
       );
@@ -252,6 +284,18 @@ const TutorDashboard = () => {
     TC.currentPagePastSessions * TC.rowsPerPagePastSessions,
   );
 
+  const {
+    visibleItems: visibleActiveSessions,
+    hasMore: hasMoreActiveSessions,
+    loadMore: loadMoreActiveSessions,
+  } = useLoadMore(TC.filteredSessions);
+
+  const {
+    visibleItems: visiblePastSessions,
+    hasMore: hasMorePastSessions,
+    loadMore: loadMorePastSessions,
+  } = useLoadMore(TC.filteredPastSessions);
+
   const handleInputChange = (e: { target: { name: string; value: string } }) => {
     const { name, value } = e.target;
 
@@ -316,6 +360,9 @@ const TutorDashboard = () => {
 
             <ActiveSessionsTable
               paginatedSessions={paginatedSessions}
+              visibleSessions={visibleActiveSessions}
+              hasMore={hasMoreActiveSessions}
+              loadMore={loadMoreActiveSessions}
               meetings={TC.meetings}
               totalPages={totalActiveSessionsPages}
               handleStatusChange={handleStatusChange}
@@ -347,6 +394,9 @@ const TutorDashboard = () => {
 
             <CompletedSessionsTable
               paginatedSessions={paginatedPastSessions}
+              visibleSessions={visiblePastSessions}
+              hasMore={hasMorePastSessions}
+              loadMore={loadMorePastSessions}
               totalPages={totalPastSessionsPages}
               handlePageChange={handlePastSessionsPageChange}
               handleRowsPerPageChange={handlePastSessionsRowsPerPageChange}

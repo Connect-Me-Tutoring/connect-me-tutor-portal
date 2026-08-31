@@ -17,7 +17,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { getProfile, getProfileWithProfileId } from "@/lib/actions/user/actions";
+import { getProfile, getProfileWithProfileId } from "@/lib/actions/user/client.actions";
 import { createClient } from "@/lib/supabase/client";
 import { Profile } from "@/types";
 import toast, { Toaster } from "react-hot-toast";

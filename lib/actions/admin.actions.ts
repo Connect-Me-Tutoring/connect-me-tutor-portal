@@ -9,7 +9,7 @@ import {
   sendScheduledEmailsBeforeSessions,
   updateScheduledEmailBeforeSessions,
 } from "./email/server.actions";
-import { getProfileWithProfileId, getProfileByEmail } from "./user/actions";
+import { getProfileWithProfileId, getProfileByEmail } from "./user/client.actions";
 import {
   addDays,
   format,
@@ -31,7 +31,6 @@ import ResetPassword from "@/app/(auth)/set-password/page";
 import { getStudentSessions } from "./student/actions";
 import { date } from "zod";
 import toast from "react-hot-toast";
-import { DatabaseIcon } from "lucide-react";
 import { Table } from "../supabase/tables";
 import { handleCalculateDuration } from "@/lib/utils";
 import {
@@ -40,11 +39,6 @@ import {
   tableToInterfaceSessions,
   tableToInterfaceMeetings,
 } from "../utils/type-utils";
-import { createPairingRequest } from "./pairing/client.actions";
-import { scheduleMultipleSessionReminders } from "../twilio";
-import { removeFutureSessions } from "./enrollment/server.actions";
-import type { Database } from "@/types/database.types";
-// import { getMeeting } from "./meeting.actions";
 
 const { fromZonedTime } = DateFNS;
 
@@ -60,7 +54,7 @@ export async function getAllProfiles(
   role: "Student" | "Tutor" | "Admin",
   orderBy?: string | null,
   ascending?: boolean | null,
-  status?: Profile["status"] | null,
+  status?: NonNullable<"Active" | "Inactive">,
 ): Promise<Profile[] | null> {
   try {
     const profileFields = `

@@ -3,7 +3,7 @@
 import { PairingLog, PairingRequest, SharedPairing } from "@/types/pairing";
 import { mapRpcPairingLog } from "@/lib/pairing/mapDisplayLogs";
 import { createClient } from "@supabase/supabase-js";
-import { getProfile, getProfileRole } from "../user/actions";
+import { getProfile, getProfileRole } from "../user/client.actions";
 import { supabase } from "../../supabase/client";
 import { getAccountEnrollments } from "../enrollment/client.actions";
 import { Table } from "../../supabase/tables";
@@ -20,7 +20,7 @@ import {
 } from "../email/server.actions";
 import { addEnrollment } from "../enrollment/server.actions";
 import { getOverlappingAvailabilites } from "../enrollment/client.actions";
-import { getProfileWithProfileId } from "../user/actions";
+import { getProfileWithProfileId } from "../user/client.actions";
 import { getMeeting } from "../meeting/client.actions";
 import { sendPairingAlertToWebhook } from "./server.actions";
 
