@@ -28,7 +28,7 @@ export default async function PairingChatRoomPage(props: Props) {
 
       <ChatRoom
         type="pairing"
-        roomId={id}
+        roomId={params.id}
         supabaseUrl={supabaseConfig.url!}
         supabaseKey={supabaseConfig.key!}
       />
