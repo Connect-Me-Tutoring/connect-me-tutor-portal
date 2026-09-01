@@ -7,7 +7,7 @@ import type { AnalysisResult, BreakdownResult } from "./results";
  *
  * The schema is strict on purpose: the database function and this file are
  * the two halves of one contract
- * (supabase/migrations/20260827000000_add_data_portal_overview.sql), and a
+ * (supabase/migrations/20260831000000_add_data_portal_overview.sql), and a
  * payload that does not match exactly is treated as an error rather than
  * partially rendered.
  *

@@ -252,14 +252,13 @@ declare
 begin
   -- The gate. auth.uid() comes from the caller's verified JWT, so this
   -- decides for the calling user only, from the same place the app's own
-  -- requireAdmin() looks. A Deleted profile is never an admin here.
+  -- requireAdmin() looks: the active profile must have the Admin role.
   if not exists (
     select 1
     from public.user_settings us
     join public."Profiles" p on p.id = us.last_active_profile_id
     where us.user_id = auth.uid()
       and p.role = 'Admin'
-      and coalesce(p.status, 'Active') <> 'Deleted'
   ) then
     raise exception 'Admin access required';
   end if;
