@@ -73,7 +73,8 @@ export async function requireAuthenticatedProfile(): Promise<{
 
 export async function requireAdmin(): Promise<{ user: User; profile: Profile }> {
   const ctx = await requireAuthenticatedProfile();
-  if (ctx.profile.role !== "Admin") {
+  // A deactivated admin is not an admin; matches public.is_active_admin().
+  if (ctx.profile.role !== "Admin" || ctx.profile.status !== "Active") {
     authzError("Admin access required");
   }
   return ctx;
