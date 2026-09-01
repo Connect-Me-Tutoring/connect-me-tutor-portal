@@ -36,6 +36,7 @@ export const overviewPayloadSchema = z.strictObject({
     bucket: z.enum(["week", "month"]),
     points: z
       .array(z.strictObject({ label: z.string().min(1).max(40), value: count, partial: z.boolean() }))
+      .min(1)
       .max(400),
   }),
   signupFunnel: z.strictObject({
@@ -99,10 +100,10 @@ function sessionsSection(payload: OverviewPayload): OverviewSection {
   const rangeLabel = RANGE_LABEL[payload.dateRange];
 
   const limitations = [
-    `Completed sessions only, counted per calendar ${bucket}.`,
+    `Completed sessions only, counted per calendar ${bucket} in Eastern time.`,
     ...(partial.length > 0
       ? [
-          `${partial.map((point) => point.label).join(", ")} is still in progress — shown, but not comparable with a finished ${bucket} and excluded from the total.`,
+          `${partial.map((point) => point.label).join(", ")} is only partly inside this range — shown, but not comparable with a full ${bucket} and excluded from the total.`,
         ]
       : []),
   ];

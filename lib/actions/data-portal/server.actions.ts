@@ -25,8 +25,7 @@ import {
  */
 
 export type OverviewOutcome =
-  | { ok: true; generatedAt: string; sections: OverviewSection[] }
-  | { ok: false; error: string };
+  { ok: true; generatedAt: string; sections: OverviewSection[] } | { ok: false; error: string };
 
 export const getDataPortalOverview = async (dateRange: string): Promise<OverviewOutcome> => {
   try {
@@ -41,8 +40,10 @@ export const getDataPortalOverview = async (dateRange: string): Promise<Overview
   }
 
   const supabase = await createClient();
+  // Calendar weeks and months are Eastern, like the rest of the portal.
   const { data, error } = await supabase.rpc("data_portal_overview", {
     p_date_range: parsedRange.data,
+    p_tz: "America/New_York",
   });
 
   if (error) {

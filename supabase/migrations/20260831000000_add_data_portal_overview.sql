@@ -22,8 +22,9 @@
 --     a student is counted in the window where their 30-day observation
 --     period CLOSED, so short ranges stay honest.
 --   - Retention is measured at day 90, as at least one completed session in
---     the 45 days ending there; a cohort appears in the window where it
---     REACHED day 90, and younger cohorts are omitted, never shown as zero.
+--     the 45 days ending there; a cohort appears in the window where its
+--     youngest member REACHED day 90, and younger cohorts are omitted, never
+--     shown as zero.
 --   - Subject demand joins pairing_requests through both id conventions the
 --     app tolerates (profile id and auth user id).
 --   - There is deliberately no regional section: the records carry no
@@ -166,12 +167,16 @@ as $$
   limit 100;
 $$;
 
+-- The return shape changed (last_signup added), so an earlier definition
+-- cannot be replaced in place.
+drop function if exists analysis.tutor_retention(int, int, text);
+
 create or replace function analysis.tutor_retention(
   p_horizon_days int,
   p_activity_days int,
   p_tz text
 )
-returns table (cohort_month date, cohort_size bigint, retained bigint)
+returns table (cohort_month date, last_signup date, cohort_size bigint, retained bigint)
 language sql
 stable
 security definer
@@ -187,6 +192,7 @@ as $$
   )
   select
     t.cohort_month,
+    max(t.created_at at time zone p_tz)::date as last_signup,
     count(*)::bigint as cohort_size,
     count(*) filter (
       where exists (
@@ -241,7 +247,6 @@ declare
   v_bucket text;
   v_first_period date;
   v_current_period date;
-  v_start_ts timestamptz;
   v_window_ts timestamptz;
   v_sessions jsonb;
   v_funnel record;
@@ -252,13 +257,16 @@ declare
 begin
   -- The gate. auth.uid() comes from the caller's verified JWT, so this
   -- decides for the calling user only, from the same place the app's own
-  -- requireAdmin() looks: the active profile must have the Admin role.
+  -- requireAdmin() looks: the active profile must be an Active Admin.
   if not exists (
     select 1
     from public.user_settings us
-    join public."Profiles" p on p.id = us.last_active_profile_id
+    join public."Profiles" p
+      on p.id = us.last_active_profile_id
+     and p.user_id = us.user_id
     where us.user_id = auth.uid()
       and p.role = 'Admin'
+      and p.status = 'Active'
   ) then
     raise exception 'Admin access required';
   end if;
@@ -269,39 +277,43 @@ begin
 
   v_today := (now() at time zone p_tz)::date;
 
+  -- "Last N days" is N calendar days including today.
   if p_date_range = 'last-30-days' then
-    v_range_start := v_today - 30;
+    v_range_start := v_today - 29;
     v_bucket := 'week';
   elsif p_date_range = 'last-90-days' then
-    v_range_start := v_today - 90;
+    v_range_start := v_today - 89;
     v_bucket := 'week';
   else
     v_range_start := make_date(extract(year from v_today)::int, 1, 1);
     v_bucket := 'month';
   end if;
 
-  -- Sessions open at the start of the period containing the range start, so
-  -- the first bucket is a whole period rather than a clipped one that would
-  -- read as a dip. Instants are local midnights in p_tz.
+  -- Periods are labelled from the start of the one containing the range
+  -- start, but sessions are counted from the range start itself, so the
+  -- first bucket never includes days the range does not claim; it is
+  -- flagged partial, like the period containing today. Instants are local
+  -- midnights in p_tz.
   v_first_period := date_trunc(v_bucket, v_range_start::timestamp)::date;
   v_current_period := date_trunc(v_bucket, v_today::timestamp)::date;
-  v_start_ts := (v_first_period::timestamp) at time zone p_tz;
   v_window_ts := (v_range_start::timestamp) at time zone p_tz;
 
-  -- Session volume, zero-filled: a silent week is a fact, not a gap. The
-  -- period containing today is flagged partial and rendered as such.
+  -- Session volume, zero-filled: a silent week is a fact, not a gap. A period
+  -- that is not wholly inside the range (the first, if it starts before the
+  -- range; the one containing today) is flagged partial.
   select coalesce(jsonb_agg(jsonb_build_object(
            'label', case when v_bucket = 'week'
                          then to_char(periods.period, 'Mon FMDD')
                          else to_char(periods.period, 'Mon') end,
            'value', coalesce(counted.session_count, 0),
-           'partial', (periods.period + ('1 ' || v_bucket)::interval)::date > v_today
+           'partial', periods.period::date < v_range_start
+                      or (periods.period + ('1 ' || v_bucket)::interval)::date > v_today
          ) order by periods.period), '[]'::jsonb)
   into v_sessions
   from generate_series(
          v_first_period::timestamp, v_current_period::timestamp, ('1 ' || v_bucket)::interval
        ) as periods(period)
-  left join analysis.sessions_over_time(v_start_ts, now(), v_bucket, p_tz) as counted
+  left join analysis.sessions_over_time(v_window_ts, now(), v_bucket, p_tz) as counted
     on counted.period_start = periods.period::date;
 
   select * into v_funnel from analysis.signup_funnel(v_window_ts, now(), 30);
@@ -318,8 +330,9 @@ begin
   into v_demand, v_demand_reads
   from analysis.subject_demand(v_window_ts, now()) as d;
 
-  -- A cohort belongs to the window in which its youngest member reached day
-  -- 90; cohorts that have not reached it are omitted, never shown as zero.
+  -- A cohort belongs to the window in which its youngest member (last_signup)
+  -- reached day 90; cohorts that have not reached it are omitted, never shown
+  -- as zero.
   select coalesce(jsonb_agg(jsonb_build_object(
            'label', to_char(r.cohort_month, 'Mon YYYY'),
            'cohortSize', r.cohort_size,
@@ -328,8 +341,7 @@ begin
          coalesce(sum(r.cohort_size), 0)
   into v_retention, v_retention_rows
   from analysis.tutor_retention(90, 45, p_tz) as r
-  where (r.cohort_month + interval '1 month' - interval '1 day')::date + 90
-        between v_range_start and v_today;
+  where r.last_signup + 90 between v_range_start and v_today;
 
   -- One audit row per overview read: who, which window, when. Never a value
   -- from the results — the log must not become a copy of the data.

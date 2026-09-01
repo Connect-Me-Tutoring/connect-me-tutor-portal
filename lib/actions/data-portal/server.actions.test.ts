@@ -79,7 +79,10 @@ describe("getDataPortalOverview", () => {
 
     const outcome = await getDataPortalOverview("last-90-days");
 
-    expect(rpc).toHaveBeenCalledWith("data_portal_overview", { p_date_range: "last-90-days" });
+    expect(rpc).toHaveBeenCalledWith("data_portal_overview", {
+      p_date_range: "last-90-days",
+      p_tz: "America/New_York",
+    });
     if (!outcome.ok) throw new Error("expected success");
     expect(outcome.sections.map((section) => section.id)).toEqual([
       "sessions",

@@ -20,7 +20,14 @@ export function DataPortalPage() {
     const serial = ++requestSerial.current;
     setState({ status: "loading" });
 
-    const outcome = await getDataPortalOverview(range);
+    let outcome: Awaited<ReturnType<typeof getDataPortalOverview>>;
+    try {
+      outcome = await getDataPortalOverview(range);
+    } catch {
+      // Transport or client failures reject instead of returning; they must
+      // land in the error state rather than leave the skeleton up forever.
+      outcome = { ok: false, error: "The overview could not be loaded. Try again in a moment." };
+    }
     // A stale response (range changed mid-flight) must not overwrite the
     // newer request's state.
     if (serial !== requestSerial.current) return;
