@@ -129,7 +129,11 @@ values
 insert into "Pairings" (id, tutor_id, student_id, created_at) values
   ('bbbbbbbb-0000-0000-0000-00000000000a',
    'aaaaaaaa-0000-0000-0000-00000000000b', 'aaaaaaaa-0000-0000-0000-00000000000c',
-   now() - interval '45 days');
+   now() - interval '45 days'),
+  -- the same student with a different tutor, so the first tutor must not see it
+  ('bbbbbbbb-0000-0000-0000-00000000000b',
+   'aaaaaaaa-0000-0000-0000-00000000000e', 'aaaaaaaa-0000-0000-0000-00000000000c',
+   now() - interval '20 days');
 
 insert into "Sessions" (id, tutor_id, student_id, date, status, duration) values
   ('cccccccc-0000-0000-0000-00000000000a',
@@ -141,14 +145,18 @@ insert into "Sessions" (id, tutor_id, student_id, date, status, duration) values
 
 insert into pairing_requests (id, type, user_id, created_at, priority) values
   ('dddddddd-0000-0000-0000-00000000000a', 'student',
-   'aaaaaaaa-0000-0000-0000-00000000000c', now() - interval '50 days', 1);
+   'aaaaaaaa-0000-0000-0000-00000000000c', now() - interval '50 days', 1),
+  ('dddddddd-0000-0000-0000-00000000000b', 'tutor',
+   'aaaaaaaa-0000-0000-0000-00000000000b', now() - interval '40 days', 1);
 
 -- These three carry no fixture rows of their own elsewhere in the file, and a
 -- table nobody populated would satisfy "anon sees nothing" without RLS doing
 -- any work at all.
 insert into pairing_matches (id, tutor_id, student_id, similarity) values
   ('eeeeeeee-0000-0000-0000-00000000000a',
-   'aaaaaaaa-0000-0000-0000-00000000000b', 'aaaaaaaa-0000-0000-0000-00000000000c', 0.9);
+   'aaaaaaaa-0000-0000-0000-00000000000b', 'aaaaaaaa-0000-0000-0000-00000000000c', 0.9),
+  ('eeeeeeee-0000-0000-0000-00000000000b',
+   'aaaaaaaa-0000-0000-0000-00000000000e', 'aaaaaaaa-0000-0000-0000-00000000000c', 0.7);
 
 insert into pairing_logs (id, message, type) values
   ('ffffffff-0000-0000-0000-00000000000a', 'paired a student', 'pairing-match');
@@ -193,6 +201,69 @@ select pg_temp.expect_error('anon cannot call the overview',
 
 select pg_temp.expect_no_rows_changed('anon cannot promote anyone',
   $q$update "Profiles" set role = 'Admin' where id = 'aaaaaaaa-0000-0000-0000-00000000000b'$q$);
+
+reset role;
+
+-- ---------------------------------------------------------------------------
+-- Row-scoped reads: a signed-in non-admin sees their own rows and no others
+-- ---------------------------------------------------------------------------
+-- The fixtures hold two pairings, two matches and two requests, split between
+-- two different tutors, so each of these counts distinguishes "scoped" from
+-- "happened to be the only row".
+
+select pg_temp.as_user('22222222-2222-2222-2222-222222222222');
+
+select pg_temp.expect_rows('tutor sees only their own pairing',
+  'select 1 from "Pairings"', 1);
+select pg_temp.expect_rows('tutor sees only their own pairing match',
+  'select 1 from pairing_matches', 1);
+select pg_temp.expect_rows('tutor sees only their own pairing request',
+  'select 1 from pairing_requests', 1);
+select pg_temp.expect_rows('tutor sees no pairing logs',
+  'select 1 from pairing_logs', 0);
+select pg_temp.expect_rows('tutor sees no availability rows',
+  'select 1 from "User_Availabilities"', 0);
+
+-- Students and tutors write to the log when they enter the queue or answer a
+-- match, so losing the read must not cost them the write.
+select pg_temp.expect_rows_changed('tutor may still write a pairing log',
+  $q$insert into pairing_logs (message, type) values ('entered the queue', 'pairing-match')$q$, 1);
+
+reset role;
+
+select pg_temp.as_user('33333333-3333-3333-3333-333333333333');
+
+-- This student is in both pairings, so a scoped policy is not simply hiding
+-- the second row from everyone.
+select pg_temp.expect_rows('student sees both pairings they are in',
+  'select 1 from "Pairings"', 2);
+select pg_temp.expect_rows('student sees only their own pairing request',
+  'select 1 from pairing_requests', 1);
+
+reset role;
+
+select pg_temp.as_user('44444444-4444-4444-4444-444444444444');
+
+select pg_temp.expect_rows('inactive admin gets no admin-wide read of pairings',
+  'select 1 from "Pairings"', 0);
+select pg_temp.expect_rows('inactive admin sees no pairing logs',
+  'select 1 from pairing_logs', 0);
+
+reset role;
+
+select pg_temp.as_user('11111111-1111-1111-1111-111111111111');
+
+select pg_temp.expect_rows('active admin still sees every pairing',
+  'select 1 from "Pairings"', 2);
+select pg_temp.expect_rows('active admin still sees every pairing match',
+  'select 1 from pairing_matches', 2);
+select pg_temp.expect_rows('active admin still sees every pairing request',
+  'select 1 from pairing_requests', 2);
+-- Two: the fixture row, plus the one the tutor wrote a moment ago.
+select pg_temp.expect_rows('active admin still sees the pairing logs',
+  'select 1 from pairing_logs', 2);
+select pg_temp.expect_rows('active admin still sees availability rows',
+  'select 1 from "User_Availabilities"', 1);
 
 reset role;
 

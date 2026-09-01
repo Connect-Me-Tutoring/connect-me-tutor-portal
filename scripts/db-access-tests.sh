@@ -23,14 +23,36 @@ image="public.ecr.aws/supabase/postgres:17.6.1.143"
 
 cd "$root"
 
-echo "==> resolving migrations as of a merge with $target"
-tree="$(git merge-tree --write-tree "$target" HEAD)" || {
-  echo "Merging $target into HEAD conflicts; resolve it before running these tests." >&2
-  exit 1
-}
-# macOS ships bash 3.2, which has no mapfile.
-migrations="$(git ls-tree --name-only "$tree" supabase/migrations/ | sort)"
-[ -n "$migrations" ] || { echo "No migrations found in the merged tree" >&2; exit 1; }
+echo "==> resolving the migration set for a merge with $target"
+base="$(git merge-base "$target" HEAD)"
+dev_files="$(git ls-tree --name-only "$target" supabase/migrations/)"
+base_files="$(git ls-tree --name-only "$base" supabase/migrations/)"
+
+# supabase/migrations in the working tree still holds the pre-squash history
+# this branch was cut from, which cannot build a database on its own: its
+# earliest files assume tables that predate them. The target branch squashed
+# all of that into one baseline, and merging drops those files again. So the
+# set that will really run is the target's files plus whatever this branch
+# adds on top - including migrations that are still uncommitted, which is the
+# whole point of running these tests while working.
+added_here=""
+for path in supabase/migrations/*.sql; do
+  name="$(basename "$path")"
+  echo "$dev_files" | grep -qx "supabase/migrations/$name" && continue
+  echo "$base_files" | grep -qx "supabase/migrations/$name" && continue
+  added_here="$added_here$path\n"
+done
+
+# Each line is "<sort key>\t<source>\t<path>", ordered by filename the way
+# Supabase orders migrations.
+plan="$( { echo "$dev_files" | while read -r p; do
+             [ -n "$p" ] && printf '%s\t%s\t%s\n' "$(basename "$p")" "git" "$p"
+           done
+           printf "$added_here" | while read -r p; do
+             [ -n "$p" ] && printf '%s\t%s\t%s\n' "$(basename "$p")" "worktree" "$p"
+           done
+         } | sort )"
+[ -n "$plan" ] || { echo "No migrations resolved" >&2; exit 1; }
 
 cleanup() { docker rm -f "$container" >/dev/null 2>&1 || true; rm -f "$root/.migration-failed"; }
 trap cleanup EXIT
@@ -53,22 +75,27 @@ for _ in $(seq 1 90); do
 done
 [ -n "$ready" ] || { echo "Postgres never became ready" >&2; exit 1; }
 
-echo "==> applying $(echo "$migrations" | wc -l | tr -d " ") migrations"
-echo "$migrations" | while read -r path; do
-  name="$(basename "$path")"
+echo "==> applying $(printf '%s\n' "$plan" | wc -l | tr -d ' ') migrations"
+printf '%s\n' "$plan" | while IFS="$(printf '\t')" read -r name source path; do
+  [ -n "$name" ] || continue
+  if [ "$source" = "git" ]; then
+    sql="$(git show "$target:$path")"
+  else
+    sql="$(cat "$path")"
+  fi
   # The baseline snapshot references storage.objects, which this bare image
   # does not ship. Those statements are expected to fail; anything else is not.
-  unexpected="$(git show "$tree:$path" \
+  unexpected="$(printf '%s\n' "$sql" \
     | docker exec -i "$container" psql -v ON_ERROR_STOP=0 -q -U postgres -d postgres 2>&1 \
     | grep '^ERROR' | grep -v 'storage\.objects' || true)"
   if [ -n "$unexpected" ]; then
-    echo "    $name" >&2
+    echo "    $name  [$source]" >&2
     echo "$unexpected" | sed 's/^/        /' >&2
     echo "Migration $name did not apply cleanly." >&2
     touch "$root/.migration-failed"
     exit 1
   fi
-  echo "    $name"
+  echo "    $name  [$source]"
 done
 if [ -f "$root/.migration-failed" ]; then rm -f "$root/.migration-failed"; exit 1; fi
 

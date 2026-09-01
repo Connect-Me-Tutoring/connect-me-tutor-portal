@@ -1,6 +1,6 @@
 import { getProfileByEmail } from "@/lib/actions/user/client.actions";
 import { Profile } from "@/types";
-import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/server";
 import { NextRequest, NextResponse } from "next/server";
 import { Resend } from "resend";
 import { Table } from "@/lib/supabase/tables";
@@ -32,7 +32,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const supabase = await createClient();
+    // This route authenticates with a bearer token, not a user session, so
+    // it has no session to read through.
+    const supabase = await createAdminClient();
 
     const data = await request.json();
     const { to, subject, body, sessionId } = emailSchema.parse(data);

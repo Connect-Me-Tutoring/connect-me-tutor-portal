@@ -121,7 +121,11 @@ export const deleteAllPairingRequests = async () => {
 export const getRejectedTutorIdsForStudent = async (
   studentProfileId: string,
 ): Promise<string[]> => {
-  const supabase = await createClient();
+  // The pairing workflow runs from cron as well as from the admin UI, and the
+  // cron path has no user session. Everything else in that workflow already
+  // uses the service-role client; this read was the exception, and a missing
+  // exclusion list degrades match quality silently.
+  const supabase = await createAdminClient();
   const cooldown = getPairingRejectionCooldown();
 
   const { data, error } = await supabase
