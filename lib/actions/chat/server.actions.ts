@@ -10,7 +10,7 @@ import { createClient } from "../../supabase/server";
 import { AdminConversation } from "@/types/chat";
 import { getProfileFromUserSettings } from "../profile/server.actions";
 import { getUserFromAction } from "../user/server.actions";
-import { requireAuthenticatedUser, requireSelfOrAdmin } from "../auth/authz.server";
+import { isActiveAdmin, requireAuthenticatedUser, requireSelfOrAdmin } from "../auth/authz.server";
 import { logError } from "@/lib/posthog";
 
 export const createAdminConversation = async (user_id: string) => {
@@ -125,7 +125,7 @@ async function assertCanSendChatMessage(
   }
 
   if (roomType === "admin") {
-    if (profile.role === "Admin") {
+    if (isActiveAdmin(profile)) {
       return { ok: true };
     }
     const { data, error } = await supabase
