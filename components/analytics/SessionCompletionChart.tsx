@@ -1,5 +1,11 @@
 "use client";
-import React, { useEffect, useState, useCallback, useMemo, useRef } from "react";
+import React, {
+  useEffect,
+  useState,
+  useCallback,
+  useMemo,
+  useRef,
+} from "react";
 import {
   ComposedChart,
   Bar,
@@ -49,6 +55,7 @@ const SessionCompletionChart = () => {
   const [isRefreshing, setIsRefreshing] = useState(false);
 
   const [granularity, setGranularity] = useState<Granularity>("month");
+  const [firstOnly, setFirstOnly] = useState(false);
   const [metric, setMetric] = useState<Metric>("completed");
   const [showTable, setShowTable] = useState(false);
   const [showTrendline, setShowTrendline] = useState(false);
@@ -60,42 +67,49 @@ const SessionCompletionChart = () => {
   // Monthly -> Weekly can resolve out of order).
   const latestRequestIdRef = useRef(0);
 
-  const fetchStats = useCallback(async (g: Granularity, isManualRefresh = false) => {
-    const requestId = ++latestRequestIdRef.current;
-    if (isManualRefresh) setIsRefreshing(true);
-    else setIsLoading(true);
-    try {
-      const { data, error } = await supabase.rpc("get_period_session_completion_stats", {
-        p_granularity: g,
-      });
-      if (requestId !== latestRequestIdRef.current) return;
-      if (error) throw error;
-      const rows: PeriodStat[] = data ?? [];
-      setData(rows);
-      // Reset the range to span the new dataset. Required on a granularity
-      // switch because the input value format changes between modes.
-      if (rows.length) {
-        setRangeStart(rangeKey(rows[0].period, g));
-        setRangeEnd(rangeKey(rows[rows.length - 1].period, g));
-      } else {
-        setRangeStart("");
-        setRangeEnd("");
+  const fetchStats = useCallback(
+    async (g: Granularity, first: boolean, isManualRefresh = false) => {
+      const requestId = ++latestRequestIdRef.current;
+      if (isManualRefresh) setIsRefreshing(true);
+      else setIsLoading(true);
+      try {
+        const { data, error } = await supabase.rpc(
+          "get_period_session_completion_stats",
+          {
+            p_granularity: g,
+            p_first_sessions_only: first,
+          },
+        );
+        if (requestId !== latestRequestIdRef.current) return;
+        if (error) throw error;
+        const rows: PeriodStat[] = data ?? [];
+        setData(rows);
+        // Reset the range to span the new dataset. Required on a granularity
+        // switch because the input value format changes between modes.
+        if (rows.length) {
+          setRangeStart(rangeKey(rows[0].period, g));
+          setRangeEnd(rangeKey(rows[rows.length - 1].period, g));
+        } else {
+          setRangeStart("");
+          setRangeEnd("");
+        }
+      } catch (error) {
+        if (requestId !== latestRequestIdRef.current) return;
+        console.error(error);
+        toast.error("Unable to load session completion stats");
+      } finally {
+        if (requestId === latestRequestIdRef.current) {
+          setIsLoading(false);
+          setIsRefreshing(false);
+        }
       }
-    } catch (error) {
-      if (requestId !== latestRequestIdRef.current) return;
-      console.error(error);
-      toast.error("Unable to load session completion stats");
-    } finally {
-      if (requestId === latestRequestIdRef.current) {
-        setIsLoading(false);
-        setIsRefreshing(false);
-      }
-    }
-  }, []);
+    },
+    [],
+  );
 
   useEffect(() => {
-    fetchStats(granularity);
-  }, [fetchStats, granularity]);
+    fetchStats(granularity, firstOnly);
+  }, [fetchStats, granularity, firstOnly]);
 
   const formatPeriod = useCallback(
     (iso: string, long = false) => {
@@ -134,7 +148,8 @@ const SessionCompletionChart = () => {
     const values = filtered.map((d) =>
       metric === "completed" ? d.total_completed : d.pct_completed,
     );
-    const trend = showTrendline && values.length >= 2 ? linearTrend(values) : null;
+    const trend =
+      showTrendline && values.length >= 2 ? linearTrend(values) : null;
     return filtered.map((d, i) => ({
       ...d,
       label: formatPeriod(d.period),
@@ -152,7 +167,9 @@ const SessionCompletionChart = () => {
   if (isLoading) return <div>Loading completion stats...</div>;
   if (!data.length) return <div>No data available</div>;
 
-  const axisTitle = metric === "completed" ? "Sessions completed" : "% completed";
+  const scopeLabel = firstOnly ? "First sessions" : "Sessions";
+  const axisTitle =
+    metric === "completed" ? `${scopeLabel} completed` : "% completed";
 
   const renderTooltip = ({ active, payload }: any) => {
     if (!active || !payload?.length) return null;
@@ -168,7 +185,9 @@ const SessionCompletionChart = () => {
           {row.total_completed.toLocaleString()} completed ({row.pct_completed}
           %)
         </div>
-        <div className="text-gray-500">{row.total_resolved.toLocaleString()} resolved</div>
+        <div className="text-gray-500">
+          {row.total_resolved.toLocaleString()} resolved
+        </div>
       </div>
     );
   };
@@ -177,7 +196,7 @@ const SessionCompletionChart = () => {
     <div>
       <div className="flex items-center justify-end mb-3">
         <button
-          onClick={() => fetchStats(granularity, true)}
+          onClick={() => fetchStats(granularity, firstOnly, true)}
           disabled={isRefreshing}
           className="text-xs text-blue-600 hover:underline disabled:opacity-50"
         >
@@ -185,13 +204,38 @@ const SessionCompletionChart = () => {
         </button>
       </div>
 
-      {/* Granularity + metric toggles */}
+      {/* Scope, granularity, and metric toggles */}
       <div className="flex flex-wrap items-center gap-4 mb-3">
+        <div className="flex items-center gap-1">
+          <button
+            onClick={() => setFirstOnly(false)}
+            className={`text-xs px-3 py-1 rounded border ${
+              !firstOnly
+                ? "bg-emerald-700 text-white border-emerald-700"
+                : "text-gray-600"
+            }`}
+          >
+            All sessions
+          </button>
+          <button
+            onClick={() => setFirstOnly(true)}
+            className={`text-xs px-3 py-1 rounded border ${
+              firstOnly
+                ? "bg-emerald-700 text-white border-emerald-700"
+                : "text-gray-600"
+            }`}
+          >
+            First sessions
+          </button>
+        </div>
+
         <div className="flex items-center gap-1">
           <button
             onClick={() => setGranularity("month")}
             className={`text-xs px-3 py-1 rounded border ${
-              granularity === "month" ? "bg-gray-800 text-white border-gray-800" : "text-gray-600"
+              granularity === "month"
+                ? "bg-gray-800 text-white border-gray-800"
+                : "text-gray-600"
             }`}
           >
             Monthly
@@ -199,7 +243,9 @@ const SessionCompletionChart = () => {
           <button
             onClick={() => setGranularity("week")}
             className={`text-xs px-3 py-1 rounded border ${
-              granularity === "week" ? "bg-gray-800 text-white border-gray-800" : "text-gray-600"
+              granularity === "week"
+                ? "bg-gray-800 text-white border-gray-800"
+                : "text-gray-600"
             }`}
           >
             Weekly
@@ -210,7 +256,9 @@ const SessionCompletionChart = () => {
           <button
             onClick={() => setMetric("completed")}
             className={`text-xs px-3 py-1 rounded border ${
-              metric === "completed" ? "bg-blue-600 text-white border-blue-600" : "text-gray-600"
+              metric === "completed"
+                ? "bg-blue-600 text-white border-blue-600"
+                : "text-gray-600"
             }`}
           >
             Sessions completed
@@ -218,7 +266,9 @@ const SessionCompletionChart = () => {
           <button
             onClick={() => setMetric("pct")}
             className={`text-xs px-3 py-1 rounded border ${
-              metric === "pct" ? "bg-blue-600 text-white border-blue-600" : "text-gray-600"
+              metric === "pct"
+                ? "bg-blue-600 text-white border-blue-600"
+                : "text-gray-600"
             }`}
           >
             % completed
@@ -248,7 +298,10 @@ const SessionCompletionChart = () => {
             className="border rounded px-2 py-1 text-sm"
           />
         </label>
-        <button onClick={resetRange} className="text-xs text-blue-600 hover:underline">
+        <button
+          onClick={resetRange}
+          className="text-xs text-blue-600 hover:underline"
+        >
           Reset range
         </button>
 
@@ -272,12 +325,16 @@ const SessionCompletionChart = () => {
 
       {chartData.length === 0 ? (
         <div className="text-sm text-gray-500 py-8 text-center">
-          No {granularity === "week" ? "weeks" : "months"} in the selected range.
+          No {granularity === "week" ? "weeks" : "months"} with{" "}
+          {firstOnly ? "first sessions" : "sessions"} in the selected range.
         </div>
       ) : (
         <div style={{ width: "100%", height: 320 }}>
           <ResponsiveContainer width="100%" height="100%">
-            <ComposedChart data={chartData} margin={{ top: 8, right: 16, bottom: 8, left: 8 }}>
+            <ComposedChart
+              data={chartData}
+              margin={{ top: 8, right: 16, bottom: 8, left: 8 }}
+            >
               <CartesianGrid strokeDasharray="3 3" vertical={false} />
               <XAxis
                 dataKey="label"
@@ -291,7 +348,9 @@ const SessionCompletionChart = () => {
               <YAxis
                 tick={{ fontSize: 11 }}
                 domain={metric === "pct" ? [0, 100] : [0, "auto"]}
-                tickFormatter={(v) => (metric === "pct" ? `${v}%` : v.toLocaleString())}
+                tickFormatter={(v) =>
+                  metric === "pct" ? `${v}%` : v.toLocaleString()
+                }
                 label={{
                   value: axisTitle,
                   angle: -90,
@@ -299,8 +358,16 @@ const SessionCompletionChart = () => {
                   style: { fontSize: 11, fill: "#6b7280" },
                 }}
               />
-              <Tooltip content={renderTooltip} cursor={{ fill: "rgba(0,0,0,0.04)" }} />
-              <Bar dataKey="value" fill="#2a78d6" radius={[4, 4, 0, 0]} maxBarSize={28} />
+              <Tooltip
+                content={renderTooltip}
+                cursor={{ fill: "rgba(0,0,0,0.04)" }}
+              />
+              <Bar
+                dataKey="value"
+                fill="#2a78d6"
+                radius={[4, 4, 0, 0]}
+                maxBarSize={28}
+              />
               {showTrendline && (
                 <Line
                   type="linear"
@@ -335,8 +402,12 @@ const SessionCompletionChart = () => {
               {chartData.map((d) => (
                 <tr key={d.period} className="border-b last:border-0">
                   <td className="py-2 pr-4">{formatPeriod(d.period, true)}</td>
-                  <td className="py-2 pr-4">{d.total_completed.toLocaleString()}</td>
-                  <td className="py-2 pr-4">{d.total_resolved.toLocaleString()}</td>
+                  <td className="py-2 pr-4">
+                    {d.total_completed.toLocaleString()}
+                  </td>
+                  <td className="py-2 pr-4">
+                    {d.total_resolved.toLocaleString()}
+                  </td>
                   <td className="py-2">{d.pct_completed}%</td>
                 </tr>
               ))}
