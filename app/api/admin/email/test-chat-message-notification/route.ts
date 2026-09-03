@@ -3,6 +3,7 @@ import { sendChatMessageNotificationEmailTest } from "@/lib/actions/email/server
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { logError } from "@/lib/posthog";
+import { logUnauthorizedAccess } from "@/lib/security/log-unauthorized-access";
 
 export const dynamic = "force-dynamic";
 
@@ -21,6 +22,7 @@ const bodySchema = z.object({
 export async function POST(request: NextRequest) {
   try {
     if (!(await isAuthorized(request))) {
+      await logUnauthorizedAccess(request, "admin/email/test-chat-message-notification");
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 

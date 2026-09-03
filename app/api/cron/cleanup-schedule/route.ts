@@ -7,11 +7,13 @@ import {
 } from "@/lib/actions/enrollment/server.actions";
 import { isCronRequestAuthorized } from "@/lib/security/cron";
 import { logError } from "@/lib/posthog";
+import { logUnauthorizedAccess } from "@/lib/security/log-unauthorized-access";
 
 export const dynamic = "force-dynamic";
 
 export async function GET(req: NextRequest) {
   if (!isCronRequestAuthorized(req)) {
+    await logUnauthorizedAccess(req, "cron/cleanup-schedule");
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 

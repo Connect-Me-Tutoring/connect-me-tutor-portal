@@ -3,9 +3,11 @@ import { createAdminClient } from "@/lib/supabase/server";
 import { sendMonthlyCheckInEmail } from "@/lib/actions/email/server.actions";
 import { isCronRequestAuthorized } from "@/lib/security/cron";
 import { logError } from "@/lib/posthog";
+import { logUnauthorizedAccess } from "@/lib/security/log-unauthorized-access";
 
 export async function GET(request: Request) {
   if (!isCronRequestAuthorized(request)) {
+    await logUnauthorizedAccess(request, "cron/monthly-check-in");
     return new Response("Unauthorized", { status: 401 });
   }
 

@@ -5,6 +5,7 @@ import { getSessions } from "@/lib/actions/session/server.actions";
 import { addDays } from "date-fns";
 import { isCronRequestAuthorized } from "@/lib/security/cron";
 import { logError } from "@/lib/posthog";
+import { logUnauthorizedAccess } from "@/lib/security/log-unauthorized-access";
 
 export const dynamic = "force-dynamic";
 
@@ -12,6 +13,7 @@ const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 export async function GET(request: NextRequest) {
   if (!isCronRequestAuthorized(request)) {
+    await logUnauthorizedAccess(request, "admin/email/before-sessions/schedule-reminders-weekly");
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   try {
