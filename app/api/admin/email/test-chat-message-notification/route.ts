@@ -2,6 +2,7 @@ import { isAuthorized } from "@/lib/actions/auth/server.actions";
 import { sendChatMessageNotificationEmailTest } from "@/lib/actions/email/server.actions";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
+import { logError } from "@/lib/posthog";
 
 export const dynamic = "force-dynamic";
 
@@ -34,12 +35,12 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ ok: true });
   } catch (error) {
-    const message =
-      error instanceof z.ZodError
-        ? error.flatten()
-        : error instanceof Error
-          ? error.message
-          : "Unknown error";
+    if (error instanceof z.ZodError) {
+      return NextResponse.json({ error: error.flatten() }, { status: 400 });
+    }
+    const message = error instanceof Error ? error.message : "Unknown error";
+    console.error("Error sending test chat message notification:", error);
+    await logError(error, {}, "email_test_chat_message_notification_error");
     return NextResponse.json({ error: message }, { status: 400 });
   }
 }

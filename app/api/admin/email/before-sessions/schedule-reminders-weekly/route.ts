@@ -4,6 +4,7 @@ import { sendScheduledEmailsBeforeSessions } from "@/lib/actions/email/server.ac
 import { getSessions } from "@/lib/actions/session/server.actions";
 import { addDays } from "date-fns";
 import { isCronRequestAuthorized } from "@/lib/security/cron";
+import { logError } from "@/lib/posthog";
 
 export const dynamic = "force-dynamic";
 
@@ -33,7 +34,9 @@ export async function GET(request: NextRequest) {
       status: 200,
       message: "weekly email notifications scheduled successfully",
     });
-  } catch {
+  } catch (error) {
+    console.error("Cron job schedule-reminders-weekly failed:", error);
+    await logError(error, {}, "cron_schedule_reminders_weekly_error");
     return NextResponse.json({
       status: 500,
       message: "weekly email notifications failed",
