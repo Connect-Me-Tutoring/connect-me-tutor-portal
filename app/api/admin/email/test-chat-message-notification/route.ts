@@ -32,7 +32,8 @@ export async function POST(request: NextRequest) {
     const result = await sendChatMessageNotificationEmailTest(parsed);
 
     if (!result.ok) {
-      return NextResponse.json({ error: result.error }, { status: 500 });
+      await logError(new Error(result.error), {}, "email_test_chat_message_notification_error");
+      return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
     }
 
     return NextResponse.json({ ok: true });
@@ -40,9 +41,8 @@ export async function POST(request: NextRequest) {
     if (error instanceof z.ZodError) {
       return NextResponse.json({ error: error.flatten() }, { status: 400 });
     }
-    const message = error instanceof Error ? error.message : "Unknown error";
     console.error("Error sending test chat message notification:", error);
     await logError(error, {}, "email_test_chat_message_notification_error");
-    return NextResponse.json({ error: message }, { status: 400 });
+    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }
 }
