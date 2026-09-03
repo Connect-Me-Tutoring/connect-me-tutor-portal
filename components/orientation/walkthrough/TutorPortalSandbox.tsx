@@ -43,7 +43,7 @@ import {
   type MouseEvent as ReactMouseEvent,
   type ReactNode,
 } from "react";
-import { STATUS, type Step, useJoyride } from "react-joyride";
+import { STATUS, type Status, type Step, useJoyride } from "react-joyride";
 
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -93,6 +93,10 @@ const INTERACTIVE_TARGETS: Record<string, string> = {
   "open-resources": "[data-tour='nav-resources']",
   "open-hours": "[data-tour='nav-hours']",
 };
+
+export function isGuidedSandboxInteraction(status: Status, stepId: Step["id"] | undefined) {
+  return status === STATUS.RUNNING && stepId !== "finish";
+}
 
 export function TutorPortalSandbox() {
   const [view, setView] = useState<SandboxView>("dashboard");
@@ -243,6 +247,7 @@ export function TutorPortalSandbox() {
         target: "[data-tour='sandbox-shell']",
         placement: "center",
         buttons: ["back"],
+        hideOverlay: true,
         title: "Walkthrough complete",
         content: (
           <div>
@@ -331,6 +336,9 @@ export function TutorPortalSandbox() {
     }, 0);
   };
 
+  const isGuidedInteraction = () =>
+    isGuidedSandboxInteraction(tourStatusRef.current, activeStepIdRef.current);
+
   const selectView = (nextView: SandboxView) => {
     const expectedStep: Partial<Record<SandboxView, string>> = {
       students: "open-students",
@@ -338,16 +346,21 @@ export function TutorPortalSandbox() {
       resources: "open-resources",
       hours: "open-hours",
     };
-    if (expectedStep[nextView] !== step?.id) return;
+    const expectedStepId = expectedStep[nextView];
+    if (isGuidedInteraction() && expectedStepId !== activeStepIdRef.current) return;
+
     setView(nextView);
-    advanceIfActive(expectedStep[nextView] ?? "");
+    if (expectedStepId) advanceIfActive(expectedStepId);
   };
 
   const handleSandboxClick = (event: ReactMouseEvent<HTMLDivElement>) => {
+    if (!isGuidedInteraction()) return;
+
     const target = event.target as HTMLElement;
     if (target.closest("[data-walkthrough-control]") || target.closest(".react-joyride__tooltip"))
       return;
-    const allowedSelector = step?.id ? INTERACTIVE_TARGETS[step.id] : undefined;
+    const activeStepId = activeStepIdRef.current;
+    const allowedSelector = activeStepId ? INTERACTIVE_TARGETS[activeStepId] : undefined;
     if (!allowedSelector || !target.closest(allowedSelector)) {
       event.preventDefault();
       event.stopPropagation();

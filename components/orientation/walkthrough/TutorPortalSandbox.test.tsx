@@ -1,7 +1,8 @@
 import { renderToStaticMarkup } from "react-dom/server";
+import { STATUS } from "react-joyride";
 import { describe, expect, it } from "vitest";
 
-import { TutorPortalSandbox } from "./TutorPortalSandbox";
+import { isGuidedSandboxInteraction, TutorPortalSandbox } from "./TutorPortalSandbox";
 
 describe("TutorPortalSandbox", () => {
   it("renders an isolated tutor practice environment with mock data", () => {
@@ -18,5 +19,12 @@ describe("TutorPortalSandbox", () => {
     expect(markup).toContain('href="/orientation"');
     expect(markup).not.toContain("supabase");
     expect(markup).not.toContain("/api/");
+  });
+
+  it("unlocks the practice navigation when the guided tour ends", () => {
+    expect(isGuidedSandboxInteraction(STATUS.RUNNING, "open-students")).toBe(true);
+    expect(isGuidedSandboxInteraction(STATUS.RUNNING, "finish")).toBe(false);
+    expect(isGuidedSandboxInteraction(STATUS.FINISHED, undefined)).toBe(false);
+    expect(isGuidedSandboxInteraction(STATUS.SKIPPED, undefined)).toBe(false);
   });
 });

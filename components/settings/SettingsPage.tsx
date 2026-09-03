@@ -429,7 +429,7 @@ export default function SettingsPage({
               Save Notification Settings
             </Button>
           </section>
-          {orientationEnabled && profile?.role === "Tutor" && (
+          {orientationEnabled && profile?.role === "Tutor" && profile.orientationCompletedAt && (
             <section className="rounded-lg border bg-white p-6">
               <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
                 <div className="flex items-start gap-3">
@@ -437,14 +437,14 @@ export default function SettingsPage({
                     <GraduationCap aria-hidden="true" className="h-5 w-5" />
                   </div>
                   <div>
-                    <h2 className="text-lg font-semibold text-gray-900">Help and training</h2>
+                    <h2 className="text-lg font-semibold text-gray-900">Orientation resources</h2>
                     <p className="mt-1 text-sm text-gray-600">
                       Practice common tutor portal tasks with sample data.
                     </p>
                   </div>
                 </div>
                 <Button asChild className="shrink-0" variant="outline">
-                  <Link href="/orientation/walkthrough">Open portal walkthrough</Link>
+                  <Link href="/orientation/walkthrough">Reopen portal walkthrough</Link>
                 </Button>
               </div>
             </section>

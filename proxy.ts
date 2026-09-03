@@ -61,7 +61,11 @@ export async function proxy(request: NextRequest) {
   }
 
   if (!user && !isPublicPath(path) && !isCronOrWebhookPath(path)) {
-    if (path.startsWith("/dashboard") || path.startsWith("/meeting")) {
+    if (
+      path.startsWith("/dashboard") ||
+      path.startsWith("/meeting") ||
+      path.startsWith("/orientation")
+    ) {
       return withSessionCookies(response, NextResponse.redirect(new URL("/", request.url)));
     }
 
@@ -77,5 +81,5 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/", "/dashboard/:path*", "/api/:path*", "/meeting/:path*"],
+  matcher: ["/", "/dashboard/:path*", "/api/:path*", "/meeting/:path*", "/orientation/:path*"],
 };

@@ -1,4 +1,4 @@
--- Metric: Total sessions completed + period breakdown (month or week).
+-- Metric: Total sessions completed + period breakdown (month or week)
 -- Owner: Arnav
 -- Denominator = Complete + Cancelled only (excludes Active/not-yet-happened sessions).
 
