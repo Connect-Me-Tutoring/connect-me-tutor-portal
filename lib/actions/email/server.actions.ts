@@ -4,7 +4,7 @@ import { Client } from "@upstash/qstash";
 import StudentPairingConfirmationEmail from "@/components/emails/pairing-request/student-confirmation-email";
 import { render } from "@react-email/components";
 import React from "react";
-import { Resend } from "resend";
+import { sendMail } from "@/lib/email/mailer";
 import PairingRequestNotificationEmail from "@/components/emails/pairing-request/pairing-request-notification";
 import TutorPairingConfirmationEmail from "@/components/emails/pairing-request/tutor-confirmation-email";
 import {
@@ -198,7 +198,6 @@ export async function scheduleEmail({
   }
 }
 
-const resend = new Resend(process.env.RESEND_API_KEY);
 const EARLY_SESSION_CHECK_IN_SUBJECT = "Connect Me Early Session Check-In";
 const EASTERN_TIMEZONE = "America/New_York";
 
@@ -209,7 +208,7 @@ export async function sendStudentPairingConfirmationEmail(
   const emailHtml = await render(React.createElement(StudentPairingConfirmationEmail, data));
   const emailResult = await withRetry(
     () =>
-      resend.emails.send({
+      sendMail({
         from: "Connect Me Free Tutoring & Mentoring <pairings@connectmego.app>",
         to: process.env.DEV_EMAIL!,
         cc: [process.env.OPERATIONS_EMAIL!],
@@ -235,7 +234,7 @@ export async function sendPairingRequestEmail(
 
   const emailResult = await withRetry(
     () =>
-      resend.emails.send({
+      sendMail({
         from: "reminder@connectmego.app",
         to: process.env.DEV_EMAIL!,
         cc: [process.env.OPERATIONS_EMAIL!],
@@ -259,7 +258,7 @@ export async function sendTutorPairingConfirmationEmail(
   const emailHtml = await render(React.createElement(TutorPairingConfirmationEmail, data));
   const emailResult = await withRetry(
     () =>
-      resend.emails.send({
+      sendMail({
         from: "Connect Me Free Tutoring & Mentoring <confirmation@connectmego.app>",
         to: process.env.DEV_EMAIL!,
         cc: [process.env.OPERATIONS_EMAIL!],
@@ -285,7 +284,7 @@ export async function sendSessionRescheduleEmail(
 
   const emailResult = await withRetry(
     () =>
-      resend.emails.send({
+      sendMail({
         from: "Connect Me Free Tutoring & Mentoring <notifications@connectmego.app>",
         to: emailTo,
         cc: [process.env.OPERATIONS_EMAIL!], // keeping consistent with other email methods for visibility
@@ -313,7 +312,7 @@ export async function sendStudentSessionCancellationEmail(
 
   const emailResult = await withRetry(
     () =>
-      resend.emails.send({
+      sendMail({
         from: "Connect Me Free Tutoring & Mentoring <notifications@connectmego.app>",
         to: emailTo,
         cc: [process.env.OPERATIONS_EMAIL!], // keeping consistent with other email methods for visibility
@@ -341,7 +340,7 @@ export async function sendTutorSessionCancellationEmail(
 
   const emailResult = await withRetry(
     () =>
-      resend.emails.send({
+      sendMail({
         from: "Connect Me Free Tutoring & Mentoring <notifications@connectmego.app>",
         to: emailTo,
         cc: [process.env.OPERATIONS_EMAIL!], // keeping consistent with other email methods for visibility
@@ -379,7 +378,7 @@ export async function sendChatMessageNotificationEmail(
 
   const emailResult = await withRetry(
     () =>
-      resend.emails.send({
+      sendMail({
         from: "Connect Me Free Tutoring & Mentoring <notifications@connectmego.app>",
         to: params.to,
         subject: "New message on Connect Me",
@@ -489,7 +488,7 @@ export async function sendEarlySessionCheckInEmails(now = new Date()) {
 
     const emailResult = await withRetry(
       () =>
-        resend.emails.send({
+        sendMail({
           from: "Connect Me Free Tutoring & Mentoring <reminder@connectmego.app>",
           to: recipient.email,
           cc: [process.env.OPERATIONS_EMAIL].filter((value): value is string => Boolean(value)),
@@ -538,7 +537,7 @@ export async function sendMonthlyCheckInEmail(
 
   const emailResult = await withRetry(
     () =>
-      resend.emails.send({
+      sendMail({
         from: "Connect Me Free Tutoring & Mentoring <notifications@connectmego.app>",
         to: emailTo,
         cc: [process.env.OPERATIONS_EMAIL!],
@@ -557,11 +556,10 @@ export async function sendMonthlyCheckInEmail(
 }
 
 export const sendEmail = async (from: string, to: string, subject: string, body: string) => {
-  const resend = new Resend(process.env.RESEND_API_KEY);
   try {
     await withRetry(
       () =>
-        resend.emails.send({
+        sendMail({
           from: from,
           to: to,
           cc: [process.env.OPERATIONS_EMAIL!],
@@ -583,11 +581,10 @@ export const sendEmail = async (from: string, to: string, subject: string, body:
 };
 
 export const sendEmailTest = async (from: string, to: string, subject: string, body: string) => {
-  const resend = new Resend(process.env.RESEND_API_KEY);
   try {
     await withRetry(
       () =>
-        resend.emails.send({
+        sendMail({
           from: from,
           to: ["amansreejesh9@gmail.com", process.env.DEV_EMAIL!],
           cc: [process.env.OPERATIONS_EMAIL!],
