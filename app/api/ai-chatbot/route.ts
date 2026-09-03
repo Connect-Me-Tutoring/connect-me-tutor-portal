@@ -22,9 +22,14 @@ const ChatRequestSchema = z.object({
   documents: z.array(ChatDocumentSchema).max(10).optional(),
 });
 
-// Escape angle brackets so document content can't forge its own </document> tag.
+// Escape HTML meta-characters so document content can't forge tags or break attributes.
 function escapeForDelimiter(value: string): string {
-  return value.replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
 }
 
 export async function POST(req: Request) {
