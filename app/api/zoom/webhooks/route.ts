@@ -12,6 +12,20 @@ import { logEvent, logError, serializeForPosthog } from "@/lib/posthog";
 // Use a single signing secret for all Zoom webhooks
 const validationSecret = config.zoom.ZOOM_WEBHOOK_SECRET;
 
+/**
+ * Constant-time string comparison. A plain `===` short-circuits on the first
+ * mismatching character, which leaks timing information an attacker can use to
+ * recover the secret byte by byte.
+ */
+function safeEqual(a: string, b: string): boolean {
+  const bufA = Buffer.from(a, "utf8");
+  const bufB = Buffer.from(b, "utf8");
+  if (bufA.length !== bufB.length) {
+    return false;
+  }
+  return crypto.timingSafeEqual(bufA, bufB);
+}
+
 export async function POST(req: NextRequest) {
   const requestId = crypto.randomUUID();
   const startTime = Date.now();
@@ -215,7 +229,10 @@ export async function POST(req: NextRequest) {
     // Remove "Bearer " prefix if present and compare
     const authToken = authHeader.replace(/^Bearer\s+/i, "").trim();
     // Check if it matches the secret (with or without Bearer prefix)
-    if (authToken === validationSecret || authHeader === `Bearer ${validationSecret}`) {
+    if (
+      safeEqual(authToken, validationSecret) ||
+      safeEqual(authHeader, `Bearer ${validationSecret}`)
+    ) {
       isAuthorized = true;
       authMethod = "authorization_header";
     }
@@ -230,14 +247,16 @@ export async function POST(req: NextRequest) {
         .update(message)
         .digest("hex")}`;
 
+      const signatureMatch = safeEqual(signature, expectedSignature);
+
       await logEvent("zoom_webhook_hmac_verification", {
         request_id: requestId,
-        signature_match: signature === expectedSignature,
+        signature_match: signatureMatch,
         signature_length: signature?.length,
         expected_signature_length: expectedSignature?.length,
       });
 
-      if (signature === expectedSignature) {
+      if (signatureMatch) {
         isAuthorized = true;
         authMethod = "hmac_signature";
       }

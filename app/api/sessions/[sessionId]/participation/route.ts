@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getParticipationData } from "@/lib/actions/session/server.actions";
-import { requireAuthenticatedUser } from "@/lib/actions/auth/authz.server";
+import { getParticipationData, getSessionById } from "@/lib/actions/session/server.actions";
+import { requireAuthenticatedUser, requireSessionAccess } from "@/lib/actions/auth/authz.server";
 import { logError } from "@/lib/posthog";
 
 export async function GET(req: NextRequest, props: { params: Promise<{ sessionId: string }> }) {
@@ -11,6 +11,17 @@ export async function GET(req: NextRequest, props: { params: Promise<{ sessionId
 
     if (!sessionId) {
       return NextResponse.json({ error: "Session ID is required" }, { status: 400 });
+    }
+
+    // Authorization: the caller must be the session's tutor, its student, or an Admin.
+    const session = await getSessionById(sessionId, { skipAccessCheck: true });
+    if (!session) {
+      return NextResponse.json({ error: "Session not found" }, { status: 404 });
+    }
+    try {
+      await requireSessionAccess(session);
+    } catch {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
     const enrollmentId = req.nextUrl.searchParams.get("enrollmentId");
