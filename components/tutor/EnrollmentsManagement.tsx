@@ -580,7 +580,7 @@ const EnrollmentList = ({
   return (
     <>
       <div className="flex space-x-6">
-        <div className="flex-grow bg-white rounded-lg shadow p-4 md:p-6">
+        <div className="flex-grow min-w-0 bg-white rounded-lg shadow p-4 md:p-6">
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 space-y-2 md:space-y-0">
             <div className="flex flex-wrap items-center gap-2">
               <Input
@@ -674,6 +674,7 @@ const EnrollmentList = ({
           </div>
 
           <ResponsiveList
+            desktopWrapperClassName="overflow-x-auto"
             columns={columns}
             rows={paginatedEnrollments}
             mobileRows={visibleEnrollments}
