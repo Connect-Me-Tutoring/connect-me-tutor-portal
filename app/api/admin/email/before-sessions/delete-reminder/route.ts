@@ -62,10 +62,14 @@ export async function POST(request: NextRequest) {
 
     await deleteMsg(emailData.message_id);
 
+    if (!emailData.id) {
+      throw new Error("No emailData id found");
+    }
+
     const { error: deleteDbError } = await supabase
-      .from(Table.SessionReminders)
+      .from("Emails")
       .delete()
-      .eq("id", emailData.id);
+      .eq("id", emailData.id || 0);
 
     if (deleteDbError) {
       console.error("Error deleting email record from Supabase:", deleteDbError);

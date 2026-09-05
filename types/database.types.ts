@@ -118,30 +118,27 @@ export type Database = {
         };
         Relationships: [];
       };
-      Emails: {
+      emails: {
         Row: {
+          content: string | null;
           created_at: string;
-          description: string | null;
-          id: number;
-          message_id: string | null;
-          recipient_id: string | null;
-          session_id: string | null;
+          id: string;
+          recipient_email: string;
+          subject: string | null;
         };
         Insert: {
+          content?: string | null;
           created_at?: string;
-          description?: string | null;
-          id?: number;
-          message_id?: string | null;
-          recipient_id?: string | null;
-          session_id?: string | null;
+          id?: string;
+          recipient_email: string;
+          subject?: string | null;
         };
         Update: {
+          content?: string | null;
           created_at?: string;
-          description?: string | null;
-          id?: number;
-          message_id?: string | null;
-          recipient_id?: string | null;
-          session_id?: string | null;
+          id?: string;
+          recipient_email?: string;
+          subject?: string | null;
         };
         Relationships: [];
       };
@@ -661,6 +658,33 @@ export type Database = {
         };
         Relationships: [];
       };
+      session_reminders: {
+        Row: {
+          created_at: string;
+          description: string | null;
+          id: number;
+          message_id: string | null;
+          recipient_id: string | null;
+          session_id: string | null;
+        };
+        Insert: {
+          created_at?: string;
+          description?: string | null;
+          id?: number;
+          message_id?: string | null;
+          recipient_id?: string | null;
+          session_id?: string | null;
+        };
+        Update: {
+          created_at?: string;
+          description?: string | null;
+          id?: number;
+          message_id?: string | null;
+          recipient_id?: string | null;
+          session_id?: string | null;
+        };
+        Relationships: [];
+      };
       Sessions: {
         Row: {
           created_at: string;
@@ -919,7 +943,33 @@ export type Database = {
       };
     };
     Views: {
-      [_ in never]: never;
+      Emails: {
+        Row: {
+          created_at: string | null;
+          description: string | null;
+          id: number | null;
+          message_id: string | null;
+          recipient_id: string | null;
+          session_id: string | null;
+        };
+        Insert: {
+          created_at?: string | null;
+          description?: string | null;
+          id?: number | null;
+          message_id?: string | null;
+          recipient_id?: string | null;
+          session_id?: string | null;
+        };
+        Update: {
+          created_at?: string | null;
+          description?: string | null;
+          id?: number | null;
+          message_id?: string | null;
+          recipient_id?: string | null;
+          session_id?: string | null;
+        };
+        Relationships: [];
+      };
     };
     Functions: {
       availability_overlap: {
@@ -1144,7 +1194,7 @@ export type Database = {
         }[];
       };
       get_period_session_completion_stats: {
-        Args: { p_granularity?: string };
+        Args: { p_first_sessions_only?: boolean; p_granularity?: string };
         Returns: {
           pct_completed: number;
           period: string;
