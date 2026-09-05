@@ -1,0 +1,160 @@
+"use client";
+import React, { useCallback, useEffect, useState } from "react";
+import { supabase } from "@/lib/supabase/client";
+import toast from "react-hot-toast";
+
+interface PairingLengthStat {
+  population: "active" | "ended" | "all";
+  pairs: number;
+  avg_days: number;
+  median_days: number;
+  max_days: number;
+  single_session_pairs: number;
+}
+
+interface PairingRow {
+  tutor_name: string;
+  student_name: string;
+  days: number;
+  status: "active" | "ended";
+  started_on: string;
+}
+
+type Population = "active" | "ended" | "all";
+
+const months = (days: number) => (days / 30.44).toFixed(1);
+
+const PairingLengthCard = () => {
+  const [stats, setStats] = useState<PairingLengthStat[]>([]);
+  const [rows, setRows] = useState<PairingRow[]>([]);
+  const [population, setPopulation] = useState<Population>("active");
+  const [isLoading, setIsLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  const fetchAll = useCallback(async (pop: Population, isManualRefresh = false) => {
+    if (isManualRefresh) setIsRefreshing(true);
+    try {
+      const [statsRes, rowsRes] = await Promise.all([
+        supabase.rpc("get_pairing_length_stats"),
+        supabase.rpc("get_pairing_lengths", { p_population: pop, p_limit: 100 }),
+      ]);
+      if (statsRes.error) throw statsRes.error;
+      if (rowsRes.error) throw rowsRes.error;
+      setStats(statsRes.data ?? []);
+      setRows(rowsRes.data ?? []);
+    } catch (error) {
+      console.error(error);
+      toast.error("Unable to load pairing length stats");
+    } finally {
+      setIsLoading(false);
+      setIsRefreshing(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchAll(population);
+  }, [fetchAll, population]);
+
+  if (isLoading) return <div>Loading pairing lengths...</div>;
+  if (!stats.length) return <div>No data available</div>;
+
+  const byPop = (p: Population) => stats.find((s) => s.population === p);
+  const active = byPop("active");
+  const ended = byPop("ended");
+
+  const singleSessionPct =
+    ended && ended.pairs ? Math.round((ended.single_session_pairs / ended.pairs) * 100) : null;
+
+  return (
+    <div className="w-full flex flex-col gap-4">
+      <div className="flex items-center justify-between flex-wrap gap-2">
+        <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-800 p-1 rounded-lg text-xs font-medium">
+          {(["active", "ended", "all"] as Population[]).map((p) => (
+            <button
+              key={p}
+              onClick={() => setPopulation(p)}
+              className={`px-3 py-1.5 rounded-md capitalize ${
+                population === p ? "bg-white text-slate-900 shadow-sm" : "text-slate-600"
+              }`}
+            >
+              {p}
+            </button>
+          ))}
+        </div>
+        <button
+          onClick={() => fetchAll(population, true)}
+          disabled={isRefreshing}
+          className="text-xs text-blue-600 hover:underline disabled:opacity-50"
+        >
+          {isRefreshing ? "Refreshing..." : "Refresh"}
+        </button>
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <div className="rounded-lg bg-slate-50 dark:bg-slate-800/40 p-4">
+          <p className="text-xs text-slate-500 mb-1">Active pairings</p>
+          <p className="text-2xl font-semibold">{active?.pairs.toLocaleString() ?? "-"}</p>
+          <p className="text-xs text-slate-400 mt-1">
+            Median {active ? months(active.median_days) : "-"} months
+          </p>
+        </div>
+        <div className="rounded-lg bg-slate-50 dark:bg-slate-800/40 p-4">
+          <p className="text-xs text-slate-500 mb-1">Ended pairings</p>
+          <p className="text-2xl font-semibold">{ended?.pairs.toLocaleString() ?? "-"}</p>
+          <p className="text-xs text-slate-400 mt-1">Median {ended?.median_days ?? "-"} days</p>
+        </div>
+        <div className="rounded-lg bg-slate-50 dark:bg-slate-800/40 p-4">
+          <p className="text-xs text-slate-500 mb-1">Single-session pairings</p>
+          <p className="text-2xl font-semibold">
+            {ended?.single_session_pairs.toLocaleString() ?? "-"}
+          </p>
+          <p className="text-xs text-slate-400 mt-1">
+            {singleSessionPct !== null ? `${singleSessionPct}% of ended pairings` : "-"}
+          </p>
+        </div>
+      </div>
+
+      <div className="overflow-auto" style={{ maxHeight: 400 }}>
+        <table className="w-full text-sm border-collapse">
+          <thead>
+            <tr className="text-left text-slate-500 border-b">
+              <th className="py-2 pr-4 font-medium">Tutor</th>
+              <th className="py-2 pr-4 font-medium">Student</th>
+              <th className="py-2 pr-4 font-medium">Started</th>
+              <th className="py-2 pr-4 font-medium text-right">Length</th>
+              <th className="py-2 font-medium text-right">Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((r, i) => (
+              <tr key={`${r.tutor_name}-${r.student_name}-${i}`} className="border-b last:border-0">
+                <td className="py-2 pr-4">{r.tutor_name || "Unknown"}</td>
+                <td className="py-2 pr-4">{r.student_name || "Unknown"}</td>
+                <td className="py-2 pr-4 text-slate-500">
+                  {new Date(`${r.started_on}T00:00:00`).toLocaleDateString("en-US", {
+                    month: "short",
+                    year: "numeric",
+                  })}
+                </td>
+                <td className="py-2 pr-4 text-right">{months(r.days)} mo</td>
+                <td
+                  className={`py-2 text-right capitalize ${
+                    r.status === "active" ? "text-emerald-600" : "text-slate-500"
+                  }`}
+                >
+                  {r.status}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      <p className="text-xs text-slate-400">
+        Showing {rows.length} longest {population === "all" ? "" : population} pairings
+      </p>
+    </div>
+  );
+};
+
+export default PairingLengthCard;
