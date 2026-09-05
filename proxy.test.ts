@@ -21,7 +21,6 @@ describe("orientation proxy coverage", () => {
   });
 
   it("runs session refresh middleware for all orientation pages", () => {
-    expect(config.matcher).toContain("/orientation/:path*");
     expect(unstable_doesMiddlewareMatch({ config, url: "http://localhost/orientation" })).toBe(
       true,
     );

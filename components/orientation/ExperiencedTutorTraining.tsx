@@ -73,7 +73,7 @@ export function ExperiencedTutorTraining() {
               ) : (
                 <video
                   aria-label={`${clip.title} training clip`}
-                  className="h-full w-full object-cover"
+                  className="h-full w-full object-contain"
                   controls
                   key={clip.src}
                   onEnded={() => setHasFinishedClip(true)}
