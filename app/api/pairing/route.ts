@@ -24,10 +24,7 @@ export async function GET(req: NextRequest) {
     } catch (error) {
       console.error("Cron job pairing failed:", error);
       await logError(error, {}, "cron_pairing_error");
-      return NextResponse.json(
-        { success: false, error: "Internal Server Error" },
-        { status: 500 },
-      );
+      return NextResponse.json({ success: false, error: "Internal Server Error" }, { status: 500 });
     }
   }
 
