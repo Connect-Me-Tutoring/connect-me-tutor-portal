@@ -5,6 +5,7 @@ import {
 } from "@/lib/pairing";
 import { verifyAdmin } from "@/lib/actions/auth/server.actions";
 import { isCronRequestAuthorized } from "@/lib/security/cron";
+import { logError } from "@/lib/posthog";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 
@@ -42,12 +43,18 @@ const PairingPreviewSchema = z.object({
  */
 export async function GET(req: NextRequest) {
   if (isCronRequestAuthorized(req)) {
-    const result = await runPairingWorkflow({ dryRun: false, debug: false });
-    return NextResponse.json({
-      message: "Successfully completed scheduled pairing process",
-      dryRun: false,
-      result,
-    });
+    try {
+      const result = await runPairingWorkflow({ dryRun: false, debug: false });
+      return NextResponse.json({
+        message: "Successfully completed scheduled pairing process",
+        dryRun: false,
+        result,
+      });
+    } catch (error) {
+      console.error("Cron job pairing failed:", error);
+      await logError(error, {}, "cron_pairing_error");
+      return NextResponse.json({ success: false, error: "Internal Server Error" }, { status: 500 });
+    }
   }
 
   const url = new URL(req.url);
@@ -64,13 +71,14 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   await verifyAdmin();
 
-  const url = new URL(req.url);
-  const dryRunParam = url.searchParams.get("dryRun");
-  const debugParam = url.searchParams.get("debug");
-  const dryRun = dryRunParam === "true" || dryRunParam === "1";
-  const debug = debugParam === "true" || debugParam === "1";
-  const body = await req.json().catch(() => null);
-  const mode = body?.mode as string | undefined;
+  try {
+    const url = new URL(req.url);
+    const dryRunParam = url.searchParams.get("dryRun");
+    const debugParam = url.searchParams.get("debug");
+    const dryRun = dryRunParam === "true" || dryRunParam === "1";
+    const debug = debugParam === "true" || debugParam === "1";
+    const body = await req.json().catch(() => null);
+    const mode = body?.mode as string | undefined;
 
   if (mode === "apply-preview") {
     const parsedPreview = PairingPreviewSchema.safeParse(body?.preview);
@@ -82,22 +90,18 @@ export async function POST(req: NextRequest) {
     }
     const preview: Pick<PairingWorkflowResult, "matchesToInsert" | "logs"> = parsedPreview.data;
 
-    const persisted = await applyPairingWorkflowPreview(preview, { debug });
+    const result = await runPairingWorkflow({ dryRun, debug });
     return NextResponse.json({
-      message: "Successfully applied saved pairing preview",
-      persisted,
-      dryRun: false,
+      message: dryRun
+        ? "Successfully completed pairing process preview"
+        : "Successfully completed pairing process",
+      dryRun,
       debug,
+      result,
     });
+  } catch (error) {
+    console.error("Admin pairing request failed:", error);
+    await logError(error, {}, "pairing_admin_error");
+    return NextResponse.json({ success: false, error: "Internal Server Error" }, { status: 500 });
   }
-
-  const result = await runPairingWorkflow({ dryRun, debug });
-  return NextResponse.json({
-    message: dryRun
-      ? "Successfully completed pairing process preview"
-      : "Successfully completed pairing process",
-    dryRun,
-    debug,
-    result,
-  });
 }
