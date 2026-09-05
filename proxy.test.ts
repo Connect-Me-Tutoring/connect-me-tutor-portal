@@ -22,9 +22,9 @@ describe("orientation proxy coverage", () => {
 
   it("runs session refresh middleware for all orientation pages", () => {
     expect(config.matcher).toContain("/orientation/:path*");
-    expect(
-      unstable_doesMiddlewareMatch({ config, url: "http://localhost/orientation" }),
-    ).toBe(true);
+    expect(unstable_doesMiddlewareMatch({ config, url: "http://localhost/orientation" })).toBe(
+      true,
+    );
     expect(
       unstable_doesMiddlewareMatch({
         config,
@@ -34,9 +34,7 @@ describe("orientation proxy coverage", () => {
   });
 
   it("redirects unauthenticated orientation requests to sign in", async () => {
-    const response = await proxy(
-      new NextRequest("http://localhost/orientation/walkthrough"),
-    );
+    const response = await proxy(new NextRequest("http://localhost/orientation/walkthrough"));
 
     expect(response.status).toBe(307);
     expect(response.headers.get("location")).toBe("http://localhost/");

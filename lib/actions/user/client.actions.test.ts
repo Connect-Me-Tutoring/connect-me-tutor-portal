@@ -26,10 +26,7 @@ vi.mock("@/lib/supabase/client", () => ({
   },
 }));
 
-import {
-  getProfileFromUserSettings,
-  getProfileWithProfileId,
-} from "./client.actions";
+import { getProfileFromUserSettings, getProfileWithProfileId } from "./client.actions";
 
 const databaseProfile = {
   id: "profile-1",
