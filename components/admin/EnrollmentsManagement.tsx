@@ -704,12 +704,6 @@ const EnrollmentList = ({
       mobileCell: null,
     },
     {
-      key: "status",
-      header: "Status",
-      cell: (enrollment) => renderStatusToggle(enrollment),
-      mobileCell: null,
-    },
-    {
       key: "activity",
       header: "Activity",
       cell: (enrollment) => renderActivityButton(enrollment),
@@ -752,7 +746,7 @@ const EnrollmentList = ({
     <>
       {" "}
       <div className="flex space-x-6">
-        <div className="flex-grow bg-white rounded-lg shadow p-6">
+        <div className="flex-grow min-w-0 bg-white rounded-lg shadow p-6">
           <div className="flex justify-between items-center mb-4">
             <div className="flex flex-wrap items-center gap-2">
               <Input
@@ -836,6 +830,7 @@ const EnrollmentList = ({
             </div>
           </div>
           <ResponsiveList
+            desktopWrapperClassName="overflow-x-auto"
             columns={columns}
             rows={paginatedEnrollments}
             mobileRows={visibleEnrollments}

@@ -220,11 +220,12 @@ export default function DashboardLayout({
           },
         ]
       : []),
-    {
-      title: "Notifications",
-      href: "/dashboard/notifications",
-      icon: <Bell className="h-5 w-5" />,
-    },
+
+    // {
+    //   title: "Notifications",
+    //   href: "/dashboard/notifications",
+    //   icon: <Bell className="h-5 w-5" />,
+    // },
     {
       title: "Schedule",
       href: "/dashboard/schedule",
