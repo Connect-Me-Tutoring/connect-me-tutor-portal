@@ -3,9 +3,11 @@ import { createAdminClient } from "@/lib/supabase/server";
 import { sendMonthlyCheckInEmail } from "@/lib/actions/email/server.actions";
 import { isCronRequestAuthorized } from "@/lib/security/cron";
 import { logError } from "@/lib/posthog";
+import { logUnauthorizedAccess } from "@/lib/security/log-unauthorized-access";
 
 export async function GET(request: Request) {
   if (!isCronRequestAuthorized(request)) {
+    await logUnauthorizedAccess(request, "cron/monthly-check-in");
     return new Response("Unauthorized", { status: 401 });
   }
 
@@ -46,6 +48,6 @@ export async function GET(request: Request) {
   } catch (error: any) {
     console.error("Monthly check-in cron failed:", error);
     await logError(error, {}, "cron_monthly_check_in_error");
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }
 }

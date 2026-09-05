@@ -8,6 +8,7 @@ import {
   type ZoomSessionResolution,
 } from "@/lib/actions/session/actions";
 import { logEvent, logError, serializeForPosthog } from "@/lib/posthog";
+import { getClientIp } from "@/lib/security/log-unauthorized-access";
 
 // Use a single signing secret for all Zoom webhooks
 const validationSecret = config.zoom.ZOOM_WEBHOOK_SECRET;
@@ -272,6 +273,7 @@ export async function POST(req: NextRequest) {
       has_timestamp: !!timestamp,
       zoom_meeting_id: zoomMeetingId,
       account_id: accountId,
+      ip: getClientIp(req),
     });
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }

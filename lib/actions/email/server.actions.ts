@@ -457,7 +457,7 @@ export async function sendEarlySessionCheckInEmails(now = new Date()) {
 
   const descriptions = recipients.map(({ description }) => description);
   const { data: existingEmailLogs, error: existingEmailLogsError } = await supabase
-    .from(Table.Emails)
+    .from(Table.SessionReminders)
     .select("description")
     .in("description", descriptions);
 
@@ -505,7 +505,7 @@ export async function sendEarlySessionCheckInEmails(now = new Date()) {
 
     const messageId = "data" in emailResult && emailResult.data?.id ? emailResult.data.id : null;
 
-    const { error: insertEmailLogError } = await supabase.from(Table.Emails).insert({
+    const { error: insertEmailLogError } = await supabase.from(Table.SessionReminders).insert({
       recipient_id: recipient.recipientId,
       session_id: null,
       message_id: messageId,
@@ -632,7 +632,7 @@ export const scheduleReminder = async (data: { session: Session; type: "Tutor" |
 
     if (result && result.messageId) {
       const { data, error } = await supabase
-        .from("Emails")
+        .from(Table.SessionReminders)
         .insert({
           recipient_id: tutor?.id ?? null,
           session_id: session.id,
