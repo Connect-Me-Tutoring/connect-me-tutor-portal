@@ -1,8 +1,17 @@
--- Adds a first-session filter to the completion stats
+
 --
--- "First session" is DERIVED (earliest dated session per enrollment), not read
--- from Sessions.is_first_session. That flag is only ever written on completion
--- paths (enrollment creation and the Session Exit Form)
+-- "First session" is DERIVED (earliest dated session per tutor/student pair),
+-- not read from Sessions.is_first_session.
+--
+-- Partitioning is on (tutor_id, student_id) rather than enrollment_id:
+-- deletePairingServer deletes Enrollments on unpair and Sessions.enrollment_id
+-- is ON DELETE SET NULL, so ~85% of resolved sessions have no enrollment link.
+-- Partitioning on enrollment_id would only ever see still-active pairings.
+
+-- The old single-argument version must be dropped, not replaced: adding a
+-- defaulted parameter creates an overload instead, and a one-argument call
+-- would then be ambiguous between the two.
+drop function if exists get_period_session_completion_stats(text);
 
 create or replace function get_period_session_completion_stats(
   p_granularity text default 'month',
@@ -28,11 +37,12 @@ begin
     select
       s.date,
       s.status,
-      s.enrollment_id,
+      s.tutor_id,
+      s.student_id,
       -- Rank across every status, so a cancelled first session still ranks 1
       -- and stays in the denominator.
       row_number() over (
-        partition by s.enrollment_id
+        partition by s.tutor_id, s.student_id
         order by s.date asc, s.id asc
       ) as seq
     from "Sessions" s
@@ -45,10 +55,11 @@ begin
   from ranked r
   where r.status in ('Complete', 'Cancelled')
     and r.date < date_trunc(p_granularity, now()) -- exclude the current, still-incomplete period
-    -- Standalone sessions have no enrollment, so they have no "first" to rank.
+    -- Orphaned sessions (profile deleted, ids SET NULL) can't be attributed
+    -- to a pair, so they have no "first" to rank.
     and (
       not p_first_sessions_only
-      or (r.seq = 1 and r.enrollment_id is not null)
+      or (r.seq = 1 and r.tutor_id is not null and r.student_id is not null)
     )
   group by date_trunc(p_granularity, r.date)
   order by 1;
