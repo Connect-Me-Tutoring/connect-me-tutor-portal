@@ -13,6 +13,8 @@ export const tableToInterfaceProfiles = (data: any) => {
       userId: data.user_id,
       firstName: data.first_name,
       lastName: data.last_name,
+      age: data.age,
+      grade: data.grade,
       dateOfBirth: data.date_of_birth,
       startDate: data.start_date,
       availability: data.availability,

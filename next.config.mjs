@@ -4,6 +4,8 @@ const nextConfig = {
   output: "standalone",
   serverExternalPackages: ["sharp", "onnxruntime-node", "twilio"],
 
+  turbopack: {},
+
   webpack: (config, { isServer }) => {
     if (!isServer) {
       // Don't resolve 'fs', 'net', 'tls' modules on the client-side
