@@ -5,9 +5,11 @@ import { getAllActiveEnrollmentsForCron } from "@/lib/actions/enrollment/server.
 import { isCronRequestAuthorized } from "@/lib/security/cron";
 import { getEasternWeekBounds } from "@/lib/utils";
 import { logError } from "@/lib/posthog";
+import { logUnauthorizedAccess } from "@/lib/security/log-unauthorized-access";
 
 export async function GET(request: Request) {
   if (!isCronRequestAuthorized(request)) {
+    await logUnauthorizedAccess(request, "cron/add-sessions");
     return new NextResponse("Unauthorized", { status: 401 });
   }
 

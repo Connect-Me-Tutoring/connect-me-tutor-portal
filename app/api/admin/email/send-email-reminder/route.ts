@@ -6,6 +6,7 @@ import { sendMail } from "@/lib/email/mailer";
 import { Table } from "@/lib/supabase/tables";
 import { isAuthorized } from "@/lib/actions/auth/server.actions";
 import { logError } from "@/lib/posthog";
+import { logUnauthorizedAccess } from "@/lib/security/log-unauthorized-access";
 import { z } from "zod";
 
 export const dynamic = "force-dynamic";
@@ -20,6 +21,7 @@ const emailSchema = z.object({
 export async function POST(request: NextRequest) {
   try {
     if (!(await isAuthorized(request))) {
+      await logUnauthorizedAccess(request, "admin/email/send-email-reminder");
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
