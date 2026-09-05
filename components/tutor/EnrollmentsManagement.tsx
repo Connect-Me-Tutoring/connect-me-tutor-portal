@@ -674,7 +674,6 @@ const EnrollmentList = ({
           </div>
 
           <ResponsiveList
-            desktopWrapperClassName="overflow-x-auto"
             columns={columns}
             rows={paginatedEnrollments}
             mobileRows={visibleEnrollments}
