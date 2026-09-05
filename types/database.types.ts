@@ -1134,6 +1134,27 @@ export type Database = {
         Args: { a: Json[]; b: Json[] };
         Returns: Json;
       };
+      get_pairing_length_stats: {
+        Args: never;
+        Returns: {
+          avg_days: number;
+          max_days: number;
+          median_days: number;
+          pairs: number;
+          population: string;
+          single_session_pairs: number;
+        }[];
+      };
+      get_pairing_lengths: {
+        Args: { p_limit?: number; p_population?: string };
+        Returns: {
+          days: number;
+          started_on: string;
+          status: string;
+          student_name: string;
+          tutor_name: string;
+        }[];
+      };
       get_pairing_logs: {
         Args: { end_time: string; start_time: string };
         Returns: {

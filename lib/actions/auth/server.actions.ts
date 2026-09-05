@@ -84,8 +84,17 @@ const ensurePairingQueueForNewProfile = async (
 };
 
 export const isAuthorized = async (request: NextRequest) => {
+  const bearerToken = process.env.BEARER_TOKEN;
+  if (!bearerToken) {
+    await logError(
+      new Error("BEARER_TOKEN is not configured"),
+      { action: "isAuthorized" },
+      "auth_error",
+    );
+    return false;
+  }
   const authHeader = request.headers.get("authorization");
-  return authHeader === `Bearer ${process.env.BEARER_TOKEN}`;
+  return authHeader === `Bearer ${bearerToken}`;
 };
 
 export const verifyAdmin = async () => {

@@ -3,6 +3,9 @@ import { Resend } from "resend";
 import nodemailer, { type Transporter } from "nodemailer";
 import { render } from "@react-email/components";
 import type { ReactElement } from "react";
+import { createAdminClient } from "@/lib/supabase/server";
+import { Table } from "@/lib/supabase/tables";
+import { logError } from "@/lib/posthog";
 
 type MailAddress = string | string[];
 
@@ -66,6 +69,34 @@ async function sendViaResend(params: SendMailParams): Promise<SendMailResult> {
   return getResendClient().emails.send(params as Parameters<Resend["emails"]["send"]>[0]);
 }
 
+async function recordSentEmail(params: SendMailParams): Promise<void> {
+  try {
+    const html = await resolveHtml(params);
+    const recipientEmail = Array.isArray(params.to) ? params.to.join(", ") : params.to;
+
+    const supabase = await createAdminClient();
+    const { error } = await supabase.from(Table.Emails).insert({
+      recipient_email: recipientEmail,
+      subject: params.subject,
+      content: html,
+    });
+
+    if (error) {
+      await logError(error, { to: params.to, subject: params.subject }, "email_record_error");
+    }
+  } catch (error) {
+    await logError(error, { to: params.to, subject: params.subject }, "email_record_error");
+  }
+}
+
 export async function sendMail(params: SendMailParams): Promise<SendMailResult> {
-  return getEmailProvider() === "mailpit" ? sendViaMailpit(params) : sendViaResend(params);
+  if (getEmailProvider() === "mailpit") {
+    return sendViaMailpit(params);
+  }
+
+  const result = await sendViaResend(params);
+  if (!result.error) {
+    await recordSentEmail(params);
+  }
+  return result;
 }
