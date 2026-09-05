@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { deleteMsg } from "@/lib/actions/email/server.actions";
 import { verifyAdmin } from "@/lib/actions/auth/server.actions";
 import { logError } from "@/lib/posthog";
+import { Table } from "@/lib/supabase/tables";
 
 export const dynamic = "force-dynamic";
 
@@ -25,7 +26,7 @@ export async function POST(request: NextRequest) {
     }
 
     const { data: emailData, error: fetchError } = await supabase
-      .from("Emails")
+      .from(Table.SessionReminders)
       .select("id, message_id")
       .eq("session_id", sessionId)
       .single();
@@ -61,7 +62,14 @@ export async function POST(request: NextRequest) {
 
     await deleteMsg(emailData.message_id);
 
-    const { error: deleteDbError } = await supabase.from("Emails").delete().eq("id", emailData.id);
+    if (!emailData.id) {
+      throw new Error("No emailData id found");
+    }
+
+    const { error: deleteDbError } = await supabase
+      .from("Emails")
+      .delete()
+      .eq("id", emailData.id || 0);
 
     if (deleteDbError) {
       console.error("Error deleting email record from Supabase:", deleteDbError);

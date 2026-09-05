@@ -1,20 +1,18 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
+import { isCronRequestAuthorized } from "@/lib/security/cron";
 
-const PUBLIC_PATH_PREFIXES = ["/auth", "/set-password", "/forgot-password", "/contact"];
-
-const PROTECTED_API_PREFIXES = ["/api/admin", "/api/pairing", "/api/qstash", "/api/sessions"];
+const PUBLIC_PATHS = ["/", "/auth", "/forgot-password", "/set-password", "/contact"];
+const SELF_VERIFYING_API_PATHS = ["/api/zoom", "/api/session-exit-form"];
 
 function isPublicPath(path: string) {
-  return PUBLIC_PATH_PREFIXES.some((prefix) => path === prefix || path.startsWith(`${prefix}/`));
+  return PUBLIC_PATHS.some((prefix) => path === prefix || path.startsWith(`${prefix}/`));
 }
 
-function isProtectedApiPath(path: string) {
-  return PROTECTED_API_PREFIXES.some((prefix) => path.startsWith(prefix));
-}
-
-function isCronOrWebhookPath(path: string) {
-  return path.startsWith("/api/cron") || path.startsWith("/api/zoom") || path.startsWith("/ingest");
+function isSelfVerifyingApiPath(path: string) {
+  return SELF_VERIFYING_API_PATHS.some(
+    (prefix) => path === prefix || path.startsWith(`${prefix}/`),
+  );
 }
 
 function withSessionCookies(source: NextResponse, target: NextResponse): NextResponse {
@@ -60,26 +58,28 @@ export async function proxy(request: NextRequest) {
     return withSessionCookies(response, NextResponse.redirect(new URL("/dashboard", request.url)));
   }
 
-  if (!user && !isPublicPath(path) && !isCronOrWebhookPath(path)) {
-    if (
-      path.startsWith("/dashboard") ||
-      path.startsWith("/meeting") ||
-      path.startsWith("/orientation")
-    ) {
-      return withSessionCookies(response, NextResponse.redirect(new URL("/", request.url)));
-    }
+  const isExempt =
+    !!user ||
+    isPublicPath(path) ||
+    isSelfVerifyingApiPath(path) ||
+    isCronRequestAuthorized(request);
 
-    if (isProtectedApiPath(path)) {
+  if (!isExempt) {
+    if (path.startsWith("/api/")) {
       return withSessionCookies(
         response,
         NextResponse.json({ error: "Unauthorized" }, { status: 401 }),
       );
     }
+
+    return withSessionCookies(response, NextResponse.redirect(new URL("/", request.url)));
   }
 
   return response;
 }
 
 export const config = {
-  matcher: ["/", "/dashboard/:path*", "/api/:path*", "/meeting/:path*", "/orientation/:path*"],
+  matcher: [
+    "/((?!_next/static|_next/image|favicon\\.ico|ingest/|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|css|js|map)$).*)",
+  ],
 };
