@@ -43,6 +43,7 @@ import {
   FileText,
   Sparkles,
   Flag,
+  GraduationCap,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -71,10 +72,12 @@ import { getUserProfiles, switchProfile } from "@/lib/actions/profile/server.act
 
 export default function DashboardLayout({
   children,
+  orientationEnabled,
   profile,
   userProfilesPromise,
 }: {
   children: React.ReactNode;
+  orientationEnabled: boolean;
   profile: Profile | null;
   userProfilesPromise: Promise<Partial<Profile>[]>;
 }) {
@@ -141,6 +144,15 @@ export default function DashboardLayout({
       href: "/dashboard",
       icon: <LayoutDashboardIcon className="h-5 w-5" />,
     },
+    ...(orientationEnabled
+      ? [
+          {
+            title: "Orientation",
+            href: "/orientation",
+            icon: <GraduationCap className="h-5 w-5" />,
+          },
+        ]
+      : []),
     {
       title: "Announcements",
       href: "/dashboard/announcements",
@@ -199,6 +211,15 @@ export default function DashboardLayout({
       href: "/dashboard",
       icon: <LayoutDashboardIcon className="h-5 w-5" />,
     },
+    ...(orientationEnabled
+      ? [
+          {
+            title: "Tutor Orientation",
+            href: "/orientation",
+            icon: <GraduationCap className="h-5 w-5" />,
+          },
+        ]
+      : []),
 
     // {
     //   title: "Notifications",

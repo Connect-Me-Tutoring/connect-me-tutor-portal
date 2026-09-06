@@ -43,6 +43,7 @@ export const getProfileFromUserSettings = async (userId: string): Promise<Profil
           status,
           student_number,
           settings_id,
+          orientation_completed_at,
           languages_spoken
         )
       `,
@@ -184,7 +185,8 @@ export async function getProfileWithProfileId(profileId: string): Promise<Profil
         gender,
         status,
         student_number,
-        settings_id
+        settings_id,
+        orientation_completed_at
       `,
       )
       .eq("id", profileId)
