@@ -69,9 +69,9 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  await verifyAdmin();
-
   try {
+    await verifyAdmin();
+
     const url = new URL(req.url);
     const dryRunParam = url.searchParams.get("dryRun");
     const debugParam = url.searchParams.get("debug");
@@ -80,15 +80,22 @@ export async function POST(req: NextRequest) {
     const body = await req.json().catch(() => null);
     const mode = body?.mode as string | undefined;
 
-  if (mode === "apply-preview") {
-    const parsedPreview = PairingPreviewSchema.safeParse(body?.preview);
-    if (!parsedPreview.success) {
-      return NextResponse.json(
-        { message: "Invalid preview payload", details: parsedPreview.error.flatten() },
-        { status: 400 },
-      );
+    if (mode === "apply-preview") {
+      const parsedPreview = PairingPreviewSchema.safeParse(body?.preview);
+      if (!parsedPreview.success) {
+        return NextResponse.json(
+          { message: "Invalid preview payload", details: parsedPreview.error.flatten() },
+          { status: 400 },
+        );
+      }
+
+      const preview: Pick<PairingWorkflowResult, "matchesToInsert" | "logs"> = parsedPreview.data;
+      const persisted = await applyPairingWorkflowPreview(preview, { debug });
+      return NextResponse.json({
+        message: "Successfully applied pairing preview",
+        persisted,
+      });
     }
-    const preview: Pick<PairingWorkflowResult, "matchesToInsert" | "logs"> = parsedPreview.data;
 
     const result = await runPairingWorkflow({ dryRun, debug });
     return NextResponse.json({
