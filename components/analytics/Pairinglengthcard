@@ -156,5 +156,4 @@ const PairingLengthCard = () => {
     </div>
   );
 };
-
 export default PairingLengthCard;
