@@ -46,42 +46,32 @@ export async function submitQuizCompletion(payload: SubmitQuizPayload) {
   const supabase = await createClient();
 
   const tutorName = `${profile.firstName ?? ""} ${profile.lastName ?? ""}`.trim() || "A tutor";
-  const questionsText = parsedPayload.questionsText?.trim();
-  let completionError: unknown;
 
   if (!profile.orientationCompletedAt) {
-    try {
-      const { data: updatedProfile, error: updateError } = await supabase
-        .from(Table.Profiles)
-        .update({
-          orientation_completed_at: new Date().toISOString(),
-        })
-        .eq("id", profile.id)
-        .eq("user_id", user.id)
-        .select("id")
-        .maybeSingle();
+    const { data: updatedProfile, error: updateError } = await supabase
+      .from(Table.Profiles)
+      .update({
+        orientation_completed_at: new Date().toISOString(),
+      })
+      .eq("id", profile.id)
+      .eq("user_id", user.id)
+      .select("id")
+      .maybeSingle();
 
-      if (updateError || !updatedProfile) {
-        completionError = updateError ?? new Error("No profile row was updated.");
-      } else {
-        revalidatePath("/dashboard", "layout");
-      }
-    } catch (error) {
-      completionError = error;
+    if (updateError || !updatedProfile) {
+      console.error(
+        "Failed to update profile orientation status:",
+        updateError ?? "No profile row was updated.",
+      );
+      throw new Error("Unable to save orientation completion.");
     }
 
-    if (completionError) {
-      console.error("Failed to update profile orientation status:", completionError);
-    }
+    revalidatePath("/dashboard", "layout");
   }
 
-  // A tutor's submitted question is independent of the profile completion write.
+  const questionsText = parsedPayload.questionsText?.trim();
   if (questionsText) {
     await sendDiscordWebhook(tutorName, questionsText, parsedPayload);
-  }
-
-  if (completionError) {
-    throw new Error("Unable to save orientation completion.");
   }
 
   return { success: true };

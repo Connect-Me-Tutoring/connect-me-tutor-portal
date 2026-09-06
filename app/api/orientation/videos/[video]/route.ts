@@ -1,5 +1,7 @@
-import { readFile } from "node:fs/promises";
+import { createReadStream } from "node:fs";
+import { stat } from "node:fs/promises";
 import path from "node:path";
+import { Readable } from "node:stream";
 
 import { NextResponse } from "next/server";
 
@@ -10,27 +12,10 @@ import { isTutorOrientationEnabled } from "@/lib/orientation/config.server";
 export const runtime = "nodejs";
 
 const allowedVideoFiles = new Set<string>(ORIENTATION_TRAINING_VIDEO_FILES);
-const videoCache = new Map<string, Promise<ArrayBuffer>>();
-
-function getVideo(video: string): Promise<ArrayBuffer> {
-  const cached = videoCache.get(video);
-  if (cached) return cached;
-
-  const videoPath = path.join(process.cwd(), "private", "orientation", "videos", video);
-  const file = readFile(videoPath)
-    .then((contents) => Uint8Array.from(contents).buffer)
-    .catch((error) => {
-      videoCache.delete(video);
-      throw error;
-    });
-
-  videoCache.set(video, file);
-  return file;
-}
 
 function parseRangeHeader(rangeHeader: string, size: number) {
   const match = /^bytes=(\d*)-(\d*)$/.exec(rangeHeader.trim());
-  if (!match || (!match[1] && !match[2])) return null;
+  if (!match || (!match[1] && !match[2]) || size <= 0) return null;
 
   if (!match[1]) {
     const suffixLength = Number(match[2]);
@@ -53,6 +38,11 @@ function parseRangeHeader(rangeHeader: string, size: number) {
   return { start, end: Math.min(requestedEnd, size - 1) };
 }
 
+function streamVideo(videoPath: string, range?: { start: number; end: number }) {
+  const stream = range ? createReadStream(videoPath, range) : createReadStream(videoPath);
+  return Readable.toWeb(stream) as ReadableStream<Uint8Array>;
+}
+
 function videoHeaders(contentLength: number) {
   return {
     "Accept-Ranges": "bytes",
@@ -73,7 +63,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ vide
     return NextResponse.json({ error: "Video not found" }, { status: 404 });
   }
 
-  const viewerStatus = await getOrientationViewerStatus(request);
+  const viewerStatus = await getOrientationViewerStatus();
   if (viewerStatus === "unauthenticated") {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
@@ -82,30 +72,31 @@ export async function GET(request: Request, { params }: { params: Promise<{ vide
   }
 
   try {
-    const file = await getVideo(video);
+    const videoPath = path.join(process.cwd(), "private", "orientation", "videos", video);
+    const { size } = await stat(videoPath);
     const rangeHeader = request.headers.get("range");
 
     if (!rangeHeader) {
-      return new NextResponse(file, { headers: videoHeaders(file.byteLength) });
+      return new NextResponse(streamVideo(videoPath), { headers: videoHeaders(size) });
     }
 
-    const range = parseRangeHeader(rangeHeader, file.byteLength);
+    const range = parseRangeHeader(rangeHeader, size);
     if (!range) {
       return new NextResponse(null, {
         status: 416,
         headers: {
           "Accept-Ranges": "bytes",
-          "Content-Range": `bytes */${file.byteLength}`,
+          "Content-Range": `bytes */${size}`,
         },
       });
     }
 
-    const body = file.slice(range.start, range.end + 1);
-    return new NextResponse(body, {
+    const contentLength = range.end - range.start + 1;
+    return new NextResponse(streamVideo(videoPath, range), {
       status: 206,
       headers: {
-        ...videoHeaders(body.byteLength),
-        "Content-Range": `bytes ${range.start}-${range.end}/${file.byteLength}`,
+        ...videoHeaders(contentLength),
+        "Content-Range": `bytes ${range.start}-${range.end}/${size}`,
       },
     });
   } catch {

@@ -279,9 +279,7 @@ export default function PolicyQuiz({ previewMode = false }: { previewMode?: bool
                 disabled={isSubmitting}
                 className="text-sm text-muted-foreground underline hover:text-foreground"
               >
-                {previewMode
-                  ? "Finish without a question"
-                  : "Skip — I don&apos;t have any questions"}
+                {previewMode ? "Finish without a question" : "Skip — I don't have any questions"}
               </button>
             </CardFooter>
           </Card>

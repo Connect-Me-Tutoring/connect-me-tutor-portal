@@ -74,25 +74,32 @@ describe("submitQuizCompletion", () => {
     }
   });
 
-  it("still forwards a submitted question when saving completion fails", async () => {
-    mocks.maybeSingle.mockResolvedValue({
-      data: null,
-      error: { message: "database unavailable" },
-    });
+  it("posts a submitted question only after completion is saved", async () => {
+    mocks.maybeSingle
+      .mockResolvedValueOnce({
+        data: null,
+        error: { message: "database unavailable" },
+      })
+      .mockResolvedValueOnce({ data: { id: "profile-1" }, error: null });
     const fetchMock = vi.fn().mockResolvedValue({ ok: true });
     vi.stubGlobal("fetch", fetchMock);
     consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => undefined);
 
-    const submission = submitQuizCompletion({
+    const payload = {
       questionsText: "Could you explain the cancellation policy?",
       retries: 0,
       totalAttempts: policyQuizQuestions.length,
       totalQuestions: policyQuizQuestions.length,
-    });
+    };
 
-    await expect(submission).rejects.toThrow("Unable to save orientation completion.");
+    await expect(submitQuizCompletion(payload)).rejects.toThrow(
+      "Unable to save orientation completion.",
+    );
+    expect(fetchMock).not.toHaveBeenCalled();
+
+    await expect(submitQuizCompletion(payload)).resolves.toEqual({ success: true });
     expect(fetchMock).toHaveBeenCalledOnce();
-    expect(mocks.revalidatePath).not.toHaveBeenCalled();
+    expect(mocks.revalidatePath).toHaveBeenCalledOnce();
 
     const webhookRequest = fetchMock.mock.calls[0][1];
     const webhookBody = JSON.parse(webhookRequest.body as string);

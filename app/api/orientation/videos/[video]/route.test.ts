@@ -1,13 +1,19 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { Readable } from "node:stream";
 
 const mocks = vi.hoisted(() => ({
+  createReadStream: vi.fn(),
   enabled: true,
   getViewerStatus: vi.fn(),
-  readFile: vi.fn(),
+  stat: vi.fn(),
+}));
+
+vi.mock("node:fs", () => ({
+  createReadStream: (...args: unknown[]) => mocks.createReadStream(...args),
 }));
 
 vi.mock("node:fs/promises", () => ({
-  readFile: (...args: unknown[]) => mocks.readFile(...args),
+  stat: (...args: unknown[]) => mocks.stat(...args),
 }));
 
 vi.mock("@/lib/orientation/access.server", () => ({
@@ -30,7 +36,15 @@ describe("orientation training video route", () => {
     vi.clearAllMocks();
     mocks.enabled = true;
     mocks.getViewerStatus.mockResolvedValue("authorized");
-    mocks.readFile.mockResolvedValue(Buffer.from("0123456789"));
+    mocks.stat.mockResolvedValue({ size: 10 });
+    mocks.createReadStream.mockImplementation(
+      (_path: string, range?: { start?: number; end?: number }) => {
+        const file = Buffer.from("0123456789");
+        const start = range?.start ?? 0;
+        const end = range?.end ?? file.length - 1;
+        return Readable.from([file.subarray(start, end + 1)]);
+      },
+    );
   });
 
   it("returns 404 before authorization when orientation is disabled", async () => {
@@ -41,7 +55,8 @@ describe("orientation training video route", () => {
 
     expect(response.status).toBe(404);
     expect(mocks.getViewerStatus).not.toHaveBeenCalled();
-    expect(mocks.readFile).not.toHaveBeenCalled();
+    expect(mocks.stat).not.toHaveBeenCalled();
+    expect(mocks.createReadStream).not.toHaveBeenCalled();
   });
 
   it("rejects filenames outside the approved training set", async () => {
@@ -51,7 +66,8 @@ describe("orientation training video route", () => {
 
     expect(response.status).toBe(404);
     expect(mocks.getViewerStatus).not.toHaveBeenCalled();
-    expect(mocks.readFile).not.toHaveBeenCalled();
+    expect(mocks.stat).not.toHaveBeenCalled();
+    expect(mocks.createReadStream).not.toHaveBeenCalled();
   });
 
   it("returns 401 to an unauthenticated viewer", async () => {
@@ -61,7 +77,8 @@ describe("orientation training video route", () => {
     const response = await GET(requestFor(video), paramsFor(video));
 
     expect(response.status).toBe(401);
-    expect(mocks.readFile).not.toHaveBeenCalled();
+    expect(mocks.stat).not.toHaveBeenCalled();
+    expect(mocks.createReadStream).not.toHaveBeenCalled();
   });
 
   it("returns 403 to a viewer without tutor or admin access", async () => {
@@ -71,7 +88,8 @@ describe("orientation training video route", () => {
     const response = await GET(requestFor(video), paramsFor(video));
 
     expect(response.status).toBe(403);
-    expect(mocks.readFile).not.toHaveBeenCalled();
+    expect(mocks.stat).not.toHaveBeenCalled();
+    expect(mocks.createReadStream).not.toHaveBeenCalled();
   });
 
   it("serves a complete video with private cache headers", async () => {
@@ -95,6 +113,10 @@ describe("orientation training video route", () => {
     expect(response.headers.get("content-range")).toBe("bytes 2-5/10");
     expect(response.headers.get("content-length")).toBe("4");
     await expect(response.text()).resolves.toBe("2345");
+    expect(mocks.createReadStream).toHaveBeenCalledWith(expect.any(String), {
+      start: 2,
+      end: 5,
+    });
   });
 
   it("rejects unsatisfiable byte ranges", async () => {
@@ -106,7 +128,7 @@ describe("orientation training video route", () => {
     expect(response.headers.get("content-range")).toBe("bytes */10");
   });
 
-  it("reuses decoded video bytes across requests", async () => {
+  it("streams each request without retaining the video in process memory", async () => {
     const video = "clip-07-normalize-uncertainty.mp4";
 
     const first = await GET(requestFor(video), paramsFor(video));
@@ -115,6 +137,7 @@ describe("orientation training video route", () => {
     expect(first.status).toBe(200);
     expect(second.status).toBe(206);
     await expect(second.text()).resolves.toBe("789");
-    expect(mocks.readFile).toHaveBeenCalledOnce();
+    expect(mocks.stat).toHaveBeenCalledTimes(2);
+    expect(mocks.createReadStream).toHaveBeenCalledTimes(2);
   });
 });
