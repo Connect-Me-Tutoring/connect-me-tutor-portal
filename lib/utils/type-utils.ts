@@ -123,7 +123,7 @@ export const tableToInterfaceSessions = (data: any): Session => {
     createdAt: data.created_at,
     date: data.date,
     summary: data.summary,
-    meeting: tableToInterfaceMeetings(data.meeting),
+    meeting: data.meeting ? tableToInterfaceMeetings(data.meeting) : null,
     status: data.status,
     student: tableToInterfaceProfiles(data.student),
     tutor: tableToInterfaceProfiles(data.tutor),
