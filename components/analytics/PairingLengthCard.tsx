@@ -40,8 +40,8 @@ const PairingLengthCard = () => {
       ]);
       if (statsRes.error) throw statsRes.error;
       if (rowsRes.error) throw rowsRes.error;
-      setStats(statsRes.data ?? []);
-      setRows(rowsRes.data ?? []);
+      setStats((statsRes.data ?? []) as PairingLengthStat[]);
+      setRows((rowsRes.data ?? []) as PairingRow[]);
     } catch (error) {
       console.error(error);
       toast.error("Unable to load pairing length stats");
