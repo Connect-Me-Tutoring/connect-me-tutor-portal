@@ -269,17 +269,6 @@ const EnrollmentList = ({
     }
   };
 
-  const fetchProfiles = async () => {
-    try {
-      const studentsData = await getAllProfiles("Student", null, null, "Active");
-      const tutorsData = await getAllProfiles("Tutor", null, null, "Active");
-      if (studentsData) setStudents(studentsData);
-      if (tutorsData) setTutors(tutorsData);
-    } catch (error) {
-      console.error("Error fetching profiles in EnrollmentsMangement.tsx:", error);
-    }
-  };
-
   const totalPages = Math.ceil(filteredEnrollments.length / rowsPerPage);
 
   const handlePageChange = (newPage: number) => {
