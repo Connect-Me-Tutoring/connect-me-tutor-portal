@@ -1,6 +1,7 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import { isCronRequestAuthorized } from "@/lib/security/cron";
+import { isBearerTokenAuthorized } from "@/lib/security/bearer-token";
 
 const PUBLIC_PATHS = ["/", "/auth", "/forgot-password", "/set-password", "/contact"];
 const SELF_VERIFYING_API_PATHS = ["/api/zoom", "/api/session-exit-form"];
@@ -62,7 +63,8 @@ export async function proxy(request: NextRequest) {
     !!user ||
     isPublicPath(path) ||
     isSelfVerifyingApiPath(path) ||
-    isCronRequestAuthorized(request);
+    isCronRequestAuthorized(request) ||
+    isBearerTokenAuthorized(request);
 
   if (!isExempt) {
     if (path.startsWith("/api/")) {
