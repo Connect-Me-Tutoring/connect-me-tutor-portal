@@ -164,11 +164,11 @@ export function PairingRequestCard({ userId, profileId, role }: PairingRequestCa
       });
     }
 
-    const promise = myRequest
+    const promise: Promise<void> = myRequest
       ? updatePairingRequest(myRequest.id, {
           exclude_rejected_tutors: checked,
         })
-      : setExcludeRejectedTutorsPreference(userId, checked);
+      : setExcludeRejectedTutorsPreference(userId, checked).then(() => undefined);
 
     toast.promise(promise, {
       loading: "Updating preference",

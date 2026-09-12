@@ -2,7 +2,6 @@
 
 import { PairingLog, PairingRequest, SharedPairing } from "@/types/pairing";
 import { mapRpcPairingLog } from "@/lib/pairing/mapDisplayLogs";
-import { createClient } from "@supabase/supabase-js";
 import { getProfile, getProfileRole } from "../user/client.actions";
 import { supabase } from "../../supabase/client";
 import { getAccountEnrollments } from "../enrollment/client.actions";
@@ -173,15 +172,6 @@ export type MyPairingRequest = {
 };
 
 export const getProfilePairingQueueState = async (profileId: string): Promise<boolean> => {
-  if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
-    throw new Error("Missing Supabase environment variables");
-  }
-
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
-  );
-
   const { data, error } = await supabase
     .from(Table.PairingRequests)
     .select("in_queue")
@@ -246,15 +236,6 @@ export const createPairingRequest = async (
   notes: string,
   excludeRejectedTutors: boolean = true,
 ) => {
-  if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
-    throw new Error("Missing Supabase environment variables");
-  }
-
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
-  );
-
   const [profile, enrollments] = await Promise.all([
     getProfile(userId),
     getAccountEnrollments(userId),
@@ -356,16 +337,11 @@ export const updatePairingRequest = async (
     priority?: number;
   },
 ) => {
-  if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
-    throw new Error("Missing Supabase environment variables");
-  }
-
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
-  );
-
-  const payload: Record<string, unknown> = {};
+  const payload: {
+    notes?: string;
+    exclude_rejected_tutors?: boolean;
+    priority?: number;
+  } = {};
   if (updates.notes !== undefined) payload.notes = updates.notes;
   if (updates.exclude_rejected_tutors !== undefined)
     payload.exclude_rejected_tutors = updates.exclude_rejected_tutors;
@@ -382,15 +358,6 @@ export const setExcludeRejectedTutorsPreference = async (
   userId: string,
   excludeRejectedTutors: boolean,
 ) => {
-  if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
-    throw new Error("Missing Supabase environment variables");
-  }
-
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
-  );
-
   const [profile, enrollments] = await Promise.all([
     getProfile(userId),
     getAccountEnrollments(userId),
