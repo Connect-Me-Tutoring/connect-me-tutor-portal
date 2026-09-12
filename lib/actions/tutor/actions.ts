@@ -6,33 +6,12 @@ import { Table } from "../../supabase/tables";
 import { tableToInterfaceSessions } from "../../utils/type-utils";
 import {
   requireAuthenticatedProfile,
-  requireSessionAccess,
+  requireSessionAccessById,
   requireTutorProfileAccess,
 } from "../auth/authz.server";
 import type { Database } from "@/types/database.types";
 
 type SessionStatus = Database["public"]["Enums"]["session_status"];
-
-/**
- * Resolves the caller's profile and asserts they are allowed to act on the
- * given session (its tutor, its student, or an Admin). Throws otherwise.
- */
-async function requireSessionAccessById(sessionId: string) {
-  await requireAuthenticatedProfile();
-  const supabase = await createClient();
-  const { data, error } = await supabase
-    .from(Table.Sessions)
-    .select("tutor_id, student_id")
-    .eq("id", sessionId)
-    .single();
-
-  if (error || !data) {
-    throw new Error("Session not found");
-  }
-
-  await requireSessionAccess(data);
-  return supabase;
-}
 
 /** 
 @params 
