@@ -1,11 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState, type SyntheticEvent } from "react";
 import Link from "next/link";
 import {
+  CheckCircle2,
   ChevronLeft,
   ChevronRight,
-  Lightbulb,
   LockKeyhole,
   MessageSquareText,
   Video,
@@ -17,24 +17,83 @@ import { Textarea } from "@/components/ui/textarea";
 import { ORIENTATION_TRAINING_CLIPS } from "@/constants/orientation-training-clips";
 import { cn } from "@/lib/utils";
 
+const SEEK_TOLERANCE_SECONDS = 0.5;
+
+export function clampUnwatchedSeek(
+  requestedTime: number,
+  furthestWatchedTime: number,
+  hasWatchedClip: boolean,
+) {
+  if (hasWatchedClip || requestedTime <= furthestWatchedTime + SEEK_TOLERANCE_SECONDS) {
+    return requestedTime;
+  }
+
+  return furthestWatchedTime;
+}
+
 export function ExperiencedTutorTraining() {
   const [clipIndex, setClipIndex] = useState(0);
-  const [hasFinishedClip, setHasFinishedClip] = useState(false);
-  const [reflection, setReflection] = useState("");
-  const [reflectionSubmitted, setReflectionSubmitted] = useState(false);
+  const [watchedClipIds, setWatchedClipIds] = useState<Set<string>>(new Set());
+  const [completedClipIds, setCompletedClipIds] = useState<Set<string>>(new Set());
+  const [reflections, setReflections] = useState<Record<string, string>>({});
   const [videoError, setVideoError] = useState(false);
+  const furthestWatchedTimeRef = useRef(0);
 
   const clip = ORIENTATION_TRAINING_CLIPS[clipIndex];
   const isFirstClip = clipIndex === 0;
   const isLastClip = clipIndex === ORIENTATION_TRAINING_CLIPS.length - 1;
+  const hasFinishedClip = watchedClipIds.has(clip.id);
+  const reflection = reflections[clip.id] ?? "";
+  const reflectionSubmitted = completedClipIds.has(clip.id);
 
   const selectClip = (nextIndex: number) => {
-    if (nextIndex < 0 || nextIndex >= ORIENTATION_TRAINING_CLIPS.length) return;
+    if (nextIndex < 0 || nextIndex >= ORIENTATION_TRAINING_CLIPS.length || nextIndex === clipIndex)
+      return;
+
     setClipIndex(nextIndex);
-    setHasFinishedClip(false);
-    setReflection("");
-    setReflectionSubmitted(false);
     setVideoError(false);
+    furthestWatchedTimeRef.current = 0;
+  };
+
+  const handleTimeUpdate = (event: SyntheticEvent<HTMLVideoElement>) => {
+    const video = event.currentTarget;
+    if (!video.seeking) {
+      furthestWatchedTimeRef.current = Math.max(furthestWatchedTimeRef.current, video.currentTime);
+    }
+  };
+
+  const handleSeeking = (event: SyntheticEvent<HTMLVideoElement>) => {
+    const video = event.currentTarget;
+    const allowedTime = clampUnwatchedSeek(
+      video.currentTime,
+      furthestWatchedTimeRef.current,
+      hasFinishedClip,
+    );
+
+    if (allowedTime !== video.currentTime) {
+      video.currentTime = allowedTime;
+    }
+  };
+
+  const markClipWatched = (event: SyntheticEvent<HTMLVideoElement>) => {
+    furthestWatchedTimeRef.current = event.currentTarget.duration;
+    setWatchedClipIds((current) => new Set(current).add(clip.id));
+  };
+
+  const updateReflection = (value: string) => {
+    setReflections((current) => ({ ...current, [clip.id]: value }));
+    setCompletedClipIds((current) => {
+      if (!current.has(clip.id)) return current;
+
+      const next = new Set(current);
+      next.delete(clip.id);
+      return next;
+    });
+  };
+
+  const submitReflection = () => {
+    if (!reflection.trim()) return;
+    setCompletedClipIds((current) => new Set(current).add(clip.id));
   };
 
   return (
@@ -45,8 +104,7 @@ export function ExperiencedTutorTraining() {
           <h1 className="text-3xl font-bold">Experienced Tutor Examples</h1>
         </div>
         <p className="max-w-3xl text-muted-foreground">
-          Watch real tutoring moments and reflect on the teaching decisions behind them. Your
-          responses stay in this activity and are not saved.
+          Watch real tutoring moments and reflect on the teaching decisions behind them.
         </p>
       </header>
 
@@ -58,9 +116,12 @@ export function ExperiencedTutorTraining() {
                 <span>
                   Clip {clipIndex + 1} of {ORIENTATION_TRAINING_CLIPS.length}
                 </span>
-                <span>
-                  Source {clip.sourceTime} · {clip.durationLabel}
-                </span>
+                {reflectionSubmitted && (
+                  <span className="inline-flex items-center gap-1 rounded-full bg-green-100 px-2.5 py-1 font-medium text-green-700">
+                    <CheckCircle2 aria-hidden="true" className="h-4 w-4" />
+                    Completed
+                  </span>
+                )}
               </div>
               <CardTitle className="text-2xl">{clip.title}</CardTitle>
             </CardHeader>
@@ -76,8 +137,10 @@ export function ExperiencedTutorTraining() {
                   className="h-full w-full object-contain"
                   controls
                   key={clip.src}
-                  onEnded={() => setHasFinishedClip(true)}
+                  onEnded={markClipWatched}
                   onError={() => setVideoError(true)}
+                  onSeeking={handleSeeking}
+                  onTimeUpdate={handleTimeUpdate}
                   playsInline
                   preload="metadata"
                   src={clip.src}
@@ -86,16 +149,6 @@ export function ExperiencedTutorTraining() {
                 </video>
               )}
             </div>
-
-            <CardContent className="p-5 sm:p-6">
-              <div className="flex items-start gap-3 rounded-lg border bg-blue-50 p-4 text-blue-950">
-                <Lightbulb aria-hidden="true" className="mt-0.5 h-5 w-5 shrink-0" />
-                <div>
-                  <p className="font-semibold">Teaching focus</p>
-                  <p className="mt-1 text-sm leading-6">{clip.focus}</p>
-                </div>
-              </div>
-            </CardContent>
           </Card>
 
           <Card aria-live="polite">
@@ -105,10 +158,16 @@ export function ExperiencedTutorTraining() {
                 <CardTitle>Self-Reflection</CardTitle>
               </div>
             </CardHeader>
-            <CardContent>
+            <CardContent className="space-y-4">
+              <div>
+                <p className="mb-1 text-sm font-medium text-muted-foreground">
+                  Reflection question
+                </p>
+                <p className="font-medium leading-7">{clip.reflectionPrompt}</p>
+              </div>
+
               {hasFinishedClip ? (
                 <div className="space-y-4">
-                  <p className="font-medium leading-7">{clip.reflectionPrompt}</p>
                   <div>
                     <label className="sr-only" htmlFor={`reflection-${clip.id}`}>
                       Your reflection
@@ -116,23 +175,16 @@ export function ExperiencedTutorTraining() {
                     <Textarea
                       autoComplete="off"
                       id={`reflection-${clip.id}`}
-                      onChange={(event) => {
-                        setReflection(event.target.value);
-                        setReflectionSubmitted(false);
-                      }}
+                      onChange={(event) => updateReflection(event.target.value)}
                       placeholder="Write your response here…"
                       rows={5}
                       value={reflection}
                     />
-                    <div className="mt-2 flex items-center gap-1.5 text-xs text-muted-foreground">
-                      <LockKeyhole aria-hidden="true" className="h-3.5 w-3.5" />
-                      Your response is not saved.
-                    </div>
                   </div>
 
                   <Button
                     disabled={!reflection.trim()}
-                    onClick={() => setReflectionSubmitted(true)}
+                    onClick={submitReflection}
                     variant="outline"
                   >
                     Submit response
@@ -149,7 +201,7 @@ export function ExperiencedTutorTraining() {
                   <LockKeyhole aria-hidden="true" className="mb-3 h-5 w-5 text-muted-foreground" />
                   <p className="font-medium">Watch the full clip to unlock the reflection.</p>
                   <p className="mt-1 text-sm text-muted-foreground">
-                    You can replay or scrub within the video at any time.
+                    You can replay any part you have already watched.
                   </p>
                 </div>
               )}
@@ -204,6 +256,12 @@ export function ExperiencedTutorTraining() {
                     {index + 1}. {item.durationLabel}
                   </span>
                   <span className="mt-0.5 block text-sm font-medium leading-5">{item.title}</span>
+                  {completedClipIds.has(item.id) && (
+                    <span className="mt-2 inline-flex items-center gap-1 text-xs font-medium text-green-700">
+                      <CheckCircle2 aria-hidden="true" className="h-3.5 w-3.5" />
+                      Completed
+                    </span>
+                  )}
                 </button>
               ))}
             </CardContent>
