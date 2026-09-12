@@ -5,6 +5,7 @@ import type { Profile } from "@/types";
 import type { Json } from "@/types/database.types";
 import {
   ChatFileBucket,
+  ChatRateLimitGlobalMaxMessages,
   ChatRateLimitMaxMessages,
   ChatRateLimitWindowSeconds,
   StudentAnnouncementsRoomId,
@@ -151,25 +152,40 @@ async function assertCanSendChatMessage(
   return { ok: false, message: "Invalid room type" };
 }
 
-// Counted with the admin client so the window cannot be narrowed by RLS
-// visibility; a failed count allows the send rather than blocking chat.
-async function isChatSendRateLimited(profileId: string): Promise<boolean> {
+// Two windows: a per-room cap so one conversation stays usable, plus a wider
+// global ceiling so bursts across many rooms (e.g. admin triage) are not
+// blocked while spraying every room at once still is. Counted with the admin
+// client so the window cannot be narrowed by RLS visibility; a failed count
+// allows the send rather than blocking chat.
+async function isChatSendRateLimited(profileId: string, roomId: string): Promise<boolean> {
   const admin = await createAdminClient();
   const windowStart = new Date(Date.now() - ChatRateLimitWindowSeconds * 1000).toISOString();
 
-  const { count, error } = await admin
-    .from("messages")
-    .select("id", { count: "exact", head: true })
-    .eq("user_id", profileId)
-    .gte("created_at", windowStart);
+  const [roomResult, globalResult] = await Promise.all([
+    admin
+      .from("messages")
+      .select("id", { count: "exact", head: true })
+      .eq("user_id", profileId)
+      .eq("room_id", roomId)
+      .gte("created_at", windowStart),
+    admin
+      .from("messages")
+      .select("id", { count: "exact", head: true })
+      .eq("user_id", profileId)
+      .gte("created_at", windowStart),
+  ]);
 
+  const error = roomResult.error ?? globalResult.error;
   if (error) {
     console.error("isChatSendRateLimited", error);
     await logError(error, { action: "sendChatMessage", profileId }, "chat_error");
     return false;
   }
 
-  return (count ?? 0) >= ChatRateLimitMaxMessages;
+  return (
+    (roomResult.count ?? 0) >= ChatRateLimitMaxMessages ||
+    (globalResult.count ?? 0) >= ChatRateLimitGlobalMaxMessages
+  );
 }
 
 export async function sendChatMessage(params: {
@@ -200,7 +216,7 @@ export async function sendChatMessage(params: {
   const auth = await assertCanSendChatMessage(supabase, profile, params.roomId, params.roomType);
   if (!auth.ok) return { ok: false, error: auth.message };
 
-  if (await isChatSendRateLimited(profile.id)) {
+  if (await isChatSendRateLimited(profile.id, params.roomId)) {
     return {
       ok: false,
       error: "You are sending messages too quickly. Wait a moment and try again.",

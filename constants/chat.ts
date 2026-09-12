@@ -5,7 +5,12 @@ export const ChatFileBucket = "enrollment-chat-files";
 
 // Enforced server-side in sendChatMessage; the chat UI mirrors them for early feedback.
 export const ChatMessageMaxLength = 2000;
+
+// Per-room cap keeps one conversation usable; the wider global ceiling still
+// bounds multi-room bursts without blocking normal cross-room activity such
+// as admin triage.
 export const ChatRateLimitMaxMessages = 10;
+export const ChatRateLimitGlobalMaxMessages = 30;
 export const ChatRateLimitWindowSeconds = 30;
 
 // A sender's follow-up messages in the same room within this window do not
@@ -13,6 +18,7 @@ export const ChatRateLimitWindowSeconds = 30;
 export const ChatEmailDebounceSeconds = 120;
 
 export const ChatFileMaxBytes = 10 * 1024 * 1024;
+export const ChatFileMaxMegabytes = Math.floor(ChatFileMaxBytes / (1024 * 1024));
 export const ChatFileNameMaxLength = 200;
 export const ChatAllowedFileMimeTypes = [
   "image/jpeg",

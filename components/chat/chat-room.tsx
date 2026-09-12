@@ -26,6 +26,7 @@ import {
   ChatAllowedFileMimeTypes,
   ChatFileBucket,
   ChatFileMaxBytes,
+  ChatFileMaxMegabytes,
   ChatMessageMaxLength,
 } from "@/constants/chat";
 
@@ -217,6 +218,12 @@ export function ChatRoom({
     };
   }, [roomId, roomIdValid, profile?.id]);
 
+  // The component instance survives switches between rooms (call sites pass no
+  // key), so an error from the previous room must not linger under this one.
+  useEffect(() => {
+    setSendError(null);
+  }, [roomId, type]);
+
   // Load messages and set up subscriptions
   useEffect(() => {
     let isMounted = true;
@@ -336,7 +343,7 @@ export function ChatRoom({
     };
 
     if (file.size > ChatFileMaxBytes) {
-      setSendError(`File is too large (max ${Math.floor(ChatFileMaxBytes / (1024 * 1024))} MB)`);
+      setSendError(`File is too large (max ${ChatFileMaxMegabytes} MB)`);
       resetFileInput();
       return;
     }
