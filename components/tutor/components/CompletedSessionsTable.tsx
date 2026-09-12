@@ -25,15 +25,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  ChevronsLeft,
-  ChevronsRight,
-  ChevronLeft,
-  ChevronRight,
-  CircleCheckBig,
-  CircleX,
-  Ellipsis,
-} from "lucide-react";
+import { ChevronsLeft, ChevronsRight, ChevronLeft, ChevronRight, Ellipsis } from "lucide-react";
+import { SessionStatusBadge } from "@/components/sessions/SessionStatusBadge";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -78,19 +71,7 @@ const CompletedSessionsTable = ({
             {paginatedSessions.map((session: Session, index: number) => (
               <TableRow key={index}>
                 <TableCell>
-                  {session.status === "Complete" ? (
-                    <span className="px-3 py-1 inline-flex items-center rounded-full bg-green-100 text-green-800 border border-green-200">
-                      <CircleCheckBig size={14} className="mr-1" />
-                      Complete
-                    </span>
-                  ) : session.status === "Cancelled" ? (
-                    <span className="px-3 py-1 inline-flex items-center rounded-full bg-red-100 text-red-800 border border-red-200">
-                      <CircleX size={14} className="mr-1" />
-                      Cancelled
-                    </span>
-                  ) : (
-                    ""
-                  )}
+                  <SessionStatusBadge status={session.status} />
                 </TableCell>
                 <TableCell>{formatSessionDate(session.date)}</TableCell>
                 <TableCell className="font-medium">
@@ -218,19 +199,7 @@ const CompletedSessionsTable = ({
               <div className="font-medium text-sm">
                 Tutoring Session with {session.student?.firstName} {session.student?.lastName}
               </div>
-              {session.status === "Complete" ? (
-                <span className="px-3 py-1 inline-flex items-center rounded-full bg-green-100 text-green-800 border border-green-200 whitespace-nowrap">
-                  <CircleCheckBig size={14} className="mr-1" />
-                  Complete
-                </span>
-              ) : session.status === "Cancelled" ? (
-                <span className="px-3 py-1 inline-flex items-center rounded-full bg-red-100 text-red-800 border border-red-200 whitespace-nowrap">
-                  <CircleX size={14} className="mr-1" />
-                  Cancelled
-                </span>
-              ) : (
-                ""
-              )}
+              <SessionStatusBadge status={session.status} className="whitespace-nowrap" />
             </div>
             <div className="text-sm text-muted-foreground">{formatSessionDate(session.date)}</div>
             <div className="text-sm">Duration: {formatSessionDuration(session.duration)}</div>

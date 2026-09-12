@@ -18,7 +18,7 @@ export interface Profile {
   parentEmail?: string;
   timeZone: string;
   subjects_of_interest: string[];
-  status: "Active" | "Inactive" | "Deleted";
+  status: "Active" | "Inactive";
   tutorIds: string[];
   studentNumber: string | null;
   settingsId: string;
@@ -35,7 +35,7 @@ export interface Session {
   date: string;
   meeting?: Meeting | null;
   duration: number;
-  status: "Active" | "Complete" | "Cancelled" | "Rescheduled";
+  status: "Active" | "Complete" | "Cancelled" | "Rescheduled" | "Unconfirmed";
   session_exit_form: string;
   summary: string;
   isQuestionOrConcern: boolean;

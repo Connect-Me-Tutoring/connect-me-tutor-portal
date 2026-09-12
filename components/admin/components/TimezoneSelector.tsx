@@ -31,6 +31,7 @@ const TimeZoneSelector = ({ profile, handleTimeZone }: TimeZoneSelectorProps) =>
         <SelectItem value="UTC+02">Eastern European Time (UTC+2)</SelectItem>
         <SelectItem value="UTC+03">Eastern European Summer Time (UTC+3)</SelectItem>
         <SelectItem value="UTC+04">Moscow Standard Time (UTC+4)</SelectItem>
+        <SelectItem value="UTC+04:30">Afghanistan Time (UTC+4:30)</SelectItem>
         <SelectItem value="UTC+05">Pakistan Standard Time (UTC+5)</SelectItem>
         <SelectItem value="UTC+05:30">Indian Standard Time (UTC+5:30)</SelectItem>
         <SelectItem value="UTC+06">Bangladesh Standard Time (UTC+6)</SelectItem>

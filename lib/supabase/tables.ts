@@ -1,6 +1,7 @@
 export enum Table {
   Profiles = "Profiles",
-  Emails = "Emails",
+  SessionReminders = "session_reminders",
+  Emails = "emails",
   Enrollments = "Enrollments",
   Forms = "Forms",
   Events = "Events",

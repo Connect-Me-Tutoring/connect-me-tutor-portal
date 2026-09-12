@@ -41,6 +41,9 @@ keys.json
 # vscode
 .vscode
 
+# Intellj
+.idea
+
 #supabase
 supabase/.temp/*
 types/database.types.ts.new

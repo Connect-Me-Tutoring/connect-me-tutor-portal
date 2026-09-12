@@ -1345,29 +1345,17 @@ export async function addStandaloneSession(
   }
 }
 
-export async function cancelUnsubmittedSEF(profile: Profile) {
-  try {
-    const supabase = await createClient();
-    const now = new Date();
-    const fortyEightHoursAgo = new Date(now.getTime() - 48 * 60 * 60 * 1000).toISOString();
-
-    await supabase
-      .from("Sessions")
-      .update({ status: "Cancelled" })
-      .eq("tutor_id", profile.id)
-      .lt("date", fortyEightHoursAgo);
-  } catch (error) {
-    console.error("Unable to cancel unsubmitted SEF");
-    await logError(error, { tutor_id: profile.id }, "session_error");
-  }
-}
-
-export async function cancelUnsubmittedSEFCron() {
+/**
+ * Sessions whose tutor never submitted a session exit form are left Unconfirmed
+ * rather than Cancelled, so an unfilled form stays distinguishable from a session
+ * the tutor actually called off.
+ */
+export async function markUnconfirmedSEFCron() {
   const supabase = await createAdminClient();
   const now = new Date();
   const fortyEightHoursAgo = new Date(now.getTime() - 48 * 60 * 60 * 1000).toISOString();
 
-  // First, fetch sessions that need to be cancelled
+  // First, fetch sessions that are still missing an exit form
   const { data: sessions, error: fetchError } = await supabase
     .from("Sessions")
     .select("id")
@@ -1375,26 +1363,26 @@ export async function cancelUnsubmittedSEFCron() {
     .lt("date", fortyEightHoursAgo);
 
   if (fetchError) {
-    return { success: false, error: fetchError.message, cancelled: 0 };
+    return { success: false, error: fetchError.message, unconfirmed: 0 };
   }
 
   if (!sessions || sessions.length === 0) {
-    return { success: true, error: undefined, cancelled: 0 };
+    return { success: true, error: undefined, unconfirmed: 0 };
   }
 
   // Then update them
   const { error: updateError } = await supabase
     .from("Sessions")
-    .update({ status: "Cancelled" })
+    .update({ status: "Unconfirmed" })
     .eq("status", "Active")
     .eq("is_standalone", false)
     .lt("date", fortyEightHoursAgo);
 
   if (updateError) {
-    return { success: false, error: updateError.message, cancelled: 0 };
+    return { success: false, error: updateError.message, unconfirmed: 0 };
   }
 
-  return { success: true, error: undefined, cancelled: sessions.length };
+  return { success: true, error: undefined, unconfirmed: sessions.length };
 }
 
 export async function updateSessionsStatus(sessionIds: string[], status: SessionStatus) {

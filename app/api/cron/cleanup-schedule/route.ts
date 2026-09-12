@@ -1,15 +1,19 @@
 import { NextRequest, NextResponse } from "next/server";
-import { cancelUnsubmittedSEFCron } from "@/lib/actions/session/server.actions";
+import { markUnconfirmedSEFCron } from "@/lib/actions/session/server.actions";
 import {
   deleteInactiveEnrollments,
   warnInactiveEnrollments,
+  warnInactiveEnrollmentsEarly,
 } from "@/lib/actions/enrollment/server.actions";
 import { isCronRequestAuthorized } from "@/lib/security/cron";
+import { logError } from "@/lib/posthog";
+import { logUnauthorizedAccess } from "@/lib/security/log-unauthorized-access";
 
 export const dynamic = "force-dynamic";
 
 export async function GET(req: NextRequest) {
   if (!isCronRequestAuthorized(req)) {
+    await logUnauthorizedAccess(req, "cron/cleanup-schedule");
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -18,9 +22,13 @@ export async function GET(req: NextRequest) {
   }
 
   const results = {
-    cancelUnsubmittedSEF: {
+    markUnconfirmedSEF: {
       success: false,
-      cancelled: 0,
+      unconfirmed: 0,
+      error: undefined as string | undefined,
+    },
+    warnInactiveEnrollmentsEarly: {
+      warned: 0,
       error: undefined as string | undefined,
     },
     warnInactiveEnrollments: {
@@ -34,23 +42,48 @@ export async function GET(req: NextRequest) {
     },
   };
 
-  // Task 1: Cancel unsubmitted SEFs
-  const cancelResult = await cancelUnsubmittedSEFCron();
-  results.cancelUnsubmittedSEF = cancelResult;
+  try {
+    // Task 1: Mark sessions with unsubmitted SEFs as Unconfirmed
+    const unconfirmedResult = await markUnconfirmedSEFCron();
+    results.markUnconfirmedSEF = unconfirmedResult;
 
-  // Task 2: Warn inactive enrollments (5+ weeks missing SEF)
-  const warnResult = await warnInactiveEnrollments();
-  results.warnInactiveEnrollments = {
-    warned: warnResult.length,
-    error: undefined,
-  };
+    // Task 2a: Early-warn inactive enrollments (3+ weeks missing SEF)
+    const earlyWarnResult = await warnInactiveEnrollmentsEarly();
+    results.warnInactiveEnrollmentsEarly = {
+      warned: earlyWarnResult.length,
+      error: undefined,
+    };
 
-  // Task 3: Delete inactive enrollments (6+ weeks missing SEF)
-  const deleteResult = await deleteInactiveEnrollments();
-  results.deleteInactiveEnrollments = deleteResult;
+    // Task 2b: Warn inactive enrollments (4+ weeks missing SEF)
+    const warnResult = await warnInactiveEnrollments();
+    results.warnInactiveEnrollments = {
+      warned: warnResult.length,
+      error: undefined,
+    };
+
+    // Task 3: Delete inactive enrollments (5+ weeks missing SEF)
+    const deleteResult = await deleteInactiveEnrollments();
+    results.deleteInactiveEnrollments = deleteResult;
+  } catch (error) {
+    console.error("Cron job cleanup-schedule failed:", error);
+    await logError(error, { results }, "cron_cleanup_schedule_error");
+    return NextResponse.json(
+      { message: "Cleanup failed", error: "Internal Server Error", results },
+      { status: 500 },
+    );
+  }
 
   const hasErrors =
-    !results.cancelUnsubmittedSEF.success || !results.deleteInactiveEnrollments.success;
+    !results.markUnconfirmedSEF.success || !results.deleteInactiveEnrollments.success;
+
+  if (hasErrors) {
+    console.error("Cron job cleanup-schedule completed with errors:", results);
+    await logError(
+      new Error("cleanup-schedule cron completed with errors"),
+      { results },
+      "cron_cleanup_schedule_error",
+    );
+  }
 
   return NextResponse.json(
     {

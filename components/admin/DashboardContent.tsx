@@ -168,7 +168,9 @@ const AdminDashboard = () => {
                           ? "bg-green-200 opacity-25 pointer-events-none"
                           : session.status === "Cancelled"
                             ? "bg-red-100 opacity-25 pointer-events-none"
-                            : ""
+                            : session.status === "Unconfirmed"
+                              ? "bg-amber-100 opacity-25 pointer-events-none"
+                              : ""
                     }
                   >
                     <TableCell>
@@ -317,7 +319,9 @@ const AdminDashboard = () => {
                     ? "bg-green-200 opacity-25 pointer-events-none"
                     : session.status === "Cancelled"
                       ? "bg-red-100 opacity-25 pointer-events-none"
-                      : undefined
+                      : session.status === "Unconfirmed"
+                        ? "bg-amber-100 opacity-25 pointer-events-none"
+                        : undefined
                 }
               >
                 <div className="font-medium text-sm">
