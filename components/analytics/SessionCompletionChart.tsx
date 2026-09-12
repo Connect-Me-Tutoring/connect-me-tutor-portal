@@ -49,6 +49,7 @@ const SessionCompletionChart = () => {
   const [isRefreshing, setIsRefreshing] = useState(false);
 
   const [granularity, setGranularity] = useState<Granularity>("month");
+  const [firstOnly, setFirstOnly] = useState(false);
   const [metric, setMetric] = useState<Metric>("completed");
   const [showTable, setShowTable] = useState(false);
   const [showTrendline, setShowTrendline] = useState(false);
@@ -60,42 +61,46 @@ const SessionCompletionChart = () => {
   // Monthly -> Weekly can resolve out of order).
   const latestRequestIdRef = useRef(0);
 
-  const fetchStats = useCallback(async (g: Granularity, isManualRefresh = false) => {
-    const requestId = ++latestRequestIdRef.current;
-    if (isManualRefresh) setIsRefreshing(true);
-    else setIsLoading(true);
-    try {
-      const { data, error } = await supabase.rpc("get_period_session_completion_stats", {
-        p_granularity: g,
-      });
-      if (requestId !== latestRequestIdRef.current) return;
-      if (error) throw error;
-      const rows: PeriodStat[] = data ?? [];
-      setData(rows);
-      // Reset the range to span the new dataset. Required on a granularity
-      // switch because the input value format changes between modes.
-      if (rows.length) {
-        setRangeStart(rangeKey(rows[0].period, g));
-        setRangeEnd(rangeKey(rows[rows.length - 1].period, g));
-      } else {
-        setRangeStart("");
-        setRangeEnd("");
+  const fetchStats = useCallback(
+    async (g: Granularity, first: boolean, isManualRefresh = false) => {
+      const requestId = ++latestRequestIdRef.current;
+      if (isManualRefresh) setIsRefreshing(true);
+      else setIsLoading(true);
+      try {
+        const { data, error } = await supabase.rpc("get_period_session_completion_stats", {
+          p_granularity: g,
+          p_first_sessions_only: first,
+        });
+        if (requestId !== latestRequestIdRef.current) return;
+        if (error) throw error;
+        const rows: PeriodStat[] = data ?? [];
+        setData(rows);
+        // Reset the range to span the new dataset. Required on a granularity
+        // switch because the input value format changes between modes.
+        if (rows.length) {
+          setRangeStart(rangeKey(rows[0].period, g));
+          setRangeEnd(rangeKey(rows[rows.length - 1].period, g));
+        } else {
+          setRangeStart("");
+          setRangeEnd("");
+        }
+      } catch (error) {
+        if (requestId !== latestRequestIdRef.current) return;
+        console.error(error);
+        toast.error("Unable to load session completion stats");
+      } finally {
+        if (requestId === latestRequestIdRef.current) {
+          setIsLoading(false);
+          setIsRefreshing(false);
+        }
       }
-    } catch (error) {
-      if (requestId !== latestRequestIdRef.current) return;
-      console.error(error);
-      toast.error("Unable to load session completion stats");
-    } finally {
-      if (requestId === latestRequestIdRef.current) {
-        setIsLoading(false);
-        setIsRefreshing(false);
-      }
-    }
-  }, []);
+    },
+    [],
+  );
 
   useEffect(() => {
-    fetchStats(granularity);
-  }, [fetchStats, granularity]);
+    fetchStats(granularity, firstOnly);
+  }, [fetchStats, granularity, firstOnly]);
 
   const formatPeriod = useCallback(
     (iso: string, long = false) => {
@@ -152,7 +157,8 @@ const SessionCompletionChart = () => {
   if (isLoading) return <div>Loading completion stats...</div>;
   if (!data.length) return <div>No data available</div>;
 
-  const axisTitle = metric === "completed" ? "Sessions completed" : "% completed";
+  const scopeLabel = firstOnly ? "First sessions" : "Sessions";
+  const axisTitle = metric === "completed" ? `${scopeLabel} completed` : "% completed";
 
   const renderTooltip = ({ active, payload }: any) => {
     if (!active || !payload?.length) return null;
@@ -177,7 +183,7 @@ const SessionCompletionChart = () => {
     <div>
       <div className="flex items-center justify-end mb-3">
         <button
-          onClick={() => fetchStats(granularity, true)}
+          onClick={() => fetchStats(granularity, firstOnly, true)}
           disabled={isRefreshing}
           className="text-xs text-blue-600 hover:underline disabled:opacity-50"
         >
@@ -185,8 +191,27 @@ const SessionCompletionChart = () => {
         </button>
       </div>
 
-      {/* Granularity + metric toggles */}
+      {/* Scope, granularity, and metric toggles */}
       <div className="flex flex-wrap items-center gap-4 mb-3">
+        <div className="flex items-center gap-1">
+          <button
+            onClick={() => setFirstOnly(false)}
+            className={`text-xs px-3 py-1 rounded border ${
+              !firstOnly ? "bg-emerald-700 text-white border-emerald-700" : "text-gray-600"
+            }`}
+          >
+            All sessions
+          </button>
+          <button
+            onClick={() => setFirstOnly(true)}
+            className={`text-xs px-3 py-1 rounded border ${
+              firstOnly ? "bg-emerald-700 text-white border-emerald-700" : "text-gray-600"
+            }`}
+          >
+            First sessions
+          </button>
+        </div>
+
         <div className="flex items-center gap-1">
           <button
             onClick={() => setGranularity("month")}
@@ -272,7 +297,8 @@ const SessionCompletionChart = () => {
 
       {chartData.length === 0 ? (
         <div className="text-sm text-gray-500 py-8 text-center">
-          No {granularity === "week" ? "weeks" : "months"} in the selected range.
+          No {granularity === "week" ? "weeks" : "months"} with{" "}
+          {firstOnly ? "first sessions" : "sessions"} in the selected range.
         </div>
       ) : (
         <div style={{ width: "100%", height: 320 }}>

@@ -13,7 +13,7 @@ export default async function MyTutorsPage() {
     <main className="p-8">
       <h1 className="text-3xl font-bold mb-6">All Tutors</h1>
       <div className="flex space-x-6">
-        <div className="flex-grow bg-white rounded-lg shadow p-6">
+        <div className="flex-grow min-w-0 bg-white rounded-lg shadow p-6">
           <Suspense fallback={<SkeletonTable />}>
             <MyTutorsData />
           </Suspense>

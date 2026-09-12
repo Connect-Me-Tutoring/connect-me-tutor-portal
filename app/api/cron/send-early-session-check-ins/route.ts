@@ -3,6 +3,7 @@ import { formatInTimeZone } from "date-fns-tz";
 import { sendEarlySessionCheckInEmails } from "@/lib/actions/email/server.actions";
 import { isCronRequestAuthorized } from "@/lib/security/cron";
 import { logError } from "@/lib/posthog";
+import { logUnauthorizedAccess } from "@/lib/security/log-unauthorized-access";
 
 export const dynamic = "force-dynamic";
 
@@ -10,6 +11,7 @@ const EASTERN_TIMEZONE = "America/New_York";
 
 export async function GET(request: NextRequest) {
   if (!isCronRequestAuthorized(request)) {
+    await logUnauthorizedAccess(request, "cron/send-early-session-check-ins");
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 

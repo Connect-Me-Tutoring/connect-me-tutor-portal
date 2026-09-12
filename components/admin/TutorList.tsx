@@ -523,6 +523,7 @@ const TutorList = ({ initialTutors }: any) => {
         </div>
       </div>
       <ResponsiveList
+        desktopWrapperClassName="overflow-x-auto"
         columns={columns}
         rows={paginatedTutors}
         mobileRows={visibleTutors}
