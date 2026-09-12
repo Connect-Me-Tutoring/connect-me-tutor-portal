@@ -13,17 +13,6 @@ export async function GET(req: NextRequest, props: { params: Promise<{ sessionId
       return NextResponse.json({ error: "Session ID is required" }, { status: 400 });
     }
 
-    // Authorization: the caller must be the session's tutor, its student, or an Admin.
-    const session = await getSessionById(sessionId, { skipAccessCheck: true });
-    if (!session) {
-      return NextResponse.json({ error: "Session not found" }, { status: 404 });
-    }
-    try {
-      await requireSessionAccess(session);
-    } catch {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-    }
-
     const enrollmentId = req.nextUrl.searchParams.get("enrollmentId");
     const data = await getParticipationData(sessionId, enrollmentId);
 

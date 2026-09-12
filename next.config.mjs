@@ -53,7 +53,7 @@ const nextConfig = {
               "frame-src 'self' blob: https://*.zoom.us https://vercel.live; frame-ancestors 'self'; object-src 'none'; base-uri 'self'; form-action 'self';",
           },
           { key: "X-Frame-Options", value: "SAMEORIGIN" },
-          { key: "X-Content-Type-Options", value: "nosniff" },
+          { key: "X-Content-Typ Fe-Options", value: "nosniff" },
           { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
           {
             key: "Strict-Transport-Security",
