@@ -20,10 +20,10 @@ the server-action path. They do nothing about a direct PostgREST call.
 
 ## What the two migrations do
 
-| File | Effect |
-|---|---|
-| `20260820120000_rls_helpers.sql` | Creates the `private` schema, the helper functions, and two column-guard triggers. **Changes no access on its own.** Safe to ship independently. |
-| `20260820120001_rls_enable_policies.sql` | Revokes `anon`, enables RLS on every public table, installs 47 policies. **This is the one that can break pages.** |
+| File                                     | Effect                                                                                                                                           |
+| ---------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `20260820120000_rls_helpers.sql`         | Creates the `private` schema, the helper functions, and two column-guard triggers. **Changes no access on its own.** Safe to ship independently. |
+| `20260820120001_rls_enable_policies.sql` | Revokes `anon`, enables RLS on every public table, installs 47 policies. **This is the one that can break pages.**                               |
 
 They are split so you can land the first, confirm nothing moves, then schedule
 the second.
@@ -39,12 +39,12 @@ the second.
 
 Access shape:
 
-| Role | Sees |
-|---|---|
-| Admin | everything |
-| Tutor | own profile; students they're paired/enrolled/sessioned with, or matched to; own sessions, enrollments, events; their meetings; their pairing rooms + tutor announcements |
-| Student | own profile; their tutors; own sessions and enrollments; their meetings; their pairing rooms + student announcements |
-| Anyone | nothing without a session |
+| Role    | Sees                                                                                                                                                                      |
+| ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Admin   | everything                                                                                                                                                                |
+| Tutor   | own profile; students they're paired/enrolled/sessioned with, or matched to; own sessions, enrollments, events; their meetings; their pairing rooms + tutor announcements |
+| Student | own profile; their tutors; own sessions and enrollments; their meetings; their pairing rooms + student announcements                                                      |
+| Anyone  | nothing without a session                                                                                                                                                 |
 
 One auth user can own several profiles (`user_settings.last_active_profile_id`),
 so `private.profile_ids()` returns a set, not a single id.
@@ -67,7 +67,7 @@ tutor, a paired student, and an unrelated student. Confirmed:
 
 - tutor sees only self + paired student; unpaired student sees only self; admin sees all
 - tutor cannot read a `Meetings` row (and its password) they have no session for
-- student cannot read the *tutor* announcements room
+- student cannot read the _tutor_ announcements room
 - tutor cannot self-promote to Admin, but can edit own phone number
 - admin can still set `Profiles.status`
 - student cannot post to announcements, cannot impersonate another `user_id`, cannot post into a pairing room they aren't in
