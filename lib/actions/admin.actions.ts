@@ -31,7 +31,6 @@ import ResetPassword from "@/app/(auth)/set-password/page";
 import { getStudentSessions } from "./student/actions";
 import { date } from "zod";
 import toast from "react-hot-toast";
-import { DatabaseIcon } from "lucide-react";
 import { Table } from "../supabase/tables";
 import { handleCalculateDuration } from "@/lib/utils";
 import {
@@ -40,11 +39,6 @@ import {
   tableToInterfaceSessions,
   tableToInterfaceMeetings,
 } from "../utils/type-utils";
-import { createPairingRequest } from "./pairing/client.actions";
-import { scheduleMultipleSessionReminders } from "../twilio";
-import { removeFutureSessions } from "./enrollment/server.actions";
-import type { Database } from "@/types/database.types";
-// import { getMeeting } from "./meeting.actions";
 
 const { fromZonedTime } = DateFNS;
 
@@ -60,7 +54,7 @@ export async function getAllProfiles(
   role: "Student" | "Tutor" | "Admin",
   orderBy?: string | null,
   ascending?: boolean | null,
-  status?: string | null,
+  status?: NonNullable<"Active" | "Inactive">,
 ): Promise<Profile[] | null> {
   try {
     const profileFields = `
@@ -741,7 +735,10 @@ export async function removeEvent(eventId: string): Promise<boolean> {
 /* NOTIFICATIONS */
 export async function getAllNotifications(): Promise<Notification[] | null> {
   try {
-    const { data, error } = await supabase.from("Notifications").select(`
+    const { data, error } = await supabase
+      .from("Notifications")
+      .select(
+        `
         id,
         created_at,
         session_id,
@@ -751,7 +748,9 @@ export async function getAllNotifications(): Promise<Notification[] | null> {
         student_id,
         status,
         summary
-      `);
+      `,
+      )
+      .order("created_at", { ascending: false });
 
     if (error) {
       console.error("Error fetching notification details:", error.message);

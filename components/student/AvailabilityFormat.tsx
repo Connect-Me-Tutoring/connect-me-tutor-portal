@@ -3,10 +3,10 @@ import { formatMilitaryToStandardTime } from "@/lib/utils";
 // Single Availability component that takes an array and formats it
 const Availability = ({
   availability,
-  card,
+  card = false,
 }: {
   availability: { day: string; startTime: string; endTime: string }[];
-  card: boolean;
+  card?: boolean;
 }) => (
   <div>
     <ul className={card ? "text-sm text-muted-foreground" : "text-xs"}>
