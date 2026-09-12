@@ -102,7 +102,9 @@ export async function updateStudentGradeLevels(
           result.skipped.push({
             id: student.id,
             email: student.email,
-            reason: isGraduated ? "Already graduated" : `Unrecognized grade format: '${student.grade}'`,
+            reason: isGraduated
+              ? "Already graduated"
+              : `Unrecognized grade format: '${student.grade}'`,
             grade: student.grade,
           });
           continue;
