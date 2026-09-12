@@ -1147,12 +1147,20 @@ export type Database = {
       };
     };
     Enums: {
-      day_of_week: "Monday" | "Tuesday" | "Wednesday" | "Thursday" | "Friday" | "Saturday" | "Sunday";
+      day_of_week:
+        "Monday" | "Tuesday" | "Wednesday" | "Thursday" | "Friday" | "Saturday" | "Sunday";
       event_type: "Training" | "Conference" | "Workshop" | "Meeting" | "Other";
       profile_status: "active" | "inactive" | "deleted" | "pending";
       session_frequency: "weekly" | "biweekly" | "monthly" | "as_needed";
       session_status: "completed" | "cancelled" | "scheduled";
-      timezone: "America/New_York" | "America/Chicago" | "America/Denver" | "America/Los_Angeles" | "America/Anchorage" | "Pacific/Honolulu" | "UTC";
+      timezone:
+        | "America/New_York"
+        | "America/Chicago"
+        | "America/Denver"
+        | "America/Los_Angeles"
+        | "America/Anchorage"
+        | "Pacific/Honolulu"
+        | "UTC";
     };
     CompositeTypes: {};
   };
