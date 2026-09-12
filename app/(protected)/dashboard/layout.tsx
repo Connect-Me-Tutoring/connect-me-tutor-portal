@@ -3,6 +3,7 @@ import DashboardLayout from "@/components/dashboard/dashboard-layout";
 import DashboardProviders from "./dashboardprovider";
 import { getUserProfiles } from "@/lib/actions/profile/server.actions";
 import { cachedGetProfile } from "@/lib/actions/cache";
+import { isTutorOrientationEnabled } from "@/lib/orientation/config.server";
 import { redirect } from "next/navigation";
 import { logError } from "@/lib/posthog";
 
@@ -19,9 +20,9 @@ export default async function Layout({ children }: { children: React.ReactNode }
 
   const profile = await cachedGetProfile(user.id);
 
-  const orientationQuizEnabled = process.env.ORIENTATION_QUIZ_ENABLED === "true";
-  if (orientationQuizEnabled && profile?.role === "Tutor" && !profile.orientationCompletedAt) {
-    redirect("/orientation/quiz");
+  const orientationEnabled = isTutorOrientationEnabled();
+  if (orientationEnabled && profile?.role === "Tutor" && !profile.orientationCompletedAt) {
+    redirect("/orientation");
   }
 
   const userProfiles = profile?.userId ? getUserProfiles(profile.userId) : Promise.resolve([]);
@@ -30,7 +31,11 @@ export default async function Layout({ children }: { children: React.ReactNode }
     <>
       <DashboardProviders initialProfile={profile}>
         {" "}
-        <DashboardLayout profile={profile} userProfilesPromise={userProfiles}>
+        <DashboardLayout
+          orientationEnabled={orientationEnabled}
+          profile={profile}
+          userProfilesPromise={userProfiles}
+        >
           {children}
         </DashboardLayout>
       </DashboardProviders>
