@@ -1,3 +1,4 @@
+import "server-only";
 import { createAdminClient } from "@/lib/supabase/server";
 import { ChatEmailDebounceSeconds } from "@/constants/chat";
 import { sendChatMessageNotificationEmail } from "@/lib/actions/email/server.actions";
