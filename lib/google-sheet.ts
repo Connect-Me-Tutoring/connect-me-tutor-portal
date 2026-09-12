@@ -138,3 +138,62 @@ async function sendDiscordNotification(rowIdx: number, formData: SessionExitForm
     throw error;
   }
 }
+
+export interface OrientationQuizFeedbackPayload {
+  submittedAt: string;
+  userName: string;
+  questionText: string;
+  quizStats?: {
+    totalQuestions: number;
+    retries: number;
+  };
+  status?: string;
+}
+
+export async function appendOrientationQuestionToSheet(
+  data: OrientationQuizFeedbackPayload,
+  sheetName: string = "Orientation Questions"
+) {
+  const authClient = (await authenticate()) as any;
+  const sheets = google.sheets({ version: "v4", auth: authClient });
+  const spreadsheetId = process.env.SHEET_ID;
+
+  if (!spreadsheetId) {
+    console.warn("SHEET_ID is not configured — skipping spreadsheet log");
+    return null;
+  }
+
+  // Row format: [Timestamp, Name, Question/Feedback, Total Questions, Retries, Status]
+  const values = [
+    [
+      sanitizeForSheetCell(data.submittedAt),
+      sanitizeForSheetCell(data.userName),
+      sanitizeForSheetCell(data.questionText),
+      sanitizeForSheetCell(data.quizStats ? `${data.quizStats.totalQuestions}` : ""),
+      sanitizeForSheetCell(data.quizStats ? `${data.quizStats.retries}` : ""),
+      sanitizeForSheetCell(data.status || "New"),
+    ],
+  ];
+
+  try {
+    const response = await sheets.spreadsheets.values.append({
+      spreadsheetId,
+      range: `${sheetName}!A:F`,
+      valueInputOption: "USER_ENTERED",
+      insertDataOption: "INSERT_ROWS",
+      requestBody: { values },
+    });
+
+    console.log(
+      `[Google Sheet] Successfully appended row to Sheet ID (${spreadsheetId}):`,
+      response.data.updates?.updatedRange,
+    );
+
+    return response.data;
+  } catch (error) {
+    console.error("Error appending orientation question to Google Sheet:", error);
+    await logError(error, { sheetName }, "google_sheet_orientation_error");
+    throw error;
+  }
+}
+

@@ -1,7 +1,7 @@
 "use server";
 
 import { requireAuthenticatedProfile } from "@/lib/actions/auth/authz.server";
-
+import { appendOrientationQuestionToSheet } from "@/lib/google-sheet";
 import { createClient } from "@/lib/supabase/server";
 import { Table } from "@/lib/supabase/tables";
 
@@ -13,8 +13,8 @@ interface SubmitQuizPayload {
 }
 
 /**
- * Persists a quiz completion and sends the tutor's questions
- * to a Discord channel via webhook.
+ * Persists a quiz completion, logs any submitted questions/feedback
+ * to the Operations master Google Spreadsheet, and sends a Discord alert.
  */
 export async function submitQuizCompletion(payload: SubmitQuizPayload) {
   const { profile } = await requireAuthenticatedProfile();
@@ -37,6 +37,29 @@ export async function submitQuizCompletion(payload: SubmitQuizPayload) {
   const hasQuestions = payload.questionsText && payload.questionsText.trim().length > 0;
 
   if (hasQuestions) {
+    const formattedDate = new Date().toLocaleString("en-US", {
+      timeZone: "America/Los_Angeles",
+      dateStyle: "medium",
+      timeStyle: "short",
+    });
+
+    // Append to Operations master Google Sheet
+    try {
+      await appendOrientationQuestionToSheet({
+        submittedAt: formattedDate,
+        userName: tutorName,
+        questionText: payload.questionsText!.trim(),
+        quizStats: {
+          totalQuestions: payload.totalQuestions,
+          retries: payload.retries,
+        },
+        status: "New",
+      });
+    } catch (sheetErr) {
+      console.error("Failed to log orientation question to Google Sheet:", sheetErr);
+    }
+
+    // Send Discord webhook notification
     await sendDiscordWebhook(tutorName, payload.questionsText!.trim(), payload);
   }
 
