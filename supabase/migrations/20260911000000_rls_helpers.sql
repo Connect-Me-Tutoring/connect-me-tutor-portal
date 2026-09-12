@@ -1,7 +1,8 @@
 -- Migration 1 of 2 for row level security.
 -- Creates the private helper schema and the column-guard triggers.
 -- Applying this alone changes NO access: RLS is still off everywhere except
--- chat_room_notification_preferences. It is safe to ship ahead of 20260820120001.
+-- chat_room_notification_preferences. It is safe to ship ahead of
+-- 20260911000001_rls_enable_policies.sql and 20260912000000_rls_enable_policies_remaining.sql.
 
 -- ============================================================================
 -- RLS DRAFT — Part 1: helper functions
@@ -229,8 +230,22 @@ begin
     return new;
   end if;
 
+  -- SettingsPage.tsx (components/settings/SettingsPage.tsx:206-208) lets a
+  -- user toggle their own Active/Inactive status without admin help. Allow
+  -- exactly that self-service transition; any other status value, or a
+  -- change to someone else's row, still falls through to the exception below.
+  if new.status is distinct from old.status
+     and not (
+       new.user_id = (select auth.uid())
+       and old.status in ('Active', 'Inactive')
+       and new.status in ('Active', 'Inactive')
+     )
+  then
+    raise exception 'Not allowed to modify privileged Profiles columns'
+      using errcode = '42501';
+  end if;
+
   if new.role            is distinct from old.role
-     or new.status       is distinct from old.status
      or new.user_id      is distinct from old.user_id
      or new.settings_id  is distinct from old.settings_id
      or new.tutor_ids    is distinct from old.tutor_ids
@@ -286,5 +301,86 @@ drop trigger if exists guard_pairing_match_columns on public.pairing_matches;
 create trigger guard_pairing_match_columns
   before update on public.pairing_matches
   for each row execute function private.guard_pairing_match_columns();
+
+
+-- enrollments_participant_update / sessions_tutor_update let either
+-- participant update their own row, and a policy's WITH CHECK can only see
+-- the new row -- it can't compare against the old one. OR'ing student_id
+-- and tutor_id there means a participant only needs to keep *their own*
+-- side unchanged to pass the check, so nothing stops a tutor from
+-- reassigning student_id to an arbitrary student (or a student reassigning
+-- tutor_id). Guard it here instead, where OLD is available, mirroring
+-- guard_pairing_match_columns above.
+create or replace function private.guard_enrollment_columns()
+returns trigger
+language plpgsql
+security definer
+set search_path = public, pg_temp
+as $$
+begin
+  -- updateFutureSessions (lib/actions/enrollment/server.actions.ts) doesn't
+  -- touch Enrollments itself, but keep the same non-JWT exemption as the
+  -- other guards here for consistency / future service-role writes.
+  if current_setting('request.jwt.claims', true) is null then
+    return new;
+  end if;
+
+  if private.is_admin() then
+    return new;
+  end if;
+
+  if new.student_id is distinct from old.student_id
+     or new.tutor_id is distinct from old.tutor_id
+  then
+    raise exception 'Not allowed to reassign Enrollments.student_id/tutor_id'
+      using errcode = '42501';
+  end if;
+
+  return new;
+end;
+$$;
+
+drop trigger if exists guard_enrollment_columns on public."Enrollments";
+create trigger guard_enrollment_columns
+  before update on public."Enrollments"
+  for each row execute function private.guard_enrollment_columns();
+
+
+create or replace function private.guard_session_columns()
+returns trigger
+language plpgsql
+security definer
+set search_path = public, pg_temp
+as $$
+begin
+  -- updateFutureSessions (lib/actions/enrollment/server.actions.ts:417-449)
+  -- upserts student_id/tutor_id on future Sessions via createAdminClient()
+  -- (service_role, no JWT) when an admin reassigns an Enrollment -- that's
+  -- the one legitimate path that changes these columns, so it must be
+  -- exempted rather than gated on private.is_admin() (which reads auth.uid()
+  -- and would see no JWT at all for a service_role call).
+  if current_setting('request.jwt.claims', true) is null then
+    return new;
+  end if;
+
+  if private.is_admin() then
+    return new;
+  end if;
+
+  if new.student_id is distinct from old.student_id
+     or new.tutor_id is distinct from old.tutor_id
+  then
+    raise exception 'Not allowed to reassign Sessions.student_id/tutor_id'
+      using errcode = '42501';
+  end if;
+
+  return new;
+end;
+$$;
+
+drop trigger if exists guard_session_columns on public."Sessions";
+create trigger guard_session_columns
+  before update on public."Sessions"
+  for each row execute function private.guard_session_columns();
 
 
