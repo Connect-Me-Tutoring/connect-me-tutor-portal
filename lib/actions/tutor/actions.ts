@@ -1,14 +1,12 @@
-"use server";
+// lib/tutors.actions.ts
 
-import { createClient } from "@/lib/supabase/server";
+import { supabase } from "@/lib/supabase/client";
 import { Profile, Session } from "@/types";
+import { getProfileWithProfileId } from "../user/client.actions";
+import { getMeeting } from "../admin.actions";
+import { Stats } from "fs";
 import { Table } from "../../supabase/tables";
 import { tableToInterfaceSessions } from "../../utils/type-utils";
-import {
-  requireAuthenticatedProfile,
-  requireSessionAccessById,
-  requireTutorProfileAccess,
-} from "../auth/authz.server";
 import type { Database } from "@/types/database.types";
 
 type SessionStatus = Database["public"]["Enums"]["session_status"];
@@ -29,9 +27,6 @@ export async function getTutorSessions(
   orderby?: string,
   ascending?: boolean,
 ): Promise<Session[]> {
-  await requireTutorProfileAccess(profileId);
-  const supabase = await createClient();
-
   let query = supabase
     .from(Table.Sessions)
     .select(
@@ -78,9 +73,6 @@ export async function getTutorSessions(
 
 export async function getTutorStudents(tutorId: string) {
   try {
-    await requireTutorProfileAccess(tutorId);
-    const supabase = await createClient();
-
     const { data: pairings, error: pairingsError } = await supabase
       .from(Table.Pairings)
       .select("student_id")
@@ -140,7 +132,6 @@ export async function undoCancelSession(
   sessionId: string,
   originalStatus: SessionStatus = "Active",
 ) {
-  const supabase = await requireSessionAccessById(sessionId);
   const { data, error } = await supabase
     .from(Table.Sessions)
     .update({
@@ -154,8 +145,7 @@ export async function undoCancelSession(
 }
 
 export async function recordSessionExitForm(sessionId: string, notes: string) {
-  const supabase = await requireSessionAccessById(sessionId);
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from(Table.Sessions)
     .update({
       session_exit_form: notes,
@@ -167,7 +157,6 @@ export async function recordSessionExitForm(sessionId: string, notes: string) {
 
 export async function undoSessionExitForm(sessionId: string) {
   try {
-    const supabase = await requireSessionAccessById(sessionId);
     const { data, error } = await supabase
       .from(Table.Sessions)
       .update({
