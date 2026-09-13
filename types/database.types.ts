@@ -8,6 +8,39 @@ export type Database = {
   };
   public: {
     Tables: {
+      pairing_length_snapshots: {
+        Row: {
+          avg_days: number | null;
+          captured_on: string;
+          created_at: string;
+          max_days: number | null;
+          median_days: number | null;
+          pairs: number;
+          population: string;
+          single_session_pairs: number;
+        };
+        Insert: {
+          avg_days?: number | null;
+          captured_on?: string;
+          created_at?: string;
+          max_days?: number | null;
+          median_days?: number | null;
+          pairs?: number;
+          population: string;
+          single_session_pairs?: number;
+        };
+        Update: {
+          avg_days?: number | null;
+          captured_on?: string;
+          created_at?: string;
+          max_days?: number | null;
+          median_days?: number | null;
+          pairs?: number;
+          population?: string;
+          single_session_pairs?: number;
+        };
+        Relationships: [];
+      };
       chat_room_notification_preferences: {
         Row: {
           created_at: string;
@@ -972,6 +1005,10 @@ export type Database = {
       };
     };
     Functions: {
+      capture_pairing_length_snapshot: {
+        Args: { p_captured_on?: string };
+        Returns: number;
+      };
       availability_overlap: {
         Args: { slots1: Json; slots2: Json };
         Returns: boolean;
@@ -1134,6 +1171,16 @@ export type Database = {
         Args: { a: Json[]; b: Json[] };
         Returns: Json;
       };
+      get_pairing_length_history: {
+        Args: { p_population?: string };
+        Returns: {
+          avg_days: number;
+          captured_on: string;
+          median_days: number;
+          pairs: number;
+          single_session_pairs: number;
+        }[];
+      };
       get_pairing_length_stats: {
         Args: never;
         Returns: {
@@ -1146,7 +1193,12 @@ export type Database = {
         }[];
       };
       get_pairing_lengths: {
-        Args: { p_limit?: number; p_population?: string };
+        Args: {
+          p_limit?: number;
+          p_offset?: number;
+          p_population?: string;
+          p_search?: string;
+        };
         Returns: {
           days: number;
           started_on: string;
