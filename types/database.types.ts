@@ -1199,6 +1199,7 @@ export type Database = {
           p_population?: string;
           p_search?: string;
         };
+        Args: { p_limit?: number; p_population?: string };
         Returns: {
           days: number;
           started_on: string;

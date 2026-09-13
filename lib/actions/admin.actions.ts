@@ -735,7 +735,10 @@ export async function removeEvent(eventId: string): Promise<boolean> {
 /* NOTIFICATIONS */
 export async function getAllNotifications(): Promise<Notification[] | null> {
   try {
-    const { data, error } = await supabase.from("Notifications").select(`
+    const { data, error } = await supabase
+      .from("Notifications")
+      .select(
+        `
         id,
         created_at,
         session_id,
@@ -745,7 +748,9 @@ export async function getAllNotifications(): Promise<Notification[] | null> {
         student_id,
         status,
         summary
-      `);
+      `,
+      )
+      .order("created_at", { ascending: false });
 
     if (error) {
       console.error("Error fetching notification details:", error.message);

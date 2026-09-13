@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { deleteMsg } from "@/lib/actions/email/server.actions";
 import { verifyAdmin } from "@/lib/actions/auth/server.actions";
 import { logError } from "@/lib/posthog";
+import { Table } from "@/lib/supabase/tables";
 
 export const dynamic = "force-dynamic";
 
@@ -25,7 +26,7 @@ export async function POST(request: NextRequest) {
     }
 
     const { data: emailData, error: fetchError } = await supabase
-      .from("Emails")
+      .from(Table.SessionReminders)
       .select("id, message_id")
       .eq("session_id", sessionId)
       .single();

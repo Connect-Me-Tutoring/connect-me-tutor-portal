@@ -25,12 +25,11 @@ interface CancellationFormProps {
 }
 
 type cancellationReasonType =
-  | "studentUnavailableWithPriorNotice"
-  | "studentUnavailableWithoutPriorNotice"
-  | "studentAbsent"
-  | "tutorCancelledWithPriorNotice"
-  | "emergency"
-  | "other"
+  | "Student cancelled with prior notice"
+  | "Student did not attend without prior notice"
+  | "I am cancelling with prior notice"
+  | "Last Minute Emergency"
+  | "Other"
   | null;
 
 const CancellationForm: React.FC<CancellationFormProps> = ({
@@ -42,14 +41,9 @@ const CancellationForm: React.FC<CancellationFormProps> = ({
   const [otherReason, setOtherReason] = useState<string>("");
   const [cancellationReason, setCancellationReason] = useState<cancellationReasonType>(null);
 
-  const isCancellationOther = cancellationReason === "other";
-  const isCancellationEmergency = cancellationReason === "emergency";
-  const isCancellationTutorCancelledWithpriorNotice =
-    cancellationReason === "tutorCancelledWithPriorNotice";
+  const isCancellationOther = cancellationReason === "Other";
   const isCancellationStudentAbsentWithoutPriorNotice =
-    cancellationReason === "studentUnavailableWithoutPriorNotice";
-  const isCancellationStudentAbsentWithPriorNotice =
-    cancellationReason === "studentUnavailableWithPriorNotice";
+    cancellationReason === "Student did not attend without prior notice";
 
   return (
     <AlertDialogContent>
@@ -94,13 +88,13 @@ const CancellationForm: React.FC<CancellationFormProps> = ({
 
             <RadioGroup
               value={cancellationReason || ""}
-              onValueChange={(value: string | null) =>
+              onValueChange={(value: string) =>
                 setCancellationReason(value as cancellationReasonType)
               }
             >
               <span className="space-x-2">
                 <RadioGroupItem
-                  value="studentUnavailableWithPriorNotice"
+                  value="Student cancelled with prior notice"
                   id="studentUnavailableWithPriorNotice"
                 />
                 <Label htmlFor="studentUnavailableWithPriorNotice">
@@ -109,7 +103,7 @@ const CancellationForm: React.FC<CancellationFormProps> = ({
               </span>
               <span className="space-x-2">
                 <RadioGroupItem
-                  value="studentUnavailableWithoutPriorNotice"
+                  value="Student did not attend without prior notice"
                   id="studentUnavailableWithoutPriorNotice"
                 />
                 <Label htmlFor="studentUnavailableWithoutPriorNotice">
@@ -118,7 +112,7 @@ const CancellationForm: React.FC<CancellationFormProps> = ({
               </span>
               <span className="space-x-2">
                 <RadioGroupItem
-                  value="tutorCancelledWithPriorNotice"
+                  value="I am cancelling with prior notice"
                   id="tutorCancelledWithPriorNotice"
                 />
                 <Label htmlFor="tutorCancelledWithPriorNotice">
@@ -126,11 +120,11 @@ const CancellationForm: React.FC<CancellationFormProps> = ({
                 </Label>
               </span>
               <span className="space-x-2">
-                <RadioGroupItem value="emergency" id="emergency" />
+                <RadioGroupItem value="Last Minute Emergency" id="emergency" />
                 <Label htmlFor="emergency">Last Minute Emergency</Label>
               </span>
               <span className="space-x-2">
-                <RadioGroupItem value="other" id="other" />
+                <RadioGroupItem value="Other" id="other" />
                 <Label htmlFor="other">Other</Label>
               </span>
             </RadioGroup>
@@ -150,7 +144,9 @@ const CancellationForm: React.FC<CancellationFormProps> = ({
                   status: (isCancellationStudentAbsentWithoutPriorNotice
                     ? "Complete"
                     : "Cancelled") as "Active" | "Complete" | "Cancelled" | "Rescheduled",
-                  session_exit_form: isCancellationOther ? otherReason : cancellationReason || "",
+                  session_exit_form: isCancellationOther
+                    ? "Other Reason: " + otherReason
+                    : cancellationReason || "",
                 };
                 handleStatusChange(updatedSession);
                 onClose();
