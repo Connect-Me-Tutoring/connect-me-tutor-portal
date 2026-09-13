@@ -1,8 +1,18 @@
 import React from "react";
+import { redirect } from "next/navigation";
+import { requireAdmin } from "@/lib/actions/auth/authz.server";
 import AnalyticsCard from "@/components/analytics/AnalyticsCard";
 import UserGrowthChart from "@/components/analytics/UserGrowthChart";
 
-export default function AnalyticsPage() {
+export default async function AnalyticsPage() {
+  // This page sits outside the (admin) route group, which carries no role
+  // guard of its own, and its charts are built from every profile's record.
+  try {
+    await requireAdmin();
+  } catch {
+    redirect("/dashboard");
+  }
+
   return (
     <main className="p-6">
       <div className="mb-6">

@@ -73,9 +73,21 @@ export async function requireAuthenticatedProfile(): Promise<{
   return { user, profile };
 }
 
+/**
+ * The one definition of "admin" in this app: an Active Admin profile.
+ *
+ * Deactivating an admin has to remove their access everywhere, not just from
+ * the pages that happened to check status, so every elevated branch below
+ * goes through this. It mirrors public.is_active_admin() in the database,
+ * which is the authoritative gate for anything RLS covers.
+ */
+export function isActiveAdmin(profile: Pick<Profile, "role" | "status">): boolean {
+  return profile.role === "Admin" && profile.status === "Active";
+}
+
 export async function requireAdmin(): Promise<{ user: User; profile: Profile }> {
   const ctx = await requireAuthenticatedProfile();
-  if (ctx.profile.role !== "Admin") {
+  if (!isActiveAdmin(ctx.profile)) {
     authzError("Admin access required");
   }
   return ctx;
@@ -86,7 +98,7 @@ export async function requireSelfOrAdmin(targetUserId: string): Promise<{
   profile: Profile;
 }> {
   const ctx = await requireAuthenticatedProfile();
-  if (ctx.profile.role === "Admin" || ctx.user.id === targetUserId) {
+  if (isActiveAdmin(ctx.profile) || ctx.user.id === targetUserId) {
     return ctx;
   }
   authzError();
@@ -97,7 +109,7 @@ export async function requireTutorProfileAccess(tutorProfileId: string): Promise
   profile: Profile;
 }> {
   const ctx = await requireAuthenticatedProfile();
-  if (ctx.profile.role === "Admin") {
+  if (isActiveAdmin(ctx.profile)) {
     return ctx;
   }
   if (ctx.profile.role === "Tutor" && ctx.profile.id === tutorProfileId) {
@@ -110,7 +122,7 @@ export async function requireStudentProfileAccess(
   studentProfileId: string,
 ): Promise<{ user: User; profile: Profile }> {
   const ctx = await requireAuthenticatedProfile();
-  if (ctx.profile.role === "Admin") {
+  if (isActiveAdmin(ctx.profile)) {
     return ctx;
   }
   if (ctx.profile.role === "Student" && ctx.profile.id === studentProfileId) {
@@ -138,7 +150,7 @@ export async function requireEnrollmentAccess(enrollmentId: string): Promise<{
   profile: Profile;
 }> {
   const ctx = await requireAuthenticatedProfile();
-  if (ctx.profile.role === "Admin") {
+  if (isActiveAdmin(ctx.profile)) {
     return ctx;
   }
 
@@ -167,7 +179,7 @@ export async function requireSessionAccess(session: {
   student_id?: string | null;
 }): Promise<{ user: User; profile: Profile }> {
   const ctx = await requireAuthenticatedProfile();
-  if (ctx.profile.role === "Admin") {
+  if (isActiveAdmin(ctx.profile)) {
     return ctx;
   }
 
@@ -206,7 +218,7 @@ export function applySessionScope<T extends { eq: (col: string, val: string) => 
   query: T,
   profile: Profile,
 ): T {
-  if (profile.role === "Admin") {
+  if (isActiveAdmin(profile)) {
     return query;
   }
   if (profile.role === "Tutor") {

@@ -10,7 +10,7 @@ import { profile } from "console";
 import { tableToInterfaceProfiles } from "../../utils/type-utils";
 import { createPassword } from "../../utils";
 import { cachedGetUser } from "../user/actions";
-import { getProfileRole } from "../user/server.actions";
+import { requireAdmin } from "./authz.server";
 import { isCronRequestAuthorized } from "@/lib/security/cron";
 import { logError } from "@/lib/posthog";
 import type { Database } from "@/types/database.types";
@@ -98,10 +98,8 @@ export const isAuthorized = async (request: NextRequest) => {
 };
 
 export const verifyAdmin = async () => {
-  const user = await cachedGetUser();
-  if (!user) throw new Error("Unauthenticated access");
-  const role = await getProfileRole(user.id);
-  if (role !== "Admin") throw new Error("Unauthorized Access");
+  // One definition of "admin" for the whole app: an Active Admin profile.
+  await requireAdmin();
 };
 
 /**

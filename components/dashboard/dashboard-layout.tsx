@@ -39,6 +39,7 @@ import {
   BellPlus,
   Book,
   ChartColumn,
+  Database,
   FileSpreadsheet,
   FileText,
   Sparkles,
@@ -259,6 +260,11 @@ export default function DashboardLayout({
       title: "Analytics",
       href: "/dashboard/data-analytics",
       icon: <ChartColumn className="h-5 w-5" />,
+    },
+    {
+      title: "Data Portal",
+      href: "/dashboard/data-portal",
+      icon: <Database className="h-5 w-5" />,
     },
     // {
     //   title: "Migrate Profiles",
