@@ -1,5 +1,14 @@
 "use client";
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  CartesianGrid,
+  Line,
+  LineChart,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "recharts";
 import { supabase } from "@/lib/supabase/client";
 import toast from "react-hot-toast";
 
@@ -20,43 +29,142 @@ interface PairingRow {
   started_on: string;
 }
 
+interface HistoryPoint {
+  captured_on: string;
+  pairs: number;
+  avg_days: number | null;
+  median_days: number | null;
+  single_session_pairs: number;
+}
+
 type Population = "active" | "ended" | "all";
+type HistoryMetric = "avg" | "median";
+
+const PAGE_SIZE = 100;
+const SEARCH_DEBOUNCE_MS = 300;
 
 const months = (days: number) => (days / 30.44).toFixed(1);
+
+const shortDate = (isoDate: string) =>
+  new Date(`${isoDate}T00:00:00`).toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+  });
 
 const PairingLengthCard = () => {
   const [stats, setStats] = useState<PairingLengthStat[]>([]);
   const [rows, setRows] = useState<PairingRow[]>([]);
+  const [history, setHistory] = useState<HistoryPoint[]>([]);
+
   const [population, setPopulation] = useState<Population>("active");
+  const [historyMetric, setHistoryMetric] = useState<HistoryMetric>("median");
+
+  const [searchInput, setSearchInput] = useState("");
+  const [search, setSearch] = useState("");
+
+  const [nextOffset, setNextOffset] = useState(0);
+  const [hasMore, setHasMore] = useState(false);
+
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [isLoadingRows, setIsLoadingRows] = useState(true);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
 
-  const fetchAll = useCallback(async (pop: Population, isManualRefresh = false) => {
-    if (isManualRefresh) setIsRefreshing(true);
+  // Only the most recently issued request may apply its result. Typing in the
+  // search box fires overlapping requests that can resolve out of order, which
+  // would otherwise leave the table showing a stale query's rows.
+  const rowsRequestIdRef = useRef(0);
+  const historyRequestIdRef = useRef(0);
+
+  const fetchStats = useCallback(async () => {
     try {
-      const [statsRes, rowsRes] = await Promise.all([
-        supabase.rpc("get_pairing_length_stats"),
-        supabase.rpc("get_pairing_lengths", { p_population: pop, p_limit: 100 }),
-      ]);
-      if (statsRes.error) throw statsRes.error;
-      if (rowsRes.error) throw rowsRes.error;
-      setStats((statsRes.data ?? []) as PairingLengthStat[]);
-      setRows((rowsRes.data ?? []) as PairingRow[]);
+      const { data, error } = await supabase.rpc("get_pairing_length_stats");
+      if (error) throw error;
+      setStats((data ?? []) as PairingLengthStat[]);
     } catch (error) {
       console.error(error);
       toast.error("Unable to load pairing length stats");
     } finally {
       setIsLoading(false);
-      setIsRefreshing(false);
+    }
+  }, []);
+
+  const fetchHistory = useCallback(async (pop: Population) => {
+    const requestId = ++historyRequestIdRef.current;
+    try {
+      const { data, error } = await supabase.rpc("get_pairing_length_history", {
+        p_population: pop,
+      });
+      if (requestId !== historyRequestIdRef.current) return;
+      if (error) throw error;
+      setHistory((data ?? []) as HistoryPoint[]);
+    } catch (error) {
+      if (requestId !== historyRequestIdRef.current) return;
+      console.error(error);
+      toast.error("Unable to load pairing length history");
+    }
+  }, []);
+
+  const fetchRows = useCallback(async (pop: Population, term: string, offset: number) => {
+    const requestId = ++rowsRequestIdRef.current;
+    if (offset === 0) setIsLoadingRows(true);
+    else setIsLoadingMore(true);
+
+    try {
+      const { data, error } = await supabase.rpc("get_pairing_lengths", {
+        p_population: pop,
+        // Omitted rather than nulled: the RPC parameter defaults to null server-side.
+        p_search: term === "" ? undefined : term,
+        p_limit: PAGE_SIZE,
+        p_offset: offset,
+      });
+      if (requestId !== rowsRequestIdRef.current) return;
+      if (error) throw error;
+
+      const page = (data ?? []) as PairingRow[];
+      setRows((prev) => (offset === 0 ? page : [...prev, ...page]));
+      setNextOffset(offset + page.length);
+      // A short page means the server ran out of rows, so there is no next page.
+      setHasMore(page.length === PAGE_SIZE);
+    } catch (error) {
+      if (requestId !== rowsRequestIdRef.current) return;
+      console.error(error);
+      toast.error("Unable to load pairing lengths");
+    } finally {
+      if (requestId === rowsRequestIdRef.current) {
+        setIsLoadingRows(false);
+        setIsLoadingMore(false);
+      }
     }
   }, []);
 
   useEffect(() => {
-    fetchAll(population);
-  }, [fetchAll, population]);
+    fetchStats();
+  }, [fetchStats]);
 
-  if (isLoading) return <div>Loading pairing lengths...</div>;
-  if (!stats.length) return <div>No data available</div>;
+  useEffect(() => {
+    fetchHistory(population);
+  }, [fetchHistory, population]);
+
+  useEffect(() => {
+    const timer = setTimeout(() => setSearch(searchInput.trim()), SEARCH_DEBOUNCE_MS);
+    return () => clearTimeout(timer);
+  }, [searchInput]);
+
+  // Any change of population or search term restarts paging from the top. Load-more
+  // is driven imperatively from its button, so paging never re-runs this effect.
+  useEffect(() => {
+    fetchRows(population, search, 0);
+  }, [fetchRows, population, search]);
+
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    try {
+      await Promise.all([fetchStats(), fetchHistory(population), fetchRows(population, search, 0)]);
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
 
   const byPop = (p: Population) => stats.find((s) => s.population === p);
   const active = byPop("active");
@@ -65,6 +173,22 @@ const PairingLengthCard = () => {
   const singleSessionPct =
     ended && ended.pairs ? Math.round((ended.single_session_pairs / ended.pairs) * 100) : null;
 
+  const chartData = useMemo(
+    () =>
+      history.map((point) => {
+        const raw = historyMetric === "avg" ? point.avg_days : point.median_days;
+        return {
+          label: shortDate(point.captured_on),
+          days: raw === null ? null : Number(raw),
+          pairs: point.pairs,
+        };
+      }),
+    [history, historyMetric],
+  );
+
+  if (isLoading) return <div>Loading pairing lengths...</div>;
+  if (!stats.length) return <div>No data available</div>;
+
   return (
     <div className="w-full flex flex-col gap-4">
       <div className="flex items-center justify-between flex-wrap gap-2">
@@ -72,6 +196,7 @@ const PairingLengthCard = () => {
           {(["active", "ended", "all"] as Population[]).map((p) => (
             <button
               key={p}
+              type="button"
               onClick={() => setPopulation(p)}
               className={`px-3 py-1.5 rounded-md capitalize ${
                 population === p ? "bg-white text-slate-900 shadow-sm" : "text-slate-600"
@@ -82,7 +207,8 @@ const PairingLengthCard = () => {
           ))}
         </div>
         <button
-          onClick={() => fetchAll(population, true)}
+          type="button"
+          onClick={handleRefresh}
           disabled={isRefreshing}
           className="text-xs text-blue-600 hover:underline disabled:opacity-50"
         >
@@ -114,6 +240,99 @@ const PairingLengthCard = () => {
         </div>
       </div>
 
+      <div className="rounded-lg border p-4">
+        <div className="flex items-start justify-between flex-wrap gap-2 mb-3">
+          <div>
+            <p className="text-sm font-medium">Length over time</p>
+            <p className="text-xs text-slate-400">
+              One point per weekly snapshot, {population} pairings
+            </p>
+          </div>
+          <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-800 p-1 rounded-lg text-xs font-medium">
+            {(
+              [
+                ["median", "Median"],
+                ["avg", "Average"],
+              ] as [HistoryMetric, string][]
+            ).map(([value, label]) => (
+              <button
+                key={value}
+                type="button"
+                onClick={() => setHistoryMetric(value)}
+                className={`px-3 py-1.5 rounded-md ${
+                  historyMetric === value ? "bg-white text-slate-900 shadow-sm" : "text-slate-600"
+                }`}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {chartData.length === 0 ? (
+          <div className="h-24 flex items-center justify-center text-center text-xs text-slate-400 px-4">
+            No snapshots recorded yet. The first point appears after the next weekly capture, and
+            the line fills in one point per week from there.
+          </div>
+        ) : (
+          <>
+            <div style={{ width: "100%", height: 240 }}>
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={chartData} margin={{ top: 8, right: 16, bottom: 0, left: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                  <XAxis dataKey="label" tick={{ fontSize: 11 }} />
+                  <YAxis tick={{ fontSize: 11 }} width={44} />
+                  <Tooltip
+                    formatter={(value) => [
+                      typeof value === "number" ? `${value} days (${months(value)} mo)` : "No data",
+                      "Length",
+                    ]}
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="days"
+                    stroke="#2563eb"
+                    strokeWidth={2}
+                    dot={{ r: 3 }}
+                    connectNulls
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+            {chartData.length === 1 && (
+              <p className="text-xs text-slate-400 mt-2">
+                Only one snapshot so far, so there is no trend to read yet.
+              </p>
+            )}
+            {population !== "ended" && (
+              <p className="text-xs text-slate-400 mt-2">
+                Active length is measured from the pairing date to today, so it climbs by seven days
+                a week on its own. A dip means new pairings started or long-running ones ended.
+              </p>
+            )}
+          </>
+        )}
+      </div>
+
+      <div className="flex items-center gap-2">
+        <input
+          type="text"
+          value={searchInput}
+          onChange={(event) => setSearchInput(event.target.value)}
+          placeholder="Search a tutor or student name"
+          className="w-full sm:w-80 rounded-lg border px-3 py-2 text-sm"
+        />
+        {searchInput && (
+          <button
+            type="button"
+            onClick={() => setSearchInput("")}
+            className="text-xs text-blue-600 hover:underline"
+          >
+            Clear
+          </button>
+        )}
+      </div>
+
       <div className="overflow-auto" style={{ maxHeight: 400 }}>
         <table className="w-full text-sm border-collapse">
           <thead>
@@ -127,7 +346,10 @@ const PairingLengthCard = () => {
           </thead>
           <tbody>
             {rows.map((r, i) => (
-              <tr key={`${r.tutor_name}-${r.student_name}-${i}`} className="border-b last:border-0">
+              <tr
+                key={`${r.tutor_name}-${r.student_name}-${r.started_on}-${i}`}
+                className="border-b last:border-0"
+              >
                 <td className="py-2 pr-4">{r.tutor_name || "Unknown"}</td>
                 <td className="py-2 pr-4">{r.student_name || "Unknown"}</td>
                 <td className="py-2 pr-4 text-slate-500">
@@ -148,12 +370,39 @@ const PairingLengthCard = () => {
             ))}
           </tbody>
         </table>
+
+        {isLoadingRows && <p className="py-3 text-xs text-slate-400">Loading pairings...</p>}
+
+        {!isLoadingRows && rows.length === 0 && (
+          <p className="py-3 text-xs text-slate-400">
+            {search
+              ? `No matching ${population === "all" ? "" : population} pairings.${
+                  population === "all" ? "" : " Past pairings are filed under All."
+                }`
+              : "No pairings to show."}
+          </p>
+        )}
       </div>
 
-      <p className="text-xs text-slate-400">
-        Showing {rows.length} longest {population === "all" ? "" : population} pairings
-      </p>
+      <div className="flex items-center justify-between flex-wrap gap-2">
+        <p className="text-xs text-slate-400">
+          Showing {rows.length.toLocaleString()} {search ? "matching" : "longest"}{" "}
+          {population === "all" ? "" : population} pairings
+          {hasMore ? ", more available" : ""}
+        </p>
+        {hasMore && (
+          <button
+            type="button"
+            onClick={() => fetchRows(population, search, nextOffset)}
+            disabled={isLoadingMore}
+            className="text-xs text-blue-600 hover:underline disabled:opacity-50"
+          >
+            {isLoadingMore ? "Loading..." : `Load next ${PAGE_SIZE}`}
+          </button>
+        )}
+      </div>
     </div>
   );
 };
+
 export default PairingLengthCard;
