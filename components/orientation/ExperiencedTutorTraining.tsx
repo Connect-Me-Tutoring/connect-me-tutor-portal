@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState, type SyntheticEvent } from "react";
+import { useEffect, useRef, useState, type SyntheticEvent } from "react";
 import Link from "next/link";
 import {
   CheckCircle2,
@@ -15,6 +15,10 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { ORIENTATION_TRAINING_CLIPS } from "@/constants/orientation-training-clips";
+import {
+  readOrientationTrainingProgress,
+  writeOrientationTrainingProgress,
+} from "@/lib/orientation/training-progress";
 import { cn } from "@/lib/utils";
 
 const SEEK_TOLERANCE_SECONDS = 0.5;
@@ -31,12 +35,15 @@ export function clampUnwatchedSeek(
   return furthestWatchedTime;
 }
 
-export function ExperiencedTutorTraining() {
+export function ExperiencedTutorTraining({ profileId }: { profileId: string }) {
   const [clipIndex, setClipIndex] = useState(0);
   const [watchedClipIds, setWatchedClipIds] = useState<Set<string>>(new Set());
   const [completedClipIds, setCompletedClipIds] = useState<Set<string>>(new Set());
   const [reflections, setReflections] = useState<Record<string, string>>({});
+  const [furthestWatchedSeconds, setFurthestWatchedSeconds] = useState<Record<string, number>>({});
+  const [hydratedProfileId, setHydratedProfileId] = useState<string | null>(null);
   const [videoError, setVideoError] = useState(false);
+  const videoRef = useRef<HTMLVideoElement>(null);
   const furthestWatchedTimeRef = useRef(0);
 
   const clip = ORIENTATION_TRAINING_CLIPS[clipIndex];
@@ -45,21 +52,81 @@ export function ExperiencedTutorTraining() {
   const hasFinishedClip = watchedClipIds.has(clip.id);
   const reflection = reflections[clip.id] ?? "";
   const reflectionSubmitted = completedClipIds.has(clip.id);
+  const isProgressHydrated = hydratedProfileId === profileId;
+
+  useEffect(() => {
+    const savedProgress = readOrientationTrainingProgress(window.localStorage, profileId);
+    const savedClipIndex = ORIENTATION_TRAINING_CLIPS.findIndex(
+      (item) => item.id === savedProgress.activeClipId,
+    );
+    const restoredClipIndex = savedClipIndex >= 0 ? savedClipIndex : 0;
+    const restoredClip = ORIENTATION_TRAINING_CLIPS[restoredClipIndex];
+    const restoredTime = savedProgress.furthestWatchedSeconds[restoredClip.id] ?? 0;
+
+    setClipIndex(restoredClipIndex);
+    setWatchedClipIds(new Set(savedProgress.watchedClipIds));
+    setCompletedClipIds(new Set(savedProgress.completedClipIds));
+    setReflections(savedProgress.reflections);
+    setFurthestWatchedSeconds(savedProgress.furthestWatchedSeconds);
+    furthestWatchedTimeRef.current = restoredTime;
+
+    const currentVideo = videoRef.current;
+    if (currentVideo?.dataset.clipId === restoredClip.id && currentVideo.readyState >= 1) {
+      currentVideo.currentTime = Math.min(restoredTime, currentVideo.duration);
+    }
+
+    setHydratedProfileId(profileId);
+  }, [profileId]);
+
+  useEffect(() => {
+    if (!isProgressHydrated) return;
+
+    writeOrientationTrainingProgress(window.localStorage, profileId, {
+      activeClipId: clip.id,
+      completedClipIds: Array.from(completedClipIds),
+      furthestWatchedSeconds,
+      reflections,
+      watchedClipIds: Array.from(watchedClipIds),
+    });
+  }, [
+    clip.id,
+    completedClipIds,
+    furthestWatchedSeconds,
+    isProgressHydrated,
+    profileId,
+    reflections,
+    watchedClipIds,
+  ]);
+
+  const recordVideoProgress = (video: HTMLVideoElement, force = false) => {
+    if (video.seeking) return;
+
+    const nextProgress = Math.max(furthestWatchedTimeRef.current, video.currentTime);
+    furthestWatchedTimeRef.current = nextProgress;
+    setFurthestWatchedSeconds((current) => {
+      const savedProgress = current[clip.id] ?? 0;
+      if (nextProgress <= savedProgress || (!force && nextProgress - savedProgress < 1)) {
+        return current;
+      }
+
+      return { ...current, [clip.id]: nextProgress };
+    });
+  };
 
   const selectClip = (nextIndex: number) => {
     if (nextIndex < 0 || nextIndex >= ORIENTATION_TRAINING_CLIPS.length || nextIndex === clipIndex)
       return;
 
+    if (videoRef.current) recordVideoProgress(videoRef.current, true);
+
+    const nextClip = ORIENTATION_TRAINING_CLIPS[nextIndex];
     setClipIndex(nextIndex);
     setVideoError(false);
-    furthestWatchedTimeRef.current = 0;
+    furthestWatchedTimeRef.current = furthestWatchedSeconds[nextClip.id] ?? 0;
   };
 
   const handleTimeUpdate = (event: SyntheticEvent<HTMLVideoElement>) => {
-    const video = event.currentTarget;
-    if (!video.seeking) {
-      furthestWatchedTimeRef.current = Math.max(furthestWatchedTimeRef.current, video.currentTime);
-    }
+    recordVideoProgress(event.currentTarget);
   };
 
   const handleSeeking = (event: SyntheticEvent<HTMLVideoElement>) => {
@@ -76,8 +143,22 @@ export function ExperiencedTutorTraining() {
   };
 
   const markClipWatched = (event: SyntheticEvent<HTMLVideoElement>) => {
-    furthestWatchedTimeRef.current = event.currentTarget.duration;
+    const { duration } = event.currentTarget;
+    furthestWatchedTimeRef.current = duration;
+    setFurthestWatchedSeconds((current) => ({
+      ...current,
+      [clip.id]: duration,
+    }));
     setWatchedClipIds((current) => new Set(current).add(clip.id));
+  };
+
+  const resumeSavedProgress = (event: SyntheticEvent<HTMLVideoElement>) => {
+    const savedProgress = furthestWatchedSeconds[clip.id] ?? 0;
+    furthestWatchedTimeRef.current = savedProgress;
+
+    if (savedProgress > 0 && savedProgress < event.currentTarget.duration) {
+      event.currentTarget.currentTime = savedProgress;
+    }
   };
 
   const updateReflection = (value: string) => {
@@ -136,13 +217,17 @@ export function ExperiencedTutorTraining() {
                   aria-label={`${clip.title} training clip`}
                   className="h-full w-full object-contain"
                   controls
+                  data-clip-id={clip.id}
                   key={clip.src}
                   onEnded={markClipWatched}
                   onError={() => setVideoError(true)}
+                  onLoadedMetadata={resumeSavedProgress}
+                  onPause={(event) => recordVideoProgress(event.currentTarget, true)}
                   onSeeking={handleSeeking}
                   onTimeUpdate={handleTimeUpdate}
                   playsInline
                   preload="metadata"
+                  ref={videoRef}
                   src={clip.src}
                 >
                   Your browser does not support embedded video.
@@ -176,6 +261,7 @@ export function ExperiencedTutorTraining() {
                       autoComplete="off"
                       id={`reflection-${clip.id}`}
                       onChange={(event) => updateReflection(event.target.value)}
+                      maxLength={4000}
                       placeholder="Write your response here…"
                       rows={5}
                       value={reflection}

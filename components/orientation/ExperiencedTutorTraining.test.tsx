@@ -25,7 +25,7 @@ describe("ExperiencedTutorTraining", () => {
   });
 
   it("renders the first clip and its locked reflection without internal guidance", () => {
-    const markup = renderToStaticMarkup(<ExperiencedTutorTraining />);
+    const markup = renderToStaticMarkup(<ExperiencedTutorTraining profileId="profile-1" />);
 
     expect(markup).toContain("Experienced Tutor Examples");
     expect(markup).toContain("Productive Wait Time");
