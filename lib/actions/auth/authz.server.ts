@@ -1,10 +1,8 @@
-import "server-only";
 import { Profile } from "@/types";
 import { User } from "@supabase/supabase-js";
 import { createClient } from "../../supabase/server";
 import { cachedGetUser } from "../user/actions";
 import { tableToInterfaceProfiles } from "../../utils/type-utils";
-import { Table } from "../../supabase/tables";
 
 function authzError(message = "Unauthorized"): never {
   throw new Error(message);
@@ -179,27 +177,6 @@ export async function requireSessionAccess(session: {
   }
 
   authzError();
-}
-
-/**
- * Resolves the caller's profile and asserts they are allowed to act on the
- * given session (its tutor, its student, or an Admin). Throws otherwise.
- */
-export async function requireSessionAccessById(sessionId: string) {
-  await requireAuthenticatedProfile();
-  const supabase = await createClient();
-  const { data, error } = await supabase
-    .from(Table.Sessions)
-    .select("tutor_id, student_id")
-    .eq("id", sessionId)
-    .single();
-
-  if (error || !data) {
-    throw new Error("Session not found");
-  }
-
-  await requireSessionAccess(data);
-  return supabase;
 }
 
 export function applySessionScope<T extends { eq: (col: string, val: string) => T }>(

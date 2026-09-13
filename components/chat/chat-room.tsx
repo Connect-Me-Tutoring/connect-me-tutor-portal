@@ -22,13 +22,6 @@ import { usePairing } from "@/hooks/pairings";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { isUuidString } from "@/lib/utils";
-import {
-  ChatAllowedFileMimeTypes,
-  ChatFileBucket,
-  ChatFileMaxBytes,
-  ChatFileMaxMegabytes,
-  ChatMessageMaxLength,
-} from "@/constants/chat";
 
 // Types for our chat components
 export type User = {
@@ -85,7 +78,6 @@ export function ChatRoom({
   }>({});
   const [emailMuted, setEmailMuted] = useState(false);
   const [emailMuteLoading, setEmailMuteLoading] = useState(true);
-  const [sendError, setSendError] = useState<string | null>(null);
 
   const roomIdValid = isUuidString(roomId);
   const { pairing } = usePairing(roomId);
@@ -218,12 +210,6 @@ export function ChatRoom({
     };
   }, [roomId, roomIdValid, profile?.id]);
 
-  // The component instance survives switches between rooms (call sites pass no
-  // key), so an error from the previous room must not linger under this one.
-  useEffect(() => {
-    setSendError(null);
-  }, [roomId, type]);
-
   // Load messages and set up subscriptions
   useEffect(() => {
     let isMounted = true;
@@ -304,7 +290,6 @@ export function ChatRoom({
 
     try {
       const text = messageInput.trim();
-      setSendError(null);
       const result = await sendChatMessage({
         roomId,
         roomType: type,
@@ -313,7 +298,6 @@ export function ChatRoom({
 
       if (!result.ok) {
         console.error("sendChatMessage:", result.error);
-        setSendError(result.error ?? "Failed to send message");
         return;
       }
 
@@ -324,7 +308,6 @@ export function ChatRoom({
       }
     } catch (error) {
       console.error("Error sending message:", error);
-      setSendError("Failed to send message");
     }
   };
 
@@ -335,27 +318,7 @@ export function ChatRoom({
     if (!files || files.length === 0) return;
 
     const file = files[0];
-
-    const resetFileInput = () => {
-      if (fileInputRef.current) {
-        fileInputRef.current.value = "";
-      }
-    };
-
-    if (file.size > ChatFileMaxBytes) {
-      setSendError(`File is too large (max ${ChatFileMaxMegabytes} MB)`);
-      resetFileInput();
-      return;
-    }
-
-    if (!(ChatAllowedFileMimeTypes as readonly string[]).includes(file.type)) {
-      setSendError("This file type is not allowed");
-      resetFileInput();
-      return;
-    }
-
-    setSendError(null);
-    const fileId = `${Date.now()}-${file.name.replace(/[^\w.-]+/g, "_")}`;
+    const fileId = `${Date.now()}-${file.name}`;
 
     try {
       // Start tracking upload progress
@@ -364,13 +327,15 @@ export function ChatRoom({
       // Upload file to Supabase Storage
       const filePath = `${roomId}/${profile.id}/${fileId}`;
       const { data, error } = await supabase.storage
-        .from(ChatFileBucket)
+        .from("enrollment-chat-files")
         .upload(filePath, file, {});
 
       if (error) throw error;
 
       // Get public URL for the file
-      const { data: urlData } = supabase.storage.from(ChatFileBucket).getPublicUrl(filePath);
+      const { data: urlData } = supabase.storage
+        .from("enrollment-chat-files")
+        .getPublicUrl(filePath);
 
       const result = await sendChatMessage({
         roomId,
@@ -403,7 +368,6 @@ export function ChatRoom({
       }
     } catch (error) {
       console.error("Error uploading file:", error);
-      setSendError(error instanceof Error ? error.message : "Failed to upload file");
 
       // Remove from uploading files on error
       setUploadingFiles((prev) => {
@@ -688,11 +652,6 @@ export function ChatRoom({
           </div>
         ) : (
           <div className="p-4 border-t">
-            {sendError && (
-              <p className="text-sm text-red-600 mb-2" role="alert">
-                {sendError}
-              </p>
-            )}
             <form onSubmit={handleSendMessage} className="flex gap-2">
               <Button
                 type="button"
@@ -707,14 +666,12 @@ export function ChatRoom({
                 type="file"
                 ref={fileInputRef}
                 onChange={handleFileUpload}
-                accept={ChatAllowedFileMimeTypes.join(",")}
                 className="hidden"
               />
               <input
                 type="text"
                 value={messageInput}
                 onChange={(e) => setMessageInput(e.target.value)}
-                maxLength={ChatMessageMaxLength}
                 placeholder="Type your message..."
                 className="flex-1 border rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary"
                 disabled={isLoading}
