@@ -8,39 +8,6 @@ export type Database = {
   };
   public: {
     Tables: {
-      pairing_length_snapshots: {
-        Row: {
-          avg_days: number | null;
-          captured_on: string;
-          created_at: string;
-          max_days: number | null;
-          median_days: number | null;
-          pairs: number;
-          population: string;
-          single_session_pairs: number;
-        };
-        Insert: {
-          avg_days?: number | null;
-          captured_on?: string;
-          created_at?: string;
-          max_days?: number | null;
-          median_days?: number | null;
-          pairs?: number;
-          population: string;
-          single_session_pairs?: number;
-        };
-        Update: {
-          avg_days?: number | null;
-          captured_on?: string;
-          created_at?: string;
-          max_days?: number | null;
-          median_days?: number | null;
-          pairs?: number;
-          population?: string;
-          single_session_pairs?: number;
-        };
-        Relationships: [];
-      };
       chat_room_notification_preferences: {
         Row: {
           created_at: string;
@@ -428,6 +395,39 @@ export type Database = {
             referencedColumns: ["id"];
           },
         ];
+      };
+      pairing_length_snapshots: {
+        Row: {
+          avg_days: number | null;
+          captured_on: string;
+          created_at: string;
+          max_days: number | null;
+          median_days: number | null;
+          pairs: number;
+          population: string;
+          single_session_pairs: number;
+        };
+        Insert: {
+          avg_days?: number | null;
+          captured_on?: string;
+          created_at?: string;
+          max_days?: number | null;
+          median_days?: number | null;
+          pairs?: number;
+          population: string;
+          single_session_pairs?: number;
+        };
+        Update: {
+          avg_days?: number | null;
+          captured_on?: string;
+          created_at?: string;
+          max_days?: number | null;
+          median_days?: number | null;
+          pairs?: number;
+          population?: string;
+          single_session_pairs?: number;
+        };
+        Relationships: [];
       };
       pairing_logs: {
         Row: {
@@ -1005,10 +1005,6 @@ export type Database = {
       };
     };
     Functions: {
-      capture_pairing_length_snapshot: {
-        Args: { p_captured_on?: string };
-        Returns: number;
-      };
       availability_overlap: {
         Args: { slots1: Json; slots2: Json };
         Returns: boolean;
@@ -1020,6 +1016,10 @@ export type Database = {
           end_ts: string;
           start_ts: string;
         }[];
+      };
+      capture_pairing_length_snapshot: {
+        Args: { p_captured_on?: string };
+        Returns: number;
       };
       get_admin_conversations: {
         Args: never;
@@ -1199,7 +1199,6 @@ export type Database = {
           p_population?: string;
           p_search?: string;
         };
-        Args: { p_limit?: number; p_population?: string };
         Returns: {
           days: number;
           started_on: string;
