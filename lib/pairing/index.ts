@@ -1,3 +1,4 @@
+import "server-only";
 import type { PairingMatch, PairingMatchPreview } from "@/types/pairing";
 import { createAdminClient, createClient } from "../supabase/server";
 import { Person } from "@/types/enrollment";
