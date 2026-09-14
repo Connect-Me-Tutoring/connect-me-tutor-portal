@@ -175,6 +175,7 @@ const Schedule = () => {
     },
     date: new Date().toISOString(),
     summary: "",
+    isFirstSession: false,
   });
 
   const formatDurationLabel = (hours: number): string => {
@@ -656,9 +657,19 @@ const Schedule = () => {
                 : "bg-blue-50 border-l-blue-500 text-blue-900",
       )}
     >
-      <p className="font-medium truncate">
-        {session.tutor?.firstName} {session.tutor?.lastName}
-      </p>
+      <div className="flex items-center justify-between gap-1">
+        <p className="font-medium truncate">
+          {session.tutor?.firstName} {session.tutor?.lastName}
+        </p>
+        {session.isFirstSession && (
+          <span
+            title="First Session"
+            className="shrink-0 inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-semibold bg-indigo-100 text-indigo-700 border border-indigo-200"
+          >
+            1st
+          </span>
+        )}
+      </div>
       <p className="truncate text-[11px] opacity-80">
         {session.student?.firstName} {session.student?.lastName}
       </p>
@@ -725,6 +736,12 @@ const Schedule = () => {
                     {label}
                   </span>
                 ))}
+                <span className="flex items-center gap-1.5 border-l pl-3">
+                  <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-indigo-100 text-indigo-700 border border-indigo-200">
+                    1st
+                  </span>
+                  First Session
+                </span>
               </div>
 
               <div className="flex flex-wrap items-center gap-2">
@@ -897,6 +914,23 @@ const Schedule = () => {
                               </SelectContent>
                             </Select>
                           </div>
+                        </div>
+                        <div className="flex items-center space-x-2 pt-1">
+                          <input
+                            type="checkbox"
+                            id="newIsFirstSession"
+                            checked={Boolean(newSession.isFirstSession)}
+                            onChange={(e) =>
+                              setNewSession({
+                                ...newSession,
+                                isFirstSession: e.target.checked,
+                              })
+                            }
+                            className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
+                          />
+                          <Label htmlFor="newIsFirstSession" className="text-sm font-medium cursor-pointer">
+                            First Session
+                          </Label>
                         </div>
                         <Button
                           onClick={handleAddSession}
@@ -1112,7 +1146,7 @@ const Schedule = () => {
                                   setIsModalOpen(true);
                                 }}
                                 className={cn(
-                                  "cursor-pointer truncate rounded px-1 py-0.5 text-[10px]",
+                                  "cursor-pointer truncate rounded px-1 py-0.5 text-[10px] flex items-center justify-between gap-1",
                                   session.status === "Complete"
                                     ? "bg-green-100 text-green-800"
                                     : session.status === "Cancelled"
@@ -1124,7 +1158,17 @@ const Schedule = () => {
                                           : "bg-blue-100 text-blue-800",
                                 )}
                               >
-                                {session.tutor?.firstName} / {session.student?.firstName}
+                                <span className="truncate">
+                                  {session.tutor?.firstName} / {session.student?.firstName}
+                                </span>
+                                {session.isFirstSession && (
+                                  <span
+                                    title="First Session"
+                                    className="shrink-0 text-[8px] font-bold px-1 rounded bg-indigo-200 text-indigo-800"
+                                  >
+                                    1st
+                                  </span>
+                                )}
                               </div>
                             ))}
                           </div>
@@ -1141,7 +1185,14 @@ const Schedule = () => {
         <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>Session Details</DialogTitle>
+              <div className="flex items-center justify-between">
+                <DialogTitle>Session Details</DialogTitle>
+                {selectedSession?.isFirstSession && (
+                  <Badge className="bg-indigo-100 text-indigo-800 border-indigo-200 hover:bg-indigo-100 text-xs font-semibold">
+                    First Session
+                  </Badge>
+                )}
+              </div>
             </DialogHeader>
             {selectedSession && (
               <div className="space-y-4">
@@ -1292,6 +1343,23 @@ const Schedule = () => {
                       })
                     }
                   />
+                </div>
+                <div className="flex items-center space-x-2 pt-1">
+                  <input
+                    type="checkbox"
+                    id="isFirstSession"
+                    checked={Boolean(selectedSession?.isFirstSession)}
+                    onChange={(e) =>
+                      setSelectedSession({
+                        ...selectedSession,
+                        isFirstSession: e.target.checked,
+                      })
+                    }
+                    className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
+                  />
+                  <Label htmlFor="isFirstSession" className="text-sm font-medium cursor-pointer">
+                    First Session
+                  </Label>
                 </div>
                 {(() => {
                   const rawSef = (selectedSession as any)?.session_exit_form as
