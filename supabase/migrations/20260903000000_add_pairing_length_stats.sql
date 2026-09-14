@@ -1,21 +1,4 @@
 
--- Two populations, deliberately reported separately:
---   active -- a Pairings row still exists. Length = created_at -> today. This is
---             tenure to date, not a finished duration.
---   ended  -- no Pairings row survives. deletePairingServer hard-deletes the
---             Pairings and Enrollments rows on unpair, so the only remaining
---             evidence is completed Sessions, which keep tutor_id/student_id.
---             Length = first completed session -> last completed session.
---
--- a pair that met once and then cancelled for weeks before unpairing measures as 0 days. Roughly 1/3 of
--- ended pairs currently measure 0 for that reason.
---
--- Sessions whose profile was deleted have tutor_id/student_id SET NULL and
--- cannot be attributed to a pair, so they are excluded throughout.
---
--- Test and dummy accounts are excluded by name match (25 pairings today).
--- Deliberately a substring match, not word-boundary: several junk accounts are
--- concatenated, e.g. "testAman testAman".
 
 create or replace function get_pairing_length_stats()
 returns table (
@@ -86,15 +69,6 @@ $$;
 
 grant execute on function get_pairing_length_stats() to authenticated;
 
--- Individual pairings for the detail table. p_population is whitelisted rather
--- than interpolated; p_limit/p_offset keep the payload bounded and pageable.
---
--- NOTE: this signature (with p_search/p_offset) is what is actually live on
--- prod today -- it was applied out-of-band and never captured in a migration
--- until now. This definition is copied verbatim from prod so this migration
--- is a no-op there, and so a 2-arg overload doesn't get created alongside it
--- (which would make supabase.rpc("get_pairing_lengths", { p_population,
--- p_limit }) in PairingLengthCard.tsx ambiguous between two overloads).
 create or replace function get_pairing_lengths(
   p_population text default 'all',
   p_search text default null,
