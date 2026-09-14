@@ -1,5 +1,3 @@
--- Convert "Profiles".status from free-text to a proper enum.
--- Prod data audited 2026-08-30: only 'Active' (2386), 'Inactive' (7), and null (3) exist.
 
 CREATE TYPE "public"."profile_status" AS ENUM (
     'Active',

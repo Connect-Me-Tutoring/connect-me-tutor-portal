@@ -1,21 +1,4 @@
 
--- Two populations, deliberately reported separately:
---   active -- a Pairings row still exists. Length = created_at -> today. This is
---             tenure to date, not a finished duration.
---   ended  -- no Pairings row survives. deletePairingServer hard-deletes the
---             Pairings and Enrollments rows on unpair, so the only remaining
---             evidence is completed Sessions, which keep tutor_id/student_id.
---             Length = first completed session -> last completed session.
---
--- a pair that met once and then cancelled for weeks before unpairing measures as 0 days. Roughly 1/3 of
--- ended pairs currently measure 0 for that reason.
---
--- Sessions whose profile was deleted have tutor_id/student_id SET NULL and
--- cannot be attributed to a pair, so they are excluded throughout.
---
--- Test and dummy accounts are excluded by name match (25 pairings today).
--- Deliberately a substring match, not word-boundary: several junk accounts are
--- concatenated, e.g. "testAman testAman".
 
 create or replace function get_pairing_length_stats()
 returns table (
@@ -86,11 +69,11 @@ $$;
 
 grant execute on function get_pairing_length_stats() to authenticated;
 
--- Individual pairings for the detail table. p_population is whitelisted rather
--- than interpolated; p_limit keeps the payload bounded.
 create or replace function get_pairing_lengths(
   p_population text default 'all',
-  p_limit integer default 100
+  p_search text default null,
+  p_limit integer default 100,
+  p_offset integer default 0
 )
 returns table (
   tutor_name text,
@@ -103,9 +86,29 @@ language plpgsql
 security definer
 set search_path = public
 as $$
+declare
+  v_search text;
+  v_pattern text;
 begin
   if p_population not in ('active', 'ended', 'all') then
     raise exception 'Invalid population: %. Expected active, ended, or all.', p_population;
+  end if;
+
+  if p_limit is null or p_limit < 1 or p_limit > 500 then
+    raise exception 'Invalid limit: %. Expected 1-500.', p_limit;
+  end if;
+
+  if p_offset is null or p_offset < 0 then
+    raise exception 'Invalid offset: %. Expected 0 or greater.', p_offset;
+  end if;
+
+  v_search := nullif(trim(p_search), '');
+
+  -- Treat the search term as a literal: escape the LIKE metacharacters so a stray
+  -- % or _ in a name (or a pasted wildcard) matches itself instead of everything.
+  if v_search is not null then
+    v_pattern := '%' ||
+      replace(replace(replace(v_search, '\', '\\'), '%', '\%'), '_', '\_') || '%';
   end if;
 
   return query
@@ -154,16 +157,34 @@ begin
   select
     trim(coalesce(t.first_name, '') || ' ' || coalesce(t.last_name, '')) as tutor_name,
     trim(coalesce(st.first_name, '') || ' ' || coalesce(st.last_name, '')) as student_name,
-    c.days::integer,
-    c.status,
-    c.started_on
+    c.days::integer as days,
+    c.status as status,
+    c.started_on as started_on
   from combined c
   left join "Profiles" t on t.id = c.tutor_id
   left join "Profiles" st on st.id = c.student_id
-  where p_population = 'all' or c.status = p_population
-  order by c.days desc
-  limit p_limit;
+  where (p_population = 'all' or c.status = p_population)
+    and (
+      v_pattern is null
+      or trim(coalesce(t.first_name, '') || ' ' || coalesce(t.last_name, ''))
+           ilike v_pattern escape '\'
+      or trim(coalesce(st.first_name, '') || ' ' || coalesce(st.last_name, ''))
+           ilike v_pattern escape '\'
+    )
+  -- days alone is not a stable sort: ~1/3 of ended pairs measure exactly 0, so
+  -- paging on a ties-only ORDER BY would duplicate and drop rows between pages.
+  -- The trailing id columns make the order total.
+  order by
+    c.days desc,
+    t.first_name asc,
+    t.last_name asc,
+    st.first_name asc,
+    st.last_name asc,
+    c.tutor_id asc,
+    c.student_id asc
+  limit p_limit
+  offset p_offset;
 end;
 $$;
 
-grant execute on function get_pairing_lengths(text, integer) to authenticated;
+grant execute on function get_pairing_lengths(text, text, integer, integer) to authenticated;
