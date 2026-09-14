@@ -47,8 +47,8 @@ create policy "pairings_select_own"
   on public."Pairings" for select to authenticated
   using (
     (select private.is_admin())
-    or student_id = any ((select private.profile_ids()))
-    or tutor_id   = any ((select private.profile_ids()))
+    or student_id = any ((select private.profile_ids())::uuid[])
+    or tutor_id   = any ((select private.profile_ids())::uuid[])
   );
 
 -- updatePairingMatchStatus() (lib/actions/pairing/client.actions.ts:721)
@@ -63,7 +63,7 @@ create policy "pairings_tutor_insert_from_accepted_match"
   with check (
     (select private.is_admin())
     or (
-      tutor_id = any ((select private.profile_ids()))
+      tutor_id = any ((select private.profile_ids())::uuid[])
       and exists (
         select 1 from public.pairing_matches pm
         where pm.tutor_id = "Pairings".tutor_id
@@ -79,7 +79,7 @@ create policy "pairings_tutor_insert_from_accepted_match"
 -- already set by enrollments_participant_delete.
 create policy "pairings_tutor_delete_own"
   on public."Pairings" for delete to authenticated
-  using ((select private.is_admin()) or tutor_id = any ((select private.profile_ids())));
+  using ((select private.is_admin()) or tutor_id = any ((select private.profile_ids())::uuid[]));
 
 create policy "pairings_admin_update"
   on public."Pairings" for update to authenticated
@@ -93,8 +93,8 @@ drop policy if exists "analytics read" on public."Events";
 
 create policy "events_own"
   on public."Events" for all to authenticated
-  using ((select private.is_admin()) or tutor_id = any ((select private.profile_ids())))
-  with check ((select private.is_admin()) or tutor_id = any ((select private.profile_ids())));
+  using ((select private.is_admin()) or tutor_id = any ((select private.profile_ids())::uuid[]))
+  with check ((select private.is_admin()) or tutor_id = any ((select private.profile_ids())::uuid[]));
 
 
 -- ===========================================================================
@@ -115,7 +115,7 @@ create policy "meetings_select_accessible"
   using (
     (select private.is_admin())
     or (select private.is_tutor())
-    or id = any ((select private.accessible_meeting_ids()))
+    or id = any ((select private.accessible_meeting_ids())::uuid[])
   );
 
 create policy "meetings_admin_write"
@@ -147,7 +147,7 @@ drop policy if exists "Enable update access for all users" on public.conversatio
 
 create policy "conversations_select_participant"
   on public.conversations for select to authenticated
-  using ((select private.is_admin()) or id = any ((select private.conversation_ids())));
+  using ((select private.is_admin()) or id = any ((select private.conversation_ids())::uuid[]));
 
 -- createAdminConversation() (lib/actions/chat/server.actions.ts:16-51) is
 -- gated by requireSelfOrAdmin(user_id) -- i.e. a student/tutor opening their
@@ -173,7 +173,7 @@ drop policy if exists "Enable update access for all users" on public.conversatio
 
 create policy "conversation_participant_select"
   on public.conversation_participant for select to authenticated
-  using ((select private.is_admin()) or conversation_id = any ((select private.conversation_ids())));
+  using ((select private.is_admin()) or conversation_id = any ((select private.conversation_ids())::uuid[]));
 
 -- Same self-service case as conversations_self_create_admin_chat above:
 -- createAdminConversation() adds the caller as the sole participant of the
@@ -188,7 +188,7 @@ create policy "conversation_participant_self_insert"
   with check (
     (select private.is_admin())
     or (
-      profile_id = any ((select private.profile_ids()))
+      profile_id = any ((select private.profile_ids())::uuid[])
       and not exists (
         select 1 from public.conversation_participant existing
         where existing.conversation_id = conversation_participant.conversation_id
@@ -217,7 +217,7 @@ create policy "messages_select_rooms"
   on public.messages for select to authenticated
   using (
     (select private.is_admin())
-    or room_id = any ((select private.chat_room_ids()))
+    or room_id = any ((select private.chat_room_ids())::uuid[])
   );
 
 -- Write: must be a real participant, must post as yourself, and only admins
@@ -225,12 +225,12 @@ create policy "messages_select_rooms"
 create policy "messages_insert_participant"
   on public.messages for insert to authenticated
   with check (
-    user_id = any ((select private.profile_ids()))
+    user_id = any ((select private.profile_ids())::uuid[])
     and (
       (select private.is_admin())
       or (
         room_id <> all ((select private.announcement_room_ids()))
-        and room_id = any ((select private.chat_room_ids()))
+        and room_id = any ((select private.chat_room_ids())::uuid[])
       )
     )
   );
@@ -241,21 +241,21 @@ create policy "messages_insert_participant"
 -- their message (e.g. into the student announcements room).
 create policy "messages_update_own"
   on public.messages for update to authenticated
-  using ((select private.is_admin()) or user_id = any ((select private.profile_ids())))
+  using ((select private.is_admin()) or user_id = any ((select private.profile_ids())::uuid[]))
   with check (
-    user_id = any ((select private.profile_ids()))
+    user_id = any ((select private.profile_ids())::uuid[])
     and (
       (select private.is_admin())
       or (
         room_id <> all ((select private.announcement_room_ids()))
-        and room_id = any ((select private.chat_room_ids()))
+        and room_id = any ((select private.chat_room_ids())::uuid[])
       )
     )
   );
 
 create policy "messages_delete_own"
   on public.messages for delete to authenticated
-  using ((select private.is_admin()) or user_id = any ((select private.profile_ids())));
+  using ((select private.is_admin()) or user_id = any ((select private.profile_ids())::uuid[]));
 
 -- chat_room_notification_preferences. These four self-access policies were
 -- originally created by 202604120002_enable_chat_room_notification_preferences_rls.sql;
@@ -269,20 +269,20 @@ drop policy if exists "delete_own_chat_room_notification_preferences" on public.
 
 create policy "chat_prefs_select_own"
   on public.chat_room_notification_preferences for select to authenticated
-  using (profile_id = any ((select private.profile_ids())));
+  using (profile_id = any ((select private.profile_ids())::uuid[]));
 
 create policy "chat_prefs_insert_own"
   on public.chat_room_notification_preferences for insert to authenticated
-  with check (profile_id = any ((select private.profile_ids())));
+  with check (profile_id = any ((select private.profile_ids())::uuid[]));
 
 create policy "chat_prefs_update_own"
   on public.chat_room_notification_preferences for update to authenticated
-  using (profile_id = any ((select private.profile_ids())))
-  with check (profile_id = any ((select private.profile_ids())));
+  using (profile_id = any ((select private.profile_ids())::uuid[]))
+  with check (profile_id = any ((select private.profile_ids())::uuid[]));
 
 create policy "chat_prefs_delete_own"
   on public.chat_room_notification_preferences for delete to authenticated
-  using (profile_id = any ((select private.profile_ids())));
+  using (profile_id = any ((select private.profile_ids())::uuid[]));
 
 create policy "chat_prefs_admin_all"
   on public.chat_room_notification_preferences for all to authenticated
@@ -303,7 +303,7 @@ drop policy if exists "analytics read" on public.pairing_requests;
 
 create policy "pairing_requests_select_own"
   on public.pairing_requests for select to authenticated
-  using ((select private.is_admin()) or user_id = any ((select private.profile_ids())));
+  using ((select private.is_admin()) or user_id = any ((select private.profile_ids())::uuid[]));
 
 -- createPairingRequest / removePairingRequest / updatePairingRequest /
 -- setExcludeRejectedTutorsPreference (lib/actions/pairing/client.actions.ts)
@@ -312,12 +312,12 @@ create policy "pairing_requests_select_own"
 -- stays restricted.
 create policy "pairing_requests_self_insert"
   on public.pairing_requests for insert to authenticated
-  with check ((select private.is_admin()) or user_id = any ((select private.profile_ids())));
+  with check ((select private.is_admin()) or user_id = any ((select private.profile_ids())::uuid[]));
 
 create policy "pairing_requests_self_update"
   on public.pairing_requests for update to authenticated
-  using ((select private.is_admin()) or user_id = any ((select private.profile_ids())))
-  with check ((select private.is_admin()) or user_id = any ((select private.profile_ids())));
+  using ((select private.is_admin()) or user_id = any ((select private.profile_ids())::uuid[]))
+  with check ((select private.is_admin()) or user_id = any ((select private.profile_ids())::uuid[]));
 
 -- updatePairingMatchStatus()'s reject branch (client.actions.ts:816-821)
 -- resets BOTH parties' pairing_requests row to "pending" in one .update()
@@ -332,15 +332,15 @@ create policy "pairing_requests_update_matched_party"
   using (
     exists (
       select 1 from public.pairing_matches pm
-      where (pm.tutor_id = any ((select private.profile_ids())) and pm.student_id = pairing_requests.user_id)
-         or (pm.student_id = any ((select private.profile_ids())) and pm.tutor_id = pairing_requests.user_id)
+      where (pm.tutor_id = any ((select private.profile_ids())::uuid[]) and pm.student_id = pairing_requests.user_id)
+         or (pm.student_id = any ((select private.profile_ids())::uuid[]) and pm.tutor_id = pairing_requests.user_id)
     )
   )
   with check (
     exists (
       select 1 from public.pairing_matches pm
-      where (pm.tutor_id = any ((select private.profile_ids())) and pm.student_id = pairing_requests.user_id)
-         or (pm.student_id = any ((select private.profile_ids())) and pm.tutor_id = pairing_requests.user_id)
+      where (pm.tutor_id = any ((select private.profile_ids())::uuid[]) and pm.student_id = pairing_requests.user_id)
+         or (pm.student_id = any ((select private.profile_ids())::uuid[]) and pm.tutor_id = pairing_requests.user_id)
     )
   );
 
@@ -358,8 +358,8 @@ create policy "pairing_matches_select_own"
   on public.pairing_matches for select to authenticated
   using (
     (select private.is_admin())
-    or tutor_id   = any ((select private.profile_ids()))
-    or student_id = any ((select private.profile_ids()))
+    or tutor_id   = any ((select private.profile_ids())::uuid[])
+    or student_id = any ((select private.profile_ids())::uuid[])
   );
 
 -- A tutor accepts or rejects the match offered to them. guard_pairing_match_columns
@@ -367,8 +367,8 @@ create policy "pairing_matches_select_own"
 -- reassigning the student.
 create policy "pairing_matches_tutor_update"
   on public.pairing_matches for update to authenticated
-  using ((select private.is_admin()) or tutor_id = any ((select private.profile_ids())))
-  with check ((select private.is_admin()) or tutor_id = any ((select private.profile_ids())));
+  using ((select private.is_admin()) or tutor_id = any ((select private.profile_ids())::uuid[]))
+  with check ((select private.is_admin()) or tutor_id = any ((select private.profile_ids())::uuid[]));
 
 create policy "pairing_matches_admin_write"
   on public.pairing_matches for all to authenticated

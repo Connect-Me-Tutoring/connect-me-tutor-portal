@@ -32,7 +32,7 @@ create policy "profiles_select_related"
   using (
     (select private.is_admin())
     or role = 'Admin'
-    or id = any ((select private.visible_profile_ids()))
+    or id = any ((select private.visible_profile_ids())::uuid[])
   );
 
 create policy "profiles_update_own"
@@ -60,9 +60,13 @@ create policy "user_settings_own"
   with check (user_id = (select auth.uid()) or (select private.is_admin()));
 
 -- Reached through Profiles.settings_id (1:1).
--- "Enable insert for authenticated users only" on this table was already
--- dropped by 20260829225535_remote_schema.sql; the other two legacy grants
--- are still live.
+-- 20260829225535_remote_schema.sql already dropped "Enable insert for
+-- authenticated users only" once, but it is live on prod again today (either
+-- that migration's DROP predates the pull rather than having been executed,
+-- or the policy was re-added out-of-band since) -- drop it here too rather
+-- than trust the earlier migration, or this permissive policy stays live
+-- alongside user_notification_settings_own below.
+drop policy if exists "Enable insert for authenticated users only" on public.user_notification_settings;
 drop policy if exists "Enable read access for all users" on public.user_notification_settings;
 drop policy if exists "Enable update for users" on public.user_notification_settings;
 
@@ -73,7 +77,7 @@ create policy "user_notification_settings_own"
     or exists (
       select 1 from public."Profiles" p
       where p.settings_id = user_notification_settings.id
-        and p.id = any ((select private.profile_ids()))
+        and p.id = any ((select private.profile_ids())::uuid[])
     )
   )
   with check (
@@ -81,7 +85,7 @@ create policy "user_notification_settings_own"
     or exists (
       select 1 from public."Profiles" p
       where p.settings_id = user_notification_settings.id
-        and p.id = any ((select private.profile_ids()))
+        and p.id = any ((select private.profile_ids())::uuid[])
     )
   );
 
@@ -93,12 +97,12 @@ drop policy if exists "analytics read" on public."User_Availabilities";
 
 create policy "user_availabilities_read_related"
   on public."User_Availabilities" for select to authenticated
-  using ((select private.is_admin()) or profile_id = any ((select private.visible_profile_ids())));
+  using ((select private.is_admin()) or profile_id = any ((select private.visible_profile_ids())::uuid[]));
 
 create policy "user_availabilities_write_own"
   on public."User_Availabilities" for all to authenticated
-  using ((select private.is_admin()) or profile_id = any ((select private.profile_ids())))
-  with check ((select private.is_admin()) or profile_id = any ((select private.profile_ids())));
+  using ((select private.is_admin()) or profile_id = any ((select private.profile_ids())::uuid[]))
+  with check ((select private.is_admin()) or profile_id = any ((select private.profile_ids())::uuid[]));
 
 
 -- ===========================================================================
@@ -119,8 +123,8 @@ create policy "enrollments_select_own"
   on public."Enrollments" for select to authenticated
   using (
     (select private.is_admin())
-    or student_id = any ((select private.profile_ids()))
-    or tutor_id   = any ((select private.profile_ids()))
+    or student_id = any ((select private.profile_ids())::uuid[])
+    or tutor_id   = any ((select private.profile_ids())::uuid[])
   );
 
 -- addEnrollment() gates on requireTutorProfileAccess(tutorId) then writes
@@ -128,7 +132,7 @@ create policy "enrollments_select_own"
 -- -- tutors create their own enrollments, not just admins.
 create policy "enrollments_tutor_insert"
   on public."Enrollments" for insert to authenticated
-  with check ((select private.is_admin()) or tutor_id = any ((select private.profile_ids())));
+  with check ((select private.is_admin()) or tutor_id = any ((select private.profile_ids())::uuid[]));
 
 -- updateEnrollment/removeEnrollment gate on requireEnrollmentAccess, which
 -- explicitly allows the enrollment's own student or tutor
@@ -137,21 +141,21 @@ create policy "enrollments_participant_update"
   on public."Enrollments" for update to authenticated
   using (
     (select private.is_admin())
-    or student_id = any ((select private.profile_ids()))
-    or tutor_id   = any ((select private.profile_ids()))
+    or student_id = any ((select private.profile_ids())::uuid[])
+    or tutor_id   = any ((select private.profile_ids())::uuid[])
   )
   with check (
     (select private.is_admin())
-    or student_id = any ((select private.profile_ids()))
-    or tutor_id   = any ((select private.profile_ids()))
+    or student_id = any ((select private.profile_ids())::uuid[])
+    or tutor_id   = any ((select private.profile_ids())::uuid[])
   );
 
 create policy "enrollments_participant_delete"
   on public."Enrollments" for delete to authenticated
   using (
     (select private.is_admin())
-    or student_id = any ((select private.profile_ids()))
-    or tutor_id   = any ((select private.profile_ids()))
+    or student_id = any ((select private.profile_ids())::uuid[])
+    or tutor_id   = any ((select private.profile_ids())::uuid[])
   );
 
 drop policy if exists "Enable delete for users if admin" on public."Sessions";
@@ -166,19 +170,19 @@ create policy "sessions_select_own"
   on public."Sessions" for select to authenticated
   using (
     (select private.is_admin())
-    or student_id = any ((select private.profile_ids()))
-    or tutor_id   = any ((select private.profile_ids()))
+    or student_id = any ((select private.profile_ids())::uuid[])
+    or tutor_id   = any ((select private.profile_ids())::uuid[])
   );
 
 -- Tutors submit/complete their own sessions. Students get read-only.
 create policy "sessions_tutor_insert"
   on public."Sessions" for insert to authenticated
-  with check ((select private.is_admin()) or tutor_id = any ((select private.profile_ids())));
+  with check ((select private.is_admin()) or tutor_id = any ((select private.profile_ids())::uuid[]));
 
 create policy "sessions_tutor_update"
   on public."Sessions" for update to authenticated
-  using ((select private.is_admin()) or tutor_id = any ((select private.profile_ids())))
-  with check ((select private.is_admin()) or tutor_id = any ((select private.profile_ids())));
+  using ((select private.is_admin()) or tutor_id = any ((select private.profile_ids())::uuid[]))
+  with check ((select private.is_admin()) or tutor_id = any ((select private.profile_ids())::uuid[]));
 
 create policy "sessions_admin_delete"
   on public."Sessions" for delete to authenticated
@@ -198,8 +202,8 @@ create policy "notifications_select_own"
   on public."Notifications" for select to authenticated
   using (
     (select private.is_admin())
-    or student_id = any ((select private.profile_ids()))
-    or tutor_id   = any ((select private.profile_ids()))
+    or student_id = any ((select private.profile_ids())::uuid[])
+    or tutor_id   = any ((select private.profile_ids())::uuid[])
   );
 
 -- Reschedule / cancel requests are raised by the participants themselves.
@@ -207,21 +211,21 @@ create policy "notifications_insert_own"
   on public."Notifications" for insert to authenticated
   with check (
     (select private.is_admin())
-    or student_id = any ((select private.profile_ids()))
-    or tutor_id   = any ((select private.profile_ids()))
+    or student_id = any ((select private.profile_ids())::uuid[])
+    or tutor_id   = any ((select private.profile_ids())::uuid[])
   );
 
 create policy "notifications_update_own"
   on public."Notifications" for update to authenticated
   using (
     (select private.is_admin())
-    or student_id = any ((select private.profile_ids()))
-    or tutor_id   = any ((select private.profile_ids()))
+    or student_id = any ((select private.profile_ids())::uuid[])
+    or tutor_id   = any ((select private.profile_ids())::uuid[])
   )
   with check (
     (select private.is_admin())
-    or student_id = any ((select private.profile_ids()))
-    or tutor_id   = any ((select private.profile_ids()))
+    or student_id = any ((select private.profile_ids())::uuid[])
+    or tutor_id   = any ((select private.profile_ids())::uuid[])
   );
 
 create policy "notifications_admin_delete"
@@ -243,7 +247,7 @@ drop policy if exists "Policy with table joins" on public.session_reminders;
 -- defeats any index on recipient_id).
 create policy "emails_select_own"
   on public.session_reminders for select to authenticated
-  using ((select private.is_admin()) or recipient_id = any ((select private.profile_ids())));
+  using ((select private.is_admin()) or recipient_id = any ((select private.profile_ids())::uuid[]));
 
 -- Admin-triggered reminder scheduling/cancellation writes this table via the
 -- RLS-bound client, not createAdminClient() --

@@ -87,10 +87,19 @@ $$;
 grant execute on function get_pairing_length_stats() to authenticated;
 
 -- Individual pairings for the detail table. p_population is whitelisted rather
--- than interpolated; p_limit keeps the payload bounded.
+-- than interpolated; p_limit/p_offset keep the payload bounded and pageable.
+--
+-- NOTE: this signature (with p_search/p_offset) is what is actually live on
+-- prod today -- it was applied out-of-band and never captured in a migration
+-- until now. This definition is copied verbatim from prod so this migration
+-- is a no-op there, and so a 2-arg overload doesn't get created alongside it
+-- (which would make supabase.rpc("get_pairing_lengths", { p_population,
+-- p_limit }) in PairingLengthCard.tsx ambiguous between two overloads).
 create or replace function get_pairing_lengths(
   p_population text default 'all',
-  p_limit integer default 100
+  p_search text default null,
+  p_limit integer default 100,
+  p_offset integer default 0
 )
 returns table (
   tutor_name text,
@@ -103,9 +112,29 @@ language plpgsql
 security definer
 set search_path = public
 as $$
+declare
+  v_search text;
+  v_pattern text;
 begin
   if p_population not in ('active', 'ended', 'all') then
     raise exception 'Invalid population: %. Expected active, ended, or all.', p_population;
+  end if;
+
+  if p_limit is null or p_limit < 1 or p_limit > 500 then
+    raise exception 'Invalid limit: %. Expected 1-500.', p_limit;
+  end if;
+
+  if p_offset is null or p_offset < 0 then
+    raise exception 'Invalid offset: %. Expected 0 or greater.', p_offset;
+  end if;
+
+  v_search := nullif(trim(p_search), '');
+
+  -- Treat the search term as a literal: escape the LIKE metacharacters so a stray
+  -- % or _ in a name (or a pasted wildcard) matches itself instead of everything.
+  if v_search is not null then
+    v_pattern := '%' ||
+      replace(replace(replace(v_search, '\', '\\'), '%', '\%'), '_', '\_') || '%';
   end if;
 
   return query
@@ -154,16 +183,34 @@ begin
   select
     trim(coalesce(t.first_name, '') || ' ' || coalesce(t.last_name, '')) as tutor_name,
     trim(coalesce(st.first_name, '') || ' ' || coalesce(st.last_name, '')) as student_name,
-    c.days::integer,
-    c.status,
-    c.started_on
+    c.days::integer as days,
+    c.status as status,
+    c.started_on as started_on
   from combined c
   left join "Profiles" t on t.id = c.tutor_id
   left join "Profiles" st on st.id = c.student_id
-  where p_population = 'all' or c.status = p_population
-  order by c.days desc
-  limit p_limit;
+  where (p_population = 'all' or c.status = p_population)
+    and (
+      v_pattern is null
+      or trim(coalesce(t.first_name, '') || ' ' || coalesce(t.last_name, ''))
+           ilike v_pattern escape '\'
+      or trim(coalesce(st.first_name, '') || ' ' || coalesce(st.last_name, ''))
+           ilike v_pattern escape '\'
+    )
+  -- days alone is not a stable sort: ~1/3 of ended pairs measure exactly 0, so
+  -- paging on a ties-only ORDER BY would duplicate and drop rows between pages.
+  -- The trailing id columns make the order total.
+  order by
+    c.days desc,
+    t.first_name asc,
+    t.last_name asc,
+    st.first_name asc,
+    st.last_name asc,
+    c.tutor_id asc,
+    c.student_id asc
+  limit p_limit
+  offset p_offset;
 end;
 $$;
 
-grant execute on function get_pairing_lengths(text, integer) to authenticated;
+grant execute on function get_pairing_lengths(text, text, integer, integer) to authenticated;
