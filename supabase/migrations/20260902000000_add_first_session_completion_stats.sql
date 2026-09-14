@@ -1,16 +1,4 @@
 
---
--- "First session" is DERIVED (earliest dated session per tutor/student pair),
--- not read from Sessions.is_first_session.
---
--- Partitioning is on (tutor_id, student_id) rather than enrollment_id:
--- deletePairingServer deletes Enrollments on unpair and Sessions.enrollment_id
--- is ON DELETE SET NULL, so ~85% of resolved sessions have no enrollment link.
--- Partitioning on enrollment_id would only ever see still-active pairings.
-
--- The old single-argument version must be dropped, not replaced: adding a
--- defaulted parameter creates an overload instead, and a one-argument call
--- would then be ambiguous between the two.
 drop function if exists get_period_session_completion_stats(text);
 
 create or replace function get_period_session_completion_stats(
