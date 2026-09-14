@@ -57,7 +57,7 @@ const SessionCompletionChart = () => {
   const [rangeEnd, setRangeEnd] = useState("");
 
   // Guards against out-of-order responses: only the most recently issued
-  // request is allowed to apply its result (e.g. rapidly switching
+  // request is allowed to apply its result
   // Monthly -> Weekly can resolve out of order).
   const latestRequestIdRef = useRef(0);
 
