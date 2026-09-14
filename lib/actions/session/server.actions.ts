@@ -1313,6 +1313,7 @@ export async function addStandaloneSession(
       meeting_id: session.meeting?.id,
       duration: session.duration || 1,
       is_standalone: true,
+      is_first_session: session.isFirstSession ?? false,
     };
 
     const { data, error } = await supabase
