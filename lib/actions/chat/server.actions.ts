@@ -3,10 +3,18 @@
 import crypto from "crypto";
 import type { Profile } from "@/types";
 import type { Json } from "@/types/database.types";
-import { StudentAnnouncementsRoomId, TutorAnnouncementRoomId } from "@/constants/chat";
+import {
+  ChatFileBucket,
+  ChatRateLimitGlobalMaxMessages,
+  ChatRateLimitMaxMessages,
+  ChatRateLimitWindowSeconds,
+  StudentAnnouncementsRoomId,
+  TutorAnnouncementRoomId,
+} from "@/constants/chat";
 import { dispatchChatMessageEmails } from "@/lib/chat/dispatch-chat-message-emails";
+import { validateChatMessage } from "@/lib/chat/validate-chat-message";
 import type { ChatRoomType } from "@/lib/chat/resolve-chat-recipients";
-import { createClient } from "../../supabase/server";
+import { createAdminClient, createClient } from "../../supabase/server";
 import { AdminConversation } from "@/types/chat";
 import { getProfileFromUserSettings } from "../profile/server.actions";
 import { getUserFromAction } from "../user/server.actions";
@@ -144,6 +152,42 @@ async function assertCanSendChatMessage(
   return { ok: false, message: "Invalid room type" };
 }
 
+// Two windows: a per-room cap so one conversation stays usable, plus a wider
+// global ceiling so bursts across many rooms (e.g. admin triage) are not
+// blocked while spraying every room at once still is. Counted with the admin
+// client so the window cannot be narrowed by RLS visibility; a failed count
+// allows the send rather than blocking chat.
+async function isChatSendRateLimited(profileId: string, roomId: string): Promise<boolean> {
+  const admin = await createAdminClient();
+  const windowStart = new Date(Date.now() - ChatRateLimitWindowSeconds * 1000).toISOString();
+
+  const [roomResult, globalResult] = await Promise.all([
+    admin
+      .from("messages")
+      .select("id", { count: "exact", head: true })
+      .eq("user_id", profileId)
+      .eq("room_id", roomId)
+      .gte("created_at", windowStart),
+    admin
+      .from("messages")
+      .select("id", { count: "exact", head: true })
+      .eq("user_id", profileId)
+      .gte("created_at", windowStart),
+  ]);
+
+  const error = roomResult.error ?? globalResult.error;
+  if (error) {
+    console.error("isChatSendRateLimited", error);
+    await logError(error, { action: "sendChatMessage", profileId }, "chat_error");
+    return false;
+  }
+
+  return (
+    (roomResult.count ?? 0) >= ChatRateLimitMaxMessages ||
+    (globalResult.count ?? 0) >= ChatRateLimitGlobalMaxMessages
+  );
+}
+
 export async function sendChatMessage(params: {
   roomId: string;
   roomType: ChatRoomType;
@@ -161,9 +205,23 @@ export async function sendChatMessage(params: {
   const profile = await getProfileFromUserSettings(user.id);
   if (!profile) return { ok: false, error: "No profile" };
 
+  const validated = validateChatMessage({
+    content: params.content,
+    file: params.file,
+    storagePublicUrlPrefix: `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/${ChatFileBucket}/`,
+  });
+  if (!validated.ok) return { ok: false, error: validated.message };
+
   const supabase = await createClient();
   const auth = await assertCanSendChatMessage(supabase, profile, params.roomId, params.roomType);
   if (!auth.ok) return { ok: false, error: auth.message };
+
+  if (await isChatSendRateLimited(profile.id, params.roomId)) {
+    return {
+      ok: false,
+      error: "You are sending messages too quickly. Wait a moment and try again.",
+    };
+  }
 
   const newMessage: {
     room_id: string;
@@ -173,11 +231,11 @@ export async function sendChatMessage(params: {
   } = {
     room_id: params.roomId,
     user_id: profile.id,
-    content: params.content,
+    content: validated.content,
   };
 
-  if (params.file) {
-    newMessage.file = params.file as unknown as Json;
+  if (validated.file) {
+    newMessage.file = validated.file as unknown as Json;
   }
 
   const { error } = await supabase.from("messages").insert([newMessage]);
@@ -191,7 +249,8 @@ export async function sendChatMessage(params: {
     return { ok: false, error: error.message };
   }
 
-  const preview = params.content || (params.file ? `Shared a file: ${params.file.name}` : "");
+  const preview =
+    validated.content || (validated.file ? `Shared a file: ${validated.file.name}` : "");
 
   await dispatchChatMessageEmails({
     roomId: params.roomId,
