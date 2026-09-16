@@ -27,7 +27,7 @@
     },
     {
       "path": "/api/cron/pairing-length-snapshot",
-      "schedule": "0 8 * * 1"
+      "schedule": "0 8 * * *"
     }
   ],
   "functions": {
