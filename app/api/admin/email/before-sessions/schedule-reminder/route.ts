@@ -6,6 +6,7 @@ import { addMinutes, subMinutes, parseISO } from "date-fns";
 import { scheduleEmail } from "@/lib/actions/email/server.actions";
 import { verifyAdmin } from "@/lib/actions/auth/server.actions";
 import { logError } from "@/lib/posthog";
+import { Table } from "@/lib/supabase/tables";
 
 export const dynamic = "force-dynamic";
 
@@ -41,7 +42,7 @@ export async function POST(request: NextRequest) {
 
     if (result && result.messageId) {
       const { data, error } = await supabase
-        .from("Emails")
+        .from(Table.SessionReminders)
         .insert({
           recipient_id: tutor?.id ?? null,
           session_id: session.id,

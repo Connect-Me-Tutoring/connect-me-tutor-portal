@@ -4,6 +4,7 @@ import { z } from "zod";
 import { CATEGORY_LABELS } from "@/constants/sessionExitForm";
 import { SessionExitFormCategory, SessionExitFormPayload } from "@/types/sessionExitForm";
 import { logEvent, logError } from "@/lib/posthog";
+import { requireAuthenticatedUser } from "@/lib/actions/auth/authz.server";
 
 export const dynamic = "force-dynamic";
 
@@ -47,6 +48,12 @@ export async function GET() {
 }
 
 export async function POST(request: NextRequest) {
+  try {
+    await requireAuthenticatedUser();
+  } catch {
+    return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
+  }
+
   let body: unknown;
 
   try {

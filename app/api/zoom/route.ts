@@ -3,6 +3,7 @@ import crypto from "crypto";
 import { config } from "@/config";
 import { logZoomMetadata } from "@/lib/actions/zoom.server.actions";
 import { logEvent } from "@/lib/posthog";
+import { logUnauthorizedAccess } from "@/lib/security/log-unauthorized-access";
 // import { logZoomMetadata } from "@/lib/actions/zoom.server.actions";
 // import { getActiveSessionFromMeetingID } from "@/lib/actions/session/session.server.actions";
 
@@ -36,6 +37,7 @@ export async function POST(req: NextRequest) {
   // Verify authorization header from Zoom
   const authHeader = req.headers.get("authorization");
   if (authHeader !== `Bearer ${validationSecret}`) {
+    await logUnauthorizedAccess(req, "zoom");
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 

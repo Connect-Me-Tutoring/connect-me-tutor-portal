@@ -15,7 +15,7 @@ import { addStandaloneSession } from "../session/server.actions";
 import { getMeeting } from "../meeting/server.actions";
 import { fromZonedTime } from "date-fns-tz";
 import { computeSessionDateForSchedule } from "../../utils/timezone";
-import { Resend } from "resend";
+import { sendMail } from "@/lib/email/mailer";
 import InactiveEnrollmentWarning from "@/components/emails/enrollments/inactve-enrollment-warning";
 import InactiveEnrollmentEarlyWarning from "@/components/emails/enrollments/inactive-enrollment-early-warning";
 import InactiveEnrollmentDeletion from "@/components/emails/enrollments/inactive-enrollment-deletion";
@@ -822,8 +822,7 @@ export async function sendDeleteEnrollmentEmail(params: {
 }
 
 async function sendTutorProbationEmail(tutor: Profile, reason: string) {
-  const resend = new Resend(process.env.RESEND_API_KEY);
-  await resend.emails.send({
+  await sendMail({
     from: "Connect Me Free Tutoring & mentoring <reminder@connectmego.app>",
     to: tutor.email,
     cc: [process.env.INTERNAL_VP_EMAIL!],
@@ -842,8 +841,7 @@ async function sendEmailHelper(
 ) {
   try {
     const { tutor } = params;
-    const resend = new Resend(process.env.RESEND_API_KEY);
-    await resend.emails.send({
+    await sendMail({
       from: "Connect Me Free Tutoring & mentoring <reminder@connectmego.app>",
       to: tutor.email,
       cc: [process.env.OPERATIONS_EMAIL!],
