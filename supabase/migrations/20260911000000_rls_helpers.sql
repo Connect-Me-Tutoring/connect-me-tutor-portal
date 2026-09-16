@@ -1,33 +1,8 @@
--- Migration 1 of 2 for row level security.
--- Creates the private helper schema and the column-guard triggers.
--- Applying this alone changes NO access: RLS is still off everywhere except
--- chat_room_notification_preferences. It is safe to ship ahead of
--- 20260911000001_rls_enable_policies.sql and 20260912000000_rls_enable_policies_remaining.sql.
-
--- ============================================================================
--- RLS DRAFT — Part 1: helper functions
---
--- These live in a `private` schema so they are not exposed via PostgREST.
--- All are SECURITY DEFINER + STABLE so that:
---   * they can read "Profiles" without tripping the RLS policy that is itself
---     defined in terms of them (infinite recursion),
---   * Postgres evaluates them once per statement (InitPlan) instead of once
---     per row.
--- search_path is pinned on every one of them (search_path injection).
--- ============================================================================
-
 create schema if not exists private;
 
 revoke all on schema private from public;
 grant usage on schema private to authenticated;
 
--- ---------------------------------------------------------------------------
--- Identity
--- ---------------------------------------------------------------------------
-
--- Every Profiles row belonging to the calling auth user.
--- NOTE: one auth user can own several profiles (see user_settings.last_active_profile_id),
--- so this is intentionally a set, not a single id.
 create or replace function private.profile_ids()
 returns uuid[]
 language sql
@@ -40,7 +15,6 @@ as $$
   where p.user_id = (select auth.uid());
 $$;
 
--- The profile the user is currently acting as.
 create or replace function private.active_profile_id()
 returns uuid
 language sql
@@ -83,13 +57,6 @@ as $$
   );
 $$;
 
--- ---------------------------------------------------------------------------
--- Relationship graph
--- ---------------------------------------------------------------------------
-
--- Profiles the caller is allowed to see: their own, plus everyone they are
--- connected to through a pairing, enrollment, session, proposed match, or a
--- shared admin conversation.
 create or replace function private.visible_profile_ids()
 returns uuid[]
 language sql
@@ -107,11 +74,8 @@ as $$
     union select e.student_id  from public."Enrollments" e join me on e.tutor_id   = me.id
     union select s.tutor_id    from public."Sessions" s join me on s.student_id = me.id
     union select s.student_id  from public."Sessions" s join me on s.tutor_id   = me.id
-    -- a tutor must be able to read the student profile attached to a match
-    -- they have been offered, before they accept or reject it
     union select m.student_id  from public.pairing_matches m join me on m.tutor_id = me.id
     union select m.tutor_id    from public.pairing_matches m join me on m.student_id = me.id
-    -- co-participants of admin conversations the caller belongs to
     union select cp_other.profile_id
       from public.conversation_participant cp_mine
       join me on cp_mine.profile_id = me.id
@@ -121,7 +85,6 @@ as $$
   where v.id is not null;
 $$;
 
--- Conversations (admin chat) the caller participates in.
 create or replace function private.conversation_ids()
 returns uuid[]
 language sql
@@ -134,7 +97,6 @@ as $$
   where cp.profile_id = any (private.profile_ids());
 $$;
 
--- Pairings the caller is one half of.
 create or replace function private.pairing_ids()
 returns uuid[]
 language sql
@@ -148,9 +110,6 @@ as $$
      or p.tutor_id   = any (private.profile_ids());
 $$;
 
--- messages.room_id is polymorphic: it is either a Pairings.id, a
--- conversations.id, or one of the two hard-coded announcement room ids
--- (constants/chat.ts). Keep these two literals in sync with that file.
 create or replace function private.chat_room_ids()
 returns uuid[]
 language sql
@@ -170,8 +129,6 @@ as $$
           end;
 $$;
 
--- Read access to announcements is broader than write access: everyone reads
--- their own announcement room, only admins post to it (see the messages policies).
 create or replace function private.announcement_room_ids()
 returns uuid[]
 language sql
@@ -185,8 +142,6 @@ as $$
   ];
 $$;
 
--- Meetings the caller has a legitimate reason to see (the row carries a
--- join link and a password, so this is not blanket-readable).
 create or replace function private.accessible_meeting_ids()
 returns uuid[]
 language sql
@@ -215,10 +170,6 @@ $$;
 
 grant execute on all functions in schema private to authenticated;
 
--- Privilege escalation guard. A policy cannot restrict *which columns* a user
--- changes, and column-level GRANTs would also block admins (who edit
--- Profiles.status from the browser client, lib/actions/admin.actions.ts:206).
--- So enforce it with a trigger that knows about the caller's role.
 create or replace function private.guard_profile_columns()
 returns trigger
 language plpgsql
@@ -230,10 +181,6 @@ begin
     return new;
   end if;
 
-  -- SettingsPage.tsx (components/settings/SettingsPage.tsx:206-208) lets a
-  -- user toggle their own Active/Inactive status without admin help. Allow
-  -- exactly that self-service transition; any other status value, or a
-  -- change to someone else's row, still falls through to the exception below.
   if new.status is distinct from old.status
      and not (
        new.user_id = (select auth.uid())
@@ -267,13 +214,6 @@ create trigger guard_profile_columns
   before update on public."Profiles"
   for each row execute function private.guard_profile_columns();
 
--- NOTE: the trigger runs for service_role too. If a server action legitimately
--- needs to change role/status, it must go through createAdminClient() AND the
--- trigger must be taught about it -- add `if current_setting('request.jwt.claims',
--- true) is null then return new; end if;` at the top to exempt non-JWT
--- (service) callers.
-
-
 create or replace function private.guard_pairing_match_columns()
 returns trigger
 language plpgsql
@@ -303,14 +243,6 @@ create trigger guard_pairing_match_columns
   for each row execute function private.guard_pairing_match_columns();
 
 
--- enrollments_participant_update / sessions_tutor_update let either
--- participant update their own row, and a policy's WITH CHECK can only see
--- the new row -- it can't compare against the old one. OR'ing student_id
--- and tutor_id there means a participant only needs to keep *their own*
--- side unchanged to pass the check, so nothing stops a tutor from
--- reassigning student_id to an arbitrary student (or a student reassigning
--- tutor_id). Guard it here instead, where OLD is available, mirroring
--- guard_pairing_match_columns above.
 create or replace function private.guard_enrollment_columns()
 returns trigger
 language plpgsql
@@ -318,9 +250,6 @@ security definer
 set search_path = public, pg_temp
 as $$
 begin
-  -- updateFutureSessions (lib/actions/enrollment/server.actions.ts) doesn't
-  -- touch Enrollments itself, but keep the same non-JWT exemption as the
-  -- other guards here for consistency / future service-role writes.
   if current_setting('request.jwt.claims', true) is null then
     return new;
   end if;
@@ -353,12 +282,6 @@ security definer
 set search_path = public, pg_temp
 as $$
 begin
-  -- updateFutureSessions (lib/actions/enrollment/server.actions.ts:417-449)
-  -- upserts student_id/tutor_id on future Sessions via createAdminClient()
-  -- (service_role, no JWT) when an admin reassigns an Enrollment -- that's
-  -- the one legitimate path that changes these columns, so it must be
-  -- exempted rather than gated on private.is_admin() (which reads auth.uid()
-  -- and would see no JWT at all for a service_role call).
   if current_setting('request.jwt.claims', true) is null then
     return new;
   end if;
