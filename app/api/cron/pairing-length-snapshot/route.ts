@@ -9,12 +9,14 @@ export const dynamic = "force-dynamic";
 /**
  * Records one pairing-length data point per population (active / ended / all).
  *
- * Runs weekly. The capture is idempotent on (captured_on, population), so a retry
- * or a duplicate fire overwrites the day's point rather than duplicating it.
+ * Runs DAILY but writes WEEKLY: ensure_weekly_pairing_length_snapshot() inserts
+ * only if the current week has no point yet. Vercel does not retry failed crons,
+ * so a daily schedule lets Tuesday cover for a failed Monday and the week is
+ * never lost. Returns rows written, so 0 is the normal expected result on every
+ * day after the week's first successful run.
  *
- * This history cannot be rebuilt after the fact-->unpairing hard-deletes the
- * Pairings row-->so a week the job does not run is a week permanently missing
- * from the chart.
+ * This history cannot be rebuilt after the fact, since unpairing hard-deletes the
+ * Pairings row, so a week in which no run succeeds is permanently missing.
  */
 export async function GET(req: NextRequest) {
   if (!isCronRequestAuthorized(req)) {
@@ -24,15 +26,32 @@ export async function GET(req: NextRequest) {
 
   try {
     const supabase = await createAdminClient();
-    const { data, error } = await supabase.rpc("capture_pairing_length_snapshot");
+    const { data, error } = await supabase.rpc("ensure_weekly_pairing_length_snapshot");
 
     if (error) throw error;
 
     const rows = data ?? 0;
-    await logEvent("pairing_length_snapshot_captured", { rows });
+    const captured = rows > 0;
+    // 1 = Monday. A write on any other day means the week's earlier run(s) failed
+    // and this one recovered the point, which is worth seeing in PostHog.
+    const dayOfWeek = new Date().getUTCDay();
+    const recoveredMissedRun = captured && dayOfWeek !== 1;
+
+    await logEvent("pairing_length_snapshot_run", {
+      rows,
+      captured,
+      recoveredMissedRun,
+      dayOfWeek,
+    });
 
     return NextResponse.json(
-      { message: "Pairing length snapshot captured", rows },
+      {
+        message: captured
+          ? "Pairing length snapshot captured"
+          : "Pairing length snapshot already recorded for this week",
+        rows,
+        recoveredMissedRun,
+      },
       { status: 200 },
     );
   } catch (error) {
