@@ -1021,6 +1021,10 @@ export type Database = {
         Args: { p_captured_on?: string };
         Returns: number;
       };
+      ensure_weekly_pairing_length_snapshot: {
+        Args: never;
+        Returns: number;
+      };
       get_admin_conversations: {
         Args: never;
         Returns: {
