@@ -30,11 +30,13 @@ interface PairingRow {
 }
 
 interface HistoryPoint {
+  // captured_on is the start of the week. A week with no capture still comes back,
+  // with every other field null, so the gap is visible instead of silently closing up.
   captured_on: string;
-  pairs: number;
+  pairs: number | null;
   avg_days: number | null;
   median_days: number | null;
-  single_session_pairs: number;
+  single_session_pairs: number | null;
 }
 
 type Population = "active" | "ended" | "all";
@@ -181,6 +183,8 @@ const PairingLengthCard = () => {
           label: shortDate(point.captured_on),
           days: raw === null ? null : Number(raw),
           pairs: point.pairs,
+          // No snapshot at all, as opposed to a snapshot that found no pairings.
+          missing: point.pairs === null,
         };
       }),
     [history, historyMetric],
@@ -244,9 +248,7 @@ const PairingLengthCard = () => {
         <div className="flex items-start justify-between flex-wrap gap-2 mb-3">
           <div>
             <p className="text-sm font-medium">Length over time</p>
-            <p className="text-xs text-slate-400">
-              One point per weekly snapshot, {population} pairings
-            </p>
+            <p className="text-xs text-slate-400">One point per week, {population} pairings</p>
           </div>
           <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-800 p-1 rounded-lg text-xs font-medium">
             {(
@@ -283,10 +285,16 @@ const PairingLengthCard = () => {
                   <XAxis dataKey="label" tick={{ fontSize: 11 }} />
                   <YAxis tick={{ fontSize: 11 }} width={44} />
                   <Tooltip
-                    formatter={(value) => [
-                      typeof value === "number" ? `${value} days (${months(value)} mo)` : "No data",
-                      "Length",
-                    ]}
+                    formatter={(value, _name, item) => {
+                      const point = item?.payload as { missing?: boolean } | undefined;
+                      if (point?.missing) return ["No capture that week", "Length"];
+                      return [
+                        typeof value === "number"
+                          ? `${value} days (${months(value)} mo)`
+                          : "No pairings that week",
+                        "Length",
+                      ];
+                    }}
                   />
                   <Line
                     type="monotone"
@@ -294,7 +302,6 @@ const PairingLengthCard = () => {
                     stroke="#2563eb"
                     strokeWidth={2}
                     dot={{ r: 3 }}
-                    connectNulls
                   />
                 </LineChart>
               </ResponsiveContainer>
@@ -304,6 +311,10 @@ const PairingLengthCard = () => {
                 Only one snapshot so far, so there is no trend to read yet.
               </p>
             )}
+            <p className="text-xs text-slate-400 mt-2">
+              A break in the line means no snapshot was captured that week. Past weeks cannot be
+              recovered, so a repeated gap means the weekly job needs looking at.
+            </p>
             {population !== "ended" && (
               <p className="text-xs text-slate-400 mt-2">
                 Active length is measured from the pairing date to today, so it climbs by seven days
