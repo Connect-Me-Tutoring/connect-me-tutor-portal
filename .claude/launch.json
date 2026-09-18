@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "portal-local",
+      "runtimeExecutable": "bash",
+      "runtimeArgs": ["scripts/dev-local.sh"],
+      "port": 3000
+    }
+  ]
+}
