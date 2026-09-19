@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/select";
 import { DATE_RANGE_OPTIONS, type OverviewSection } from "@/lib/data-portal/overview";
 import { AnalysisResults } from "./analysis-results";
+import { DataPortalChat } from "./data-portal-chat";
 import styles from "./data-portal.module.css";
 
 /**
@@ -42,9 +43,7 @@ function SectionCard({ section }: { section: OverviewSection }) {
         <h2 id={`dp-section-${section.id}`} className={styles.cardTitle}>
           {section.title}
         </h2>
-        <span className={styles.cardMeta}>
-          {section.sourceRows.toLocaleString()} records read
-        </span>
+        <span className={styles.cardMeta}>{section.sourceRows.toLocaleString()} records read</span>
       </div>
 
       {section.results.length > 0 ? (
@@ -137,6 +136,8 @@ export function DataPortalOverview({
               <SectionCard key={section.id} section={section} />
             ))}
           </div>
+          <DataPortalChat dateRange={dateRange} ready={state.status === "ready"} />
+
           <p className={styles.footNote}>
             Read-only aggregates; no individual records are shown or retrievable here.
           </p>
