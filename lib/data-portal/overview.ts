@@ -35,7 +35,9 @@ export const overviewPayloadSchema = z.strictObject({
   sessionsOverTime: z.strictObject({
     bucket: z.enum(["week", "month"]),
     points: z
-      .array(z.strictObject({ label: z.string().min(1).max(40), value: count, partial: z.boolean() }))
+      .array(
+        z.strictObject({ label: z.string().min(1).max(40), value: count, partial: z.boolean() }),
+      )
       .min(1)
       .max(400),
   }),
@@ -61,7 +63,9 @@ export const overviewPayloadSchema = z.strictObject({
     horizonDays: z.number().int().positive(),
     activityDays: z.number().int().positive(),
     cohorts: z
-      .array(z.strictObject({ label: z.string().min(1).max(40), cohortSize: count, retained: count }))
+      .array(
+        z.strictObject({ label: z.string().min(1).max(40), cohortSize: count, retained: count }),
+      )
       .max(400),
     tutorsRead: count,
   }),
@@ -103,7 +107,7 @@ function sessionsSection(payload: OverviewPayload): OverviewSection {
     `Completed sessions only, counted per calendar ${bucket} in Eastern time.`,
     ...(partial.length > 0
       ? [
-          `${partial.map((point) => point.label).join(", ")} is only partly inside this range — shown, but not comparable with a full ${bucket} and excluded from the total.`,
+          `${partial.map((point) => point.label).join(", ")} is only partly inside this range. It is shown, but not comparable with a full ${bucket}, and it is excluded from the total.`,
         ]
       : []),
   ];
@@ -160,7 +164,7 @@ function funnelSection(payload: OverviewPayload): OverviewSection {
       },
     ],
     limitations: [
-      `A student is counted where their ${windowDays}-day observation window closed, not where they signed up — students still inside their window are not counted as failures.`,
+      `A student is counted where their ${windowDays}-day observation window closed, not where they signed up. Students still inside their window are not counted as failures.`,
       "Stages are cumulative: each requires the ones before it.",
     ],
     sourceRows: signedUp,
@@ -217,7 +221,7 @@ function demandSection(payload: OverviewPayload): OverviewSection {
         : [],
     emptyNote: "No subject requests fall inside this window.",
     limitations: [
-      "Tutor headcount is not capacity, so this supports a demand-to-supply ratio and nothing stronger — it does not say how many students go unserved.",
+      "Tutor headcount is not capacity, so this supports a demand-to-supply ratio and nothing stronger. It does not say how many students go unserved.",
       "A tutor who teaches several subjects is counted in each, so tutor counts must not be summed across rows.",
     ],
     sourceRows: requestsRead + tutorsRead,
@@ -263,7 +267,7 @@ function retentionSection(payload: OverviewPayload): OverviewSection {
         : [],
     emptyNote: `No cohort reached its day-${horizonDays} mark inside this window, so there is nothing comparable to report.`,
     limitations: [
-      `Every cohort is measured at the same age — day ${horizonDays} — and appears in the window where it reached it. Younger cohorts are omitted, never shown as zero.`,
+      `Every cohort is measured at the same age, day ${horizonDays}, and appears in the window where it reached it. Younger cohorts are omitted, never shown as zero.`,
       `Retained means at least one completed session in the ${activityDays} days ending on day ${horizonDays}. Small cohorts move by whole percentage points per departure.`,
     ],
     sourceRows: tutorsRead,

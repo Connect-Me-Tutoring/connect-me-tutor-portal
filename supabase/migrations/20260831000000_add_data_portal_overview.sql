@@ -4,8 +4,7 @@
 -- calls, with the signed-in user's own session. It refuses unless the
 -- caller's ACTIVE profile (user_settings.last_active_profile_id) is an
 -- Admin — the same definition the app's authz helpers use — computes four
--- read-only aggregates, writes one audit row, and returns a single jsonb
--- payload. One round trip per panel open.
+-- read-only aggregates and returns a single jsonb payload. It writes nothing. One round trip per panel open.
 --
 -- The aggregate functions live in the `analysis` schema, are aggregate-only
 -- by construction (no name, email, free text beyond subject labels, or
@@ -216,19 +215,6 @@ revoke all on function analysis.subject_demand(timestamptz, timestamptz) from pu
 revoke all on function analysis.tutor_retention(int, int, text) from public;
 
 -- ---------------------------------------------------------------------------
--- Audit storage (shared definition with the analysis-backend migration)
--- ---------------------------------------------------------------------------
-
-create table if not exists analysis.audit_log (
-  id bigint generated always as identity primary key,
-  recorded_at timestamptz not null default now(),
-  event jsonb not null,
-  constraint audit_event_is_object check (jsonb_typeof(event) = 'object')
-);
-
-revoke all on analysis.audit_log from public;
-
--- ---------------------------------------------------------------------------
 -- The wrapper the portal calls
 -- ---------------------------------------------------------------------------
 
@@ -343,14 +329,6 @@ begin
   from analysis.tutor_retention(90, 45, p_tz) as r
   where r.last_signup + 90 between v_range_start and v_today;
 
-  -- One audit row per overview read: who, which window, when. Never a value
-  -- from the results — the log must not become a copy of the data.
-  insert into analysis.audit_log (event) values (jsonb_build_object(
-    'event', 'data_portal_overview',
-    'userId', auth.uid(),
-    'dateRange', p_date_range,
-    'timezone', p_tz
-  ));
 
   return jsonb_build_object(
     'dateRange', p_date_range,

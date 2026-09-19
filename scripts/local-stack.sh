@@ -31,6 +31,22 @@ mkdir -p "$workdir/supabase/migrations"
 # (perl, not sed: BSD sed on macOS has no \b)
 perl -pe 's/\b543(\d\d)\b/544$1/g' "$root/supabase/config.toml" > "$workdir/supabase/config.toml"
 
+# Some optional services fail their health checks on this machine, and the CLI
+# tears the whole stack down when any one of them does. None of them are
+# needed to run the portal locally, so the shadow config switches them off:
+# analytics (and the vector collector behind it), realtime, which only the
+# chat subscribes to, storage, which only the analytics page's map uses, and
+# studio. What is left is the database, auth and the REST API.
+python3 - "$workdir/supabase/config.toml" <<'PYEOF'
+import re, sys
+path = sys.argv[1]
+s = open(path).read()
+for section in ("analytics", "realtime", "storage", "studio"):
+    s = re.sub(r"(\[" + section + r"\]\s*\n(?:[^\[]*?\n)?)enabled\s*=\s*true",
+               lambda m: m.group(1) + "enabled = false", s, count=1)
+open(path, "w").write(s)
+PYEOF
+
 echo "==> starting the local stack (first run pulls images, give it a few minutes)"
 supabase --workdir "$workdir" start
 
@@ -43,8 +59,10 @@ else
   echo "==> applying migrations"
   for path in "$root"/supabase/migrations/*.sql; do
     name="$(basename "$path")"
+    # The storage service is switched off above, so the baseline's references to
+    # storage.objects have nothing to resolve against. Those are expected here.
     unexpected="$(docker exec -i "$db" psql -v ON_ERROR_STOP=0 -q -U postgres -d postgres < "$path" 2>&1 \
-      | grep '^ERROR' || true)"
+      | grep '^ERROR' | grep -v 'storage\.' || true)"
     if [ -n "$unexpected" ]; then
       echo "    $name" >&2
       echo "$unexpected" | sort | uniq -c | sed 's/^/        /' >&2
