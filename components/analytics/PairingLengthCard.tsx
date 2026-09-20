@@ -11,6 +11,7 @@ import {
 } from "recharts";
 import { supabase } from "@/lib/supabase/client";
 import toast from "react-hot-toast";
+import { z } from "zod";
 
 interface PairingLengthStat {
   population: "active" | "ended" | "all";
@@ -29,15 +30,31 @@ interface PairingRow {
   started_on: string;
 }
 
-interface HistoryPoint {
-  // captured_on is the start of the week. A week with no capture still comes back,
-  // with every other field null, so the gap is visible instead of silently closing up.
-  captured_on: string;
-  pairs: number | null;
-  avg_days: number | null;
-  median_days: number | null;
-  single_session_pairs: number | null;
-}
+// database.types.ts types this RPC's returns as non-nullable: Postgres does not expose
+// nullability for a function's RETURNS TABLE columns, so the generator has nothing to
+// read and marks every function return non-nullable, while the table types are accurate.
+// gen:types overwrites any hand edit to that file, so the real shape is enforced here,
+// at the point the data arrives.
+//
+// The nulls are real. captured_on is the start of a week; a week with no capture comes
+// back with every other field null, and a week captured while a population had no
+// pairings comes back with pairs 0 and null averages.
+const nullableNumber = z
+  .union([z.number(), z.string()])
+  .nullable()
+  .transform((value) => (value === null ? null : Number(value)));
+
+const HistoryPointSchema = z.object({
+  captured_on: z.string(),
+  pairs: nullableNumber,
+  avg_days: nullableNumber,
+  median_days: nullableNumber,
+  single_session_pairs: nullableNumber,
+});
+
+const HistoryResponseSchema = z.array(HistoryPointSchema);
+
+type HistoryPoint = z.infer<typeof HistoryPointSchema>;
 
 type Population = "active" | "ended" | "all";
 type HistoryMetric = "avg" | "median";
@@ -99,7 +116,17 @@ const PairingLengthCard = () => {
       });
       if (requestId !== historyRequestIdRef.current) return;
       if (error) throw error;
-      setHistory((data ?? []) as HistoryPoint[]);
+
+      const parsed = HistoryResponseSchema.safeParse(data ?? []);
+      if (!parsed.success) {
+        // Shape changed under us: surface it rather than rendering wrong numbers.
+        console.error("Unexpected get_pairing_length_history payload", parsed.error.issues);
+        toast.error("Unable to load pairing length history");
+        setHistory([]);
+        return;
+      }
+
+      setHistory(parsed.data);
     } catch (error) {
       if (requestId !== historyRequestIdRef.current) return;
       console.error(error);
@@ -181,7 +208,7 @@ const PairingLengthCard = () => {
         const raw = historyMetric === "avg" ? point.avg_days : point.median_days;
         return {
           label: shortDate(point.captured_on),
-          days: raw === null ? null : Number(raw),
+          days: raw,
           pairs: point.pairs,
           // No snapshot at all, as opposed to a snapshot that found no pairings.
           missing: point.pairs === null,
