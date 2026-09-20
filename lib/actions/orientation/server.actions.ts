@@ -1,7 +1,7 @@
 "use server";
 
 import { requireAuthenticatedProfile } from "@/lib/actions/auth/authz.server";
-
+import { appendOrientationQuestionToSheet } from "@/lib/google-sheet";
 import { createClient } from "@/lib/supabase/server";
 import { Table } from "@/lib/supabase/tables";
 
@@ -37,6 +37,29 @@ export async function submitQuizCompletion(payload: SubmitQuizPayload) {
   const hasQuestions = payload.questionsText && payload.questionsText.trim().length > 0;
 
   if (hasQuestions) {
+    const formattedDate = new Date().toLocaleString("en-US", {
+      timeZone: "America/Los_Angeles",
+      dateStyle: "medium",
+      timeStyle: "short",
+    });
+
+    // Append to Operations master Google Sheet
+    try {
+      await appendOrientationQuestionToSheet({
+        submittedAt: formattedDate,
+        userName: tutorName,
+        userEmail: profile.email ?? "",
+        questionText: payload.questionsText!.trim(),
+        quizStats: {
+          totalQuestions: payload.totalQuestions,
+          retries: payload.retries,
+        },
+        status: "New",
+      });
+    } catch (sheetErr) {
+      console.error("Failed to log orientation question to Google Sheet:", sheetErr);
+    }
+
     await sendDiscordWebhook(tutorName, payload.questionsText!.trim(), payload);
   }
 
