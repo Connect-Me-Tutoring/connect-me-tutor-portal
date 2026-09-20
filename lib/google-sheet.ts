@@ -142,6 +142,7 @@ async function sendDiscordNotification(rowIdx: number, formData: SessionExitForm
 export interface OrientationQuizFeedbackPayload {
   submittedAt: string;
   userName: string;
+  userEmail: string;
   questionText: string;
   quizStats?: {
     totalQuestions: number;
@@ -163,11 +164,12 @@ export async function appendOrientationQuestionToSheet(
     return null;
   }
 
-  // Row format: [Timestamp, Name, Question/Feedback, Total Questions, Retries, Status]
+  // Row format: [Timestamp, Name, Email, Question/Feedback, Total Questions, Retries, Status]
   const values = [
     [
       sanitizeForSheetCell(data.submittedAt),
       sanitizeForSheetCell(data.userName),
+      sanitizeForSheetCell(data.userEmail),
       sanitizeForSheetCell(data.questionText),
       sanitizeForSheetCell(data.quizStats ? `${data.quizStats.totalQuestions}` : ""),
       sanitizeForSheetCell(data.quizStats ? `${data.quizStats.retries}` : ""),
@@ -178,7 +180,7 @@ export async function appendOrientationQuestionToSheet(
   try {
     const response = await sheets.spreadsheets.values.append({
       spreadsheetId,
-      range: `${sheetName}!A:F`,
+      range: `${sheetName}!A:G`,
       valueInputOption: "USER_ENTERED",
       insertDataOption: "INSERT_ROWS",
       requestBody: { values },

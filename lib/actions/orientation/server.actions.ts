@@ -48,6 +48,7 @@ export async function submitQuizCompletion(payload: SubmitQuizPayload) {
       await appendOrientationQuestionToSheet({
         submittedAt: formattedDate,
         userName: tutorName,
+        userEmail: profile.email ?? "",
         questionText: payload.questionsText!.trim(),
         quizStats: {
           totalQuestions: payload.totalQuestions,
