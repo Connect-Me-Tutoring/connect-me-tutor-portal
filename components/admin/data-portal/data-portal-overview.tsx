@@ -12,6 +12,7 @@ import {
 import { DATE_RANGE_OPTIONS, type OverviewSection } from "@/lib/data-portal/overview";
 import { AnalysisResults } from "./analysis-results";
 import { DataPortalChat } from "./data-portal-chat";
+import { AnalysisRunner } from "./analysis-runner";
 import styles from "./data-portal.module.css";
 
 /**
@@ -136,6 +137,8 @@ export function DataPortalOverview({
               <SectionCard key={section.id} section={section} />
             ))}
           </div>
+          <AnalysisRunner />
+
           <DataPortalChat dateRange={dateRange} ready={state.status === "ready"} />
 
           <p className={styles.footNote}>

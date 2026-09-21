@@ -90,6 +90,19 @@ insert into pairing_requests (type, user_id, created_at, priority, status)
 select 'student', s.id, s.created_at + interval '1 day', 1, 'pending'
 from "Profiles" s where s.role = 'Student';
 
+-- One enrollment per pairing. Several analyses join on these, and an empty
+-- Enrollments export makes them fail on a header-less CSV rather than on
+-- anything meaningful.
+insert into "Enrollments" (student_id, tutor_id, pairing_id, start_date, end_date, duration, day, summary)
+select pr.student_id, pr.tutor_id, pr.id,
+       pr.created_at,
+       case when row_number() over (order by pr.created_at) % 5 = 0
+            then pr.created_at + interval '60 days' else null end,
+       60,
+       'Wednesday',
+       'Weekly tutoring'
+from "Pairings" pr;
+
 -- Completed sessions across the last 120 days, weekly per pairing, with a few
 -- cancellations so the numbers are not uniformly clean.
 insert into "Sessions" (tutor_id, student_id, date, status, duration)
