@@ -3219,50 +3219,6 @@ CREATE POLICY "Users can view enrollments they're involved in" ON "public"."Enro
 
 
 
-CREATE POLICY "analytics read" ON "public"."Enrollments" FOR SELECT TO "anon" USING (true);
-
-
-
-CREATE POLICY "analytics read" ON "public"."Events" FOR SELECT TO "anon" USING (true);
-
-
-
-CREATE POLICY "analytics read" ON "public"."Notifications" FOR SELECT TO "anon" USING (true);
-
-
-
-CREATE POLICY "analytics read" ON "public"."Pairings" FOR SELECT TO "anon" USING (true);
-
-
-
-CREATE POLICY "analytics read" ON "public"."Profiles" FOR SELECT TO "anon" USING (true);
-
-
-
-CREATE POLICY "analytics read" ON "public"."Sessions" FOR SELECT TO "anon" USING (true);
-
-
-
-CREATE POLICY "analytics read" ON "public"."User_Availabilities" FOR SELECT TO "anon" USING (true);
-
-
-
-CREATE POLICY "analytics read" ON "public"."pairing_logs" FOR SELECT TO "anon" USING (true);
-
-
-
-CREATE POLICY "analytics read" ON "public"."pairing_matches" FOR SELECT TO "anon" USING (true);
-
-
-
-CREATE POLICY "analytics read" ON "public"."pairing_requests" FOR SELECT TO "anon" USING (true);
-
-
-
-CREATE POLICY "analytics read" ON "public"."zoom_participant_events" FOR SELECT TO "anon" USING (true);
-
-
-
 ALTER TABLE "public"."chat_room_notification_preferences" ENABLE ROW LEVEL SECURITY;
 
 
