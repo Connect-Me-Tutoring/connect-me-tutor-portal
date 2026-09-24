@@ -20,6 +20,7 @@ import {
 } from "react";
 
 import { ORIENTATION_SLIDES } from "@/constants/orientation-slides";
+import { ORIENTATION_SLIDE_TRANSCRIPTS } from "@/constants/orientation-slide-transcripts";
 import { cn } from "@/lib/utils";
 
 export interface OrientationSlideshowProps {
@@ -51,6 +52,7 @@ export function OrientationSlideshow({ className }: OrientationSlideshowProps) {
   const [retryAttempt, setRetryAttempt] = useState(0);
   const isFullscreen = isNativeFullscreen || isFallbackFullscreen;
   const slide = ORIENTATION_SLIDES[slideIndex];
+  const transcript = ORIENTATION_SLIDE_TRANSCRIPTS[slideIndex];
   const isFirstSlide = slideIndex === 0;
   const canAdvance = canAdvanceOrientationSlide(slideIndex);
   const isLastSlide = !canAdvance;
@@ -162,7 +164,7 @@ export function OrientationSlideshow({ className }: OrientationSlideshowProps) {
       className={cn(
         "w-full overflow-hidden focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
         isFullscreen
-          ? "fixed inset-0 z-[100] grid h-screen h-dvh grid-rows-[minmax(0,1fr)_3.25rem] bg-white"
+          ? "fixed inset-0 z-[100] grid h-screen h-dvh grid-rows-[minmax(0,1fr)_3.25rem_auto] bg-white"
           : "flex flex-col rounded-lg border border-black bg-white",
         className,
       )}
@@ -196,7 +198,7 @@ export function OrientationSlideshow({ className }: OrientationSlideshowProps) {
           </div>
         ) : (
           <Image
-            alt={`Connect Me tutor orientation slide ${slideNumber} of ${ORIENTATION_SLIDES.length}`}
+            alt=""
             className="animate-in select-none object-contain fade-in duration-200"
             draggable={false}
             fill
@@ -290,6 +292,59 @@ export function OrientationSlideshow({ className }: OrientationSlideshowProps) {
           </button>
         </div>
       </nav>
+
+      <article
+        aria-atomic="true"
+        aria-live="polite"
+        className={cn(
+          "border-t border-zinc-200 bg-white px-5 py-4 text-zinc-950 sm:px-6",
+          isFullscreen && "max-h-[35dvh] overflow-y-auto",
+        )}
+        key={transcript.title}
+      >
+        <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
+          Slide {slideNumber} transcript
+        </p>
+        <h3 className="mt-1 text-lg font-semibold">{transcript.title}</h3>
+
+        <div className="mt-3 space-y-3 text-sm leading-6">
+          {transcript.blocks.map((block, blockIndex) => {
+            if (block.type === "heading") {
+              return (
+                <h4 className="font-semibold" key={`${block.type}-${blockIndex}`}>
+                  {block.text}
+                </h4>
+              );
+            }
+
+            if (block.type === "list") {
+              return (
+                <ul className="list-disc space-y-1 pl-5" key={`${block.type}-${blockIndex}`}>
+                  {block.items.map((item) => (
+                    <li key={item}>{item}</li>
+                  ))}
+                </ul>
+              );
+            }
+
+            return <p key={`${block.type}-${blockIndex}`}>{block.text}</p>;
+          })}
+
+          {transcript.links?.map((link) => (
+            <p key={link.href}>
+              <a
+                className="font-medium text-blue-700 underline underline-offset-4 hover:text-blue-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-700 focus-visible:ring-offset-2"
+                href={link.href}
+                rel="noopener noreferrer"
+                target="_blank"
+              >
+                {link.label}
+                <span className="sr-only"> (opens in a new tab)</span>
+              </a>
+            </p>
+          ))}
+        </div>
+      </article>
     </section>
   );
 }

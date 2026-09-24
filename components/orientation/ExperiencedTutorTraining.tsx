@@ -234,6 +234,20 @@ export function ExperiencedTutorTraining({ profileId }: { profileId: string }) {
                 </video>
               )}
             </div>
+
+            <section aria-labelledby={`transcript-${clip.id}`} className="border-t px-6 py-5">
+              <h3 className="font-semibold" id={`transcript-${clip.id}`}>
+                Clip transcript
+              </h3>
+              <div className="mt-3 space-y-2 text-sm leading-6 text-muted-foreground">
+                {clip.transcript.map((line, index) => (
+                  <p key={`${line.speaker}-${index}`}>
+                    <span className="font-semibold text-foreground">{line.speaker}:</span>{" "}
+                    {line.text}
+                  </p>
+                ))}
+              </div>
+            </section>
           </Card>
 
           <Card aria-live="polite">

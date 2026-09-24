@@ -36,6 +36,10 @@ describe("ExperiencedTutorTraining", () => {
     );
     expect(markup).toContain("Watch the full clip to unlock the reflection");
     expect(markup).toContain("You can replay any part you have already watched");
+    expect(markup).toContain("Clip transcript");
+    expect(markup).toContain("All right, here&#x27;s the question");
+    expect(markup).toContain("Tutor:");
+    expect(markup).toContain("Student:");
     expect(markup).not.toContain("responses stay in this activity and are not saved");
     expect(markup).not.toContain("Your response is not saved");
     expect(markup).not.toContain("Coaching guidance");

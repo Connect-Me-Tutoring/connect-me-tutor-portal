@@ -6,6 +6,7 @@ vi.mock("next/navigation", () => ({
 }));
 
 import { ORIENTATION_SLIDES } from "@/constants/orientation-slides";
+import { ORIENTATION_SLIDE_TRANSCRIPTS } from "@/constants/orientation-slide-transcripts";
 import {
   canAdvanceOrientationSlide,
   getOrientationSlideRetrySource,
@@ -15,6 +16,7 @@ import {
 describe("OrientationSlideshow", () => {
   it("uses the 21 protected orientation slides", () => {
     expect(ORIENTATION_SLIDES).toHaveLength(21);
+    expect(ORIENTATION_SLIDE_TRANSCRIPTS).toHaveLength(ORIENTATION_SLIDES.length);
     expect(ORIENTATION_SLIDES[0]).toBe("/api/orientation/slides/slide-01.webp");
     expect(
       ORIENTATION_SLIDES.every((slide) =>
@@ -27,9 +29,22 @@ describe("OrientationSlideshow", () => {
     const markup = renderToStaticMarkup(<OrientationSlideshow />);
 
     expect(markup).toContain("/api/orientation/slides/slide-01.webp");
-    expect(markup).toContain("Connect Me tutor orientation slide 1 of 21");
+    expect(markup).toContain('alt=""');
     expect(markup).toContain("1 / 21");
+    expect(markup).toContain("Slide 1 transcript");
+    expect(markup).toContain("Our mission is to give back");
     expect(markup).not.toContain("docs.google.com");
+  });
+
+  it("provides keyboard-accessible links from slide transcripts", () => {
+    expect(ORIENTATION_SLIDE_TRANSCRIPTS[4].links).toEqual([
+      expect.objectContaining({
+        href: expect.stringContaining("drive.google.com"),
+        label: "Open the Mentorship Program Graphic",
+      }),
+    ]);
+    expect(ORIENTATION_SLIDE_TRANSCRIPTS[6].links?.[0].href).toBe("https://connectmego.app/");
+    expect(ORIENTATION_SLIDE_TRANSCRIPTS[10].links?.[0].href).toContain("docs.google.com");
   });
 
   it("provides restart and optional fullscreen controls", () => {
