@@ -825,7 +825,7 @@ async function sendTutorProbationEmail(tutor: Profile, reason: string) {
   await sendMail({
     from: "Connect Me Free Tutoring & mentoring <reminder@connectmego.app>",
     to: tutor.email,
-    cc: [process.env.INTERNAL_VP_EMAIL!],
+    cc: [process.env.OPERATIONS_EMAIL!],
     subject: "Connect Me Membership Status: Probation",
     react: TutorProbationEmail({ tutor, reason }),
   });
