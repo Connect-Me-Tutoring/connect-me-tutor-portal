@@ -646,14 +646,16 @@ const Schedule = () => {
       className={cn(
         "rounded-md px-2 py-1 text-xs cursor-pointer border-l-2 truncate hover:shadow-md transition-shadow",
         session.status === "Complete"
-          ? "bg-green-50 border-l-green-500 text-green-900"
+          ? "bg-green-100 border-l-4 border-l-green-500 text-green-900"
           : session.status === "Cancelled"
-            ? "bg-red-50 border-l-red-500 text-red-900"
-            : session.status === "Unconfirmed"
-              ? "bg-amber-50 border-l-amber-500 text-amber-900"
-              : session.isStandalone == true
-                ? "bg-purple-50  border-l-purple-500 text-purple-900"
-                : "bg-blue-50 border-l-blue-500 text-blue-900",
+            ? "bg-red-100 border-l-4 border-l-red-500 text-red-900 line-through opacity-80"
+            : session.status === "Student Did Not Attend"
+              ? "bg-orange-100 border-l-4 border-l-orange-500 text-orange-900"
+              : session.status === "Unconfirmed"
+                ? "bg-amber-100 border-l-4 border-l-amber-500 text-amber-900"
+                : session.isStandalone == true
+                  ? "bg-purple-100 border-l-4 border-l-purple-500 text-purple-900"
+                  : "bg-blue-100 border-l-4 border-l-blue-500 text-blue-900",
       )}
     >
       <p className="font-medium truncate">
@@ -716,6 +718,7 @@ const Schedule = () => {
                 {[
                   { color: "bg-green-500", label: "Complete" },
                   { color: "bg-red-500", label: "Cancelled" },
+                  { color: "bg-orange-500", label: "Student Did Not Attend" },
                   { color: "bg-amber-500", label: "Unconfirmed" },
                   { color: "bg-blue-500", label: "Active" },
                   { color: "bg-purple-500", label: "Standalone" },
@@ -1116,12 +1119,14 @@ const Schedule = () => {
                                   session.status === "Complete"
                                     ? "bg-green-100 text-green-800"
                                     : session.status === "Cancelled"
-                                      ? "bg-red-100 text-red-800"
-                                      : session.status === "Unconfirmed"
-                                        ? "bg-amber-100 text-amber-800"
-                                        : session.isStandalone
-                                          ? "bg-purple-100 text-purple-800"
-                                          : "bg-blue-100 text-blue-800",
+                                      ? "bg-red-100 text-red-800 line-through opacity-80"
+                                      : session.status === "Student Did Not Attend"
+                                        ? "bg-orange-100 text-orange-800 font-medium"
+                                        : session.status === "Unconfirmed"
+                                          ? "bg-amber-100 text-amber-800"
+                                          : session.isStandalone
+                                            ? "bg-purple-100 text-purple-800"
+                                            : "bg-blue-100 text-blue-800",
                                 )}
                               >
                                 {session.tutor?.firstName} / {session.student?.firstName}
@@ -1149,7 +1154,9 @@ const Schedule = () => {
                   <Label>Status</Label>
                   <Select
                     value={selectedSession?.status}
-                    onValueChange={(value: "Active" | "Complete" | "Cancelled") => {
+                    onValueChange={(
+                      value: "Active" | "Complete" | "Cancelled" | "Student Did Not Attend",
+                    ) => {
                       if (value && selectedSession) {
                         setSelectedSession({
                           ...selectedSession,
@@ -1165,6 +1172,7 @@ const Schedule = () => {
                       <SelectItem value="Active">Active</SelectItem>
                       <SelectItem value="Complete">Complete</SelectItem>
                       <SelectItem value="Cancelled">Cancelled</SelectItem>
+                      <SelectItem value="Student Did Not Attend">Student Did Not Attend</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -1301,6 +1309,8 @@ const Schedule = () => {
                     sefFlags.push("question/concern");
                   if ((selectedSession as any)?.isFirstSession) sefFlags.push("first session");
                   if (selectedSession.status === "Cancelled") sefFlags.push("cancelled");
+                  if (selectedSession.status === "Student Did Not Attend")
+                    sefFlags.push("student did not attend");
                   if (selectedSession.status === "Unconfirmed") sefFlags.push("unconfirmed");
                   let sefReasonText = rawSef ?? "";
                   if (rawSef && rawSef.trim().startsWith("{")) {

@@ -1,4 +1,4 @@
-import { CircleAlert, CircleCheckBig, CircleX, Clock } from "lucide-react";
+import { CircleAlert, CircleCheckBig, CircleX, Clock, UserX } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Session } from "@/types";
 
@@ -21,6 +21,11 @@ const STATUS_STYLES: Partial<
     label: "Cancelled",
     className: "bg-red-100 text-red-800 border-red-200",
     icon: CircleX,
+  },
+  "Student Did Not Attend": {
+    label: "Student Did Not Attend",
+    className: "bg-orange-100 text-orange-800 border-orange-200",
+    icon: UserX,
   },
   Unconfirmed: {
     label: "Unconfirmed",
