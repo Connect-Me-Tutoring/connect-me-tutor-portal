@@ -782,3 +782,20 @@ function normalizeEnrollmentStartDate(startDate: string) {
   }
   return formatInTimeZone(startDate, EASTERN_TIMEZONE, "yyyy-MM-dd");
 }
+
+export async function getEmailLogs() {
+  await requireAdmin();
+  const supabase = await createAdminClient();
+  const { data, error } = await supabase
+    .from("emails")
+    .select("created_at, recipient_email, subject, content")
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    console.error("Error fetching email logs:", error);
+    await logError(error, {}, "email_error");
+    throw error;
+  }
+
+  return data ?? [];
+}
