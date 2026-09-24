@@ -5,6 +5,9 @@ export default defineConfig({
   plugins: [react()],
   resolve: {
     tsconfigPaths: true,
+    alias: {
+      "server-only": "node_modules/next/dist/compiled/server-only/empty.js",
+    },
   },
   test: {
     environment: "node",
