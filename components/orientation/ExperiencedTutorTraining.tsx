@@ -320,8 +320,8 @@ export function ExperiencedTutorTraining({ profileId }: { profileId: string }) {
 
             {isLastClip ? (
               <Button asChild>
-                <Link href="/orientation">
-                  Return to orientation
+                <Link href="/orientation/quiz">
+                  Next module
                   <ChevronRight aria-hidden="true" className="h-4 w-4" />
                 </Link>
               </Button>

@@ -253,8 +253,9 @@ export function TutorPortalSandbox() {
           <div>
             <p>You have reviewed the tutor workflows covered in orientation.</p>
             <Button asChild className="mt-4 w-full">
-              <Link data-walkthrough-control href="/orientation">
-                Return to Orientation
+              <Link data-walkthrough-control href="/orientation/experienced-tutor">
+                Next module
+                <ChevronRight aria-hidden="true" className="h-4 w-4" />
               </Link>
             </Button>
           </div>

@@ -11,21 +11,21 @@ export const metadata: Metadata = {
 
 export default function OrientationSlideshowPage() {
   return (
-    <div className="p-8">
+    <div className="flex h-[calc(100dvh-4.25rem)] min-h-0 flex-col overflow-hidden p-4 sm:p-6 lg:p-8">
       <Link
-        className="mb-6 inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
+        className="mb-3 inline-flex shrink-0 items-center gap-1 self-start text-sm text-muted-foreground hover:text-foreground"
         href="/orientation"
       >
-        <ChevronLeft className="h-4 w-4" />
+        <ChevronLeft aria-hidden="true" className="h-4 w-4" />
         Orientation
       </Link>
-      <header className="mb-6">
-        <h1 className="text-3xl font-bold">Orientation Slideshow</h1>
+      <header className="mb-4 shrink-0">
+        <h1 className="text-2xl font-bold sm:text-3xl">Orientation Slideshow</h1>
         <p className="mt-2 text-muted-foreground">
           Review Connect Me policies, tutor expectations, and frequently asked questions.
         </p>
       </header>
-      <OrientationSlideshow />
+      <OrientationSlideshow className="min-h-0 flex-1" />
     </div>
   );
 }

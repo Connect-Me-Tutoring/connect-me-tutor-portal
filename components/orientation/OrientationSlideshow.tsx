@@ -20,7 +20,6 @@ import {
 } from "react";
 
 import { ORIENTATION_SLIDES } from "@/constants/orientation-slides";
-import { ORIENTATION_SLIDE_TRANSCRIPTS } from "@/constants/orientation-slide-transcripts";
 import { cn } from "@/lib/utils";
 
 export interface OrientationSlideshowProps {
@@ -52,7 +51,6 @@ export function OrientationSlideshow({ className }: OrientationSlideshowProps) {
   const [retryAttempt, setRetryAttempt] = useState(0);
   const isFullscreen = isNativeFullscreen || isFallbackFullscreen;
   const slide = ORIENTATION_SLIDES[slideIndex];
-  const transcript = ORIENTATION_SLIDE_TRANSCRIPTS[slideIndex];
   const isFirstSlide = slideIndex === 0;
   const canAdvance = canAdvanceOrientationSlide(slideIndex);
   const isLastSlide = !canAdvance;
@@ -75,8 +73,8 @@ export function OrientationSlideshow({ className }: OrientationSlideshowProps) {
     goToSlide(slideIndex + 1);
   }, [canAdvance, goToSlide, slideIndex]);
 
-  const exitSlideshow = useCallback(() => {
-    router.push("/orientation");
+  const goToNextModule = useCallback(() => {
+    router.push("/orientation/walkthrough");
   }, [router]);
 
   const retrySlide = () => {
@@ -162,10 +160,10 @@ export function OrientationSlideshow({ className }: OrientationSlideshowProps) {
       onKeyDown={handleKeyDown}
       tabIndex={0}
       className={cn(
-        "w-full overflow-hidden focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+        "min-h-0 w-full overflow-hidden focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
         isFullscreen
-          ? "fixed inset-0 z-[100] grid h-screen h-dvh grid-rows-[minmax(0,1fr)_3.25rem_auto] bg-white"
-          : "flex flex-col rounded-lg border border-black bg-white",
+          ? "fixed inset-0 z-[100] grid h-screen h-dvh grid-rows-[minmax(0,1fr)_3.25rem] bg-white"
+          : "flex h-full flex-col rounded-lg border border-black bg-white",
         className,
       )}
     >
@@ -174,7 +172,7 @@ export function OrientationSlideshow({ className }: OrientationSlideshowProps) {
       <div
         className={cn(
           "relative overflow-hidden bg-white",
-          isFullscreen ? "min-h-0" : "aspect-video w-full shrink-0",
+          isFullscreen ? "min-h-0" : "min-h-0 w-full flex-1",
         )}
       >
         {slideFailed ? (
@@ -198,7 +196,7 @@ export function OrientationSlideshow({ className }: OrientationSlideshowProps) {
           </div>
         ) : (
           <Image
-            alt=""
+            alt={`Connect Me tutor orientation slide ${slideNumber} of ${ORIENTATION_SLIDES.length}`}
             className="animate-in select-none object-contain fade-in duration-200"
             draggable={false}
             fill
@@ -232,7 +230,7 @@ export function OrientationSlideshow({ className }: OrientationSlideshowProps) {
 
       <nav
         aria-label="Orientation slide controls"
-        className="relative z-20 flex h-[3.25rem] items-center justify-center border-t border-white/10 bg-zinc-950 px-4 text-white"
+        className="relative z-20 flex h-[3.25rem] shrink-0 items-center justify-between border-t border-white/10 bg-zinc-950 px-2 text-white sm:px-4"
       >
         <div className="flex items-center gap-1">
           <button
@@ -253,21 +251,24 @@ export function OrientationSlideshow({ className }: OrientationSlideshowProps) {
           </span>
 
           <button
-            aria-label={isLastSlide ? "Back to modules" : "Next slide"}
+            aria-label={isLastSlide ? "Next module" : "Next slide"}
             className="inline-flex h-9 min-w-9 items-center justify-center rounded-md px-1 text-zinc-200 transition-colors hover:bg-zinc-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
-            onClick={isLastSlide ? exitSlideshow : goForward}
-            title={isLastSlide ? "Back to modules" : "Next slide"}
+            onClick={isLastSlide ? goToNextModule : goForward}
+            title={isLastSlide ? "Next module" : "Next slide"}
             type="button"
           >
             {isLastSlide ? (
-              <span className="px-2 text-sm font-medium">Back to modules</span>
+              <>
+                <span className="pl-2 text-sm font-medium">Next module</span>
+                <ChevronRight aria-hidden="true" className="h-4 w-4" />
+              </>
             ) : (
               <ChevronRight aria-hidden="true" className="h-5 w-5" />
             )}
           </button>
         </div>
 
-        <div className="absolute right-4 flex items-center gap-1">
+        <div className="flex items-center gap-1">
           <button
             aria-label="Restart orientation"
             className="inline-flex h-9 w-9 items-center justify-center rounded-md text-zinc-400 transition-colors hover:bg-zinc-800 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
@@ -292,59 +293,6 @@ export function OrientationSlideshow({ className }: OrientationSlideshowProps) {
           </button>
         </div>
       </nav>
-
-      <article
-        aria-atomic="true"
-        aria-live="polite"
-        className={cn(
-          "border-t border-zinc-200 bg-white px-5 py-4 text-zinc-950 sm:px-6",
-          isFullscreen && "max-h-[35dvh] overflow-y-auto",
-        )}
-        key={transcript.title}
-      >
-        <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
-          Slide {slideNumber} transcript
-        </p>
-        <h3 className="mt-1 text-lg font-semibold">{transcript.title}</h3>
-
-        <div className="mt-3 space-y-3 text-sm leading-6">
-          {transcript.blocks.map((block, blockIndex) => {
-            if (block.type === "heading") {
-              return (
-                <h4 className="font-semibold" key={`${block.type}-${blockIndex}`}>
-                  {block.text}
-                </h4>
-              );
-            }
-
-            if (block.type === "list") {
-              return (
-                <ul className="list-disc space-y-1 pl-5" key={`${block.type}-${blockIndex}`}>
-                  {block.items.map((item) => (
-                    <li key={item}>{item}</li>
-                  ))}
-                </ul>
-              );
-            }
-
-            return <p key={`${block.type}-${blockIndex}`}>{block.text}</p>;
-          })}
-
-          {transcript.links?.map((link) => (
-            <p key={link.href}>
-              <a
-                className="font-medium text-blue-700 underline underline-offset-4 hover:text-blue-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-700 focus-visible:ring-offset-2"
-                href={link.href}
-                rel="noopener noreferrer"
-                target="_blank"
-              >
-                {link.label}
-                <span className="sr-only"> (opens in a new tab)</span>
-              </a>
-            </p>
-          ))}
-        </div>
-      </article>
     </section>
   );
 }

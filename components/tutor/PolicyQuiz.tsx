@@ -373,7 +373,7 @@ export default function PolicyQuiz({ previewMode = false }: { previewMode?: bool
                 className="w-full gap-2 bg-connect-me-blue-3 hover:bg-connect-me-blue-4"
               >
                 <Link href={previewMode ? "/orientation" : "/dashboard"}>
-                  {previewMode ? "Return to Orientation" : "Go to Dashboard"}
+                  {previewMode ? "Finish orientation preview" : "Finish orientation"}
                   <ChevronRight className="h-4 w-4" />
                 </Link>
               </Button>
