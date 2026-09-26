@@ -3,7 +3,7 @@ import DashboardLayout from "@/components/dashboard/dashboard-layout";
 import DashboardProviders from "./dashboardprovider";
 import { getUserProfiles } from "@/lib/actions/profile/server.actions";
 import { cachedGetProfile } from "@/lib/actions/cache";
-import { isTutorOrientationEnabled } from "@/lib/orientation/config.server";
+import { hasTutorOrientationAccess } from "@/lib/orientation/config.server";
 import { redirect } from "next/navigation";
 import { logError } from "@/lib/posthog";
 
@@ -20,7 +20,7 @@ export default async function Layout({ children }: { children: React.ReactNode }
 
   const profile = await cachedGetProfile(user.id);
 
-  const orientationEnabled = isTutorOrientationEnabled();
+  const orientationEnabled = await hasTutorOrientationAccess(profile);
   if (orientationEnabled && profile?.role === "Tutor" && !profile.orientationCompletedAt) {
     redirect("/orientation");
   }

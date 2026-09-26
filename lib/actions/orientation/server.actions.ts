@@ -3,7 +3,7 @@
 import { requireAuthenticatedProfile } from "@/lib/actions/auth/authz.server";
 
 import { policyQuizQuestions } from "@/constants/policy-quiz";
-import { isTutorOrientationEnabled } from "@/lib/orientation/config.server";
+import { hasTutorOrientationAccess } from "@/lib/orientation/config.server";
 import { createClient } from "@/lib/supabase/server";
 import { Table } from "@/lib/supabase/tables";
 import { revalidatePath } from "next/cache";
@@ -33,14 +33,13 @@ type SubmitQuizPayload = z.infer<typeof submitQuizPayloadSchema>;
  * to a Discord channel via webhook.
  */
 export async function submitQuizCompletion(payload: SubmitQuizPayload) {
-  if (!isTutorOrientationEnabled()) {
-    throw new Error("Tutor orientation is not enabled.");
-  }
-
   const parsedPayload = submitQuizPayloadSchema.parse(payload);
   const { profile, user } = await requireAuthenticatedProfile();
   if (profile.role !== "Tutor") {
     throw new Error("Only tutors can complete the orientation quiz.");
+  }
+  if (!(await hasTutorOrientationAccess(profile))) {
+    throw new Error("Tutor orientation is not enabled.");
   }
 
   const supabase = await createClient();

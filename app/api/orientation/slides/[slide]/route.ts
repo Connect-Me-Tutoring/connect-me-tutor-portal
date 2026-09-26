@@ -5,20 +5,13 @@ import { NextResponse } from "next/server";
 
 import { cachedGetProfile } from "@/lib/actions/cache";
 import { cachedGetUser } from "@/lib/actions/user/actions";
-import {
-  canViewTutorOrientation,
-  isTutorOrientationEnabled,
-} from "@/lib/orientation/config.server";
+import { hasTutorOrientationAccess } from "@/lib/orientation/config.server";
 
 export const runtime = "nodejs";
 
 const SLIDE_FILE_PATTERN = /^slide-(0[1-9]|1\d|2[01])\.webp$/;
 
 export async function GET(_request: Request, { params }: { params: Promise<{ slide: string }> }) {
-  if (!isTutorOrientationEnabled()) {
-    return NextResponse.json({ error: "Not found" }, { status: 404 });
-  }
-
   const user = await cachedGetUser();
 
   if (!user) {
@@ -26,7 +19,7 @@ export async function GET(_request: Request, { params }: { params: Promise<{ sli
   }
 
   const profile = await cachedGetProfile(user.id);
-  if (!canViewTutorOrientation(profile?.role)) {
+  if (!(await hasTutorOrientationAccess(profile))) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
