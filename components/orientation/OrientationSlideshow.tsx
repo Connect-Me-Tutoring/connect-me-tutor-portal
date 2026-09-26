@@ -1,6 +1,14 @@
 "use client";
 
-import { ChevronLeft, ChevronRight, Maximize2, Minimize2, RotateCcw } from "lucide-react";
+import {
+  AlertTriangle,
+  ChevronLeft,
+  ChevronRight,
+  Maximize2,
+  Minimize2,
+  RefreshCw,
+  RotateCcw,
+} from "lucide-react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import {
@@ -23,19 +31,36 @@ function clampSlideIndex(index: number) {
   return Math.min(Math.max(safeIndex, 0), ORIENTATION_SLIDES.length - 1);
 }
 
+export function canAdvanceOrientationSlide(index: number) {
+  return clampSlideIndex(index) < ORIENTATION_SLIDES.length - 1;
+}
+
+export function getOrientationSlideRetrySource(slide: string, retryAttempt: number) {
+  if (retryAttempt <= 0) return slide;
+  const separator = slide.includes("?") ? "&" : "?";
+  return slide + separator + "retry=" + retryAttempt;
+}
+
 export function OrientationSlideshow({ className }: OrientationSlideshowProps) {
   const router = useRouter();
   const slideshowRef = useRef<HTMLElement>(null);
   const [slideIndex, setSlideIndex] = useState(0);
   const [isNativeFullscreen, setIsNativeFullscreen] = useState(false);
   const [isFallbackFullscreen, setIsFallbackFullscreen] = useState(false);
+  const [failedSlide, setFailedSlide] = useState<string | null>(null);
+  const [retryAttempt, setRetryAttempt] = useState(0);
   const isFullscreen = isNativeFullscreen || isFallbackFullscreen;
   const slide = ORIENTATION_SLIDES[slideIndex];
   const isFirstSlide = slideIndex === 0;
-  const isLastSlide = slideIndex === ORIENTATION_SLIDES.length - 1;
+  const canAdvance = canAdvanceOrientationSlide(slideIndex);
+  const isLastSlide = !canAdvance;
+  const slideFailed = failedSlide === slide;
+  const slideSource = getOrientationSlideRetrySource(slide, retryAttempt);
   const slideNumber = slideIndex + 1;
 
   const goToSlide = useCallback((nextIndex: number) => {
+    setFailedSlide(null);
+    setRetryAttempt(0);
     setSlideIndex(clampSlideIndex(nextIndex));
   }, []);
 
@@ -44,13 +69,18 @@ export function OrientationSlideshow({ className }: OrientationSlideshowProps) {
   }, [goToSlide, slideIndex]);
 
   const goForward = useCallback(() => {
-    if (isLastSlide) {
-      router.push("/orientation");
-      return;
-    }
-
+    if (!canAdvance) return;
     goToSlide(slideIndex + 1);
-  }, [goToSlide, isLastSlide, router, slideIndex]);
+  }, [canAdvance, goToSlide, slideIndex]);
+
+  const goToNextModule = useCallback(() => {
+    router.push("/orientation/walkthrough");
+  }, [router]);
+
+  const retrySlide = () => {
+    setFailedSlide(null);
+    setRetryAttempt((current) => current + 1);
+  };
 
   useEffect(() => {
     const previousSlide = ORIENTATION_SLIDES[slideIndex - 1];
@@ -130,10 +160,10 @@ export function OrientationSlideshow({ className }: OrientationSlideshowProps) {
       onKeyDown={handleKeyDown}
       tabIndex={0}
       className={cn(
-        "w-full overflow-hidden focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+        "min-h-0 w-full overflow-hidden focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
         isFullscreen
           ? "fixed inset-0 z-[100] grid h-screen h-dvh grid-rows-[minmax(0,1fr)_3.25rem] bg-white"
-          : "flex flex-col rounded-lg border border-black bg-white",
+          : "flex h-full flex-col rounded-lg border border-black bg-white",
         className,
       )}
     >
@@ -142,20 +172,42 @@ export function OrientationSlideshow({ className }: OrientationSlideshowProps) {
       <div
         className={cn(
           "relative overflow-hidden bg-white",
-          isFullscreen ? "min-h-0" : "aspect-video w-full shrink-0",
+          isFullscreen ? "min-h-0" : "min-h-0 w-full flex-1",
         )}
       >
-        <Image
-          alt={`Connect Me tutor orientation slide ${slideNumber} of ${ORIENTATION_SLIDES.length}`}
-          className="animate-in select-none object-contain fade-in duration-200"
-          draggable={false}
-          fill
-          key={slide}
-          priority={isFirstSlide}
-          sizes="(min-width: 1536px) 1536px, 100vw"
-          src={slide}
-          unoptimized
-        />
+        {slideFailed ? (
+          <div
+            className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-zinc-50 px-6 text-center"
+            role="alert"
+          >
+            <AlertTriangle aria-hidden="true" className="mb-3 h-7 w-7 text-amber-600" />
+            <p className="font-semibold text-zinc-900">This slide could not be loaded.</p>
+            <p className="mt-1 text-sm text-zinc-600">
+              Check your connection and try loading it again.
+            </p>
+            <button
+              className="mt-4 inline-flex h-9 items-center gap-2 rounded-md border border-zinc-300 bg-white px-4 text-sm font-medium text-zinc-900 transition-colors hover:bg-zinc-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-900"
+              onClick={retrySlide}
+              type="button"
+            >
+              <RefreshCw aria-hidden="true" className="h-4 w-4" />
+              Retry slide
+            </button>
+          </div>
+        ) : (
+          <Image
+            alt={`Connect Me tutor orientation slide ${slideNumber} of ${ORIENTATION_SLIDES.length}`}
+            className="animate-in select-none object-contain fade-in duration-200"
+            draggable={false}
+            fill
+            key={slideSource}
+            onError={() => setFailedSlide(slide)}
+            priority={isFirstSlide}
+            sizes="(min-width: 1536px) 1536px, 100vw"
+            src={slideSource}
+            unoptimized
+          />
+        )}
 
         <button
           aria-label="Previous slide"
@@ -165,18 +217,20 @@ export function OrientationSlideshow({ className }: OrientationSlideshowProps) {
           tabIndex={-1}
           type="button"
         />
-        <button
-          aria-label={isLastSlide ? "Back to modules" : "Next slide"}
-          className="absolute inset-y-0 right-0 w-2/3 cursor-pointer"
-          onClick={goForward}
-          tabIndex={-1}
-          type="button"
-        />
+        {canAdvance && (
+          <button
+            aria-label="Next slide"
+            className="absolute inset-y-0 right-0 w-2/3 cursor-pointer"
+            onClick={goForward}
+            tabIndex={-1}
+            type="button"
+          />
+        )}
       </div>
 
       <nav
         aria-label="Orientation slide controls"
-        className="relative z-20 flex h-[3.25rem] items-center justify-center border-t border-white/10 bg-zinc-950 px-4 text-white"
+        className="relative z-20 flex h-[3.25rem] shrink-0 items-center justify-between border-t border-white/10 bg-zinc-950 px-2 text-white sm:px-4"
       >
         <div className="flex items-center gap-1">
           <button
@@ -197,21 +251,24 @@ export function OrientationSlideshow({ className }: OrientationSlideshowProps) {
           </span>
 
           <button
-            aria-label={isLastSlide ? "Back to modules" : "Next slide"}
+            aria-label={isLastSlide ? "Next module" : "Next slide"}
             className="inline-flex h-9 min-w-9 items-center justify-center rounded-md px-1 text-zinc-200 transition-colors hover:bg-zinc-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
-            onClick={goForward}
-            title={isLastSlide ? "Back to modules" : "Next slide"}
+            onClick={isLastSlide ? goToNextModule : goForward}
+            title={isLastSlide ? "Next module" : "Next slide"}
             type="button"
           >
             {isLastSlide ? (
-              <span className="px-2 text-sm font-medium">Back to modules</span>
+              <>
+                <span className="pl-2 text-sm font-medium">Next module</span>
+                <ChevronRight aria-hidden="true" className="h-4 w-4" />
+              </>
             ) : (
               <ChevronRight aria-hidden="true" className="h-5 w-5" />
             )}
           </button>
         </div>
 
-        <div className="absolute right-4 flex items-center gap-1">
+        <div className="flex items-center gap-1">
           <button
             aria-label="Restart orientation"
             className="inline-flex h-9 w-9 items-center justify-center rounded-md text-zinc-400 transition-colors hover:bg-zinc-800 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"

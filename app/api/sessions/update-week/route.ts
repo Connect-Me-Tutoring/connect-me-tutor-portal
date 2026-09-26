@@ -5,11 +5,13 @@ import { Session } from "@/types";
 import { getEasternWeekBounds } from "@/lib/utils";
 import { isCronRequestAuthorized } from "@/lib/security/cron";
 import { logError } from "@/lib/posthog";
+import { logUnauthorizedAccess } from "@/lib/security/log-unauthorized-access";
 
 export const dynamic = "force-dynamic";
 
 export async function GET(request: NextRequest) {
   if (!isCronRequestAuthorized(request)) {
+    await logUnauthorizedAccess(request, "sessions/update-week");
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -18,8 +20,8 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({ newSessions: newSessions }, { status: 200 });
   } catch (error) {
-    const err = error as Error;
-    return NextResponse.json({ error: `Update Week error ${err.message}` }, { status: 500 });
+    await logError(error, {}, "cron_update_week_error");
+    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }
 }
 

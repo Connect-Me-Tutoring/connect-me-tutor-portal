@@ -1,47 +1,37 @@
-import { readFile } from "node:fs/promises";
-import path from "node:path";
-
 import { NextResponse } from "next/server";
 
-import { cachedGetProfile } from "@/lib/actions/cache";
-import { cachedGetUser } from "@/lib/actions/user/actions";
-import { hasTutorOrientationAccess } from "@/lib/orientation/config.server";
+import { getOrientationViewerStatus } from "@/lib/orientation/access.server";
+import {
+  createOrientationAssetUrl,
+  ORIENTATION_REDIRECT_CACHE_CONTROL,
+} from "@/lib/orientation/storage.server";
 
 export const runtime = "nodejs";
 
 const SLIDE_FILE_PATTERN = /^slide-(0[1-9]|1\d|2[01])\.webp$/;
 
 export async function GET(_request: Request, { params }: { params: Promise<{ slide: string }> }) {
-  const user = await cachedGetUser();
-
-  if (!user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
-  const profile = await cachedGetProfile(user.id);
-  if (!(await hasTutorOrientationAccess(profile))) {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-  }
-
   const { slide } = await params;
 
   if (!SLIDE_FILE_PATTERN.test(slide)) {
     return NextResponse.json({ error: "Slide not found" }, { status: 404 });
   }
 
-  const slidePath = path.join(process.cwd(), "private", "orientation", "slides", slide);
+  const viewerStatus = await getOrientationViewerStatus();
+  if (viewerStatus === "unauthenticated") {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+  if (viewerStatus === "forbidden") {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
 
-  try {
-    const image = await readFile(slidePath);
-
-    return new NextResponse(new Uint8Array(image), {
-      headers: {
-        "Cache-Control": "private, max-age=3600",
-        "Content-Type": "image/webp",
-        "X-Content-Type-Options": "nosniff",
-      },
-    });
-  } catch {
+  const signedUrl = await createOrientationAssetUrl(`slides/${slide}`);
+  if (!signedUrl) {
     return NextResponse.json({ error: "Slide not found" }, { status: 404 });
   }
+
+  return NextResponse.redirect(signedUrl, {
+    status: 302,
+    headers: { "Cache-Control": ORIENTATION_REDIRECT_CACHE_CONTROL },
+  });
 }

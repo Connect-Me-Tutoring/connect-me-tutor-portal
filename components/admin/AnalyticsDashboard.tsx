@@ -5,6 +5,7 @@ import toast from "react-hot-toast";
 import AnalyticsCard from "@/components/analytics/AnalyticsCard";
 import UserGrowthChart from "@/components/analytics/UserGrowthChart";
 import SessionCompletionChart from "@/components/analytics/SessionCompletionChart";
+import PairingLengthCard from "@/components/analytics/PairingLengthCard";
 
 const AnalyticsDashboard = () => {
   const [mapUrl, setMapUrl] = useState<string>("");
@@ -53,6 +54,15 @@ const AnalyticsDashboard = () => {
           subtitle="Tutors added and students added / removed over given intervals"
         >
           <UserGrowthChart />
+        </AnalyticsCard>
+        <AnalyticsCard
+          title="Session Completion"
+          subtitle="Completed vs. cancelled sessions over time"
+        >
+          <SessionCompletionChart />
+        </AnalyticsCard>
+        <AnalyticsCard title="Pairing Length" subtitle="Active tenure and completed spans">
+          <PairingLengthCard />
         </AnalyticsCard>
       </div>
 

@@ -18,7 +18,7 @@ export interface Profile {
   parentEmail?: string;
   timeZone: string;
   subjects_of_interest: string[];
-  status: "Active" | "Inactive" | "Deleted";
+  status: "Active" | "Inactive";
   tutorIds: string[];
   studentNumber: string | null;
   settingsId: string;

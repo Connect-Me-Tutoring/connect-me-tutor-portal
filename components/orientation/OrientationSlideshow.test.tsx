@@ -6,7 +6,11 @@ vi.mock("next/navigation", () => ({
 }));
 
 import { ORIENTATION_SLIDES } from "@/constants/orientation-slides";
-import { OrientationSlideshow } from "./OrientationSlideshow";
+import {
+  canAdvanceOrientationSlide,
+  getOrientationSlideRetrySource,
+  OrientationSlideshow,
+} from "./OrientationSlideshow";
 
 describe("OrientationSlideshow", () => {
   it("uses the 21 protected orientation slides", () => {
@@ -23,9 +27,9 @@ describe("OrientationSlideshow", () => {
     const markup = renderToStaticMarkup(<OrientationSlideshow />);
 
     expect(markup).toContain("/api/orientation/slides/slide-01.webp");
-    expect(markup).toContain("Connect Me tutor orientation slide 1 of 21");
+    expect(markup).toContain('alt="Connect Me tutor orientation slide 1 of 21"');
     expect(markup).toContain("1 / 21");
-    expect(markup).not.toContain("docs.google.com");
+    expect(markup).not.toContain("transcript");
   });
 
   it("provides restart and optional fullscreen controls", () => {
@@ -33,5 +37,17 @@ describe("OrientationSlideshow", () => {
 
     expect(markup).toContain('aria-label="Restart orientation"');
     expect(markup).toContain('aria-label="Enter fullscreen"');
+  });
+
+  it("only uses the invisible advance target before the final slide", () => {
+    expect(canAdvanceOrientationSlide(0)).toBe(true);
+    expect(canAdvanceOrientationSlide(ORIENTATION_SLIDES.length - 2)).toBe(true);
+    expect(canAdvanceOrientationSlide(ORIENTATION_SLIDES.length - 1)).toBe(false);
+  });
+
+  it("creates a cache-busting URL when a failed slide is retried", () => {
+    expect(getOrientationSlideRetrySource("/slide.webp", 0)).toBe("/slide.webp");
+    expect(getOrientationSlideRetrySource("/slide.webp", 2)).toBe("/slide.webp?retry=2");
+    expect(getOrientationSlideRetrySource("/slide.webp?v=3", 2)).toBe("/slide.webp?v=3&retry=2");
   });
 });

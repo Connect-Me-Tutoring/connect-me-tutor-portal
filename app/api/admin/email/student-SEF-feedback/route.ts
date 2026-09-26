@@ -1,18 +1,9 @@
 import { NextResponse } from "next/server";
-import { Resend } from "resend";
+import { sendMail } from "@/lib/email/mailer";
 import FeedbackEmail from "@/components/emails/feedback/student-feedback-email";
 import { verifyAdmin } from "@/lib/actions/auth/server.actions";
 import { requireSelfOrAdmin } from "@/lib/actions/auth/authz.server";
 import { logError } from "@/lib/posthog";
-
-let resend: Resend | null = null;
-
-function getResend() {
-  if (!resend) {
-    resend = new Resend(process.env.RESEND_API_KEY);
-  }
-  return resend;
-}
 
 export async function POST(request: Request) {
   try {
@@ -24,7 +15,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Student email is required" }, { status: 400 });
     }
 
-    await getResend().emails.send({
+    await sendMail({
       from: "Connect Me Free Tutoring & Mentoring <notifications@connectmego.app>",
       to: studentEmail,
       cc: [process.env.OPERATIONS_EMAIL!],

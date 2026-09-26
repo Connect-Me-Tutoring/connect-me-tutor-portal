@@ -3,9 +3,15 @@ const nextConfig = {
   outputFileTracingRoot: process.cwd(),
   outputFileTracingIncludes: {
     "/api/orientation/slides/*": ["./private/orientation/slides/**/*"],
+    "/api/orientation/videos/*": ["./private/orientation/videos/**/*"],
   },
   output: "standalone",
   serverExternalPackages: ["sharp", "onnxruntime-node", "twilio"],
+  typescript: {
+    // Never ship a build that fails type checking.
+    ignoreBuildErrors: false,
+  },
+  turbopack: {},
 
   webpack: (config, { isServer }) => {
     if (!isServer) {
@@ -23,14 +29,45 @@ const nextConfig = {
   },
 
   async headers() {
+    const isDevelopment = process.env.NODE_ENV === "development";
+    const csp = [
+      "default-src 'self'",
+      // Next.js App Router injects inline hydration/RSC-streaming scripts, so
+      // 'unsafe-inline' is required here without nonce plumbing through proxy.ts.
+      // React also requires 'unsafe-eval' for development-only debugging features.
+      `script-src 'self' 'unsafe-inline'${isDevelopment ? " 'unsafe-eval'" : ""} https://vercel.live`,
+      // Several components use inline style={{...}}; Tailwind itself ships as a static file.
+      "style-src 'self' 'unsafe-inline'",
+      "img-src 'self' data: blob: https://*.supabase.co",
+      "media-src 'self' blob: https://*.supabase.co",
+      "font-src 'self' data:",
+      "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://vercel.live wss://vercel.live",
+      "frame-src 'self' blob: https://*.zoom.us https://vercel.live",
+      "object-src 'none'",
+      "base-uri 'self'",
+      "form-action 'self'",
+      "frame-ancestors 'self'",
+      "upgrade-insecure-requests",
+    ].join("; ");
+
     return [
       {
         source: "/(.*)",
         headers: [
           {
             key: "Content-Security-Policy",
-            value: "frame-src 'self' blob: https://*.zoom.us https://vercel.live;",
+            value:
+              "frame-src 'self' blob: https://*.zoom.us https://vercel.live; frame-ancestors 'self'; object-src 'none'; base-uri 'self'; form-action 'self';",
           },
+          { key: "X-Frame-Options", value: "SAMEORIGIN" },
+          { key: "X-Content-Type-Options", value: "nosniff" },
+          { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+          {
+            key: "Strict-Transport-Security",
+            value: "max-age=63072000; includeSubDomains; preload",
+          },
+          { key: "Permissions-Policy", value: "geolocation=()" },
+          { key: "X-DNS-Prefetch-Control", value: "on" },
         ],
       },
     ];

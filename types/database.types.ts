@@ -118,30 +118,27 @@ export type Database = {
         };
         Relationships: [];
       };
-      Emails: {
+      emails: {
         Row: {
+          content: string | null;
           created_at: string;
-          description: string | null;
-          id: number;
-          message_id: string | null;
-          recipient_id: string | null;
-          session_id: string | null;
+          id: string;
+          recipient_email: string;
+          subject: string | null;
         };
         Insert: {
+          content?: string | null;
           created_at?: string;
-          description?: string | null;
-          id?: number;
-          message_id?: string | null;
-          recipient_id?: string | null;
-          session_id?: string | null;
+          id?: string;
+          recipient_email: string;
+          subject?: string | null;
         };
         Update: {
+          content?: string | null;
           created_at?: string;
-          description?: string | null;
-          id?: number;
-          message_id?: string | null;
-          recipient_id?: string | null;
-          session_id?: string | null;
+          id?: string;
+          recipient_email?: string;
+          subject?: string | null;
         };
         Relationships: [];
       };
@@ -399,6 +396,39 @@ export type Database = {
           },
         ];
       };
+      pairing_length_snapshots: {
+        Row: {
+          avg_days: number | null;
+          captured_on: string;
+          created_at: string;
+          max_days: number | null;
+          median_days: number | null;
+          pairs: number;
+          population: string;
+          single_session_pairs: number;
+        };
+        Insert: {
+          avg_days?: number | null;
+          captured_on?: string;
+          created_at?: string;
+          max_days?: number | null;
+          median_days?: number | null;
+          pairs?: number;
+          population: string;
+          single_session_pairs?: number;
+        };
+        Update: {
+          avg_days?: number | null;
+          captured_on?: string;
+          created_at?: string;
+          max_days?: number | null;
+          median_days?: number | null;
+          pairs?: number;
+          population?: string;
+          single_session_pairs?: number;
+        };
+        Relationships: [];
+      };
       pairing_logs: {
         Row: {
           created_at: string | null;
@@ -561,7 +591,7 @@ export type Database = {
           role: string | null;
           settings_id: string;
           start_date: string | null;
-          status: string | null;
+          status: Database["public"]["Enums"]["profile_status"];
           student_number: string | null;
           subject_embed: string | null;
           subjects_of_interest: string[] | null;
@@ -591,7 +621,7 @@ export type Database = {
           role?: string | null;
           settings_id: string;
           start_date?: string | null;
-          status?: string | null;
+          status: Database["public"]["Enums"]["profile_status"];
           student_number?: string | null;
           subject_embed?: string | null;
           subjects_of_interest?: string[] | null;
@@ -621,7 +651,7 @@ export type Database = {
           role?: string | null;
           settings_id?: string;
           start_date?: string | null;
-          status?: string | null;
+          status?: Database["public"]["Enums"]["profile_status"];
           student_number?: string | null;
           subject_embed?: string | null;
           subjects_of_interest?: string[] | null;
@@ -658,6 +688,33 @@ export type Database = {
           id?: string;
           request_information?: Json | null;
           request_type?: string | null;
+        };
+        Relationships: [];
+      };
+      session_reminders: {
+        Row: {
+          created_at: string;
+          description: string | null;
+          id: number;
+          message_id: string | null;
+          recipient_id: string | null;
+          session_id: string | null;
+        };
+        Insert: {
+          created_at?: string;
+          description?: string | null;
+          id?: number;
+          message_id?: string | null;
+          recipient_id?: string | null;
+          session_id?: string | null;
+        };
+        Update: {
+          created_at?: string;
+          description?: string | null;
+          id?: number;
+          message_id?: string | null;
+          recipient_id?: string | null;
+          session_id?: string | null;
         };
         Relationships: [];
       };
@@ -919,7 +976,33 @@ export type Database = {
       };
     };
     Views: {
-      [_ in never]: never;
+      Emails: {
+        Row: {
+          created_at: string | null;
+          description: string | null;
+          id: number | null;
+          message_id: string | null;
+          recipient_id: string | null;
+          session_id: string | null;
+        };
+        Insert: {
+          created_at?: string | null;
+          description?: string | null;
+          id?: number | null;
+          message_id?: string | null;
+          recipient_id?: string | null;
+          session_id?: string | null;
+        };
+        Update: {
+          created_at?: string | null;
+          description?: string | null;
+          id?: number | null;
+          message_id?: string | null;
+          recipient_id?: string | null;
+          session_id?: string | null;
+        };
+        Relationships: [];
+      };
     };
     Functions: {
       availability_overlap: {
@@ -934,6 +1017,11 @@ export type Database = {
           start_ts: string;
         }[];
       };
+      capture_pairing_length_snapshot: {
+        Args: { p_captured_on?: string };
+        Returns: number;
+      };
+      ensure_weekly_pairing_length_snapshot: { Args: never; Returns: number };
       get_admin_conversations: {
         Args: never;
         Returns: {
@@ -1084,6 +1172,42 @@ export type Database = {
         Args: { a: Json[]; b: Json[] };
         Returns: Json;
       };
+      get_pairing_length_history: {
+        Args: { p_population?: string };
+        Returns: {
+          avg_days: number;
+          captured_on: string;
+          median_days: number;
+          pairs: number;
+          single_session_pairs: number;
+        }[];
+      };
+      get_pairing_length_stats: {
+        Args: never;
+        Returns: {
+          avg_days: number;
+          max_days: number;
+          median_days: number;
+          pairs: number;
+          population: string;
+          single_session_pairs: number;
+        }[];
+      };
+      get_pairing_lengths: {
+        Args: {
+          p_limit?: number;
+          p_offset?: number;
+          p_population?: string;
+          p_search?: string;
+        };
+        Returns: {
+          days: number;
+          started_on: string;
+          status: string;
+          student_name: string;
+          tutor_name: string;
+        }[];
+      };
       get_pairing_logs: {
         Args: { end_time: string; start_time: string };
         Returns: {
@@ -1144,7 +1268,7 @@ export type Database = {
         }[];
       };
       get_period_session_completion_stats: {
-        Args: { p_granularity?: string };
+        Args: { p_first_sessions_only?: boolean; p_granularity?: string };
         Returns: {
           pct_completed: number;
           period: string;
@@ -1315,6 +1439,7 @@ export type Database = {
         | "Biweekly Meeting"
         | "Other";
       pairing_status: "pending" | "accepted" | "rejected";
+      profile_status: "Active" | "Inactive";
       session_frequency: "weekly" | "biweekly" | "monthly";
       session_status:
         | "Active"
@@ -1467,6 +1592,7 @@ export const Constants = {
         "Other",
       ],
       pairing_status: ["pending", "accepted", "rejected"],
+      profile_status: ["Active", "Inactive"],
       session_frequency: ["weekly", "biweekly", "monthly"],
       session_status: [
         "Active",

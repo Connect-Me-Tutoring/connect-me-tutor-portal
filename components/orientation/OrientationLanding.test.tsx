@@ -9,9 +9,11 @@ describe("OrientationLanding", () => {
 
     expect(markup).toContain("Orientation slideshow");
     expect(markup).toContain("Portal walkthrough");
+    expect(markup).toContain("Experienced Tutor Examples");
     expect(markup).toContain("Knowledge check");
     expect(markup).toContain('href="/orientation/slideshow"');
     expect(markup).toContain('href="/orientation/walkthrough"');
+    expect(markup).toContain('href="/orientation/experienced-tutor"');
     expect(markup).toContain('href="/orientation/quiz"');
     expect(markup).not.toContain("Coming soon");
     expect(markup).not.toContain("completed");

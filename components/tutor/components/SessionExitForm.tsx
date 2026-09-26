@@ -112,9 +112,11 @@ const SessionExitForm = ({
     setIsFirstSession(false);
   };
 
+  const isThisSessionOpen = TC.isSessionExitFormOpen && TC.selectedSession?.id === currSession.id;
+
   return (
     <Dialog
-      open={TC.isSessionExitFormOpen}
+      open={isThisSessionOpen}
       onOpenChange={(open) => {
         TC.setIsSessionExitFormOpen(open);
         if (!open) {

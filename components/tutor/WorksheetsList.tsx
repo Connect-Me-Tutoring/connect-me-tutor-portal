@@ -1,14 +1,17 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, type ReactNode } from "react";
 import type { WorksheetResource } from "@/app/(protected)/dashboard/(tutor)/worksheets/page";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/lib/supabase/client";
 import { ChevronLeft, Download, ExternalLink, FileText, FolderOpen, Search } from "lucide-react";
+import { usePostHog } from "posthog-js/react";
 
 const allCategories = "All categories";
 const allCollections = "All grades";
+
+const submitWorksheetFormUrl = "https://forms.gle/yXht2JBQ7dBiKpZr6";
 
 const gradeOrder = [
   "Kindergarten",
@@ -41,11 +44,13 @@ const PickerScreen = ({
   options,
   onSelect,
   onBack,
+  action,
 }: {
   title: string;
   options: { name: string; count: number }[];
   onSelect: (name: string) => void;
   onBack?: () => void;
+  action?: ReactNode;
 }) => (
   <section className="mx-auto flex w-full max-w-6xl flex-col gap-6">
     <div className="flex flex-col gap-2">
@@ -59,7 +64,10 @@ const PickerScreen = ({
           Back
         </button>
       ) : null}
-      <h1 className="text-4xl font-semibold tracking-tight text-gray-900">{title}</h1>
+      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+        <h1 className="text-4xl font-semibold tracking-tight text-gray-900">{title}</h1>
+        {action}
+      </div>
     </div>
 
     <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -82,6 +90,7 @@ const PickerScreen = ({
 );
 
 const WorksheetsList = ({ worksheets }: { worksheets: WorksheetResource[] }) => {
+  const posthog = usePostHog();
   const [searchQuery, setSearchQuery] = useState("");
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const [activeCollection, setActiveCollection] = useState<string | null>(null);
@@ -145,9 +154,22 @@ const WorksheetsList = ({ worksheets }: { worksheets: WorksheetResource[] }) => 
       });
   }, [activeCategory, activeCollection, searchQuery, worksheets]);
 
-  const openWorksheet = (path: string) => {
-    const { data } = supabase.storage.from("worksheets").getPublicUrl(path);
+  const openWorksheet = (
+    worksheet: WorksheetResource,
+    openSource: "worksheet_card" | "open_button",
+  ) => {
+    const { data } = supabase.storage.from("worksheets").getPublicUrl(worksheet.path);
+
     window.open(data.publicUrl, "_blank", "noopener,noreferrer");
+
+    posthog.capture("worksheet_opened", {
+      worksheet_name: worksheet.name,
+      worksheet_path: worksheet.path,
+      worksheet_category: worksheet.category,
+      worksheet_collection: worksheet.collection,
+      worksheet_file_type: worksheet.name.split(".").pop()?.toLowerCase() ?? "unknown",
+      open_source: openSource,
+    });
   };
 
   const downloadWorksheet = async (worksheet: WorksheetResource) => {
@@ -168,7 +190,21 @@ const WorksheetsList = ({ worksheets }: { worksheets: WorksheetResource[] }) => 
 
   // Step through subject then grade on the way in; the sidebar takes over once a grade is picked.
   if (!activeCategory) {
-    return <PickerScreen title="Worksheets" options={categories} onSelect={setActiveCategory} />;
+    return (
+      <PickerScreen
+        title="Worksheets"
+        options={categories}
+        onSelect={setActiveCategory}
+        action={
+          <Button asChild variant="outline" className="h-11 w-fit justify-center gap-2 text-base">
+            <a href={submitWorksheetFormUrl} target="_blank" rel="noopener noreferrer">
+              <ExternalLink className="h-5 w-5" />
+              Submit your worksheet
+            </a>
+          </Button>
+        }
+      />
+    );
   }
 
   if (!activeCollection) {
@@ -291,7 +327,7 @@ const WorksheetsList = ({ worksheets }: { worksheets: WorksheetResource[] }) => 
                 >
                   <button
                     type="button"
-                    onClick={() => openWorksheet(worksheet.path)}
+                    onClick={() => openWorksheet(worksheet, "worksheet_card")}
                     className="min-w-0 rounded-md px-3 py-3 text-left transition-colors hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-900"
                   >
                     <div className="flex min-w-0 items-start gap-3">
@@ -314,7 +350,7 @@ const WorksheetsList = ({ worksheets }: { worksheets: WorksheetResource[] }) => 
                     <Button
                       type="button"
                       variant="outline"
-                      onClick={() => openWorksheet(worksheet.path)}
+                      onClick={() => openWorksheet(worksheet, "open_button")}
                       className="h-11 justify-center gap-2 text-base sm:w-28"
                     >
                       <ExternalLink className="h-5 w-5" />

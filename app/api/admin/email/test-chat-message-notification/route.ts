@@ -2,6 +2,8 @@ import { isAuthorized } from "@/lib/actions/auth/server.actions";
 import { sendChatMessageNotificationEmailTest } from "@/lib/actions/email/server.actions";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
+import { logError } from "@/lib/posthog";
+import { logUnauthorizedAccess } from "@/lib/security/log-unauthorized-access";
 
 export const dynamic = "force-dynamic";
 
@@ -20,6 +22,7 @@ const bodySchema = z.object({
 export async function POST(request: NextRequest) {
   try {
     if (!(await isAuthorized(request))) {
+      await logUnauthorizedAccess(request, "admin/email/test-chat-message-notification");
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
@@ -29,17 +32,17 @@ export async function POST(request: NextRequest) {
     const result = await sendChatMessageNotificationEmailTest(parsed);
 
     if (!result.ok) {
-      return NextResponse.json({ error: result.error }, { status: 500 });
+      await logError(new Error(result.error), {}, "email_test_chat_message_notification_error");
+      return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
     }
 
     return NextResponse.json({ ok: true });
   } catch (error) {
-    const message =
-      error instanceof z.ZodError
-        ? error.flatten()
-        : error instanceof Error
-          ? error.message
-          : "Unknown error";
-    return NextResponse.json({ error: message }, { status: 400 });
+    if (error instanceof z.ZodError) {
+      return NextResponse.json({ error: error.flatten() }, { status: 400 });
+    }
+    console.error("Error sending test chat message notification:", error);
+    await logError(error, {}, "email_test_chat_message_notification_error");
+    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }
 }

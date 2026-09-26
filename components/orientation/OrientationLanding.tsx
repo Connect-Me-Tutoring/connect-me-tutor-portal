@@ -1,4 +1,10 @@
-import { BookOpenCheck, ClipboardCheck, MousePointerClick, Presentation } from "lucide-react";
+import {
+  BookOpenCheck,
+  ClipboardCheck,
+  MousePointerClick,
+  Presentation,
+  Video,
+} from "lucide-react";
 import Link from "next/link";
 
 import { Button } from "@/components/ui/button";
@@ -20,6 +26,15 @@ const MODULES = [
     href: "/orientation/walkthrough",
     action: "Start walkthrough",
     icon: MousePointerClick,
+  },
+  {
+    key: "experienced_tutor",
+    title: "Experienced Tutor Examples",
+    description:
+      "Watch real tutoring moments, identify effective teaching moves, and reflect on how you would apply them.",
+    href: "/orientation/experienced-tutor",
+    action: "Watch training clips",
+    icon: Video,
   },
   {
     key: "quiz",
@@ -51,7 +66,7 @@ export function OrientationLanding({ previewMode = false }: { previewMode?: bool
           Orientation Modules
         </h2>
 
-        <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+        <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-4">
           {MODULES.map((module, index) => {
             const Icon = module.icon;
 

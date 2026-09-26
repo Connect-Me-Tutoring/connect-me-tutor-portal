@@ -540,12 +540,6 @@ const StudentList = ({ initialStudents }: any) =>
         mobileCell: null,
       },
       {
-        key: "status",
-        header: "Status",
-        cell: (student) => student.status,
-        mobileCell: null,
-      },
-      {
         key: "startDate",
         header: "Start Date",
         cell: (student) => student.startDate,
@@ -675,6 +669,7 @@ const StudentList = ({ initialStudents }: any) =>
         </div>
 
         <ResponsiveList
+          desktopWrapperClassName="overflow-x-auto"
           columns={columns}
           rows={paginatedStudents}
           mobileRows={visibleStudents}
