@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("server-only", () => ({}));
 
@@ -10,14 +10,48 @@ vi.mock("@/lib/posthog", () => ({
 import {
   canViewTutorOrientation,
   hasTutorOrientationAccess,
+  isTutorOrientationEnabledForAll,
   TUTOR_ORIENTATION_FLAG,
 } from "@/lib/orientation/config.server";
 
+const originalFeatureFlag = process.env.TUTOR_ORIENTATION_ENABLED;
+const originalLegacyFeatureFlag = process.env.ORIENTATION_QUIZ_ENABLED;
+
+const restoreEnv = (key: string, value: string | undefined) => {
+  if (value === undefined) delete process.env[key];
+  else process.env[key] = value;
+};
+
+beforeEach(() => {
+  delete process.env.TUTOR_ORIENTATION_ENABLED;
+  delete process.env.ORIENTATION_QUIZ_ENABLED;
+});
+
 afterEach(() => {
   isFeatureEnabled.mockReset();
+  restoreEnv("TUTOR_ORIENTATION_ENABLED", originalFeatureFlag);
+  restoreEnv("ORIENTATION_QUIZ_ENABLED", originalLegacyFeatureFlag);
 });
 
 describe("tutor orientation configuration", () => {
+  it("only enables the env override for the exact true value", () => {
+    expect(isTutorOrientationEnabledForAll()).toBe(false);
+
+    process.env.TUTOR_ORIENTATION_ENABLED = "TRUE";
+    expect(isTutorOrientationEnabledForAll()).toBe(false);
+
+    process.env.TUTOR_ORIENTATION_ENABLED = "true";
+    expect(isTutorOrientationEnabledForAll()).toBe(true);
+  });
+
+  it("falls back to the legacy variable only when the canonical one is unset", () => {
+    process.env.ORIENTATION_QUIZ_ENABLED = "true";
+    expect(isTutorOrientationEnabledForAll()).toBe(true);
+
+    process.env.TUTOR_ORIENTATION_ENABLED = "false";
+    expect(isTutorOrientationEnabledForAll()).toBe(false);
+  });
+
   it("allows tutors and admins to view orientation content", () => {
     expect(canViewTutorOrientation("Tutor")).toBe(true);
     expect(canViewTutorOrientation("Admin")).toBe(true);
@@ -52,6 +86,21 @@ describe("tutor orientation configuration", () => {
 
       isFeatureEnabled.mockResolvedValueOnce(false);
       await expect(hasTutorOrientationAccess({ ...tutor, id: "tutor-2" })).resolves.toBe(false);
+    });
+
+    it("lets every tutor in without consulting PostHog when the env override is on", async () => {
+      process.env.TUTOR_ORIENTATION_ENABLED = "true";
+
+      await expect(hasTutorOrientationAccess({ ...tutor, id: "tutor-5" })).resolves.toBe(true);
+      expect(isFeatureEnabled).not.toHaveBeenCalled();
+    });
+
+    it("falls back to the PostHog flag when the env override is false", async () => {
+      process.env.TUTOR_ORIENTATION_ENABLED = "false";
+      isFeatureEnabled.mockResolvedValueOnce(false);
+
+      await expect(hasTutorOrientationAccess({ ...tutor, id: "tutor-6" })).resolves.toBe(false);
+      expect(isFeatureEnabled).toHaveBeenCalledOnce();
     });
 
     it("fails closed when PostHog errors or returns undefined", async () => {

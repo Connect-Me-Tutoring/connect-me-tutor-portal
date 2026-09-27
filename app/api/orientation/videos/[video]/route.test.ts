@@ -16,7 +16,8 @@ vi.mock("@/lib/orientation/storage.server", () => ({
 
 import { GET } from "./route";
 
-const SIGNED_URL = "https://example.supabase.co/storage/v1/object/sign/orientations/videos/x?token=t";
+const SIGNED_URL =
+  "https://example.supabase.co/storage/v1/object/sign/orientations/videos/x?token=t";
 
 const get = (video: string) =>
   GET(new Request(`http://localhost/api/orientation/videos/${video}`), {

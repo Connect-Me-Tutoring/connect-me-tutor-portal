@@ -22,7 +22,11 @@ export async function createOrientationAssetUrl(objectPath: string): Promise<str
     .createSignedUrl(objectPath, SIGNED_URL_TTL_SECONDS);
 
   if (error || !data?.signedUrl) {
-    await logError(error ?? new Error("No signed URL returned"), { objectPath }, "orientation_asset_error");
+    await logError(
+      error ?? new Error("No signed URL returned"),
+      { objectPath },
+      "orientation_asset_error",
+    );
     return null;
   }
 
