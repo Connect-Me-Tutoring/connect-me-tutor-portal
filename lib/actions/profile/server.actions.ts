@@ -328,7 +328,6 @@ export async function editProfile(profile: Profile) {
     subjects_of_interest,
     languages_spoken,
     studentNumber,
-    status, // pull status out so we can actually persist it instead of just ignoring
   } = profile;
   try {
     const { data: emailData } = await supabase
@@ -362,7 +361,6 @@ export async function editProfile(profile: Profile) {
         availability: availability,
         subjects_of_interest: subjects_of_interest,
         languages_spoken: languages_spoken,
-        status: status, // without this, status changes from the edit form just get ignored and dont hit db
       })
       .eq("id", id)
       .single();
@@ -373,4 +371,47 @@ export async function editProfile(profile: Profile) {
     await logError(error, { action: "editProfile", profileId: id }, "profile_error");
     throw new Error("Unable to edit User");
   }
+}
+
+/*
+ * #807: deactivate instead of delete.
+ *
+ * Deliberately uses the cookie-bound client, NOT createAdminClient():
+ * guard_profile_columns only allows status changes when private.is_admin()
+ * is true, and is_admin() depends on auth.uid(), which is NULL for the
+ * service-role client. The admin's own session is what makes this pass.
+ *
+ * deactivated_at, the profile_status_changes history row, and removing the
+ * profile from the pairing queue are all handled by DB triggers
+ * (20260926000000_profile_deactivation.sql), so a self-pause from Settings
+ * gets the same behavior without going through this function. This is the
+ * only admin path for status; editProfile deliberately doesn't write it.
+ */
+export async function setProfileStatus(
+  profileId: string,
+  status: "Active" | "Inactive",
+): Promise<Profile> {
+  await requireAdmin();
+  const supabase = await createClient();
+  try {
+    const { data, error } = await supabase
+      .from(Table.Profiles)
+      .update({ status })
+      .eq("id", profileId)
+      .select("*")
+      .single();
+    if (error) throw error;
+    return tableToInterfaceProfiles(data) as Profile;
+  } catch (error) {
+    await logError(error, { action: "setProfileStatus", profileId, status }, "profile_error");
+    throw new Error(`Unable to set profile status to ${status}`);
+  }
+}
+
+export async function deactivateProfile(profileId: string) {
+  return setProfileStatus(profileId, "Inactive");
+}
+
+export async function reactivateProfile(profileId: string) {
+  return setProfileStatus(profileId, "Active");
 }
