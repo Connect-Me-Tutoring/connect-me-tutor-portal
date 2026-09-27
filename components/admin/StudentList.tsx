@@ -38,13 +38,14 @@ import {
 import { getProfile } from "@/lib/actions/user/client.actions";
 import {
   getAllProfiles,
-  deactivateUser,
-  reactivateUser,
   getUserFromId,
   resendEmailConfirmation,
 } from "@/lib/actions/admin.actions";
-import { editProfile } from "@/lib/actions/profile/server.actions";
-import { deleteUser } from "@/lib/actions/auth/server.actions";
+import {
+  editProfile,
+  deactivateProfile,
+  reactivateProfile,
+} from "@/lib/actions/profile/server.actions";
 import { addUser } from "@/lib/actions/auth/client.actions";
 import { createClient } from "@/lib/supabase/client";
 import { Profile } from "@/types";
@@ -64,7 +65,7 @@ import toast, { Toaster } from "react-hot-toast";
 import { set } from "date-fns";
 import { AlertDialogCancel } from "@radix-ui/react-alert-dialog";
 import AddStudentForm from "./components/AddStudentForm";
-import DeleteStudentForm from "./components/DeleteStudentForm";
+import ProfileStatusForm from "./components/ProfileStatusForm";
 import EditStudentForm from "./components/EditStudentForm";
 import { UserAvailabilities } from "../ui/UserAvailabilities";
 
@@ -125,9 +126,7 @@ const StudentList = ({ initialStudents }: any) =>
     const [selectedStudent, setSelectedStudent] = useState<Profile | null>(null);
 
     //---Modals
-    const [isDeactivateModalOpen, setIsDeactivateModalOpen] = useState(false);
     const [selectedStudentId, setSelectedStudentId] = useState<string | null>(null);
-    const [isReactivateModalOpen, setIsReactivateModalOpen] = useState(false);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
     const [addingStudent, setAddingStudent] = useState(false);
@@ -401,38 +400,18 @@ const StudentList = ({ initialStudents }: any) =>
       }
     };
 
-    const handleDeleteStudent = async () => {
-      if (selectedStudentId) {
-        try {
-          console.log("Deleting User");
-          await deleteUser(selectedStudentId);
-          toast.success("Student deleted successfully");
-          setIsDeactivateModalOpen(false);
-          setSelectedStudentId(null);
-          getStudentData();
-        } catch (error) {
-          toast.error("Failed to delete student");
-        }
+    // #807: students are deactivated, never deleted. Deleting cascades away
+    // their enrollments and pairings, and nulls student_id on sessions.
+    const handleDeactivateStudent = async (profileId: string) => {
+      try {
+        await deactivateProfile(profileId);
+        toast.success("Student deactivated");
+        getStudentData();
+      } catch (error) {
+        toast.error("Failed to deactivate student");
+        throw error;
       }
     };
-
-    //----Deprecated--->
-    const handleDeactivateStudent = async () => {
-      if (selectedStudentId) {
-        try {
-          const data = await deactivateUser(selectedStudentId); // Call deactivateUser function with studentId
-          if (data) {
-            toast.success("Student deactivated successfully");
-            setIsDeactivateModalOpen(false);
-            setSelectedStudentId(null);
-            getStudentData();
-          }
-        } catch (error) {
-          toast.error("Failed to deactivate student");
-        }
-      }
-    };
-    //<---
 
     const handleGetSelectedStudent = async (profileId: string | null) => {
       if (profileId) {
@@ -460,19 +439,14 @@ const StudentList = ({ initialStudents }: any) =>
       }
     };
 
-    const handleReactivateStudent = async () => {
-      if (selectedStudentId) {
-        try {
-          const data = await reactivateUser(selectedStudentId); // Call deactivateUser function with studentId
-          if (data) {
-            toast.success("Student reactivated successfully");
-            setIsReactivateModalOpen(false);
-            setSelectedStudentId(null);
-            getStudentData();
-          }
-        } catch (error) {
-          toast.error("Failed to deactivate student");
-        }
+    const handleReactivateStudent = async (profileId: string) => {
+      try {
+        await reactivateProfile(profileId);
+        toast.success("Student reactivated");
+        getStudentData();
+      } catch (error) {
+        toast.error("Failed to reactivate student");
+        throw error;
       }
     };
 
@@ -642,13 +616,18 @@ const StudentList = ({ initialStudents }: any) =>
               addingStudent={addingStudent}
             />
 
-            <DeleteStudentForm
-              students={students}
-              selectedStudentId={selectedStudentId}
-              setSelectedStudentId={setSelectedStudentId}
-              handleDeleteStudent={handleDeleteStudent}
+            <ProfileStatusForm
+              profiles={students}
+              roleLabel="Student"
+              mode="deactivate"
+              onConfirm={handleDeactivateStudent}
             />
-            {/*Reactivate Student*/}
+            <ProfileStatusForm
+              profiles={students}
+              roleLabel="Student"
+              mode="reactivate"
+              onConfirm={handleReactivateStudent}
+            />
 
             <EditStudentForm
               students={students}
