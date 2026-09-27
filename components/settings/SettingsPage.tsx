@@ -71,7 +71,8 @@ export default function SettingsPage({
       ? (profile as any).languages_spoken.join(", ")
       : "",
   }));
-  // track account status stae for students so they can toggle their own active inactive status in settings without admin help
+  // Students and tutors can pause themselves here (one-way; only an admin reactivates, #807)
+  const canSelfPause = profile?.role === "Student" || profile?.role === "Tutor";
   const [accountStatus, setAccountStatus] = useState<Profile["status"]>(
     profile?.status === "Inactive" ? "Inactive" : "Active",
   );
@@ -207,9 +208,19 @@ export default function SettingsPage({
         subjects_of_interest: toList(accountForm.subjectsOfInterest),
         languages_spoken: toList(accountForm.languagesSpoken),
       };
-      // only add status to update if students so tutors dont get this control in settings and keep the admin level stuff
-      if (profile.role === "Student") {
-        updatePayload.status = accountStatus;
+      // Students and tutors can pause themselves (Active -> Inactive) but can't unpause:
+      // only an admin can reactivate, and the DB guard enforces that (#807).
+      // So status is only sent when this save is actually a pause.
+      const isPausing = canSelfPause && profile.status === "Active" && accountStatus === "Inactive";
+      if (isPausing) {
+        const confirmed = window.confirm(
+          "Pause your account? Your tutoring will be paused and you won't be matched with anyone new. You'll need to contact ConnectMe to reactivate.",
+        );
+        if (!confirmed) {
+          setIsSavingProfile(false);
+          return;
+        }
+        updatePayload.status = "Inactive";
       }
 
       const { error } = await supabase
@@ -458,8 +469,15 @@ export default function SettingsPage({
             </div>
             <p className="text-gray-600 mb-6">Manage your information and account preferences.</p>
             <form onSubmit={handleProfileSubmit} className="space-y-6">
-              {/* students can toggle their own active inactive status here without needing admin intervention to deactivate account */}
-              {profile?.role === "Student" && (
+              {/* students and tutors can pause themselves; only an admin can reactivate (#807) */}
+              {canSelfPause && profile?.status === "Inactive" && (
+                <Alert>
+                  <AlertDescription>
+                    Your account is paused. To reactivate it, contact ConnectMe.
+                  </AlertDescription>
+                </Alert>
+              )}
+              {canSelfPause && profile?.status === "Active" && (
                 <div>
                   <Label htmlFor="account-status" className="text-sm font-medium">
                     Account Status
@@ -476,6 +494,11 @@ export default function SettingsPage({
                       <SelectItem value="Inactive">Inactive</SelectItem>
                     </SelectContent>
                   </Select>
+                  {accountStatus === "Inactive" && (
+                    <p className="mt-1 text-xs text-gray-600">
+                      Once paused, only ConnectMe can reactivate your account.
+                    </p>
+                  )}
                 </div>
               )}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
