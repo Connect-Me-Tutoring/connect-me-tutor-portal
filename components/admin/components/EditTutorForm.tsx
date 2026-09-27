@@ -284,24 +284,6 @@ const EditTutorForm = ({
               {/* Extended Profile Tab */}
               {activeTab === "extended" && (
                 <div className="space-y-6">
-                  <div className="space-y-4">
-                    <h3 className="text-lg font-semibold">Status</h3>
-                    <Select
-                      value={selectedTutor?.status ?? "Active"}
-                      onValueChange={(value) =>
-                        handleComplexFieldsForEdit("status", value as Profile["status"])
-                      }
-                    >
-                      <SelectTrigger className="w-full">
-                        <SelectValue placeholder="Select status" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="Active">Active</SelectItem>
-                        <SelectItem value="Inactive">Inactive</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
                   {/* Availability Section */}
                   <div className="space-y-4">
                     <h3 className="text-lg font-semibold">Availability</h3>
