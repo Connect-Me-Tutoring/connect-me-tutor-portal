@@ -569,6 +569,36 @@ export type Database = {
           },
         ];
       };
+      profile_status_changes: {
+        Row: {
+          changed_at: string;
+          changed_by: string | null;
+          from_status: string | null;
+          id: number;
+          profile_id: string;
+          role: string | null;
+          to_status: string;
+        };
+        Insert: {
+          changed_at?: string;
+          changed_by?: string | null;
+          from_status?: string | null;
+          id?: never;
+          profile_id: string;
+          role?: string | null;
+          to_status: string;
+        };
+        Update: {
+          changed_at?: string;
+          changed_by?: string | null;
+          from_status?: string | null;
+          id?: never;
+          profile_id?: string;
+          role?: string | null;
+          to_status?: string;
+        };
+        Relationships: [];
+      };
       Profiles: {
         Row: {
           age: string | null;
@@ -576,6 +606,8 @@ export type Database = {
           availability: Json[] | null;
           created_at: string;
           date_of_birth: string | null;
+          deactivated_at: string | null;
+          deactivated_by: string | null;
           email: string | null;
           first_name: string;
           gender: string | null;
@@ -606,6 +638,8 @@ export type Database = {
           availability?: Json[] | null;
           created_at?: string;
           date_of_birth?: string | null;
+          deactivated_at?: string | null;
+          deactivated_by?: string | null;
           email?: string | null;
           first_name: string;
           gender?: string | null;
@@ -636,6 +670,8 @@ export type Database = {
           availability?: Json[] | null;
           created_at?: string;
           date_of_birth?: string | null;
+          deactivated_at?: string | null;
+          deactivated_by?: string | null;
           email?: string | null;
           first_name?: string;
           gender?: string | null;
