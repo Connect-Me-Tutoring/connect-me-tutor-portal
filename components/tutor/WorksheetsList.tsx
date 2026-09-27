@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/lib/supabase/client";
 import { ChevronLeft, Download, ExternalLink, FileText, FolderOpen, Search } from "lucide-react";
+import { usePostHog } from "posthog-js/react";
 
 const allCategories = "All categories";
 const allCollections = "All grades";
@@ -89,6 +90,7 @@ const PickerScreen = ({
 );
 
 const WorksheetsList = ({ worksheets }: { worksheets: WorksheetResource[] }) => {
+  const posthog = usePostHog();
   const [searchQuery, setSearchQuery] = useState("");
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const [activeCollection, setActiveCollection] = useState<string | null>(null);
@@ -152,9 +154,22 @@ const WorksheetsList = ({ worksheets }: { worksheets: WorksheetResource[] }) => 
       });
   }, [activeCategory, activeCollection, searchQuery, worksheets]);
 
-  const openWorksheet = (path: string) => {
-    const { data } = supabase.storage.from("worksheets").getPublicUrl(path);
+  const openWorksheet = (
+    worksheet: WorksheetResource,
+    openSource: "worksheet_card" | "open_button",
+  ) => {
+    const { data } = supabase.storage.from("worksheets").getPublicUrl(worksheet.path);
+
     window.open(data.publicUrl, "_blank", "noopener,noreferrer");
+
+    posthog.capture("worksheet_opened", {
+      worksheet_name: worksheet.name,
+      worksheet_path: worksheet.path,
+      worksheet_category: worksheet.category,
+      worksheet_collection: worksheet.collection,
+      worksheet_file_type: worksheet.name.split(".").pop()?.toLowerCase() ?? "unknown",
+      open_source: openSource,
+    });
   };
 
   const downloadWorksheet = async (worksheet: WorksheetResource) => {
@@ -312,7 +327,7 @@ const WorksheetsList = ({ worksheets }: { worksheets: WorksheetResource[] }) => 
                 >
                   <button
                     type="button"
-                    onClick={() => openWorksheet(worksheet.path)}
+                    onClick={() => openWorksheet(worksheet, "worksheet_card")}
                     className="min-w-0 rounded-md px-3 py-3 text-left transition-colors hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-900"
                   >
                     <div className="flex min-w-0 items-start gap-3">
@@ -335,7 +350,7 @@ const WorksheetsList = ({ worksheets }: { worksheets: WorksheetResource[] }) => 
                     <Button
                       type="button"
                       variant="outline"
-                      onClick={() => openWorksheet(worksheet.path)}
+                      onClick={() => openWorksheet(worksheet, "open_button")}
                       className="h-11 justify-center gap-2 text-base sm:w-28"
                     >
                       <ExternalLink className="h-5 w-5" />

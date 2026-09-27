@@ -1021,6 +1021,7 @@ export type Database = {
         Args: { p_captured_on?: string };
         Returns: number;
       };
+      ensure_weekly_pairing_length_snapshot: { Args: never; Returns: number };
       get_admin_conversations: {
         Args: never;
         Returns: {
@@ -1449,7 +1450,8 @@ export type Database = {
         | "Expired"
         | "Standalone"
         | "Unsubmitted"
-        | "Unconfirmed";
+        | "Unconfirmed"
+        | "Student Did Not Attend";
       timezone: "EST" | "CST" | "PST" | "MST" | "MT" | "Other";
     };
     CompositeTypes: {
@@ -1603,6 +1605,7 @@ export const Constants = {
         "Standalone",
         "Unsubmitted",
         "Unconfirmed",
+        "Student Did Not Attend",
       ],
       timezone: ["EST", "CST", "PST", "MST", "MT", "Other"],
     },

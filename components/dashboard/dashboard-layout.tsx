@@ -43,6 +43,7 @@ import {
   FileText,
   Sparkles,
   Flag,
+  GraduationCap,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -68,13 +69,16 @@ import { toast, Toaster } from "react-hot-toast";
 import { Select, SelectContent, SelectItem, SelectTrigger } from "../ui/select";
 import { Profile } from "@/types";
 import { getUserProfiles, switchProfile } from "@/lib/actions/profile/server.actions";
+import { isTutorNavigationRestricted } from "@/lib/orientation/navigation";
 
 export default function DashboardLayout({
   children,
+  orientationEnabled,
   profile,
   userProfilesPromise,
 }: {
   children: React.ReactNode;
+  orientationEnabled: boolean;
   profile: Profile | null;
   userProfilesPromise: Promise<Partial<Profile>[]>;
 }) {
@@ -92,6 +96,11 @@ export default function DashboardLayout({
   const router = useRouter();
   const pathname = usePathname();
   const isSettingsPage = pathname === "/dashboard/settings";
+  const orientationNavigationRestricted = isTutorNavigationRestricted(
+    orientationEnabled,
+    profile?.role,
+    profile?.orientationCompletedAt,
+  );
 
   useEffect(() => {
     if (!profile && !isSettingsPage) {
@@ -135,63 +144,72 @@ export default function DashboardLayout({
     },
   ];
 
-  const tutorSidebarItems = [
-    {
-      title: "Dashboard",
-      href: "/dashboard",
-      icon: <LayoutDashboardIcon className="h-5 w-5" />,
-    },
-    {
-      title: "Announcements",
-      href: "/dashboard/announcements",
-      icon: <BellPlus className="h-5 w-5" />,
-    },
-    {
-      title: "My Students",
-      href: "/dashboard/my-students",
-      icon: <Users className="h-5 w-5" />,
-    },
-    {
-      title: "My Enrollments",
-      href: "/dashboard/my-enrollments",
-      icon: <BookOpenText className="h-5 w-5" />,
-    },
-    {
-      title: "Chats",
-      href: "/dashboard/chats",
-      icon: <MessageCircleIcon className="h-5 w-5" />,
-    },
-    {
-      title: "My Hours",
-      href: "/dashboard/my-stats",
-      icon: <TrendingUp className="h-5 w-5" />,
-    },
-    {
-      title: "Resources",
-      href: "/dashboard/resources",
-      icon: <Layers className="h-5 w-5" />,
-    },
-    {
-      title: "Worksheets",
-      href: "/dashboard/worksheets",
-      icon: <FileText className="h-5 w-5" />,
-    },
-    {
-      title: "Pairings",
-      href: "/dashboard/pairings",
-      icon: <LinkIcon className="h-5 w-5" />,
-    },
-    // {
-    //   title: "AI Chatbot",
-    //   href: "/dashboard/ai-chatbot",
-    //   icon: <Sparkles className="h-5 w-5" />,
-    // },
-    {
-      title: "Profile",
-      href: "/dashboard/profile",
-      icon: <User className="h-5 w-5" />,
-    },
-  ];
+  const tutorOrientationSidebarItem = {
+    title: "Orientation",
+    href: "/orientation",
+    icon: <GraduationCap className="h-5 w-5" />,
+  };
+
+  const tutorSidebarItems = orientationNavigationRestricted
+    ? [tutorOrientationSidebarItem]
+    : [
+        {
+          title: "Dashboard",
+          href: "/dashboard",
+          icon: <LayoutDashboardIcon className="h-5 w-5" />,
+        },
+        ...(orientationEnabled ? [tutorOrientationSidebarItem] : []),
+        {
+          title: "Announcements",
+          href: "/dashboard/announcements",
+          icon: <BellPlus className="h-5 w-5" />,
+        },
+        {
+          title: "My Students",
+          href: "/dashboard/my-students",
+          icon: <Users className="h-5 w-5" />,
+        },
+        {
+          title: "My Enrollments",
+          href: "/dashboard/my-enrollments",
+          icon: <BookOpenText className="h-5 w-5" />,
+        },
+        {
+          title: "Chats",
+          href: "/dashboard/chats",
+          icon: <MessageCircleIcon className="h-5 w-5" />,
+        },
+        {
+          title: "My Hours",
+          href: "/dashboard/my-stats",
+          icon: <TrendingUp className="h-5 w-5" />,
+        },
+        {
+          title: "Resources",
+          href: "/dashboard/resources",
+          icon: <Layers className="h-5 w-5" />,
+        },
+        {
+          title: "Worksheets",
+          href: "/dashboard/worksheets",
+          icon: <FileText className="h-5 w-5" />,
+        },
+        {
+          title: "Pairings",
+          href: "/dashboard/pairings",
+          icon: <LinkIcon className="h-5 w-5" />,
+        },
+        // {
+        //   title: "AI Chatbot",
+        //   href: "/dashboard/ai-chatbot",
+        //   icon: <Sparkles className="h-5 w-5" />,
+        // },
+        {
+          title: "Profile",
+          href: "/dashboard/profile",
+          icon: <User className="h-5 w-5" />,
+        },
+      ];
 
   const adminSidebarItems = [
     {
@@ -199,6 +217,15 @@ export default function DashboardLayout({
       href: "/dashboard",
       icon: <LayoutDashboardIcon className="h-5 w-5" />,
     },
+    ...(orientationEnabled
+      ? [
+          {
+            title: "Tutor Orientation",
+            href: "/orientation",
+            icon: <GraduationCap className="h-5 w-5" />,
+          },
+        ]
+      : []),
 
     // {
     //   title: "Notifications",
@@ -319,7 +346,7 @@ export default function DashboardLayout({
             {/* Logo */}
             <div className="h-16 p-4 flex items-center">
               <Link
-                href="/dashboard"
+                href={orientationNavigationRestricted ? "/orientation" : "/dashboard"}
                 className="flex items-center px-1 text-sm font-medium rounded-md transition-colors"
               >
                 <div className="text-white p-1 rounded">
@@ -553,7 +580,7 @@ export default function DashboardLayout({
                 )}
               </Tooltip>
 
-              {!isSettingsPage && (
+              {!isSettingsPage && !orientationNavigationRestricted && (
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <Button
@@ -659,17 +686,19 @@ export default function DashboardLayout({
                   <Flag className="h-5 w-5" />
                   <span>Report an Issue</span>
                 </a>
-                <Link
-                  href="/dashboard/settings"
-                  onClick={() => setMobileOpen(false)}
-                  className={cn(
-                    "flex items-center gap-3 p-2 rounded-md hover:bg-muted text-primary-dark",
-                    pathname === "/dashboard/settings" && "bg-blue-400/10 text-blue-500",
-                  )}
-                >
-                  <Settings className="h-5 w-5" />
-                  <span>Settings</span>
-                </Link>
+                {!orientationNavigationRestricted && (
+                  <Link
+                    href="/dashboard/settings"
+                    onClick={() => setMobileOpen(false)}
+                    className={cn(
+                      "flex items-center gap-3 p-2 rounded-md hover:bg-muted text-primary-dark",
+                      pathname === "/dashboard/settings" && "bg-blue-400/10 text-blue-500",
+                    )}
+                  >
+                    <Settings className="h-5 w-5" />
+                    <span>Settings</span>
+                  </Link>
+                )}
               </nav>
             </div>
           </div>

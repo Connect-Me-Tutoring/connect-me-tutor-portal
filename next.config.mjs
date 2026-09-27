@@ -25,14 +25,17 @@ const nextConfig = {
   },
 
   async headers() {
+    const isDevelopment = process.env.NODE_ENV === "development";
     const csp = [
       "default-src 'self'",
       // Next.js App Router injects inline hydration/RSC-streaming scripts, so
       // 'unsafe-inline' is required here without nonce plumbing through proxy.ts.
-      "script-src 'self' 'unsafe-inline' https://vercel.live",
+      // React also requires 'unsafe-eval' for development-only debugging features.
+      `script-src 'self' 'unsafe-inline'${isDevelopment ? " 'unsafe-eval'" : ""} https://vercel.live`,
       // Several components use inline style={{...}}; Tailwind itself ships as a static file.
       "style-src 'self' 'unsafe-inline'",
       "img-src 'self' data: blob: https://*.supabase.co",
+      "media-src 'self' blob: https://*.supabase.co",
       "font-src 'self' data:",
       "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://vercel.live wss://vercel.live",
       "frame-src 'self' blob: https://*.zoom.us https://vercel.live",
