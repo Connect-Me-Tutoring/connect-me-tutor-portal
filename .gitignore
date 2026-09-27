@@ -55,8 +55,3 @@ unlighthouse.config.mjs
 
 #mcp
 .mcp.json
-
-# local preview stack
-.supabase-local/
-.local-stack.log
-.dev-server.log

@@ -1,14 +1,64 @@
 import { Agent } from "@mastra/core/agent";
+import { createTool } from "@mastra/core/tools";
 import { google } from "@ai-sdk/google";
+import { z } from "zod/v4";
+import { ANALYSES, findAnalysis } from "@/lib/analysis/catalog";
+import { runAnalysis } from "@/lib/analysis/runner";
 import type { OverviewSection } from "./overview";
+
+/**
+ * The analyses the model may run, as a tool.
+ *
+ * The id is an enum built from the allow list, so the model cannot name a
+ * script that is not on it. Running one exports current data and executes the
+ * real analysis, which takes tens of seconds; the instructions tell the model
+ * to say it is doing that rather than sit silent.
+ */
+const runAnalysisTool = createTool({
+  id: "run_analysis",
+  description: [
+    "Run one of Connect Me's analysis scripts over current data and return what it produced.",
+    "Use this when the question needs a measure the figures on the page do not already answer.",
+    "Available:",
+    ...ANALYSES.map((analysis) => `  ${analysis.id}: ${analysis.question}`),
+  ].join("\n"),
+  inputSchema: z.object({
+    analysisId: z
+      .enum(ANALYSES.map((analysis) => analysis.id) as [string, ...string[]])
+      .describe("Which analysis to run."),
+  }),
+  execute: async ({ context }) => {
+    const spec = findAnalysis(context.analysisId);
+    if (!spec) return { ok: false, error: "That analysis is not available." };
+
+    const result = await runAnalysis(context.analysisId);
+    if (!result.ok) return { ok: false, error: result.error };
+
+    return {
+      ok: true,
+      title: result.title,
+      rowsRead: result.rowsRead,
+      // Flattened to text: the model reads it, it is not rendered from here.
+      output: result.sections
+        .map((section) =>
+          section.kind === "text"
+            ? `${section.title}:\n${section.body}`
+            : `${section.title}:\n${[section.columns.join("\t"), ...section.rows.map((row) => row.join("\t"))].join("\n")}`,
+        )
+        .join("\n\n")
+        .slice(0, 12000),
+      limitations: result.limitations,
+    };
+  },
+});
 
 /**
  * The Data Portal's analyst.
  *
- * It answers from one thing only: the aggregate payload the page already
- * loaded. It is given no database access, no tools and no SQL, so the worst a
- * bad answer can be is wrong about numbers the admin can see for themselves
- * right above the chat.
+ * It answers from the aggregates the page already loaded, and it can run one of
+ * Connect Me's analysis scripts when a question needs more than those. It has
+ * no database access and no SQL: the only thing it can reach is an analysis on
+ * the allow list, which reads and returns but never writes.
  *
  * The instructions lean hard on the limitations each section carries, because
  * those are what stop a reasonable-sounding sentence from being false: tutor
@@ -24,8 +74,17 @@ You help a Connect Me administrator read the Data Portal's figures.
 Connect Me is a nonprofit that pairs K-8 students with volunteer tutors for
 free one-to-one sessions.
 
-Your source is the <figures> block in the system message. It is the same data
-rendered on the page above the chat.
+You have two sources.
+
+The <figures> block in the system message holds the aggregates already on the
+page. Answer from it when it is enough.
+
+When the question needs something those figures do not cover, run the analysis
+that answers it with the run_analysis tool. These are Connect Me's own scripts,
+run over current data. The tool's own description lists which ids exist. A run takes tens of seconds,
+so say you are running it before you call it, and report what it returned along
+with the limitations it comes back with. If a run fails, say so and what you
+could not answer. Never fill the gap with a guess.
 
 Rules you do not break:
 - Answer only from the figures given. If a question needs something that is
@@ -56,6 +115,7 @@ Style:
   useful answer.
   `,
   model: google("gemini-2.5-flash"),
+  tools: { run_analysis: runAnalysisTool },
 });
 
 /**

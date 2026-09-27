@@ -7,10 +7,22 @@ import path from "node:path";
 import { findAnalysis, type AnalysisSpec } from "./catalog";
 
 /**
- * Runs an analysis from the sibling dataAnalysis repository.
+ * Runs an analysis from the dataAnalysis repository.
  *
- * That repository is Python and shells out, so this spawns it rather than
- * importing it. Three things keep that from being dangerous:
+ * Two ways, chosen by configuration:
+ *
+ *   - Against a deployed analysis service, when ANALYSIS_SERVICE_URL and
+ *     ANALYSIS_SERVICE_KEY are set. This is how it runs in production, because
+ *     the analyses are Python and a Node serverless function cannot spawn a
+ *     Python environment. Both values are ordinary environment variables, so on
+ *     Vercel they are two project secrets and nothing else.
+ *
+ *   - By spawning the repository's CLI locally, when those are not set and the
+ *     repository is checked out beside this one. Useful while developing.
+ *
+ * Either way it reads and returns; nothing is written back.
+ *
+ * For the local path, three things keep spawning from being dangerous:
  *
  *   - the analysis id must come from the allow list in catalog.ts, so no
  *     request can name a script;
@@ -54,6 +66,9 @@ function pythonBin(): string {
 
 /** Present so the page can explain itself instead of failing mysteriously. */
 export function analysisBackendStatus(): { ready: boolean; reason?: string } {
+  if (process.env.ANALYSIS_SERVICE_URL && process.env.ANALYSIS_SERVICE_KEY) {
+    return { ready: true };
+  }
   const root = repoRoot();
   if (!existsSync(root)) {
     return { ready: false, reason: `The analysis repository is not at ${root}.` };
@@ -61,7 +76,8 @@ export function analysisBackendStatus(): { ready: boolean; reason?: string } {
   if (!existsSync(pythonBin())) {
     return {
       ready: false,
-      reason: "The analysis repository has no virtual environment yet.",
+      reason:
+        "No analysis service is configured, and the local analysis repository has no virtual environment.",
     };
   }
   return { ready: true };
@@ -169,10 +185,58 @@ async function collect(spec: AnalysisSpec, outputDir: string, stdout: string) {
   return sections;
 }
 
+async function runRemote(spec: AnalysisSpec, url: string, key: string): Promise<AnalysisResult> {
+  const started = Date.now();
+  try {
+    const response = await fetch(new URL("/run", url), {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${key}` },
+      body: JSON.stringify({ id: spec.id }),
+      signal: AbortSignal.timeout(RUN_TIMEOUT_MS),
+    });
+
+    if (!response.ok) {
+      console.error("[analysis] Service returned", response.status, "for", spec.id);
+      return { ok: false, id: spec.id, error: "The analysis service could not run it." };
+    }
+
+    const payload = (await response.json()) as {
+      rowsRead?: Record<string, number>;
+      sections?: AnalysisSection[];
+    };
+    const sections = payload.sections ?? [];
+    if (sections.length === 0) {
+      return { ok: false, id: spec.id, error: "The analysis produced no output to show." };
+    }
+
+    return {
+      ok: true,
+      id: spec.id,
+      title: spec.title,
+      ranAt: new Date().toISOString(),
+      durationMs: Date.now() - started,
+      rowsRead: payload.rowsRead ?? {},
+      sections,
+      // Taken from here, not from the service, so the caveats cannot go missing
+      // because a deployment is out of date.
+      limitations: spec.limitations,
+    };
+  } catch (error) {
+    console.error("[analysis] Service call failed.", spec.id, error);
+    return { ok: false, id: spec.id, error: "The analysis service could not be reached." };
+  }
+}
+
 export async function runAnalysis(id: string): Promise<AnalysisResult> {
   const spec = findAnalysis(id);
-  // The only path to a subprocess, and it only opens for an id on the list.
+  // The only path to running anything, and it only opens for an id on the list.
   if (!spec) return { ok: false, id, error: "Unknown analysis." };
+
+  const serviceUrl = process.env.ANALYSIS_SERVICE_URL;
+  const serviceKey = process.env.ANALYSIS_SERVICE_KEY;
+  if (serviceUrl && serviceKey) {
+    return runRemote(spec, serviceUrl, serviceKey);
+  }
 
   const status = analysisBackendStatus();
   if (!status.ready) return { ok: false, id, error: status.reason ?? "Not available." };
