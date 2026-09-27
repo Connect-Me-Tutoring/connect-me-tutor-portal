@@ -69,6 +69,7 @@ import { Combobox } from "@/components/ui/combobox";
 
 import AddTutorForm from "./components/AddTutorForm";
 import ProfileStatusForm from "./components/ProfileStatusForm";
+import { inactiveLast } from "@/lib/utils/inactive-last";
 import EditTutorForm from "./components/EditTutorForm";
 import ManageTutorSessions from "./components/ManageTutorSessionForm";
 import { Turret_Road } from "next/font/google";
@@ -154,7 +155,8 @@ const TutorList = ({ initialTutors }: any) => {
         fullName.includes(searchTerm)
       );
     });
-    setFilteredTutors(filtered);
+    // Inactive tutors go to the bottom (#807), before pagination so it holds across pages.
+    setFilteredTutors(inactiveLast(filtered));
     setCurrentPage(1);
   }, [filterValue, tutors]);
 

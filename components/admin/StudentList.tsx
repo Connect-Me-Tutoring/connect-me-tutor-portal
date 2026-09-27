@@ -66,6 +66,7 @@ import { set } from "date-fns";
 import { AlertDialogCancel } from "@radix-ui/react-alert-dialog";
 import AddStudentForm from "./components/AddStudentForm";
 import ProfileStatusForm from "./components/ProfileStatusForm";
+import { inactiveLast } from "@/lib/utils/inactive-last";
 import EditStudentForm from "./components/EditStudentForm";
 import { UserAvailabilities } from "../ui/UserAvailabilities";
 
@@ -183,7 +184,8 @@ const StudentList = ({ initialStudents }: any) =>
         );
       });
 
-      setFilteredStudents(filtered);
+      // Inactive students go to the bottom (#807), before pagination so it holds across pages.
+      setFilteredStudents(inactiveLast(filtered));
       setCurrentPage(1);
     }, [filterValue, students]);
 
@@ -507,6 +509,12 @@ const StudentList = ({ initialStudents }: any) =>
     );
 
     const columns: ResponsiveListColumn<Profile>[] = [
+      {
+        key: "status",
+        header: "Status",
+        cell: (student) => student.status,
+        mobileCell: null,
+      },
       {
         key: "studentNumber",
         header: "Student #",
