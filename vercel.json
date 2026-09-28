@@ -24,6 +24,10 @@
     {
       "path": "/api/cron/send-early-session-check-ins",
       "schedule": "0 17 * * *"
+    },
+    {
+      "path": "/api/cron/update-student-grade-levels",
+      "schedule": "0 0 1 8 *"
     }
   ],
   "functions": {
