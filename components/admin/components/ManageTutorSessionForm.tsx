@@ -70,7 +70,7 @@ export default function ManageTutorSessions({ tutors }: { tutors: Profile[] }) {
     );
   };
 
-  const handleUpdate = async (status: "Cancelled" | "Complete") => {
+  const handleUpdate = async (status: "Cancelled" | "Complete" | "Student Did Not Attend") => {
     if (selectedIds.length === 0 || !selectedTutorId) return;
     setLoading(true);
     try {
@@ -174,6 +174,14 @@ export default function ManageTutorSessions({ tutors }: { tutors: Profile[] }) {
                   disabled={selectedIds.length === 0 || loading}
                 >
                   Mark Cancelled
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => handleUpdate("Student Did Not Attend")}
+                  disabled={selectedIds.length === 0 || loading}
+                  className="border-orange-300 text-orange-700 hover:bg-orange-50"
+                >
+                  Mark Did Not Attend
                 </Button>
                 <Button
                   onClick={() => handleUpdate("Complete")}

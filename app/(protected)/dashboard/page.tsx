@@ -17,7 +17,12 @@ import { getProfile } from "@/lib/actions/profile/server.actions";
 import { logEvent } from "@/lib/posthog";
 
 /** Statuses that put a session in the past bucket: it has happened and needs no more action. */
-const PAST_SESSION_STATUSES: Session["status"][] = ["Complete", "Cancelled", "Unconfirmed"];
+const PAST_SESSION_STATUSES: Session["status"][] = [
+  "Complete",
+  "Cancelled",
+  "Unconfirmed",
+  "Student Did Not Attend",
+];
 
 async function TutorDashboardPage({
   profile,
