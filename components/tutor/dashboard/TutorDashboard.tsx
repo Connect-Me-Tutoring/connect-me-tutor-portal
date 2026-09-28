@@ -1,6 +1,8 @@
 "use client";
 import React, { useState, useEffect, use } from "react";
 import { Input } from "@/components/ui/input";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Radio } from "lucide-react";
 import ActiveSessionsTable from "../components/ActiveSessionsTable";
 import CurrentSessionsTable from "../components/CurrentSessionsTable";
 import CompletedSessionsTable from "../components/CompletedSessionsTable";
@@ -343,6 +345,16 @@ const TutorDashboard = () => {
       </div>{" "}
       <div className="p-8">
         <h1 className="text-3xl font-bold mb-6">Active Sessions</h1>
+
+        {TC.sessions.length > 0 && (
+          <Alert className="mb-4 border-green-200 bg-green-50 text-green-900">
+            <Radio className="h-4 w-4 animate-pulse text-green-600" />
+            <AlertDescription>
+              You have {TC.sessions.length} active session{TC.sessions.length > 1 ? "s" : ""} in
+              progress right now.
+            </AlertDescription>
+          </Alert>
+        )}
 
         <div className="flex space-x-6">
           <div className="flex-grow bg-white rounded-lg shadow p-6">
