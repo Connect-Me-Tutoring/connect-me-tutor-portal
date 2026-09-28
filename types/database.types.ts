@@ -1450,7 +1450,8 @@ export type Database = {
         | "Expired"
         | "Standalone"
         | "Unsubmitted"
-        | "Unconfirmed";
+        | "Unconfirmed"
+        | "Student Did Not Attend";
       timezone: "EST" | "CST" | "PST" | "MST" | "MT" | "Other";
     };
     CompositeTypes: {
@@ -1604,6 +1605,7 @@ export const Constants = {
         "Standalone",
         "Unsubmitted",
         "Unconfirmed",
+        "Student Did Not Attend",
       ],
       timezone: ["EST", "CST", "PST", "MST", "MT", "Other"],
     },
