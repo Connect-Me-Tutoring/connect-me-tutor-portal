@@ -6,6 +6,7 @@ import AnalyticsCard from "@/components/analytics/AnalyticsCard";
 import UserGrowthChart from "@/components/analytics/UserGrowthChart";
 import SessionCompletionChart from "@/components/analytics/SessionCompletionChart";
 import PairingLengthCard from "@/components/analytics/PairingLengthCard";
+import DropoffChart from "@/components/analytics/DropoffChart";
 
 const AnalyticsDashboard = () => {
   const [mapUrl, setMapUrl] = useState<string>("");
@@ -60,6 +61,12 @@ const AnalyticsDashboard = () => {
           subtitle="Completed vs. cancelled sessions over time"
         >
           <SessionCompletionChart />
+        </AnalyticsCard>
+        <AnalyticsCard
+          title="Tutor and Student Drop-off"
+          subtitle="People who stopped having completed sessions"
+        >
+          <DropoffChart />
         </AnalyticsCard>
         <AnalyticsCard title="Pairing Length" subtitle="Active tenure and completed spans">
           <PairingLengthCard />
