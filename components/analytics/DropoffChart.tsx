@@ -12,6 +12,7 @@ import {
 } from "recharts";
 import { Info } from "lucide-react";
 import toast from "react-hot-toast";
+import { z } from "zod";
 import { supabase } from "@/lib/supabase/client";
 import {
   Dialog,
@@ -37,6 +38,21 @@ import {
 } from "@/lib/utils/dropoff";
 
 type View = "count" | "rate";
+
+// database.types.ts types this RPC's returns as non-nullable with role: string, since
+// Postgres exposes no nullability for RETURNS TABLE columns. dropped/returned really are
+// null until is_complete, so the real shape is enforced here, where the data arrives.
+// .nullable() checks for null before coercing, so null stays null rather than becoming 0.
+const DropoffResponseSchema = z.array(
+  z.object({
+    role: z.enum(["Tutor", "Student"]),
+    month: z.string(),
+    active: z.coerce.number(),
+    dropped: z.coerce.number().nullable(),
+    returned: z.coerce.number().nullable(),
+    is_complete: z.boolean(),
+  }),
+);
 
 const LEFT_COLOR = "#0E5B94"; // connect-me-blue-3
 const RETURNED_COLOR = "#b4b2a9";
@@ -71,9 +87,15 @@ const DropoffChart = () => {
       const { data, error } = await supabase.rpc("get_dropoff_stats");
       if (requestId !== latestRequestIdRef.current) return;
       if (error) throw error;
-      // Generated types can't express that dropped/returned are null until a
-      // month is complete, so narrow to the real shape here.
-      const rows = (data ?? []) as unknown as DropoffRow[];
+      const parsed = DropoffResponseSchema.safeParse(data ?? []);
+      if (!parsed.success) {
+        // Shape changed under us: surface it rather than rendering NaN bars.
+        console.error("Unexpected get_dropoff_stats payload", parsed.error.issues);
+        toast.error("Unable to load drop-off stats");
+        setData([]);
+        return;
+      }
+      const rows: DropoffRow[] = parsed.data;
       setData(rows);
       if (rows.length && !rangeInitializedRef.current) {
         setRangeStart(monthKey(rows.reduce((a, r) => (r.month < a ? r.month : a), rows[0].month)));
@@ -312,7 +334,7 @@ const DropoffChart = () => {
         </div>
       ) : (
         <div className="rounded-lg bg-gray-100 px-4 py-3 mt-3 text-sm text-gray-600">
-          No complete months in this range. Pick a range that includes months at least 6 weeks old.
+          No complete months in this range. Pick a range that includes a month that ended at least 6 weeks ago.
         </div>
       )}
       {pending.length > 0 && (
