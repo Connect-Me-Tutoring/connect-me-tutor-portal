@@ -334,7 +334,8 @@ const DropoffChart = () => {
         </div>
       ) : (
         <div className="rounded-lg bg-gray-100 px-4 py-3 mt-3 text-sm text-gray-600">
-          No complete months in this range. Pick a range that includes a month that ended at least 6 weeks ago.
+          No complete months in this range. Pick a range that includes a month that ended at least 6
+          weeks ago.
         </div>
       )}
       {pending.length > 0 && (
