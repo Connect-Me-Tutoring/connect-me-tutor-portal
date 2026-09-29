@@ -11,7 +11,7 @@ import {
 } from "recharts";
 import { supabase } from "@/lib/supabase/client";
 import toast from "react-hot-toast";
-import { z } from "zod";
+import type { Database } from "@/types/database.types";
 
 interface PairingLengthStat {
   population: "active" | "ended" | "all";
@@ -30,31 +30,11 @@ interface PairingRow {
   started_on: string;
 }
 
-// database.types.ts types this RPC's returns as non-nullable: Postgres does not expose
-// nullability for a function's RETURNS TABLE columns, so the generator has nothing to
-// read and marks every function return non-nullable, while the table types are accurate.
-// gen:types overwrites any hand edit to that file, so the real shape is enforced here,
-// at the point the data arrives.
-//
-// The nulls are real. captured_on is the start of a week; a week with no capture comes
-// back with every other field null, and a week captured while a population had no
-// pairings comes back with pairs 0 and null averages.
-const nullableNumber = z
-  .union([z.number(), z.string()])
-  .nullable()
-  .transform((value) => (value === null ? null : Number(value)));
-
-const HistoryPointSchema = z.object({
-  captured_on: z.string(),
-  pairs: nullableNumber,
-  avg_days: nullableNumber,
-  median_days: nullableNumber,
-  single_session_pairs: nullableNumber,
-});
-
-const HistoryResponseSchema = z.array(HistoryPointSchema);
-
-type HistoryPoint = z.infer<typeof HistoryPointSchema>;
+// One row per captured week (captured_on is the week's Monday). The RPC filters out
+// NULL columns server-side, so the generated non-null types are accurate. Weeks with
+// no usable capture are simply absent and are filled back in by fillMissingWeeks.
+type HistoryPoint =
+  Database["public"]["Functions"]["get_pairing_length_history"]["Returns"][number];
 
 type Population = "active" | "ended" | "all";
 type HistoryMetric = "avg" | "median";
@@ -69,6 +49,36 @@ const shortDate = (isoDate: string) =>
     month: "short",
     day: "numeric",
   });
+
+const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
+
+// Date-only strings are handled as UTC midnights so DST never shifts a step.
+const isoToUtc = (isoDate: string) => Date.parse(`${isoDate}T00:00:00Z`);
+const utcToIso = (ms: number) => new Date(ms).toISOString().slice(0, 10);
+
+// Monday of the current week, matching Postgres date_trunc('week', ...).
+const currentWeekStartUtc = () => {
+  const now = new Date();
+  const today = Date.UTC(now.getFullYear(), now.getMonth(), now.getDate());
+  const daysSinceMonday = (new Date(today).getUTCDay() + 6) % 7;
+  return today - daysSinceMonday * 24 * 60 * 60 * 1000;
+};
+
+// One entry per week from the first capture through the current week; null where
+// the RPC returned nothing, which the chart draws as a break in the line.
+const fillMissingWeeks = (points: HistoryPoint[]) => {
+  if (points.length === 0) return [];
+  const byWeek = new Map(points.map((p) => [p.captured_on, p]));
+  const first = isoToUtc(points[0].captured_on);
+  const last = Math.max(isoToUtc(points[points.length - 1].captured_on), currentWeekStartUtc());
+
+  const weeks: { week: string; point: HistoryPoint | null }[] = [];
+  for (let ms = first; ms <= last; ms += WEEK_MS) {
+    const week = utcToIso(ms);
+    weeks.push({ week, point: byWeek.get(week) ?? null });
+  }
+  return weeks;
+};
 
 const PairingLengthCard = () => {
   const [stats, setStats] = useState<PairingLengthStat[]>([]);
@@ -116,17 +126,7 @@ const PairingLengthCard = () => {
       });
       if (requestId !== historyRequestIdRef.current) return;
       if (error) throw error;
-
-      const parsed = HistoryResponseSchema.safeParse(data ?? []);
-      if (!parsed.success) {
-        // Shape changed under us: surface it rather than rendering wrong numbers.
-        console.error("Unexpected get_pairing_length_history payload", parsed.error.issues);
-        toast.error("Unable to load pairing length history");
-        setHistory([]);
-        return;
-      }
-
-      setHistory(parsed.data);
+      setHistory(data ?? []);
     } catch (error) {
       if (requestId !== historyRequestIdRef.current) return;
       console.error(error);
@@ -210,16 +210,10 @@ const PairingLengthCard = () => {
 
   const chartData = useMemo(
     () =>
-      history.map((point) => {
-        const raw = historyMetric === "avg" ? point.avg_days : point.median_days;
-        return {
-          label: shortDate(point.captured_on),
-          days: raw,
-          pairs: point.pairs,
-          // No snapshot at all, as opposed to a snapshot that found no pairings.
-          missing: point.pairs === null,
-        };
-      }),
+      fillMissingWeeks(history).map(({ week, point }) => ({
+        label: shortDate(week),
+        days: point ? (historyMetric === "avg" ? point.avg_days : point.median_days) : null,
+      })),
     [history, historyMetric],
   );
 
@@ -318,16 +312,12 @@ const PairingLengthCard = () => {
                   <XAxis dataKey="label" tick={{ fontSize: 11 }} />
                   <YAxis tick={{ fontSize: 11 }} width={44} />
                   <Tooltip
-                    formatter={(value, _name, item) => {
-                      const point = item?.payload as { missing?: boolean } | undefined;
-                      if (point?.missing) return ["No capture that week", "Length"];
-                      return [
-                        typeof value === "number"
-                          ? `${value} days (${months(value)} mo)`
-                          : "No pairings that week",
-                        "Length",
-                      ];
-                    }}
+                    formatter={(value) => [
+                      typeof value === "number"
+                        ? `${value} days (${months(value)} mo)`
+                        : "No snapshot that week",
+                      "Length",
+                    ]}
                   />
                   <Line
                     type="monotone"
