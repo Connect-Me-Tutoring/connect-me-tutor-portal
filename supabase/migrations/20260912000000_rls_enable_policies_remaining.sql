@@ -173,7 +173,7 @@ create policy "messages_insert_participant"
     and (
       (select private.is_admin())
       or (
-        room_id <> all ((select private.announcement_room_ids()))
+        room_id <> all ((select private.announcement_room_ids())::uuid[])
         and room_id = any ((select private.chat_room_ids())::uuid[])
       )
     )
@@ -187,7 +187,7 @@ create policy "messages_update_own"
     and (
       (select private.is_admin())
       or (
-        room_id <> all ((select private.announcement_room_ids()))
+        room_id <> all ((select private.announcement_room_ids())::uuid[])
         and room_id = any ((select private.chat_room_ids())::uuid[])
       )
     )
