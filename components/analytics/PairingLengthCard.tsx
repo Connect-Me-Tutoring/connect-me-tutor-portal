@@ -430,8 +430,8 @@ const PairingLengthCard = () => {
 
       <div className="flex items-center justify-between flex-wrap gap-2">
         <p className="text-xs text-slate-400">
-          Showing {rows.length.toLocaleString()} {search ? "matching" : "longest"}{" "}
-          {populationLabel}pairings
+          Showing {rows.length.toLocaleString()} {search ? "matching" : "longest"} {populationLabel}
+          pairings
           {hasMore ? ", more available" : ""}
         </p>
         {hasMore && (
