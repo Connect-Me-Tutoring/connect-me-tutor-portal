@@ -32,15 +32,36 @@ export async function GET(req: NextRequest) {
 
     const rows = data ?? 0;
     const captured = rows > 0;
-    // 1 = Monday. A write on any other day means the week's earlier run(s) failed
-    // and this one recovered the point, which is worth seeing in PostHog.
+    // 1 = Monday, in UTC to match the database's current_date. A write on any other
+    // day means the week's earlier run(s) failed and this one recovered the point,
+    // which is worth seeing in PostHog.
     const dayOfWeek = new Date().getUTCDay();
-    const recoveredMissedRun = captured && dayOfWeek !== 1;
+
+    // Exception: the very first capture after deploy. It lands on whatever day the
+    // deploy happened, and that is not a recovery. It is the first point in the series.
+    let isFirstSnapshot = false;
+    if (captured) {
+      const { count, error: countError } = await supabase
+        .from("pairing_length_snapshots")
+        .select("captured_on", { count: "exact", head: true });
+      // Telemetry only: the snapshot is already written, so a failed count must not
+      // turn a successful run into a 500. Fall back to the plain day-of-week rule.
+      if (countError) {
+        await logError(countError, {}, "cron_pairing_length_snapshot_count_error");
+      } else {
+        // If the table holds no more rows than this run just wrote, this run is the
+        // whole series.
+        isFirstSnapshot = (count ?? 0) <= rows;
+      }
+    }
+
+    const recoveredMissedRun = captured && dayOfWeek !== 1 && !isFirstSnapshot;
 
     await logEvent("pairing_length_snapshot_run", {
       rows,
       captured,
       recoveredMissedRun,
+      isFirstSnapshot,
       dayOfWeek,
     });
 
