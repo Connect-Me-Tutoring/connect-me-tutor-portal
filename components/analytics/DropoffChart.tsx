@@ -59,6 +59,9 @@ const DropoffChart = () => {
   const [rangeError, setRangeError] = useState("");
 
   const latestRequestIdRef = useRef(0);
+  // Default the range to the full span once, on the first load with data. Refresh
+  // refetches through the same path and must not discard the admin's From/To pick.
+  const rangeInitializedRef = useRef(false);
 
   const fetchStats = useCallback(async (isManualRefresh = false) => {
     const requestId = ++latestRequestIdRef.current;
@@ -72,9 +75,10 @@ const DropoffChart = () => {
       // month is complete, so narrow to the real shape here.
       const rows = (data ?? []) as unknown as DropoffRow[];
       setData(rows);
-      if (rows.length) {
+      if (rows.length && !rangeInitializedRef.current) {
         setRangeStart(monthKey(rows.reduce((a, r) => (r.month < a ? r.month : a), rows[0].month)));
         setRangeEnd(monthKey(rows.reduce((a, r) => (r.month > a ? r.month : a), rows[0].month)));
+        rangeInitializedRef.current = true;
       }
       setRangeError("");
     } catch (error) {
