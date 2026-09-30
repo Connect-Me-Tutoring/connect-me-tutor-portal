@@ -227,6 +227,16 @@ otp_expiry = 3600
 # subject = "You have been invited"
 # content_path = "./supabase/templates/invite.html"
 
+# signInWithOtp() sends magic_link to existing users and confirmation to new
+# ones; the OTP pages expect a 6-digit code, so both show {{ .Token }}.
+[auth.email.template.magic_link]
+subject = "Your Connect Me login code"
+content_path = "./supabase/templates/otp_code.html"
+
+[auth.email.template.confirmation]
+subject = "Your Connect Me login code"
+content_path = "./supabase/templates/otp_code.html"
+
 # Uncomment to customize notification email template
 # [auth.email.notification.password_changed]
 # enabled = true

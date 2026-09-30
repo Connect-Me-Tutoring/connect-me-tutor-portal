@@ -44,6 +44,9 @@ import {
   Sparkles,
   Flag,
   GraduationCap,
+  Ticket,
+  ChevronDown,
+  MoreHorizontal,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -70,6 +73,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger } from "../ui/select";
 import { Profile } from "@/types";
 import { getUserProfiles, switchProfile } from "@/lib/actions/profile/server.actions";
 import { isTutorNavigationRestricted } from "@/lib/orientation/navigation";
+import ReportIssueDialog from "@/components/dashboard/ReportIssueDialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 export default function DashboardLayout({
   children,
@@ -87,6 +98,7 @@ export default function DashboardLayout({
 
   const [loading, setLoading] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [reportIssueOpen, setReportIssueOpen] = useState(false);
   // const [profile, setProfile] = useState<{
   //   firstName: string;
   //   lastName: string;
@@ -211,91 +223,151 @@ export default function DashboardLayout({
         },
       ];
 
-  const adminSidebarItems = [
+  type SidebarItem = { title: string; href: string; icon: React.ReactNode };
+
+  const adminTopItems: SidebarItem[] = [
     {
       title: "Dashboard",
       href: "/dashboard",
       icon: <LayoutDashboardIcon className="h-5 w-5" />,
     },
-    ...(orientationEnabled
-      ? [
-          {
-            title: "Tutor Orientation",
-            href: "/orientation",
-            icon: <GraduationCap className="h-5 w-5" />,
-          },
-        ]
-      : []),
+  ];
 
-    // {
-    //   title: "Notifications",
-    //   href: "/dashboard/notifications",
-    //   icon: <Bell className="h-5 w-5" />,
-    // },
+  const adminSidebarGroups: { title: string; items: SidebarItem[] }[] = [
     {
-      title: "Schedule",
-      href: "/dashboard/schedule",
-      icon: <Calendar className="h-5 w-5" />,
+      title: "Scheduling",
+      items: [
+        { title: "Schedule", href: "/dashboard/schedule", icon: <Calendar className="h-5 w-5" /> },
+        {
+          title: "Enrollments",
+          href: "/dashboard/enrollments",
+          icon: <BookOpenText className="h-5 w-5" />,
+        },
+        {
+          title: "Meeting Schedule",
+          href: "/dashboard/hq-schedule",
+          icon: <CalendarRange className="h-5 w-5" />,
+        },
+        {
+          title: "Hours Manager",
+          href: "/dashboard/hours-manager",
+          icon: <Clock className="h-5 w-5" />,
+        },
+      ],
     },
     {
-      title: "Enrollments",
-      href: "/dashboard/enrollments",
-      icon: <BookOpenText className="h-5 w-5" />,
+      title: "People",
+      items: [
+        { title: "All Tutors", href: "/dashboard/all-tutors", icon: <Users className="h-5 w-5" /> },
+        ...(orientationEnabled
+          ? [
+              {
+                title: "Tutor Orientation",
+                href: "/orientation",
+                icon: <GraduationCap className="h-5 w-5" />,
+              },
+            ]
+          : []),
+        {
+          title: "All Students",
+          href: "/dashboard/all-students",
+          icon: <Users className="h-5 w-5" />,
+        },
+        {
+          title: "Pairing Queue",
+          href: "/dashboard/pairing-que",
+          icon: <ListOrdered className="h-5 w-5" />,
+        },
+      ],
     },
     {
-      title: "Meeting Schedule",
-      href: "/dashboard/hq-schedule",
-      icon: <CalendarRange className="h-5 w-5" />,
+      title: "Communication",
+      items: [
+        {
+          title: "Email Manager",
+          href: "/dashboard/email-manager",
+          icon: <Mail className="h-5 w-5" />,
+        },
+        {
+          title: "Announcements",
+          href: "/dashboard/announcements",
+          icon: <BellPlus className="h-5 w-5" />,
+        },
+        {
+          title: "Conversations",
+          href: "/dashboard/admin-conversations",
+          icon: <Book className="h-5 w-5" />,
+        },
+        { title: "Tickets", href: "/dashboard/tickets", icon: <Ticket className="h-5 w-5" /> },
+      ],
     },
     {
-      title: "Hours Manager",
-      href: "/dashboard/hours-manager",
-      icon: <Clock className="h-5 w-5" />,
+      title: "Insights",
+      items: [
+        {
+          title: "Analytics",
+          href: "/dashboard/data-analytics",
+          icon: <ChartColumn className="h-5 w-5" />,
+        },
+      ],
     },
-    {
-      title: "All Tutors",
-      href: "/dashboard/all-tutors",
-      icon: <Users className="h-5 w-5" />,
-    },
-    {
-      title: "All Students",
-      href: "/dashboard/all-students",
-      icon: <Users className="h-5 w-5" />,
-    },
-    {
-      title: "Email Manager",
-      href: "/dashboard/email-manager",
-      icon: <Mail className="h-5 w-5" />,
-    },
-    {
-      title: "Pairing Queue",
-      href: "/dashboard/pairing-que",
-      icon: <ListOrdered className="h-5 w-5" />,
-    },
-    {
-      title: "Announcements",
-      href: "/dashboard/announcements",
-      icon: <BellPlus className="h-5 w-5" />,
-    },
-    {
-      title: "Conversations",
-      href: "/dashboard/admin-conversations",
-      icon: <Book className="h-5 w-5" />,
-    },
-    {
-      title: "Analytics",
-      href: "/dashboard/data-analytics",
-      icon: <ChartColumn className="h-5 w-5" />,
-    },
-    // {
-    //   title: "Migrate Profiles",
-    //   href: "/dashboard/migrate",
-    //   icon: <CirclePlus className="h-5 w-5" />,
-    // },
   ];
 
   const [isOpen, setIsOpen] = useState(true);
   const toggleSidebar = () => setIsOpen(!isOpen);
+
+  // A group starts expanded when it contains the current page; after that the
+  // admin's own toggles win.
+  const activeAdminGroup = adminSidebarGroups.find((group) =>
+    group.items.some((item) => item.href === pathname),
+  )?.title;
+  const [openAdminGroups, setOpenAdminGroups] = useState<Record<string, boolean>>({});
+  const isAdminGroupOpen = (title: string) => openAdminGroups[title] ?? title === activeAdminGroup;
+  const toggleAdminGroup = (title: string) =>
+    setOpenAdminGroups((current) => ({ ...current, [title]: !isAdminGroupOpen(title) }));
+
+  const renderMobileNavItem = (item: SidebarItem) => (
+    <Link
+      key={item.href}
+      href={item.href}
+      onClick={() => setMobileOpen(false)}
+      className={cn(
+        "flex items-center gap-3 p-2 rounded-md hover:bg-muted",
+        pathname === item.href && "bg-blue-400/10 text-blue-500",
+      )}
+    >
+      {item.icon}
+      <span>{item.title}</span>
+    </Link>
+  );
+
+  const renderNavItem = (item: SidebarItem) => (
+    <Tooltip key={item.href}>
+      <TooltipTrigger asChild>
+        <Button
+          asChild
+          variant="ghost"
+          className={cn(
+            "w-full justify-start",
+            pathname === item.href
+              ? "bg-blue-400/10 text-blue-500"
+              : "text-primary-dark hover:bg-muted hover:text-foreground",
+            !isOpen && "justify-center px-2",
+          )}
+        >
+          <Link href={item.href}>
+            {item.icon}
+            {isOpen && <span className="ml-3">{item.title}</span>}
+          </Link>
+        </Button>
+      </TooltipTrigger>
+      {!isOpen && (
+        <TooltipContent side="right">
+          <p>{item.title}</p>
+        </TooltipContent>
+      )}
+    </Tooltip>
+  );
 
   const handleLogout = async () => {
     await logoutUser();
@@ -453,7 +525,7 @@ export default function DashboardLayout({
 
             {/* Navigation */}
             {!isSettingsPage && profile && (
-              <nav className="flex-grow space-y-1 px-3">
+              <nav className="flex-grow space-y-1 px-3 overflow-y-auto">
                 {profile.role === "Student" && (
                   <>
                     {studentSidebarItems.map((item) => (
@@ -522,125 +594,99 @@ export default function DashboardLayout({
                 {/* Admin Role Navigation */}
                 {profile.role === "Admin" && (
                   <>
-                    {adminSidebarItems.map((item) => (
-                      <Tooltip key={item.href}>
-                        <TooltipTrigger asChild>
-                          <Button
-                            asChild
-                            variant="ghost"
-                            className={cn(
-                              "w-full justify-start",
-                              pathname === item.href
-                                ? "bg-blue-400/10 text-blue-500"
-                                : "text-primary-dark hover:bg-muted hover:text-foreground",
-                              !isOpen && "justify-center px-2",
-                            )}
+                    {adminTopItems.map(renderNavItem)}
+                    {adminSidebarGroups.map((group) =>
+                      isOpen ? (
+                        <div key={group.title} className="pt-2">
+                          <button
+                            type="button"
+                            onClick={() => toggleAdminGroup(group.title)}
+                            aria-expanded={isAdminGroupOpen(group.title)}
+                            className="flex w-full items-center justify-between rounded-md px-4 py-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground hover:text-foreground"
                           >
-                            <Link href={item.href}>
-                              {item.icon}
-                              {isOpen && <span className="ml-3">{item.title}</span>}
-                            </Link>
-                          </Button>
-                        </TooltipTrigger>
-                        {!isOpen && (
-                          <TooltipContent side="right">
-                            <p>{item.title}</p>
-                          </TooltipContent>
-                        )}
-                      </Tooltip>
-                    ))}
+                            {group.title}
+                            <ChevronDown
+                              className={cn(
+                                "h-4 w-4 transition-transform",
+                                !isAdminGroupOpen(group.title) && "-rotate-90",
+                              )}
+                            />
+                          </button>
+                          {isAdminGroupOpen(group.title) && (
+                            <div className="mt-1 space-y-1">{group.items.map(renderNavItem)}</div>
+                          )}
+                        </div>
+                      ) : (
+                        <div key={group.title} className="space-y-1 border-t pt-1">
+                          {group.items.map(renderNavItem)}
+                        </div>
+                      ),
+                    )}
                   </>
                 )}
               </nav>
             )}
 
-            {/* Settings and Logout */}
-            <div className="px-3 space-y-2 mb-2">
-              <Tooltip>
-                <TooltipTrigger asChild>
+            {/* Account menu: Report an Issue, Settings, Manual, Logout */}
+            <div className="px-3 mb-2 border-t pt-2">
+              <DropdownMenu modal={false}>
+                <DropdownMenuTrigger asChild>
                   <Button
-                    asChild
                     variant="ghost"
-                    className={cn("w-full justify-start", !isOpen && "justify-center px-2")}
+                    className={cn(
+                      "w-full h-auto py-2 justify-start",
+                      !isOpen && "justify-center px-2",
+                    )}
+                    aria-label="Account menu"
                   >
-                    <a
-                      href="https://docs.google.com/forms/d/e/1FAIpQLSdWtwkfILDsd6o6skBhUoeEa0SprHxk4-B1ZjRpa3zPPiwTzw/viewform?usp=sharing"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                    >
-                      <Flag className="h-5 w-5" />
-                      {isOpen && <span className="ml-3">Report an Issue</span>}
-                    </a>
+                    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-blue-400/10 text-sm font-semibold text-blue-500">
+                      {profile?.firstName?.[0]?.toUpperCase() ?? <User className="h-4 w-4" />}
+                    </span>
+                    {isOpen && (
+                      <>
+                        <span className="ml-3 flex min-w-0 flex-col items-start text-left">
+                          <span className="truncate text-sm font-medium">
+                            {profile ? `${profile.firstName} ${profile.lastName}` : "Account"}
+                          </span>
+                          {profile && (
+                            <span className="text-xs text-muted-foreground">{profile.role}</span>
+                          )}
+                        </span>
+                        <MoreHorizontal className="ml-auto h-4 w-4 text-muted-foreground" />
+                      </>
+                    )}
                   </Button>
-                </TooltipTrigger>
-                {!isOpen && (
-                  <TooltipContent side="right">
-                    <p>Report an Issue</p>
-                  </TooltipContent>
-                )}
-              </Tooltip>
-
-              {!isSettingsPage && !orientationNavigationRestricted && (
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      asChild
-                      variant="ghost"
-                      className={cn("w-full justify-start", !isOpen && "justify-center px-2")}
-                    >
+                </DropdownMenuTrigger>
+                <DropdownMenuContent side={isOpen ? "top" : "right"} align="start" className="w-56">
+                  <DropdownMenuItem onSelect={() => setReportIssueOpen(true)}>
+                    <Flag className="mr-2 h-4 w-4" />
+                    Report an Issue
+                  </DropdownMenuItem>
+                  {!isSettingsPage && !orientationNavigationRestricted && (
+                    <DropdownMenuItem asChild>
                       <Link href="/dashboard/settings">
-                        <Settings className="h-5 w-5" />
-                        {isOpen && <span className="ml-3">Settings</span>}
+                        <Settings className="mr-2 h-4 w-4" />
+                        Settings
                       </Link>
-                    </Button>
-                  </TooltipTrigger>
-                  {!isOpen && (
-                    <TooltipContent side="right">
-                      <p>Settings</p>
-                    </TooltipContent>
+                    </DropdownMenuItem>
                   )}
-                </Tooltip>
-              )}
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    asChild
-                    variant="ghost"
-                    className={cn("w-full justify-start", !isOpen && "justify-center px-2")}
-                  >
+                  <DropdownMenuItem asChild>
                     <a
                       href="https://docs.google.com/document/d/1Tzc0JA90Ghy76UdBPCRFrUcT27jOxTvqh4yxq1_xVXY/edit?tab=t.0#heading=h.kk1966kbedef"
                       target="_blank"
                       rel="noopener noreferrer"
                     >
-                      <HelpCircleIcon className="h-5 w-5" />
-                      {isOpen && <span className="ml-3">Tutor Portal Manual</span>}
+                      <HelpCircleIcon className="mr-2 h-4 w-4" />
+                      Tutor Portal Manual
                     </a>
-                  </Button>
-                </TooltipTrigger>
-                {!isOpen && (
-                  <TooltipContent side="right">
-                    <p>Tutor Portal Manual</p>
-                  </TooltipContent>
-                )}
-              </Tooltip>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    className={cn("w-full justify-start", !isOpen && "justify-center px-2")}
-                    onClick={handleLogout}
-                  >
-                    <LogOut className="h-5 w-5" />
-                    {isOpen && <span className="ml-3">Logout</span>}
-                  </Button>
-                </TooltipTrigger>
-                {!isOpen && (
-                  <TooltipContent side="right">
-                    <p>Logout</p>
-                  </TooltipContent>
-                )}
-              </Tooltip>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onSelect={handleLogout}>
+                    <LogOut className="mr-2 h-4 w-4" />
+                    Logout
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           </div>
         </aside>
@@ -648,7 +694,7 @@ export default function DashboardLayout({
           <div className="fixed inset-0 z-50 flex sm:hidden">
             <div className="fixed inset-0 bg-black/50" onClick={() => setMobileOpen(false)} />
 
-            <div className="relative w-64 bg-card h-full p-6 z-50">
+            <div className="relative w-64 bg-card h-full p-6 z-50 overflow-y-auto">
               <Button
                 onClick={() => setMobileOpen(false)}
                 variant="ghost"
@@ -660,32 +706,32 @@ export default function DashboardLayout({
 
               <nav className="space-y-2">
                 {profile &&
-                  (profile.role === "Student"
-                    ? studentSidebarItems
-                    : profile.role === "Tutor"
-                      ? tutorSidebarItems
-                      : adminSidebarItems
-                  ).map((item) => (
-                    <Link
-                      key={item.href}
-                      href={item.href}
-                      onClick={() => setMobileOpen(false)}
-                      className="flex items-center gap-3 p-2 rounded:bg-muted"
-                    >
-                      {item.icon}
-                      <span>{item.title}</span>
-                    </Link>
-                  ))}
-                <a
-                  href="https://docs.google.com/forms/d/e/1FAIpQLSdWtwkfILDsd6o6skBhUoeEa0SprHxk4-B1ZjRpa3zPPiwTzw/viewform?usp=sharing"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  onClick={() => setMobileOpen(false)}
-                  className="flex items-center gap-3 p-2 rounded-md hover:bg-muted text-primary-dark"
+                  (profile.role === "Admin"
+                    ? [
+                        ...adminTopItems.map(renderMobileNavItem),
+                        ...adminSidebarGroups.map((group) => (
+                          <div key={group.title} className="space-y-2 pt-2">
+                            <p className="px-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                              {group.title}
+                            </p>
+                            {group.items.map(renderMobileNavItem)}
+                          </div>
+                        )),
+                      ]
+                    : (profile.role === "Student" ? studentSidebarItems : tutorSidebarItems).map(
+                        renderMobileNavItem,
+                      ))}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMobileOpen(false);
+                    setReportIssueOpen(true);
+                  }}
+                  className="flex w-full items-center gap-3 p-2 rounded-md hover:bg-muted text-primary-dark"
                 >
                   <Flag className="h-5 w-5" />
                   <span>Report an Issue</span>
-                </a>
+                </button>
                 {!orientationNavigationRestricted && (
                   <Link
                     href="/dashboard/settings"
@@ -703,6 +749,7 @@ export default function DashboardLayout({
             </div>
           </div>
         )}
+        <ReportIssueDialog open={reportIssueOpen} onOpenChange={setReportIssueOpen} />
       </TooltipProvider>
 
       <div className="flex-1 overflow-auto">

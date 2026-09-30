@@ -1,0 +1,10 @@
+<!-- Local-dev auth email. Prod's templates live in the Supabase dashboard;
+     this mirrors them by showing the 6-digit code the OTP pages ask for. -->
+<div style="font-family: sans-serif; max-width: 480px; margin: 0 auto; padding: 24px; color: #111827">
+  <h2 style="margin: 0 0 16px">Your Connect Me login code</h2>
+  <p style="margin: 0 0 16px">Enter this code in the portal to sign in:</p>
+  <p style="font-size: 32px; font-weight: bold; letter-spacing: 8px; margin: 0 0 16px">{{ .Token }}</p>
+  <p style="margin: 0; font-size: 12px; color: #6b7280">
+    If you didn't request this code, you can ignore this email.
+  </p>
+</div>
