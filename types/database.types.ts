@@ -1096,6 +1096,17 @@ export type Database = {
           participants: Json;
         }[];
       };
+      get_dropoff_stats: {
+        Args: { p_as_of?: string };
+        Returns: {
+          active: number;
+          dropped: number;
+          is_complete: boolean;
+          month: string;
+          returned: number;
+          role: string;
+        }[];
+      };
       get_enrollment_with_profiles: {
         Args: { enrollment_uuid: string };
         Returns: {
