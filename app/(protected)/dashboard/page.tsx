@@ -1,4 +1,4 @@
-import AdminDashboard from "@/components/admin/DashboardContent";
+import AdminHome from "@/components/admin/AdminHome";
 // import Dashboard from "@/components/dashboard/dashboard";
 import StudentDashboard from "@/components/student/StudentDashboard";
 import TutorDashboard from "@/components/tutor/dashboard";
@@ -133,7 +133,11 @@ export default async function DashboardPage() {
       {profile.role === "Tutor" && (
         <TutorDashboardPage key={profile.id} profile={profile} meetings={meetings} />
       )}
-      {profile.role === "Admin" && <AdminDashboard />}
+      {profile.role === "Admin" && (
+        <Suspense fallback={<SkeletonTable />}>
+          <AdminHome />
+        </Suspense>
+      )}
     </>
   );
 }

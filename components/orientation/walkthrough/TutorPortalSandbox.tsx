@@ -14,7 +14,7 @@ import {
   Edit,
   Ellipsis,
   FileText,
-  Flag,
+  LifeBuoy,
   GraduationCap,
   HelpCircle,
   Languages,
@@ -486,16 +486,16 @@ function PortalSidebar({
       </nav>
 
       <div className="space-y-1 px-3 pb-3">
-        <SidebarUtility icon={Flag} label="Report an Issue" />
         <SidebarUtility icon={Settings} label="Settings" />
         <SidebarUtility icon={HelpCircle} label="Tutor Portal Manual" />
+        <SidebarUtility icon={LifeBuoy} label="Get Help" />
         <SidebarUtility icon={LogOut} label="Logout" />
       </div>
     </aside>
   );
 }
 
-function SidebarUtility({ icon: Icon, label }: { icon: typeof Flag; label: string }) {
+function SidebarUtility({ icon: Icon, label }: { icon: typeof LifeBuoy; label: string }) {
   return (
     <Button className="w-full justify-start text-primary-dark" variant="ghost">
       <Icon aria-hidden="true" className="h-5 w-5" />

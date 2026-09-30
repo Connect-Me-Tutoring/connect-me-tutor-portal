@@ -12,6 +12,7 @@ export enum Table {
   UserAvailabilities = "User_Availabilities",
   UserNotificationSettings = "user_notification_settings",
   PairingRequests = "pairing_requests",
+  Tickets = "tickets",
 }
 
 // export enum Table {
