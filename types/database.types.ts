@@ -798,6 +798,56 @@ export type Database = {
           },
         ];
       };
+      tickets: {
+        Row: {
+          category: string;
+          contact_email: string | null;
+          created_at: string;
+          description: string;
+          id: string;
+          page_url: string | null;
+          profile_id: string | null;
+          status: string;
+          subject: string;
+          urgency: string;
+          user_id: string;
+        };
+        Insert: {
+          category: string;
+          contact_email?: string | null;
+          created_at?: string;
+          description: string;
+          id?: string;
+          page_url?: string | null;
+          profile_id?: string | null;
+          status?: string;
+          subject: string;
+          urgency?: string;
+          user_id?: string;
+        };
+        Update: {
+          category?: string;
+          contact_email?: string | null;
+          created_at?: string;
+          description?: string;
+          id?: string;
+          page_url?: string | null;
+          profile_id?: string | null;
+          status?: string;
+          subject?: string;
+          urgency?: string;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "tickets_profile_id_fkey";
+            columns: ["profile_id"];
+            isOneToOne: false;
+            referencedRelation: "Profiles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       User_Availabilities: {
         Row: {
           created_at: string;
@@ -1094,6 +1144,17 @@ export type Database = {
         Returns: {
           conversation_id: string;
           participants: Json;
+        }[];
+      };
+      get_dropoff_stats: {
+        Args: { p_as_of?: string };
+        Returns: {
+          active: number;
+          dropped: number;
+          is_complete: boolean;
+          month: string;
+          returned: number;
+          role: string;
         }[];
       };
       get_enrollment_with_profiles: {
