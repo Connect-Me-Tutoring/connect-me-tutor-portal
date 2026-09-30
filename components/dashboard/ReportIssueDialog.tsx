@@ -113,7 +113,7 @@ export default function ReportIssueDialog({ open, onOpenChange }: ReportIssueDia
         ) : (
           <>
             <DialogHeader>
-              <DialogTitle>Report an Issue</DialogTitle>
+              <DialogTitle>Contact Support</DialogTitle>
               <DialogDescription>
                 Answer a few quick questions and we&apos;ll open a support ticket for you.
               </DialogDescription>

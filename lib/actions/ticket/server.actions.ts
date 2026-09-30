@@ -22,7 +22,7 @@ import {
 export type SubmitTicketResult = { ok: true; ticketId: string } | { ok: false; error: string };
 
 /**
- * Stores a support ticket from the in-app "Report an Issue" form and notifies
+ * Stores a support ticket from the in-app "Get Help" form and notifies
  * the submitter with operations cc'd. The ticket is saved even if the email fails.
  */
 export async function submitTicket(input: TicketFormValues): Promise<SubmitTicketResult> {

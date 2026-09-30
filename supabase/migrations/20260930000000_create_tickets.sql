@@ -1,4 +1,4 @@
--- Support tickets submitted from the in-app "Report an Issue" form
+-- Support tickets submitted from the in-app "Get Help" form
 -- (components/dashboard/ReportIssueDialog.tsx). Serious incidents still go
 -- through the external Google Form linked from that dialog.
 

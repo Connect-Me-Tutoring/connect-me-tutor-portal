@@ -42,9 +42,9 @@ import {
   FileSpreadsheet,
   FileText,
   Sparkles,
-  Flag,
   GraduationCap,
   Ticket,
+  LifeBuoy,
   ChevronDown,
   MoreHorizontal,
 } from "lucide-react";
@@ -627,7 +627,7 @@ export default function DashboardLayout({
               </nav>
             )}
 
-            {/* Account menu: Report an Issue, Settings, Manual, Logout */}
+            {/* Account menu: Settings, then help (Manual, Get Help), then Logout */}
             <div className="px-3 mb-2 border-t pt-2">
               <DropdownMenu modal={false}>
                 <DropdownMenuTrigger asChild>
@@ -658,27 +658,33 @@ export default function DashboardLayout({
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent side={isOpen ? "top" : "right"} align="start" className="w-56">
-                  <DropdownMenuItem onSelect={() => setReportIssueOpen(true)}>
-                    <Flag className="mr-2 h-4 w-4" />
-                    Report an Issue
-                  </DropdownMenuItem>
                   {!isSettingsPage && !orientationNavigationRestricted && (
+                    <>
+                      <DropdownMenuItem asChild>
+                        <Link href="/dashboard/settings">
+                          <Settings className="mr-2 h-4 w-4" />
+                          Settings
+                        </Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                    </>
+                  )}
+                  {/* The manual is written for tutors; students shouldn't see it. */}
+                  {profile && profile.role !== "Student" && (
                     <DropdownMenuItem asChild>
-                      <Link href="/dashboard/settings">
-                        <Settings className="mr-2 h-4 w-4" />
-                        Settings
-                      </Link>
+                      <a
+                        href="https://docs.google.com/document/d/1Tzc0JA90Ghy76UdBPCRFrUcT27jOxTvqh4yxq1_xVXY/edit?tab=t.0#heading=h.kk1966kbedef"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        <HelpCircleIcon className="mr-2 h-4 w-4" />
+                        Tutor Portal Manual
+                      </a>
                     </DropdownMenuItem>
                   )}
-                  <DropdownMenuItem asChild>
-                    <a
-                      href="https://docs.google.com/document/d/1Tzc0JA90Ghy76UdBPCRFrUcT27jOxTvqh4yxq1_xVXY/edit?tab=t.0#heading=h.kk1966kbedef"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                    >
-                      <HelpCircleIcon className="mr-2 h-4 w-4" />
-                      Tutor Portal Manual
-                    </a>
+                  <DropdownMenuItem onSelect={() => setReportIssueOpen(true)}>
+                    <LifeBuoy className="mr-2 h-4 w-4" />
+                    Get Help
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onSelect={handleLogout}>
@@ -729,8 +735,8 @@ export default function DashboardLayout({
                   }}
                   className="flex w-full items-center gap-3 p-2 rounded-md hover:bg-muted text-primary-dark"
                 >
-                  <Flag className="h-5 w-5" />
-                  <span>Report an Issue</span>
+                  <LifeBuoy className="h-5 w-5" />
+                  <span>Get Help</span>
                 </button>
                 {!orientationNavigationRestricted && (
                   <Link
