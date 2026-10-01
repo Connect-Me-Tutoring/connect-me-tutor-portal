@@ -38,15 +38,16 @@ import {
 import { getProfile } from "@/lib/actions/user/client.actions";
 import {
   getAllProfiles,
-  deactivateUser,
-  reactivateUser,
   getEventsWithTutorMonth,
   getUserFromId,
   resendEmailConfirmation,
 } from "@/lib/actions/admin.actions";
-import { editProfile } from "@/lib/actions/profile/server.actions";
+import {
+  editProfile,
+  deactivateProfile,
+  reactivateProfile,
+} from "@/lib/actions/profile/server.actions";
 import { getEvents } from "@/lib/actions/event/server.actions";
-import { deleteUser } from "@/lib/actions/auth/server.actions";
 import { addUser } from "@/lib/actions/auth/client.actions";
 import { getTutorSessions } from "@/lib/actions/tutor/actions";
 import { createClient } from "@/lib/supabase/client";
@@ -67,7 +68,8 @@ import toast, { Toaster } from "react-hot-toast";
 import { Combobox } from "@/components/ui/combobox";
 
 import AddTutorForm from "./components/AddTutorForm";
-import DeleteTutorForm from "./components/DeleteTutorForm";
+import ProfileStatusForm from "./components/ProfileStatusForm";
+import { inactiveLast } from "@/lib/utils/inactive-last";
 import EditTutorForm from "./components/EditTutorForm";
 import ManageTutorSessions from "./components/ManageTutorSessionForm";
 import { Turret_Road } from "next/font/google";
@@ -153,7 +155,8 @@ const TutorList = ({ initialTutors }: any) => {
         fullName.includes(searchTerm)
       );
     });
-    setFilteredTutors(filtered);
+    // Inactive tutors go to the bottom (#807), before pagination so it holds across pages.
+    setFilteredTutors(inactiveLast(filtered));
     setCurrentPage(1);
   }, [filterValue, tutors]);
 
@@ -280,31 +283,27 @@ const TutorList = ({ initialTutors }: any) => {
     }
   };
 
-  const handleDeleteTutor = async () => {
-    if (selectedTutorId) {
-      try {
-        await deleteUser(selectedTutorId);
-        toast.success("Tutor deleted successfully");
-        setSelectedTutorId(null);
-        getTutorData();
-      } catch (error) {
-        toast.error("Failed to delete Tutor");
-      }
+  // #807: tutors are deactivated, never deleted. Deleting cascades away their
+  // enrollments, pairings, and hour credits, and nulls tutor_id on sessions.
+  const handleDeactivateTutor = async (profileId: string) => {
+    try {
+      await deactivateProfile(profileId);
+      toast.success("Tutor deactivated");
+      getTutorData();
+    } catch (error) {
+      toast.error("Failed to deactivate tutor");
+      throw error;
     }
   };
 
-  const handleDeactivateTutor = async () => {
-    if (selectedTutorId) {
-      try {
-        const data = await deactivateUser(selectedTutorId); // Call deactivateUser function with studentId
-        if (data) {
-          toast.success("Tutor deactivated successfully");
-          setSelectedTutorId(null);
-          getTutorData();
-        }
-      } catch (error) {
-        toast.error("Failed to deactivate tutor");
-      }
+  const handleReactivateTutor = async (profileId: string) => {
+    try {
+      await reactivateProfile(profileId);
+      toast.success("Tutor reactivated");
+      getTutorData();
+    } catch (error) {
+      toast.error("Failed to reactivate tutor");
+      throw error;
     }
   };
 
@@ -493,12 +492,17 @@ const TutorList = ({ initialTutors }: any) => {
             handleAddTutor={handleAddTutorWithParam}
             handleTimeZone={handleTimeZone}
           />
-          {/*Delete Student*/}
-          <DeleteTutorForm
-            tutors={tutors}
-            selectedTutorId={selectedTutorId}
-            setSelectedTutorId={setSelectedTutorId}
-            handleDeleteTutor={handleDeleteTutor}
+          <ProfileStatusForm
+            profiles={tutors}
+            roleLabel="Tutor"
+            mode="deactivate"
+            onConfirm={handleDeactivateTutor}
+          />
+          <ProfileStatusForm
+            profiles={tutors}
+            roleLabel="Tutor"
+            mode="reactivate"
+            onConfirm={handleReactivateTutor}
           />
 
           {/*Reactivate Student*/}
