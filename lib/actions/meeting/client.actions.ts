@@ -79,8 +79,7 @@ export const checkAvailableMeeting = async (
 ): Promise<{ [key: string]: boolean }> => {
   try {
     const requestedDate: Date = parseISO(session.date);
-    const sessionsToSearch: Session[] | undefined =
-      await fetchDaySessionsFromSchedule(requestedDate);
+    const sessionsToSearch = await fetchDaySessionsFromSchedule(requestedDate);
     const updatedMeetingAvailability: { [key: string]: boolean } = {};
     if (!session.date || !isValid(parseISO(session.date))) {
       throw new Error("Invalid session date selected");
@@ -122,9 +121,14 @@ export const checkAvailableMeeting = async (
   }
 };
 
+export type EnrollmentMeetingSlot = Pick<
+  Enrollment,
+  "id" | "meetingId" | "day" | "startTime" | "endTime"
+>;
+
 export const checkAvailableMeetingForEnrollments = async (
   enroll: Omit<Enrollment, "id" | "createdAt">,
-  enrollments: Enrollment[],
+  enrollments: EnrollmentMeetingSlot[],
   meetings: Meeting[],
   weeklySchedules: WeeklyMeetingSchedule[] = [],
 ) => {

@@ -1,6 +1,7 @@
 "use client";
 import { Profile, Session, Notification, Event, Enrollment, Meeting } from "@/types";
 import type { Database } from "@/types/database.types";
+import { getSessionMeetingSlots } from "../meeting/occupancy.server.actions";
 
 type SessionStatus = Database["public"]["Enums"]["session_status"];
 import {
@@ -43,14 +44,21 @@ import { supabase } from "@/lib/supabase/client";
  * @param requestedDate - The date to search around for existing sessions
  * @returns Promise resolving to array of sessions or undefined
  */
+/**
+ * Minimal view of sessions occupying meeting links around `requestedDate`.
+ * Read server-side because RLS hides other tutors' sessions, and the link
+ * availability check must see every booking (no identities returned).
+ */
 export const fetchDaySessionsFromSchedule = async (requestedDate: Date) => {
   if (requestedDate) {
     try {
-      const startDateSearch = addHours(requestedDate, -12).toISOString();
-
-      const endDateSearch = addHours(requestedDate, 12).toISOString();
-      const data = await getAllSessions(startDateSearch, endDateSearch);
-      return data;
+      const slots = await getSessionMeetingSlots(requestedDate.toISOString());
+      return slots.map((slot) => ({
+        id: slot.id,
+        date: slot.date,
+        duration: slot.duration,
+        meeting: { id: slot.meetingId },
+      }));
     } catch (error) {
       console.error("Failed to fetch sessions for day");
       throw error;
