@@ -23,10 +23,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Dialog, DialogTrigger } from "@/components/ui/dialog";
-import {
-  getMeetings,
-  pauseEnrollmentOverSummer,
-} from "@/lib/actions/admin.actions";
+import { getMeetings, pauseEnrollmentOverSummer } from "@/lib/actions/admin.actions";
 import {
   removeEnrollment,
   updateEnrollment,

@@ -79,8 +79,7 @@ export const checkAvailableMeeting = async (
 ): Promise<{ [key: string]: boolean }> => {
   try {
     const requestedDate: Date = parseISO(session.date);
-    const sessionsToSearch =
-      await fetchDaySessionsFromSchedule(requestedDate);
+    const sessionsToSearch = await fetchDaySessionsFromSchedule(requestedDate);
     const updatedMeetingAvailability: { [key: string]: boolean } = {};
     if (!session.date || !isValid(parseISO(session.date))) {
       throw new Error("Invalid session date selected");
