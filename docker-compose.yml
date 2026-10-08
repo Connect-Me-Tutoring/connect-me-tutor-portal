@@ -7,6 +7,8 @@
 # Start: docker compose up -d mailpit
 # Web UI: http://localhost:8025 | SMTP: localhost:1025
 # Set EMAIL_PROVIDER=mailpit in .env.local to route app email through it.
+# Alternatively, skip this container: set MAILPIT_SMTP_PORT=54325 to use the
+# Mailpit that `supabase start` runs (UI http://127.0.0.1:54324).
 
 services:
   postgres:

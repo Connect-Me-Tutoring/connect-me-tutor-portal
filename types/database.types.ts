@@ -798,6 +798,56 @@ export type Database = {
           },
         ];
       };
+      tickets: {
+        Row: {
+          category: string;
+          contact_email: string | null;
+          created_at: string;
+          description: string;
+          id: string;
+          page_url: string | null;
+          profile_id: string | null;
+          status: string;
+          subject: string;
+          urgency: string;
+          user_id: string;
+        };
+        Insert: {
+          category: string;
+          contact_email?: string | null;
+          created_at?: string;
+          description: string;
+          id?: string;
+          page_url?: string | null;
+          profile_id?: string | null;
+          status?: string;
+          subject: string;
+          urgency?: string;
+          user_id?: string;
+        };
+        Update: {
+          category?: string;
+          contact_email?: string | null;
+          created_at?: string;
+          description?: string;
+          id?: string;
+          page_url?: string | null;
+          profile_id?: string | null;
+          status?: string;
+          subject?: string;
+          urgency?: string;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "tickets_profile_id_fkey";
+            columns: ["profile_id"];
+            isOneToOne: false;
+            referencedRelation: "Profiles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       User_Availabilities: {
         Row: {
           created_at: string;

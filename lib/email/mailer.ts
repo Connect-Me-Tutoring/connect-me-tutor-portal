@@ -22,7 +22,9 @@ export type SendMailResult = { data: { id: string } | null; error: unknown };
 
 /**
  * Set EMAIL_PROVIDER=mailpit in .env.local to route mail to a local Mailpit
- * container (docker compose up -d mailpit) instead of Resend's live API.
+ * instead of Resend's live API. Defaults to the docker-compose Mailpit (SMTP
+ * :1025); set MAILPIT_SMTP_PORT=54325 to use the Mailpit `supabase start`
+ * already runs, so app and auth emails share one inbox (http://127.0.0.1:54324).
  */
 function getEmailProvider(): "resend" | "mailpit" {
   return process.env.EMAIL_PROVIDER === "mailpit" ? "mailpit" : "resend";
@@ -39,7 +41,10 @@ function getResendClient(): Resend {
 let mailpitTransport: Transporter | null = null;
 function getMailpitTransport(): Transporter {
   if (!mailpitTransport) {
-    mailpitTransport = nodemailer.createTransport({ host: "localhost", port: 1025 });
+    mailpitTransport = nodemailer.createTransport({
+      host: "localhost",
+      port: Number(process.env.MAILPIT_SMTP_PORT) || 1025,
+    });
   }
   return mailpitTransport;
 }
