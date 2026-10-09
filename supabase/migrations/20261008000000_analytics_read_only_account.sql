@@ -7,6 +7,9 @@ create table if not exists private.analytics_accounts (
   created_at timestamptz not null default now()
 );
 
+revoke all on private.analytics_accounts from anon, authenticated;
+alter table private.analytics_accounts enable row level security;
+
 create or replace function private.is_analytics()
 returns boolean language sql stable security definer set search_path = public as $$
   select exists (select 1 from private.analytics_accounts a where a.user_id = auth.uid());
@@ -26,6 +29,7 @@ begin
     'Requests', 'Forms', 'zoom_participant_events'
   ]
   loop
+    execute format('drop policy if exists "analytics_select" on public.%I', t);
     execute format(
       'create policy "analytics_select" on public.%I for select to authenticated using ((select private.is_analytics()))', t
     );
