@@ -26,7 +26,7 @@ begin
     'Profiles', 'Enrollments', 'Sessions', 'User_Availabilities',
     'Pairings', 'Events', 'weekly_meeting_schedules',
     'pairing_requests', 'pairing_matches', 'pairing_logs',
-    'Requests', 'Forms', 'zoom_participant_events'
+    'Requests', 'Forms', 'zoom_participant_events', 'Notifications'
   ]
   loop
     execute format('drop policy if exists "analytics_select" on public.%I', t);
