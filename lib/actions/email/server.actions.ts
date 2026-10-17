@@ -32,12 +32,14 @@ import EarlySessionCheckInEmail from "@/components/emails/check-in/early-session
 import { getAllActiveEnrollmentsForCron } from "../enrollment/server.actions";
 import { Table } from "../../supabase/tables";
 import { formatInTimeZone } from "date-fns-tz";
-import { requireAdmin } from "../auth/authz.server";
+import { requireAdmin, requireSessionAccess } from "../auth/authz.server";
 import { logError } from "@/lib/posthog";
+
+const SESSION_REMINDER_DESCRIPTION = "Session Reminder";
 
 export const fetchScheduledMessages = async () => {
   await requireAdmin();
-  const qstash = new Client({ token: process.env.EU_CENTRAL_1_QSTASH_TOKEN });
+  const qstash = new Client({ token: process.env.US_EAST_1_QSTASH_TOKEN });
 
   const messages = await withRetry(() => qstash.schedules.list(), {
     onRetry: async (error, attempt) => {
@@ -88,7 +90,39 @@ export async function sendScheduledEmailsBeforeSessions(sessions: Session[]): Pr
 }
 
 /**
- * Updates a scheduled reminder email for a session by deleting the old one and scheduling a new one.
+ * Cancels every pending reminder for a session: deletes the QStash messages and
+ * the session_reminders rows (one per recipient). Throws if the lookup or row
+ * delete fails so callers that reschedule don't stack new reminders on old ones.
+ */
+async function removeSessionReminders(sessionId: string) {
+  const supabase = await createAdminClient();
+
+  const { data: reminders, error } = await supabase
+    .from(Table.SessionReminders)
+    .select("id, message_id")
+    .eq("session_id", sessionId)
+    .eq("description", SESSION_REMINDER_DESCRIPTION);
+
+  if (error) throw error;
+  if (!reminders || reminders.length === 0) return;
+
+  await Promise.all(
+    reminders.flatMap((reminder) => (reminder.message_id ? [deleteMsg(reminder.message_id)] : [])),
+  );
+
+  const { error: deleteError } = await supabase
+    .from(Table.SessionReminders)
+    .delete()
+    .in(
+      "id",
+      reminders.map((reminder) => reminder.id),
+    );
+
+  if (deleteError) throw deleteError;
+}
+
+/**
+ * Updates scheduled reminder emails for a session by cancelling the old ones and scheduling new ones.
  *
  * @param session - The Session object with updated details.
  * @returns A promise that resolves when the update process is complete.
@@ -96,7 +130,8 @@ export async function sendScheduledEmailsBeforeSessions(sessions: Session[]): Pr
  */
 export async function updateScheduledEmailBeforeSessions(session: Session) {
   try {
-    await deleteScheduledEmailBeforeSessions(session.id);
+    await requireSessionAccess(session);
+    await removeSessionReminders(session.id);
     await sendScheduledEmailsBeforeSessions([session]);
   } catch (error) {
     console.error("Unable to update scheduled message");
@@ -106,47 +141,38 @@ export async function updateScheduledEmailBeforeSessions(session: Session) {
 }
 
 /**
- * Sends a request to an API endpoint to delete a scheduled reminder email for a specific session.
+ * Cancels the scheduled reminder emails for a session. Failures are logged, not thrown,
+ * so a cancelled or deleted session isn't blocked on cleanup; the send route also
+ * re-checks the session before sending.
  *
- * @param sessionId - The ID of the session whose scheduled email is to be deleted.
- * @returns A promise that resolves when the deletion request has been attempted.
- * @throws Will throw an error if the API request fails.
+ * @param sessionId - The ID of the session whose scheduled emails are to be deleted.
  */
 export async function deleteScheduledEmailBeforeSessions(sessionId: string) {
   try {
-    await withRetry(
-      async () => {
-        const response = await fetch(
-          `${process.env.NEXT_PUBLIC_SITE_URL}/api/admin/email/before-sessions/delete-reminder`,
-          {
-            method: "POST",
-            body: JSON.stringify({ sessionId }),
-            headers: {
-              "Content-Type": "application/json",
-            },
-          },
-        );
+    // The session may already be deleted (callers remove it first), in which case there is
+    // nothing to authorize against and only orphaned reminders are left to clean up.
+    const supabase = await createAdminClient();
+    const { data: session } = await supabase
+      .from(Table.Sessions)
+      .select("tutor_id, student_id")
+      .eq("id", sessionId)
+      .maybeSingle();
+    if (session) await requireSessionAccess(session);
 
-        if (!response.ok) {
-          throw new Error("Unable to delete scheduled email");
-        }
+    await withRetry(() => removeSessionReminders(sessionId), {
+      onRetry: async (error, attempt) => {
+        console.error(`deleteScheduledEmailBeforeSessions attempt ${attempt + 1} failed:`, error);
+        await logError(error, { session_id: sessionId, attempt }, "email_error");
       },
-      {
-        onRetry: async (error, attempt) => {
-          console.error(`deleteScheduledEmailBeforeSessions attempt ${attempt + 1} failed:`, error);
-          await logError(error, { session_id: sessionId, attempt }, "email_error");
-        },
-      },
-    );
+    });
   } catch (error) {
     console.error("Unable to delete message");
     await logError(error, { session_id: sessionId }, "email_error");
-    // throw error;
   }
 }
 
 export async function deleteMsg(messageId: string) {
-  const qstash = new Client({ token: process.env.EU_CENTRAL_1_QSTASH_TOKEN });
+  const qstash = new Client({ token: process.env.US_EAST_1_QSTASH_TOKEN });
   try {
     await withRetry(() => qstash.messages.delete(messageId), {
       onRetry: async (error, attempt) => {
@@ -166,15 +192,18 @@ export async function scheduleEmail({
   subject,
   body,
   sessionId,
+  scheduledFor,
 }: {
   notBefore: number;
   to: string;
   subject: string;
   body: string;
   sessionId: string;
+  /** ISO session start this reminder was scheduled for; the send route drops it if the session has since moved. */
+  scheduledFor?: string;
 }) {
   try {
-    const qstash = new Client({ token: process.env.EU_CENTRAL_1_QSTASH_TOKEN });
+    const qstash = new Client({ token: process.env.US_EAST_1_QSTASH_TOKEN });
     const result = await qstash.publishJSON({
       url: `${process.env.NEXT_PUBLIC_SITE_URL}/api/admin/email/send-email-reminder`,
       notBefore: notBefore,
@@ -183,6 +212,7 @@ export async function scheduleEmail({
         subject: subject,
         body: body,
         sessionId: sessionId,
+        scheduledFor: scheduledFor,
       },
       headers: {
         authorization: `Bearer ${process.env.BEARER_TOKEN}`,
@@ -622,22 +652,42 @@ export const scheduleReminder = async (data: { session: Session; type: "Tutor" |
     const sessionDate = parseISO(session.date);
     const scheduledTime = subMinutes(sessionDate, 15);
     const message = createSessionNotification(session, tutor, student, type);
+    const recipient = type === "Tutor" ? tutor : student;
+    if (!recipient.email) {
+      throw new Error(`No email on file for ${type.toLowerCase()} ${recipient.id}`);
+    }
+
+    // Already scheduled for this recipient (weekly cron, session creation and
+    // reschedules can all reach here for the same session) - don't double-send.
+    const { data: existing, error: existingError } = await supabase
+      .from(Table.SessionReminders)
+      .select("id")
+      .eq("session_id", session.id)
+      .eq("recipient_id", recipient.id)
+      .eq("description", SESSION_REMINDER_DESCRIPTION)
+      .limit(1);
+    if (existingError) throw existingError;
+    if (existing && existing.length > 0) {
+      return { status: 200, message: "Reminder already scheduled", messageId: null };
+    }
+
     const result = await scheduleEmail({
       notBefore: Math.floor(scheduledTime.getTime() / 1000),
-      to: tutor.email,
+      to: recipient.email,
       subject: "Upcoming Connect Me Session",
       body: message,
       sessionId: session.id,
+      scheduledFor: session.date,
     });
 
     if (result && result.messageId) {
       const { data, error } = await supabase
         .from(Table.SessionReminders)
         .insert({
-          recipient_id: tutor?.id ?? null,
+          recipient_id: recipient.id,
           session_id: session.id,
           message_id: result.messageId,
-          description: "Session Reminder",
+          description: SESSION_REMINDER_DESCRIPTION,
         })
         .select();
 

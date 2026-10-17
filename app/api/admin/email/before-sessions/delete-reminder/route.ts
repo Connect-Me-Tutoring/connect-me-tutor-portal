@@ -25,65 +25,45 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { data: emailData, error: fetchError } = await supabase
+    const { data: reminders, error: fetchError } = await supabase
       .from(Table.SessionReminders)
       .select("id, message_id")
       .eq("session_id", sessionId)
-      .single();
+      .eq("description", "Session Reminder");
 
     if (fetchError) {
-      if (fetchError.code === "PGRST116") {
-        return NextResponse.json(
-          {
-            message: "No scheduled email found",
-          },
-          {
-            status: 200,
-          },
-        );
-      }
-      console.error("Error fetching messageId", fetchError);
+      console.error("Error fetching messageIds", fetchError);
       await logError(fetchError, { sessionId }, "email_delete_reminder_error");
       throw fetchError;
     }
 
-    if (!emailData || !emailData.message_id) {
-      console.error("No Scheduled Email found");
-      await logError(
-        new Error("No scheduled email found"),
-        { sessionId },
-        "email_delete_reminder_error",
-      );
-      return NextResponse.json(
-        { message: "Scheduled email found but no message_id" },
-        { status: 404 },
-      );
+    if (!reminders || reminders.length === 0) {
+      return NextResponse.json({ message: "No scheduled email found" }, { status: 200 });
     }
 
-    await deleteMsg(emailData.message_id);
-
-    if (!emailData.id) {
-      throw new Error("No emailData id found");
-    }
+    await Promise.all(
+      reminders.flatMap((reminder) =>
+        reminder.message_id ? [deleteMsg(reminder.message_id)] : [],
+      ),
+    );
 
     const { error: deleteDbError } = await supabase
-      .from("Emails")
+      .from(Table.SessionReminders)
       .delete()
-      .eq("id", emailData.id || 0);
+      .in(
+        "id",
+        reminders.map((reminder) => reminder.id),
+      );
 
     if (deleteDbError) {
-      console.error("Error deleting email record from Supabase:", deleteDbError);
-      await logError(
-        deleteDbError,
-        { sessionId, emailId: emailData.id },
-        "email_delete_reminder_error",
-      );
-      throw deleteDbError; // Let the generic catch handle it
+      console.error("Error deleting reminder records from Supabase:", deleteDbError);
+      await logError(deleteDbError, { sessionId }, "email_delete_reminder_error");
+      throw deleteDbError;
     }
 
     return NextResponse.json({
       status: 200,
-      message: "Email reminder scheduled successfully",
+      message: "Email reminders deleted successfully",
     });
   } catch (error) {
     console.error("Error deleting scheduled reminder");

@@ -16,6 +16,7 @@ const emailSchema = z.object({
   subject: z.string().trim(),
   body: z.string().trim(),
   sessionId: z.string().trim(),
+  scheduledFor: z.string().trim().optional(),
 });
 
 export async function POST(request: NextRequest) {
@@ -28,7 +29,7 @@ export async function POST(request: NextRequest) {
     const supabase = await createClient();
 
     const data = await request.json();
-    const { to, subject, body, sessionId } = emailSchema.parse(data);
+    const { to, subject, body, sessionId, scheduledFor } = emailSchema.parse(data);
 
     const { data: session, error: sessionError } = await supabase
       .from(Table.Sessions)
@@ -47,6 +48,19 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({
         status: 400,
         message: "Session no longer active",
+      });
+    }
+
+    // The session was moved after this reminder was queued; a replacement was (or will be)
+    // scheduled for the new time, so this one is stale.
+    if (
+      scheduledFor &&
+      session.date &&
+      new Date(session.date).getTime() !== new Date(scheduledFor).getTime()
+    ) {
+      return NextResponse.json({
+        status: 200,
+        message: "Session time changed since reminder was scheduled",
       });
     }
 

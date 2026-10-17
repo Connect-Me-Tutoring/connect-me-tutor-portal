@@ -1332,7 +1332,7 @@ export async function addStandaloneSession(
     if (data && scheduleEmail) {
       const addedSession: Session = tableToInterfaceSessions(data);
 
-      sendScheduledEmailsBeforeSessions([addedSession]);
+      await sendScheduledEmailsBeforeSessions([addedSession]);
     }
   } catch (error) {
     console.error("Unable to add one session", error);
