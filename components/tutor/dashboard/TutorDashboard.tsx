@@ -250,7 +250,7 @@ const TutorDashboard = () => {
     } catch (error) {
       const err = error as Error;
       console.error("Undo exit form failed:", err);
-      if ((err.message = "Undo Expired")) {
+      if (err.message === "Undo Expired") {
         toast.error("Time To Undo Expired");
       } else {
         toast.error("Could not undo session exit form");
