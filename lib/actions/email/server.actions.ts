@@ -122,7 +122,8 @@ async function removeSessionReminders(sessionId: string) {
 }
 
 /**
- * Updates scheduled reminder emails for a session by cancelling the old ones and scheduling new ones.
+ * Cancels the reminder state for a moved session. The send-session-reminders cron re-sends
+ * for the new time once it falls inside the reminder window, so nothing is scheduled here.
  *
  * @param session - The Session object with updated details.
  * @returns A promise that resolves when the update process is complete.
@@ -132,7 +133,6 @@ export async function updateScheduledEmailBeforeSessions(session: Session) {
   try {
     await requireSessionAccess(session);
     await removeSessionReminders(session.id);
-    await sendScheduledEmailsBeforeSessions([session]);
   } catch (error) {
     console.error("Unable to update scheduled message");
     await logError(error, { session_id: session.id }, "email_error");
@@ -193,6 +193,7 @@ export async function scheduleEmail({
   body,
   sessionId,
   scheduledFor,
+  deduplicationId,
 }: {
   notBefore: number;
   to: string;
@@ -201,12 +202,15 @@ export async function scheduleEmail({
   sessionId: string;
   /** ISO session start this reminder was scheduled for; the send route drops it if the session has since moved. */
   scheduledFor?: string;
+  /** QStash drops a publish repeating an id within its dedup window, so overlapping cron runs can't double-queue. */
+  deduplicationId?: string;
 }) {
   try {
     const qstash = new Client({ token: process.env.US_EAST_1_QSTASH_TOKEN });
     const result = await qstash.publishJSON({
       url: `${process.env.NEXT_PUBLIC_SITE_URL}/api/admin/email/send-email-reminder`,
       notBefore: notBefore,
+      deduplicationId: deduplicationId,
       body: {
         to: to,
         subject: subject,
@@ -672,7 +676,9 @@ export const scheduleReminder = async (data: { session: Session; type: "Tutor" |
     }
 
     const result = await scheduleEmail({
-      notBefore: Math.floor(scheduledTime.getTime() / 1000),
+      // Sessions created or moved inside the 15 minute lead time send right away.
+      notBefore: Math.floor(Math.max(scheduledTime.getTime(), Date.now()) / 1000),
+      deduplicationId: `session-reminder:${session.id}:${recipient.id}:${session.date}`,
       to: recipient.email,
       subject: "Upcoming Connect Me Session",
       body: message,
@@ -691,12 +697,19 @@ export const scheduleReminder = async (data: { session: Session; type: "Tutor" |
         })
         .select();
 
+      // The message is already queued; without a row nothing can cancel it, so drop it.
       if (error) {
+        await deleteMsg(result.messageId);
+        // 23505: a concurrent caller recorded this recipient's reminder first.
+        if (error.code === "23505") {
+          return { status: 200, message: "Reminder already scheduled", messageId: null };
+        }
         console.error("Supabase insert error", error);
         await logError(error, { session_id: session.id, type }, "email_error");
         throw error;
       }
       if (!data) {
+        await deleteMsg(result.messageId);
         throw new Error("Unable to record scheduled message");
       }
     }

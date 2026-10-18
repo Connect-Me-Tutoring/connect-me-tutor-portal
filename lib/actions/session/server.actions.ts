@@ -28,7 +28,6 @@ import { normalizeZoomParticipationEvents } from "@/lib/zoom/participation-norma
 import { tableToInterfaceEnrollments, tableToInterfaceSessions } from "../../utils/type-utils";
 import {
   deleteScheduledEmailBeforeSessions,
-  sendScheduledEmailsBeforeSessions,
   sendStudentSessionCancellationEmail,
   sendTutorSessionCancellationEmail,
   updateScheduledEmailBeforeSessions,
@@ -1329,11 +1328,7 @@ export async function addStandaloneSession(
     if (error) throw error;
     if (!data) toast.error("No Data");
 
-    if (data && scheduleEmail) {
-      const addedSession: Session = tableToInterfaceSessions(data);
-
-      await sendScheduledEmailsBeforeSessions([addedSession]);
-    }
+    // Reminders are sent by the send-session-reminders cron once the session is 20 minutes out.
   } catch (error) {
     console.error("Unable to add one session", error);
     await logError(
