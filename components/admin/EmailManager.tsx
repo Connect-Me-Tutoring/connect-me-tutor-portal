@@ -121,10 +121,7 @@ const EmailManager = () => {
           </div>
           <div className="flex items-center gap-2 text-sm text-gray-600 self-end sm:self-auto">
             <span>Rows per page:</span>
-            <Select
-              value={String(pageSize)}
-              onValueChange={(val) => setPageSize(Number(val))}
-            >
+            <Select value={String(pageSize)} onValueChange={(val) => setPageSize(Number(val))}>
               <SelectTrigger className="w-20">
                 <SelectValue />
               </SelectTrigger>
@@ -211,7 +208,8 @@ const EmailManager = () => {
             <div className="flex items-center justify-between px-6 py-4 border-t bg-gray-50/50 text-sm text-gray-500">
               <div>
                 Showing {Math.min((currentPage - 1) * pageSize + 1, filteredEmails.length)} to{" "}
-                {Math.min(currentPage * pageSize, filteredEmails.length)} of {filteredEmails.length} entries
+                {Math.min(currentPage * pageSize, filteredEmails.length)} of {filteredEmails.length}{" "}
+                entries
               </div>
               <div className="flex items-center gap-2">
                 <Button

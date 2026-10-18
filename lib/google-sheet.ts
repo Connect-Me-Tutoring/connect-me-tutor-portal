@@ -153,7 +153,7 @@ export interface OrientationQuizFeedbackPayload {
 
 export async function appendOrientationQuestionToSheet(
   data: OrientationQuizFeedbackPayload,
-  sheetName: string = "Orientation Questions"
+  sheetName: string = "Orientation Questions",
 ) {
   const spreadsheetId = process.env.SHEET_ID;
   if (!spreadsheetId) {

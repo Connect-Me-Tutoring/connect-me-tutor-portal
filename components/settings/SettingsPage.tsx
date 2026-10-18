@@ -502,8 +502,8 @@ export default function SettingsPage({
           <section className="bg-white rounded-lg border p-6">
             <h1 className="text-2xl font-bold mb-2">Email Address</h1>
             <p className="text-gray-600 mb-6">
-              Update the email address associated with your account. We&apos;ll send a
-              confirmation link to your new email before the change takes effect.
+              Update the email address associated with your account. We&apos;ll send a confirmation
+              link to your new email before the change takes effect.
             </p>
             <form onSubmit={handleEmailSubmit} className="space-y-4">
               <div>
