@@ -1451,7 +1451,7 @@ export async function updateSession(updatedSession: Session, updateEmail: boolea
     const newSession: Session = tableToInterfaceSessions(data);
 
     if (updateEmail) {
-      await updateScheduledEmailBeforeSessions(newSession);
+      await updateScheduledEmailBeforeSessions(newSession.id);
     }
 
     return newSession;

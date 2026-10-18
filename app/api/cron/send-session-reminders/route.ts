@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { addMinutes } from "date-fns";
 import { createAdminClient } from "@/lib/supabase/server";
 import { Table } from "@/lib/supabase/tables";
-import { sendScheduledEmailsBeforeSessions } from "@/lib/actions/email/server.actions";
+import { sendScheduledEmailsBeforeSessions } from "@/lib/email/session-reminders";
 import { tableToInterfaceSessions } from "@/lib/utils/type-utils";
 import { isCronRequestAuthorized } from "@/lib/security/cron";
 import { logError } from "@/lib/posthog";
@@ -35,7 +35,7 @@ export async function GET(request: NextRequest) {
       )
       .gt("date", now.toISOString())
       .lte("date", addMinutes(now, LOOKAHEAD_MINUTES).toISOString())
-      .not("status", "in", "(Cancelled,Complete,Expired)");
+      .or("status.is.null,status.not.in.(Cancelled,Complete,Expired)");
 
     if (error) throw error;
 
@@ -43,12 +43,21 @@ export async function GET(request: NextRequest) {
       .filter((session: any) => session.student && session.tutor)
       .map((session: any) => tableToInterfaceSessions(session));
 
-    await sendScheduledEmailsBeforeSessions(sessions);
+    const result = await sendScheduledEmailsBeforeSessions(sessions);
 
-    return NextResponse.json({
-      message: "Session reminders processed successfully",
-      checked: sessions.length,
-    });
+    // Failed recipients had their claim released, so the next run retries them; a non-2xx
+    // status makes the failure visible to cron monitoring.
+    return NextResponse.json(
+      {
+        message:
+          result.failed > 0
+            ? "Some session reminders failed"
+            : "Session reminders processed successfully",
+        checked: sessions.length,
+        ...result,
+      },
+      { status: result.failed > 0 ? 500 : 200 },
+    );
   } catch (error) {
     console.error("Cron job send-session-reminders failed:", error);
     await logError(error, {}, "cron_send_session_reminders_error");

@@ -1,6 +1,5 @@
 "use server";
-import { Enrollment, Profile, Session } from "@/types";
-import { Client } from "@upstash/qstash";
+import { Enrollment } from "@/types";
 import StudentPairingConfirmationEmail from "@/components/emails/pairing-request/student-confirmation-email";
 import { render } from "@react-email/components";
 import React from "react";
@@ -14,7 +13,6 @@ import {
 } from "@/types/email";
 import MonthlyCheckInEmail from "@/components/emails/check-in/monthly-check-in-email";
 import { createAdminClient, createClient } from "../../supabase/server";
-import { parseISO, subMinutes } from "date-fns";
 import StudentRescheduleNotificationEmail, {
   SessionRescheduleEmailProps,
 } from "@/components/emails/rescheduling/student-reschedule-notification";
@@ -32,14 +30,17 @@ import EarlySessionCheckInEmail from "@/components/emails/check-in/early-session
 import { getAllActiveEnrollmentsForCron } from "../enrollment/server.actions";
 import { Table } from "../../supabase/tables";
 import { formatInTimeZone } from "date-fns-tz";
-import { requireAdmin, requireSessionAccess } from "../auth/authz.server";
+import {
+  requireAdmin,
+  requireSessionAccess,
+  requireSessionAccessById,
+} from "../auth/authz.server";
+import { getQstashClient, removeSessionReminders } from "@/lib/email/session-reminders";
 import { logError } from "@/lib/posthog";
-
-const SESSION_REMINDER_DESCRIPTION = "Session Reminder";
 
 export const fetchScheduledMessages = async () => {
   await requireAdmin();
-  const qstash = new Client({ token: process.env.US_EAST_1_QSTASH_TOKEN });
+  const qstash = getQstashClient();
 
   const messages = await withRetry(() => qstash.schedules.list(), {
     onRetry: async (error, attempt) => {
@@ -51,91 +52,21 @@ export const fetchScheduledMessages = async () => {
 };
 
 /**
- * Sends requests to an API endpoint to schedule reminder emails for a list of sessions.
- *
- * @param sessions - An array of Session objects for which to schedule emails.
- * @returns A promise that resolves when all scheduling requests have been attempted.
- * @throws Will throw an error if any API request fails and is not caught internally.
- */
-export async function sendScheduledEmailsBeforeSessions(sessions: Session[]): Promise<void> {
-  try {
-    // Use Promise.all for parallel execution or for...of for sequential
-    await Promise.all(
-      sessions.map(async (session) => {
-        // Check if session has a tutor
-        if (!session.tutor) {
-          // console.warn(`Session ${session.id} has no tutor assigned`);
-          return;
-        }
-
-        if (!session.student) {
-          // console.warn(`Session ${session.id} has no student assigned`);
-          return;
-        }
-
-        try {
-          await scheduleReminder({ session: session, type: "Tutor" });
-          await scheduleReminder({ session: session, type: "Student" });
-        } catch (error) {
-          console.error("Error processing session %s:", session.id, error);
-          await logError(error, { session_id: session.id }, "email_error");
-        }
-      }),
-    );
-  } catch (error) {
-    console.error("Error scheduling session emails", error);
-    await logError(error, { session_ids: sessions.map((s) => s.id) }, "email_error");
-    throw error;
-  }
-}
-
-/**
- * Cancels every pending reminder for a session: deletes the QStash messages and
- * the session_reminders rows (one per recipient). Throws if the lookup or row
- * delete fails so callers that reschedule don't stack new reminders on old ones.
- */
-async function removeSessionReminders(sessionId: string) {
-  const supabase = await createAdminClient();
-
-  const { data: reminders, error } = await supabase
-    .from(Table.SessionReminders)
-    .select("id, message_id")
-    .eq("session_id", sessionId)
-    .eq("description", SESSION_REMINDER_DESCRIPTION);
-
-  if (error) throw error;
-  if (!reminders || reminders.length === 0) return;
-
-  await Promise.all(
-    reminders.flatMap((reminder) => (reminder.message_id ? [deleteMsg(reminder.message_id)] : [])),
-  );
-
-  const { error: deleteError } = await supabase
-    .from(Table.SessionReminders)
-    .delete()
-    .in(
-      "id",
-      reminders.map((reminder) => reminder.id),
-    );
-
-  if (deleteError) throw deleteError;
-}
-
-/**
  * Cancels the reminder state for a moved session. The send-session-reminders cron re-sends
  * for the new time once it falls inside the reminder window, so nothing is scheduled here.
  *
- * @param session - The Session object with updated details.
- * @returns A promise that resolves when the update process is complete.
- * @throws Will throw an error if deletion or scheduling fails.
+ * Access is checked against the session stored under `sessionId`, never the caller's copy.
+ *
+ * @param sessionId - The ID of the session whose reminders are to be cancelled.
+ * @throws Will throw if the caller can't access the session or a reminder can't be cancelled.
  */
-export async function updateScheduledEmailBeforeSessions(session: Session) {
+export async function updateScheduledEmailBeforeSessions(sessionId: string) {
   try {
-    await requireSessionAccess(session);
-    await removeSessionReminders(session.id);
+    await requireSessionAccessById(sessionId);
+    await removeSessionReminders(sessionId);
   } catch (error) {
     console.error("Unable to update scheduled message");
-    await logError(error, { session_id: session.id }, "email_error");
+    await logError(error, { session_id: sessionId }, "email_error");
     throw error;
   }
 }
@@ -168,67 +99,6 @@ export async function deleteScheduledEmailBeforeSessions(sessionId: string) {
   } catch (error) {
     console.error("Unable to delete message");
     await logError(error, { session_id: sessionId }, "email_error");
-  }
-}
-
-export async function deleteMsg(messageId: string) {
-  const qstash = new Client({ token: process.env.US_EAST_1_QSTASH_TOKEN });
-  try {
-    await withRetry(() => qstash.messages.delete(messageId), {
-      onRetry: async (error, attempt) => {
-        console.error(`deleteMsg attempt ${attempt + 1} failed:`, error);
-        await logError(error, { message_id: messageId, attempt }, "email_error");
-      },
-    });
-  } catch (qstashError: any) {
-    console.warn("Failed to delete message from QStash");
-    await logError(qstashError, { message_id: messageId }, "email_error");
-  }
-}
-
-export async function scheduleEmail({
-  notBefore,
-  to,
-  subject,
-  body,
-  sessionId,
-  scheduledFor,
-  deduplicationId,
-}: {
-  notBefore: number;
-  to: string;
-  subject: string;
-  body: string;
-  sessionId: string;
-  /** ISO session start this reminder was scheduled for; the send route drops it if the session has since moved. */
-  scheduledFor?: string;
-  /** QStash drops a publish repeating an id within its dedup window, so overlapping cron runs can't double-queue. */
-  deduplicationId?: string;
-}) {
-  try {
-    const qstash = new Client({ token: process.env.US_EAST_1_QSTASH_TOKEN });
-    const result = await qstash.publishJSON({
-      url: `${process.env.NEXT_PUBLIC_SITE_URL}/api/admin/email/send-email-reminder`,
-      notBefore: notBefore,
-      deduplicationId: deduplicationId,
-      body: {
-        to: to,
-        subject: subject,
-        body: body,
-        sessionId: sessionId,
-        scheduledFor: scheduledFor,
-      },
-      headers: {
-        authorization: `Bearer ${process.env.BEARER_TOKEN}`,
-      },
-    });
-    if (result && result.messageId) {
-    }
-    return result;
-  } catch (error) {
-    console.error("Unable to schedule email");
-    await logError(error, { to, subject, sessionId }, "email_error");
-    throw error;
   }
 }
 
@@ -637,154 +507,6 @@ export const sendEmailTest = async (from: string, to: string, subject: string, b
     await logError(error, { subject }, "email_error");
     throw error;
   }
-};
-
-export const scheduleReminder = async (data: { session: Session; type: "Tutor" | "Student" }) => {
-  try {
-    const supabase = await createAdminClient();
-
-    const session: Session = data.session;
-    const tutor: Profile | null = session.tutor;
-    const student: Profile | null = session.student;
-    const type: "Tutor" | "Student" = data.type;
-
-    if (!tutor || !student) {
-      throw new Error("No identified tutor or student");
-    }
-
-    //* Uncomment in production
-    const sessionDate = parseISO(session.date);
-    const scheduledTime = subMinutes(sessionDate, 15);
-    const message = createSessionNotification(session, tutor, student, type);
-    const recipient = type === "Tutor" ? tutor : student;
-    if (!recipient.email) {
-      throw new Error(`No email on file for ${type.toLowerCase()} ${recipient.id}`);
-    }
-
-    // Already scheduled for this recipient (weekly cron, session creation and
-    // reschedules can all reach here for the same session) - don't double-send.
-    const { data: existing, error: existingError } = await supabase
-      .from(Table.SessionReminders)
-      .select("id")
-      .eq("session_id", session.id)
-      .eq("recipient_id", recipient.id)
-      .eq("description", SESSION_REMINDER_DESCRIPTION)
-      .limit(1);
-    if (existingError) throw existingError;
-    if (existing && existing.length > 0) {
-      return { status: 200, message: "Reminder already scheduled", messageId: null };
-    }
-
-    const result = await scheduleEmail({
-      // Sessions created or moved inside the 15 minute lead time send right away.
-      notBefore: Math.floor(Math.max(scheduledTime.getTime(), Date.now()) / 1000),
-      deduplicationId: `session-reminder:${session.id}:${recipient.id}:${session.date}`,
-      to: recipient.email,
-      subject: "Upcoming Connect Me Session",
-      body: message,
-      sessionId: session.id,
-      scheduledFor: session.date,
-    });
-
-    if (result && result.messageId) {
-      const { data, error } = await supabase
-        .from(Table.SessionReminders)
-        .insert({
-          recipient_id: recipient.id,
-          session_id: session.id,
-          message_id: result.messageId,
-          description: SESSION_REMINDER_DESCRIPTION,
-        })
-        .select();
-
-      // The message is already queued; without a row nothing can cancel it, so drop it.
-      if (error) {
-        await deleteMsg(result.messageId);
-        // 23505: a concurrent caller recorded this recipient's reminder first.
-        if (error.code === "23505") {
-          return { status: 200, message: "Reminder already scheduled", messageId: null };
-        }
-        console.error("Supabase insert error", error);
-        await logError(error, { session_id: session.id, type }, "email_error");
-        throw error;
-      }
-      if (!data) {
-        await deleteMsg(result.messageId);
-        throw new Error("Unable to record scheduled message");
-      }
-    }
-
-    return {
-      status: 200,
-      message: "Email reminder scheduled successfully",
-      messageId: result.messageId,
-    };
-  } catch (error) {
-    console.error("Error scheduling reminder", error);
-    await logError(error, { session_id: data.session.id, type: data.type }, "email_error");
-    throw error;
-  }
-};
-
-/**
- * @param session Session Details
- * @param tutor Details about the tutor
- * @param student Details about the student
- *
- *
- * @returns email notification message
- */
-
-const createSessionNotification = (
-  session: Session,
-  tutor: Profile,
-  student: Profile,
-  type: "Tutor" | "Student",
-) => {
-  const tutorName: string = tutor ? ` ${tutor.firstName} ${tutor.lastName}` : "";
-  const studentName: string = student ? `${student.firstName} ${student.lastName}` : "your student";
-
-  if (type === "Tutor") {
-    return `
-      <p>Hi ${tutorName},<br><br>
-  
-      This is a reminder that your tutoring session with ${studentName} starts in <strong>15 minutes</strong>!<br><br>
-  
-      Remember to visit the <a href="https://www.connectmego.app/">Connect Me Tutor Portal</a> and fill out a Session Exist Form (SEF) once the session is complete.<br><br>
-  
-      Here's the Zoom link to the meeting:<br>
-      <a href="${session.meeting?.link}">Join Zoom Meeting</a><br><br>
-  
-      If you need to cancel, reschedule, or add additional sessions, you can do everything through the portal:<br>
-      <a href="https://www.connectmego.app/">https://www.connectmego.app/</a><br><br>
-  
-      For more details, you can reference the Connect Me Guidebook:<br>
-      <a href="https://drive.google.com/file/d/1vk9neT5FzDfk2ICpW6aeP5B_OL06te8i/view">
-          Connect Me Guidebook
-      </a><br><br>
-  
-      If you have any questions, feel free to reach out to us on Discord!<br><br>
-  
-      Best,<br>
-      The Connect Me Free Tutoring & Mentoring Team
-      </p>
-      `;
-  }
-
-  return `
-      <p>Hi ${studentName},<br><br>
-  
-      This is a reminder that your tutoring session with ${tutorName} starts in <strong>15 minutes</strong>!<br><br>
-  
-      Here's the Zoom link to the meeting:<br>
-      <a href="${session.meeting?.link}">Join Zoom Meeting</a><br><br>
-  
-      If you have any questions, feel free to reach out to your Tutor!<br><br>
-  
-      Best,<br>
-      The Connect Me Free Tutoring & Mentoring Team
-      </p>
-      `;
 };
 
 function getEarlySessionCheckInRecipients(enrollment: Enrollment) {
