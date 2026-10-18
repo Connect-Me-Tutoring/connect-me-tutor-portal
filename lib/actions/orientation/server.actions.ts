@@ -3,6 +3,7 @@
 import { requireAuthenticatedProfile } from "@/lib/actions/auth/authz.server";
 
 import { policyQuizQuestions } from "@/constants/policy-quiz";
+import { appendOrientationQuestionToSheet } from "@/lib/google-sheet";
 import { hasTutorOrientationAccess } from "@/lib/orientation/config.server";
 import { createClient } from "@/lib/supabase/server";
 import { Table } from "@/lib/supabase/tables";
@@ -29,8 +30,8 @@ const submitQuizPayloadSchema = z
 type SubmitQuizPayload = z.infer<typeof submitQuizPayloadSchema>;
 
 /**
- * Persists a quiz completion and sends the tutor's questions
- * to a Discord channel via webhook.
+ * Persists a quiz completion and sends the tutor's questions to the
+ * Operations sheet and a Discord channel via webhook.
  */
 export async function submitQuizCompletion(payload: SubmitQuizPayload) {
   const parsedPayload = submitQuizPayloadSchema.parse(payload);
@@ -70,7 +71,25 @@ export async function submitQuizCompletion(payload: SubmitQuizPayload) {
 
   const questionsText = parsedPayload.questionsText?.trim();
   if (questionsText) {
-    await sendDiscordWebhook(tutorName, questionsText, parsedPayload);
+    // Both helpers log their own failures; run them together so neither delays the other.
+    await Promise.allSettled([
+      appendOrientationQuestionToSheet({
+        submittedAt: new Date().toLocaleString("en-US", {
+          timeZone: "America/Los_Angeles",
+          dateStyle: "medium",
+          timeStyle: "short",
+        }),
+        userName: tutorName,
+        userEmail: profile.email ?? "",
+        questionText: questionsText,
+        quizStats: {
+          totalQuestions: parsedPayload.totalQuestions,
+          retries: parsedPayload.retries,
+        },
+        status: "New",
+      }),
+      sendDiscordWebhook(tutorName, questionsText, parsedPayload),
+    ]);
   }
 
   return { success: true };
