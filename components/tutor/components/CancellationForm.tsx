@@ -26,6 +26,7 @@ interface CancellationFormProps {
 
 type cancellationReasonType =
   | "Student cancelled with prior notice"
+  | "Student Did Not Attend"
   | "Student did not attend without prior notice"
   | "I am cancelling with prior notice"
   | "Last Minute Emergency"
@@ -43,6 +44,7 @@ const CancellationForm: React.FC<CancellationFormProps> = ({
 
   const isCancellationOther = cancellationReason === "Other";
   const isCancellationStudentAbsentWithoutPriorNotice =
+    cancellationReason === "Student Did Not Attend" ||
     cancellationReason === "Student did not attend without prior notice";
 
   return (
@@ -66,7 +68,7 @@ const CancellationForm: React.FC<CancellationFormProps> = ({
               onClick={(e) => {
                 const updatedSession: Session = {
                   ...session,
-                  status: "Cancelled" as "Active" | "Complete" | "Cancelled" | "Rescheduled",
+                  status: "Cancelled" as Session["status"],
                   session_exit_form: otherReason,
                 };
                 handleStatusChange(updatedSession);
@@ -103,11 +105,11 @@ const CancellationForm: React.FC<CancellationFormProps> = ({
               </span>
               <span className="space-x-2">
                 <RadioGroupItem
-                  value="Student did not attend without prior notice"
+                  value="Student Did Not Attend"
                   id="studentUnavailableWithoutPriorNotice"
                 />
                 <Label htmlFor="studentUnavailableWithoutPriorNotice">
-                  Student did not attend without prior notice
+                  Student Did Not Attend
                 </Label>
               </span>
               <span className="space-x-2">
@@ -142,8 +144,8 @@ const CancellationForm: React.FC<CancellationFormProps> = ({
                 const updatedSession: Session = {
                   ...session,
                   status: (isCancellationStudentAbsentWithoutPriorNotice
-                    ? "Complete"
-                    : "Cancelled") as "Active" | "Complete" | "Cancelled" | "Rescheduled",
+                    ? "Student Did Not Attend"
+                    : "Cancelled") as Session["status"],
                   session_exit_form: isCancellationOther
                     ? "Other Reason: " + otherReason
                     : cancellationReason || "",
