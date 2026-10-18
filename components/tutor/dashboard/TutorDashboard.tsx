@@ -260,6 +260,10 @@ const TutorDashboard = () => {
 
   // why: restore cancelled session to active status and update UI state
   const handleUndoCancel = async (sessionId: string) => {
+    // A no-show is recorded as a session exit form, so undo it like one.
+    if (TC.currentSessions.find((s) => s.id === sessionId)?.status === "Student Did Not Attend") {
+      return handleUndoSessionExitForm(sessionId);
+    }
     try {
       await undoCancelSession(sessionId, "Active");
       TC.setCurrentSessions(
