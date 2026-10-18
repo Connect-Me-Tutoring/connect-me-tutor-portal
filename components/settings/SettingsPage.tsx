@@ -26,7 +26,7 @@ import toast, { Toaster } from "react-hot-toast";
 import {
   switchProfile,
   getProfileUncached,
-  editProfile,
+  requestEmailChange,
 } from "@/lib/actions/profile/server.actions";
 import { useProfile } from "@/lib/contexts/profileContext";
 import type { Database } from "@/types/database.types";
@@ -80,6 +80,8 @@ export default function SettingsPage({
   );
   const [newEmail, setNewEmail] = useState(profile?.email || "");
   const [isSavingEmail, setIsSavingEmail] = useState(false);
+  // Address waiting on the confirmation links (auth user.new_email).
+  const [pendingEmail, setPendingEmail] = useState<string | null>(null);
   const [sessionReminders, setSessionReminders] = useState(false);
   const [sessionEmailNotifications, setSessionEmailNotifications] = useState(false);
   const [sessionTextNotifications, setSessionTextNotifications] = useState(false);
@@ -141,6 +143,7 @@ export default function SettingsPage({
 
       if (userError) throw new Error(userError.message);
       if (!user) throw new Error("No user found");
+      setPendingEmail(user.new_email ?? null);
 
       const profileData = await getProfile(user.id);
       if (profileData) {
@@ -257,20 +260,21 @@ export default function SettingsPage({
       toast.error("Email address is required");
       return;
     }
-    if (trimmedEmail === profile.email) {
+    if (trimmedEmail.toLowerCase() === profile.email?.toLowerCase()) {
       toast.error("That's already your current email address");
       return;
     }
 
     try {
       setIsSavingEmail(true);
-      await editProfile({ ...profile, email: trimmedEmail });
-
-      const refreshed = await getProfileWithProfileId(profile.id);
-      if (refreshed) setProfile(refreshed);
-
+      const { error } = await requestEmailChange(trimmedEmail);
+      if (error) {
+        toast.error(error);
+        return;
+      }
+      setPendingEmail(trimmedEmail.toLowerCase());
       toast.success(
-        "Confirmation emails sent to your old and new addresses. Your email will update once you confirm.",
+        "Check both your old and new inboxes and click the confirmation links. Your email will update once both are confirmed.",
       );
     } catch (error) {
       console.error("Error updating email:", error);
@@ -502,8 +506,8 @@ export default function SettingsPage({
           <section className="bg-white rounded-lg border p-6">
             <h1 className="text-2xl font-bold mb-2">Email Address</h1>
             <p className="text-gray-600 mb-6">
-              Update the email address associated with your account. We&apos;ll send a confirmation
-              link to your new email before the change takes effect.
+              Update the email address you log in with. We&apos;ll send confirmation links to your
+              current and new addresses, and the change takes effect once both are clicked.
             </p>
             <form onSubmit={handleEmailSubmit} className="space-y-4">
               <div>
@@ -519,6 +523,11 @@ export default function SettingsPage({
                   value={newEmail}
                   onChange={(e) => setNewEmail(e.target.value)}
                 />
+                {pendingEmail && (
+                  <p className="mt-2 text-sm text-amber-700">
+                    Pending confirmation: {pendingEmail}
+                  </p>
+                )}
               </div>
               <Button
                 type="submit"
