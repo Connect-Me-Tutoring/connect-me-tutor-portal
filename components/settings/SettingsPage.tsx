@@ -23,7 +23,11 @@ import { getProfile, getProfileWithProfileId } from "@/lib/actions/user/client.a
 import { createClient } from "@/lib/supabase/client";
 import { Profile } from "@/types";
 import toast, { Toaster } from "react-hot-toast";
-import { switchProfile, getProfileUncached } from "@/lib/actions/profile/server.actions";
+import {
+  switchProfile,
+  getProfileUncached,
+  editProfile,
+} from "@/lib/actions/profile/server.actions";
 import { useProfile } from "@/lib/contexts/profileContext";
 import type { Database } from "@/types/database.types";
 import { getUserProfiles } from "@/lib/actions/profile/server.actions";
@@ -33,7 +37,6 @@ interface AccountFormType {
   lastName: string;
   phoneNumber: string;
   age: string;
-  email: string;
   subjectsOfInterest: string;
   languagesSpoken: string;
 }
@@ -63,7 +66,6 @@ export default function SettingsPage({
     lastName: profile?.lastName || "",
     phoneNumber: profile?.phoneNumber || "",
     age: profile?.age !== undefined && profile?.age !== null ? String(profile.age) : "",
-    email: profile?.email || "",
     subjectsOfInterest: Array.isArray((profile as any)?.subjects_of_interest)
       ? (profile as any).subjects_of_interest.join(", ")
       : "",
@@ -76,6 +78,8 @@ export default function SettingsPage({
   const [accountStatus, setAccountStatus] = useState<Profile["status"]>(
     profile?.status === "Inactive" ? "Inactive" : "Active",
   );
+  const [newEmail, setNewEmail] = useState(profile?.email || "");
+  const [isSavingEmail, setIsSavingEmail] = useState(false);
   const [sessionReminders, setSessionReminders] = useState(false);
   const [sessionEmailNotifications, setSessionEmailNotifications] = useState(false);
   const [sessionTextNotifications, setSessionTextNotifications] = useState(false);
@@ -109,7 +113,6 @@ export default function SettingsPage({
       lastName: profile.lastName || "",
       phoneNumber: profile.phoneNumber || "",
       age: profile.age !== undefined && profile.age !== null ? String(profile.age) : "",
-      email: profile.email || "",
       subjectsOfInterest: Array.isArray((profile as any).subjects_of_interest)
         ? (profile as any).subjects_of_interest.join(", ")
         : "",
@@ -119,6 +122,7 @@ export default function SettingsPage({
     });
     // sync account status when profile loads so the selector actually shows the current saved value instead of defaults
     setAccountStatus(profile.status === "Inactive" ? "Inactive" : "Active");
+    setNewEmail(profile.email || "");
   }, [profile]);
 
   const toList = (value: string) => {
@@ -204,7 +208,6 @@ export default function SettingsPage({
         last_name: accountForm.lastName.trim(),
         phone_number: accountForm.phoneNumber.trim() || null,
         age: accountForm.age ? Number(accountForm.age) : null,
-        email: accountForm.email.trim() || null,
         subjects_of_interest: toList(accountForm.subjectsOfInterest),
         languages_spoken: toList(accountForm.languagesSpoken),
       };
@@ -239,6 +242,41 @@ export default function SettingsPage({
       toast.error("Unable to update profile");
     } finally {
       setIsSavingProfile(false);
+    }
+  };
+
+  const handleEmailSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!profile?.id) {
+      toast.error("No active profile to update");
+      return;
+    }
+
+    const trimmedEmail = newEmail.trim();
+    if (!trimmedEmail) {
+      toast.error("Email address is required");
+      return;
+    }
+    if (trimmedEmail === profile.email) {
+      toast.error("That's already your current email address");
+      return;
+    }
+
+    try {
+      setIsSavingEmail(true);
+      await editProfile({ ...profile, email: trimmedEmail });
+
+      const refreshed = await getProfileWithProfileId(profile.id);
+      if (refreshed) setProfile(refreshed);
+
+      toast.success(
+        "Confirmation emails sent to your old and new addresses. Your email will update once you confirm.",
+      );
+    } catch (error) {
+      console.error("Error updating email:", error);
+      toast.error("Unable to update email address");
+    } finally {
+      setIsSavingEmail(false);
     }
   };
 
@@ -460,6 +498,37 @@ export default function SettingsPage({
               </div>
             </section>
           )}
+          {/* Email Address Section */}
+          <section className="bg-white rounded-lg border p-6">
+            <h1 className="text-2xl font-bold mb-2">Email Address</h1>
+            <p className="text-gray-600 mb-6">
+              Update the email address associated with your account. We&apos;ll send a
+              confirmation link to your new email before the change takes effect.
+            </p>
+            <form onSubmit={handleEmailSubmit} className="space-y-4">
+              <div>
+                <Label htmlFor="email" className="text-sm font-medium">
+                  Email Address
+                </Label>
+                <Input
+                  id="email"
+                  type="email"
+                  required
+                  placeholder="Enter your email (e.g john@example.com)"
+                  className="mt-1 placeholder:text-gray-300"
+                  value={newEmail}
+                  onChange={(e) => setNewEmail(e.target.value)}
+                />
+              </div>
+              <Button
+                type="submit"
+                disabled={!profile || isSavingEmail}
+                className="w-full sm:w-auto"
+              >
+                {isSavingEmail ? "Updating..." : "Update Email"}
+              </Button>
+            </form>
+          </section>
           <section className="bg-white rounded-lg border p-6">
             <div className="flex items-center gap-3 mb-4">
               <h2 className="text-2xl font-bold">Account Settings</h2>
@@ -574,24 +643,6 @@ export default function SettingsPage({
                     }
                   />
                 </div>
-              </div>
-              <div>
-                <Label htmlFor="email" className="text-sm font-medium">
-                  Email Address
-                </Label>
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="Enter your email (e.g john@example.com)"
-                  className="mt-1 placeholder:text-gray-300"
-                  value={accountForm.email}
-                  onChange={(e) =>
-                    setAccountForm((prev) => ({
-                      ...prev,
-                      email: e.target.value,
-                    }))
-                  }
-                />
               </div>
               <div>
                 <Label htmlFor="bio" className="text-sm font-medium">
