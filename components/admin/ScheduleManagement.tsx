@@ -554,6 +554,8 @@ const Schedule = () => {
       fetchSessions(weekStart, weekEnd);
       toast.success("Added Session");
       setIsAddSessionOpen(false);
+      // Don't carry "First Session" over to the next session added from this dialog.
+      setNewSession((prev) => ({ ...prev, isFirstSession: false }));
     } catch (error) {
       toast.error("Unable to add session");
     }
@@ -1193,7 +1195,8 @@ const Schedule = () => {
         <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
           <DialogContent>
             <DialogHeader>
-              <div className="flex items-center justify-between">
+              {/* pr-8 keeps the badge clear of the dialog's close button */}
+              <div className="flex items-center justify-between pr-8">
                 <DialogTitle>Session Details</DialogTitle>
                 {selectedSession?.isFirstSession && (
                   <Badge className="bg-indigo-100 text-indigo-800 border-indigo-200 hover:bg-indigo-100 text-xs font-semibold">
