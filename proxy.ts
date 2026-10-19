@@ -3,7 +3,15 @@ import { NextResponse, type NextRequest } from "next/server";
 import { isCronRequestAuthorized } from "@/lib/security/cron";
 import { isBearerTokenAuthorized } from "@/lib/security/bearer-token";
 
-const PUBLIC_PATHS = ["/", "/auth", "/forgot-password", "/set-password", "/contact"];
+const PUBLIC_PATHS = [
+  "/",
+  "/auth",
+  "/forgot-password",
+  "/set-password",
+  "/contact",
+  "/privacy",
+  "/parental-consent",
+];
 const SELF_VERIFYING_API_PATHS = ["/api/zoom", "/api/session-exit-form"];
 
 function isPublicPath(path: string) {
