@@ -6,7 +6,6 @@ import { getSessionMeetingSlots } from "../meeting/occupancy.server.actions";
 type SessionStatus = Database["public"]["Enums"]["session_status"];
 import {
   deleteScheduledEmailBeforeSessions,
-  sendScheduledEmailsBeforeSessions,
   updateScheduledEmailBeforeSessions,
 } from "../email/server.actions";
 import { getProfileWithProfileId, getProfileByEmail } from "../user/client.actions";
@@ -391,7 +390,12 @@ export async function getTutorSessions(
 }
 
 export async function getSessionTimePassed(sessionId: string): Promise<number> {
-  const { data } = await supabase.from("Sessions").select("date").single().throwOnError();
+  const { data } = await supabase
+    .from("Sessions")
+    .select("date")
+    .eq("id", sessionId)
+    .single()
+    .throwOnError();
   if (!data || !data.date) throw new Error("Session Date Not Found");
   const sessionDate: Date = new Date(data.date);
   const now: Date = new Date();

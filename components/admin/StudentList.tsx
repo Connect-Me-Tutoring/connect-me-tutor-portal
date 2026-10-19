@@ -38,13 +38,14 @@ import {
 import { getProfile } from "@/lib/actions/user/client.actions";
 import {
   getAllProfiles,
-  deactivateUser,
-  reactivateUser,
   getUserFromId,
   resendEmailConfirmation,
 } from "@/lib/actions/admin.actions";
-import { editProfile } from "@/lib/actions/profile/server.actions";
-import { deleteUser } from "@/lib/actions/auth/server.actions";
+import {
+  editProfile,
+  deactivateProfile,
+  reactivateProfile,
+} from "@/lib/actions/profile/server.actions";
 import { addUser } from "@/lib/actions/auth/client.actions";
 import { createClient } from "@/lib/supabase/client";
 import { Profile } from "@/types";
@@ -63,8 +64,10 @@ import { ResponsiveList, ResponsiveListColumn } from "@/components/ui/responsive
 import toast, { Toaster } from "react-hot-toast";
 import { set } from "date-fns";
 import { AlertDialogCancel } from "@radix-ui/react-alert-dialog";
+import { isPendingParentalConsent } from "@/lib/consent/types";
 import AddStudentForm from "./components/AddStudentForm";
-import DeleteStudentForm from "./components/DeleteStudentForm";
+import ProfileStatusForm from "./components/ProfileStatusForm";
+import { inactiveLast } from "@/lib/utils/inactive-last";
 import EditStudentForm from "./components/EditStudentForm";
 import { UserAvailabilities } from "../ui/UserAvailabilities";
 
@@ -125,9 +128,7 @@ const StudentList = ({ initialStudents }: any) =>
     const [selectedStudent, setSelectedStudent] = useState<Profile | null>(null);
 
     //---Modals
-    const [isDeactivateModalOpen, setIsDeactivateModalOpen] = useState(false);
     const [selectedStudentId, setSelectedStudentId] = useState<string | null>(null);
-    const [isReactivateModalOpen, setIsReactivateModalOpen] = useState(false);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
     const [addingStudent, setAddingStudent] = useState(false);
@@ -184,7 +185,8 @@ const StudentList = ({ initialStudents }: any) =>
         );
       });
 
-      setFilteredStudents(filtered);
+      // Inactive students go to the bottom (#807), before pagination so it holds across pages.
+      setFilteredStudents(inactiveLast(filtered));
       setCurrentPage(1);
     }, [filterValue, students]);
 
@@ -282,15 +284,23 @@ const StudentList = ({ initialStudents }: any) =>
     const handleAddStudentWithParam = async (student: Partial<Profile>) => {
       try {
         setAddingStudent(true);
-        // Ensure addStudent returns a Profile
-        const addedStudent: Profile = await addUser(student, "Student", true);
+        const result = await addUser(student, "Student", true);
+        const pendingConsent = isPendingParentalConsent(result);
+        const addedStudent = pendingConsent ? null : (result as Profile);
 
-        if (addedStudent) {
+        if (addedStudent || pendingConsent) {
           // Close modal and show success toast
           setIsModalOpen(false);
-          setStudents((prevStudents) => [...prevStudents, addedStudent]);
-          setFilteredStudents((prev) => [...prev, addedStudent]);
-          toast.success("Successfully added student.");
+          if (addedStudent) {
+            setStudents((prevStudents) => [...prevStudents, addedStudent]);
+            setFilteredStudents((prev) => [...prev, addedStudent]);
+            toast.success("Successfully added student.");
+          } else {
+            toast.success(
+              "Student is under 13. We emailed their parent/guardian for permission; the account is created once they approve.",
+              { duration: 8000 },
+            );
+          }
 
           // Reset form
           setNewStudent({
@@ -334,8 +344,9 @@ const StudentList = ({ initialStudents }: any) =>
     const handleAddStudent = async () => {
       try {
         setAddingStudent(true);
-        // Ensure addStudent returns a Profile
-        const addedStudent: Profile = await addUser(newStudent, "Student", true);
+        const result = await addUser(newStudent, "Student", true);
+        const pendingConsent = isPendingParentalConsent(result);
+        const addedStudent = pendingConsent ? null : (result as Profile);
 
         // Update local state
         setStudents((prevStudents) => {
@@ -354,12 +365,18 @@ const StudentList = ({ initialStudents }: any) =>
           return prevFiltered; // Return previous state if addedStudent is not valid
         });
 
-        if (addedStudent) {
+        if (addedStudent || pendingConsent) {
           // Close modal and show success toast
           setIsModalOpen(false);
-          setStudents((prevStudents) => [...prevStudents, addedStudent]);
-
-          toast.success("Successfully added student.");
+          if (addedStudent) {
+            setStudents((prevStudents) => [...prevStudents, addedStudent]);
+            toast.success("Successfully added student.");
+          } else {
+            toast.success(
+              "Student is under 13. We emailed their parent/guardian for permission; the account is created once they approve.",
+              { duration: 8000 },
+            );
+          }
 
           // Reset form
           setNewStudent({
@@ -401,38 +418,18 @@ const StudentList = ({ initialStudents }: any) =>
       }
     };
 
-    const handleDeleteStudent = async () => {
-      if (selectedStudentId) {
-        try {
-          console.log("Deleting User");
-          await deleteUser(selectedStudentId);
-          toast.success("Student deleted successfully");
-          setIsDeactivateModalOpen(false);
-          setSelectedStudentId(null);
-          getStudentData();
-        } catch (error) {
-          toast.error("Failed to delete student");
-        }
+    // #807: students are deactivated, never deleted. Deleting cascades away
+    // their enrollments and pairings, and nulls student_id on sessions.
+    const handleDeactivateStudent = async (profileId: string) => {
+      try {
+        await deactivateProfile(profileId);
+        toast.success("Student deactivated");
+        getStudentData();
+      } catch (error) {
+        toast.error("Failed to deactivate student");
+        throw error;
       }
     };
-
-    //----Deprecated--->
-    const handleDeactivateStudent = async () => {
-      if (selectedStudentId) {
-        try {
-          const data = await deactivateUser(selectedStudentId); // Call deactivateUser function with studentId
-          if (data) {
-            toast.success("Student deactivated successfully");
-            setIsDeactivateModalOpen(false);
-            setSelectedStudentId(null);
-            getStudentData();
-          }
-        } catch (error) {
-          toast.error("Failed to deactivate student");
-        }
-      }
-    };
-    //<---
 
     const handleGetSelectedStudent = async (profileId: string | null) => {
       if (profileId) {
@@ -460,19 +457,14 @@ const StudentList = ({ initialStudents }: any) =>
       }
     };
 
-    const handleReactivateStudent = async () => {
-      if (selectedStudentId) {
-        try {
-          const data = await reactivateUser(selectedStudentId); // Call deactivateUser function with studentId
-          if (data) {
-            toast.success("Student reactivated successfully");
-            setIsReactivateModalOpen(false);
-            setSelectedStudentId(null);
-            getStudentData();
-          }
-        } catch (error) {
-          toast.error("Failed to deactivate student");
-        }
+    const handleReactivateStudent = async (profileId: string) => {
+      try {
+        await reactivateProfile(profileId);
+        toast.success("Student reactivated");
+        getStudentData();
+      } catch (error) {
+        toast.error("Failed to reactivate student");
+        throw error;
       }
     };
 
@@ -533,6 +525,12 @@ const StudentList = ({ initialStudents }: any) =>
     );
 
     const columns: ResponsiveListColumn<Profile>[] = [
+      {
+        key: "status",
+        header: "Status",
+        cell: (student) => student.status,
+        mobileCell: null,
+      },
       {
         key: "studentNumber",
         header: "Student #",
@@ -642,13 +640,18 @@ const StudentList = ({ initialStudents }: any) =>
               addingStudent={addingStudent}
             />
 
-            <DeleteStudentForm
-              students={students}
-              selectedStudentId={selectedStudentId}
-              setSelectedStudentId={setSelectedStudentId}
-              handleDeleteStudent={handleDeleteStudent}
+            <ProfileStatusForm
+              profiles={students}
+              roleLabel="Student"
+              mode="deactivate"
+              onConfirm={handleDeactivateStudent}
             />
-            {/*Reactivate Student*/}
+            <ProfileStatusForm
+              profiles={students}
+              roleLabel="Student"
+              mode="reactivate"
+              onConfirm={handleReactivateStudent}
+            />
 
             <EditStudentForm
               students={students}

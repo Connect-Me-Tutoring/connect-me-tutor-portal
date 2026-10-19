@@ -28,7 +28,6 @@ import { normalizeZoomParticipationEvents } from "@/lib/zoom/participation-norma
 import { tableToInterfaceEnrollments, tableToInterfaceSessions } from "../../utils/type-utils";
 import {
   deleteScheduledEmailBeforeSessions,
-  sendScheduledEmailsBeforeSessions,
   sendStudentSessionCancellationEmail,
   sendTutorSessionCancellationEmail,
   updateScheduledEmailBeforeSessions,
@@ -1313,6 +1312,7 @@ export async function addStandaloneSession(
       meeting_id: session.meeting?.id,
       duration: session.duration || 1,
       is_standalone: true,
+      is_first_session: session.isFirstSession ?? false,
     };
 
     const { data, error } = await supabase
@@ -1329,11 +1329,7 @@ export async function addStandaloneSession(
     if (error) throw error;
     if (!data) toast.error("No Data");
 
-    if (data && scheduleEmail) {
-      const addedSession: Session = tableToInterfaceSessions(data);
-
-      sendScheduledEmailsBeforeSessions([addedSession]);
-    }
+    // Reminders are sent by the send-session-reminders cron once the session is 20 minutes out.
   } catch (error) {
     console.error("Unable to add one session", error);
     await logError(
@@ -1456,7 +1452,7 @@ export async function updateSession(updatedSession: Session, updateEmail: boolea
     const newSession: Session = tableToInterfaceSessions(data);
 
     if (updateEmail) {
-      await updateScheduledEmailBeforeSessions(newSession);
+      await updateScheduledEmailBeforeSessions(newSession.id);
     }
 
     return newSession;

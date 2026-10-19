@@ -197,7 +197,7 @@ const CurrentSessionsTable = ({
                     </HoverCardContent>
                   </HoverCard>
                   {/* changed to show X icon for cancelled sessions, trash for active */}
-                  {session.status === "Cancelled" ? (
+                  {session.status === "Cancelled" || session.status === "Student Did Not Attend" ? (
                     <HoverCard>
                       <HoverCardTrigger asChild>
                         <Button
@@ -280,7 +280,7 @@ const CurrentSessionsTable = ({
               >
                 <UserRoundPlus className="h-4 w-4" />
               </Button>
-              {session.status === "Cancelled" ? (
+              {session.status === "Cancelled" || session.status === "Student Did Not Attend" ? (
                 <Button variant="ghost" size="icon" onClick={() => handleUndoCancel?.(session.id)}>
                   <X className="h-4 w-4" color="#10b981" />
                 </Button>

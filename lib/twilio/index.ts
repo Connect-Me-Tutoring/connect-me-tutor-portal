@@ -164,8 +164,12 @@ export async function scheduleSessionReminders(
     throw new Error(`Session ${session.id}: Tutor data is missing`);
   }
 
-  // Skip if session is cancelled or completed
-  if (session.status === "Cancelled" || session.status === "Complete") {
+  // Skip if session is cancelled, completed, or student did not attend
+  if (
+    session.status === "Cancelled" ||
+    session.status === "Complete" ||
+    session.status === "Student Did Not Attend"
+  ) {
     return scheduledMessages;
   }
 
