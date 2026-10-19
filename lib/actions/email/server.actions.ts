@@ -30,11 +30,7 @@ import EarlySessionCheckInEmail from "@/components/emails/check-in/early-session
 import { getAllActiveEnrollmentsForCron } from "../enrollment/server.actions";
 import { Table } from "../../supabase/tables";
 import { formatInTimeZone } from "date-fns-tz";
-import {
-  requireAdmin,
-  requireSessionAccess,
-  requireSessionAccessById,
-} from "../auth/authz.server";
+import { requireAdmin, requireSessionAccess, requireSessionAccessById } from "../auth/authz.server";
 import { getQstashClient, removeSessionReminders } from "@/lib/email/session-reminders";
 import { logError } from "@/lib/posthog";
 
