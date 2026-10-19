@@ -26,7 +26,7 @@
 
 //       const emailResult = await resend.emails.send({
 //         from: "reminder@connectmego.app",
-//         to: "ahu@connectmego.org", //!
+//         to: "admin@example.com", //!
 //         subject: "Connect Me Email",
 //         html: emailHtml,
 //       });
@@ -39,7 +39,7 @@
 
 //       await resend.emails.send({
 //         from: "reminder@connectmego.app",
-//         to: "ahu@connectmego.org", //!
+//         to: "admin@example.com", //!
 //         subject: "Connect Me Email",
 //         html: emailHtml,
 //       });

@@ -14,73 +14,28 @@ import { getProfileRole } from "../user/server.actions";
 import { isCronRequestAuthorized } from "@/lib/security/cron";
 import { logError } from "@/lib/posthog";
 import type { Database } from "@/types/database.types";
+import { provisionUser } from "@/lib/auth/provision-user.server";
+import { createConsentRequest } from "@/lib/consent/parental-consent.server";
+import { requiresParentalConsent } from "@/lib/consent/requires-parental-consent";
+import type { PendingParentalConsent } from "@/lib/consent/types";
 
-interface UserMetadata {
-  email: string;
-  role: "Student" | "Tutor" | "Admin";
-  user_id: string;
-  first_name: string | null;
-  last_name: string | null;
-  age: string;
-  grade: string;
-  gender: string;
-  start_date: string;
-  availability: Availability[];
-  parent_name: string;
-  parent_phone: string;
-  parent_email: string;
-  phone_number: string;
-  timezone: string;
-  subjects_of_interest: string[];
-  status: "Active";
-  student_number: string;
-  languages_spoken: string[];
-}
 
-const ensurePairingQueueForNewProfile = async (
-  supabase: Awaited<ReturnType<typeof createAdminClient>>,
-  profile: { id: string; role: string | null },
-) => {
-  const normalizedRole = profile.role?.toLowerCase();
-  if (normalizedRole !== "student" && normalizedRole !== "tutor") return;
+/**
+ * Creates a new user through an email invite. Students under 13 are not created
+ * here: the parent is emailed for consent first and the account is created when
+ * they approve (see lib/consent/parental-consent.server.ts).
+ */
+export const createUser = async (
+  newProfileData: CreatedProfileData,
+): Promise<Profile | PendingParentalConsent> => {
+  await verifyAdmin();
 
-  const { data: existing, error: existingError } = await supabase
-    .from(Table.PairingRequests)
-    .select("id, in_queue, priority")
-    .eq("user_id", profile.id)
-    .order("created_at", { ascending: false })
-    .limit(1)
-    .maybeSingle();
-
-  if (existingError) throw existingError;
-
-  if (existing?.id) {
-    if (existing.in_queue === false) {
-      const { error: updateError } = await supabase
-        .from(Table.PairingRequests)
-        .update({
-          in_queue: true,
-          status: "pending",
-          type: normalizedRole,
-          priority: existing.priority ?? 1,
-        })
-        .eq("id", existing.id);
-      if (updateError) throw updateError;
-    }
-    return;
+  if (requiresParentalConsent(newProfileData.role, newProfileData.age)) {
+    const admin = await getUser();
+    return createConsentRequest(newProfileData, admin?.id ?? null);
   }
 
-  const { error: insertError } = await supabase.from(Table.PairingRequests).insert([
-    {
-      user_id: profile.id,
-      type: normalizedRole,
-      status: "pending",
-      priority: 1,
-      in_queue: true,
-      notes: "Auto-enqueued on account creation",
-    },
-  ]);
-  if (insertError) throw insertError;
+  return provisionUser(newProfileData);
 };
 
 export const isAuthorized = async (request: NextRequest) => {
@@ -122,128 +77,7 @@ export const getUser = async () => {
   return user;
 };
 
-const inviteUser = async (newProfileData: CreatedProfileData) => {
-  const supabase = await createAdminClient();
 
-  const { data: authData, error: authError } = await supabase.auth.admin.inviteUserByEmail(
-    newProfileData.email,
-    {
-      data: {
-        first_name: newProfileData.firstName,
-        last_name: newProfileData.lastName,
-      },
-    },
-  );
-
-  // await supabase.auth.admin.createUser({
-  //   email: newProfileData.email,
-  //   password: newProfileData.password,
-  // });
-
-  // if (authError) {
-  //   console.log("Unable to invite user " + authError.message);
-  //   throw new Error("Unable to invite user " + authError.message);
-  // }
-
-  const newUserId = authData?.user?.id;
-  return { newUserId, authError };
-};
-
-/**
- * Creates a new user through an email invite
- * @param newProfileData
- * @returns
- */
-
-export const createUser = async (newProfileData: CreatedProfileData) => {
-  await verifyAdmin();
-  const supabase = await createAdminClient();
-  try {
-    const { data: prevProfile } = await supabase
-      .from("Profiles")
-      .select("user_id, role")
-      .eq("email", newProfileData.email)
-      .limit(1)
-      .maybeSingle()
-      .throwOnError();
-
-    if (prevProfile?.role === "Admin") {
-      throw new Error("Multiple profiles prohibited for provided email");
-    }
-
-    let userId = prevProfile?.user_id;
-    if (!userId) {
-      const { newUserId, authError } = await inviteUser(newProfileData);
-      if (!newUserId || authError) {
-        const { data } = await supabase.rpc("get_user_by_email", {
-          email: newProfileData.email,
-        });
-        const userRecord = data as unknown as { id: string } | null;
-        if (userRecord) await supabase.auth.admin.deleteUser(userRecord.id);
-        throw authError;
-      }
-      userId = newUserId;
-    }
-
-    const userMetadata: UserMetadata = {
-      email: newProfileData.email,
-      role: newProfileData.role,
-      user_id: userId,
-      first_name: newProfileData.firstName,
-      last_name: newProfileData.lastName,
-      age: newProfileData.age,
-      grade: newProfileData.grade,
-      gender: newProfileData.gender,
-      start_date: newProfileData.startDate,
-      availability: newProfileData.availability,
-      parent_name: newProfileData.parentName,
-      parent_phone: newProfileData.parentPhone,
-      parent_email: newProfileData.parentEmail,
-      phone_number: newProfileData.phoneNumber,
-      timezone: newProfileData.timezone,
-      subjects_of_interest: newProfileData.subjects_of_interest,
-      status: newProfileData.status,
-      student_number: newProfileData.studentNumber,
-      languages_spoken: newProfileData.languages_spoken,
-    };
-
-    const { data: createdProfile, error: profileError } = await supabase
-      .from("Profiles")
-      .insert(userMetadata as unknown as Database["public"]["Tables"]["Profiles"]["Insert"])
-      .select()
-      .single();
-
-    /*
-     * Should only delete if we do not already have another profile under the same email
-     * and we encounter an error inserting a Profile record to the table
-     */
-    if (!prevProfile && profileError) {
-      console.error("Unable to create profile", profileError);
-      await logError(
-        profileError,
-        { action: "createUser", email: newProfileData.email },
-        "auth_error",
-      );
-      await supabase.auth.admin.deleteUser(userId);
-      throw profileError;
-    }
-
-    const createdProfileData: Profile = tableToInterfaceProfiles(createdProfile);
-
-    if (createdProfile?.id) {
-      await ensurePairingQueueForNewProfile(supabase, {
-        id: createdProfile.id,
-        role: createdProfile.role ?? null,
-      });
-    }
-
-    return createdProfileData;
-  } catch (error) {
-    console.error("Error creating user:", error);
-    await logError(error, { action: "createUser", email: newProfileData.email }, "auth_error");
-    throw error;
-  }
-};
 
 const replaceLastActiveProfile = async (
   userId: string,

@@ -983,6 +983,68 @@ export type Database = {
           },
         ];
       };
+      parental_consents: {
+        Row: {
+          consent_text_version: string | null;
+          created_at: string;
+          expires_at: string;
+          id: string;
+          parent_email: string;
+          parent_name: string | null;
+          pending_profile: Json | null;
+          profile_id: string | null;
+          requested_by: string | null;
+          resolved_at: string | null;
+          resolved_ip: string | null;
+          resolved_user_agent: string | null;
+          status: string;
+          student_first_name: string;
+          token_hash: string;
+        };
+        Insert: {
+          consent_text_version?: string | null;
+          created_at?: string;
+          expires_at: string;
+          id?: string;
+          parent_email: string;
+          parent_name?: string | null;
+          pending_profile?: Json | null;
+          profile_id?: string | null;
+          requested_by?: string | null;
+          resolved_at?: string | null;
+          resolved_ip?: string | null;
+          resolved_user_agent?: string | null;
+          status?: string;
+          student_first_name: string;
+          token_hash: string;
+        };
+        Update: {
+          consent_text_version?: string | null;
+          created_at?: string;
+          expires_at?: string;
+          id?: string;
+          parent_email?: string;
+          parent_name?: string | null;
+          pending_profile?: Json | null;
+          profile_id?: string | null;
+          requested_by?: string | null;
+          resolved_at?: string | null;
+          resolved_ip?: string | null;
+          resolved_user_agent?: string | null;
+          status?: string;
+          student_first_name?: string;
+          token_hash?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "parental_consents_profile_id_fkey";
+            columns: ["profile_id"];
+            isOneToOne: false;
+            referencedRelation: "Profiles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       zoom_participant_events: {
         Row: {
           action: string;
