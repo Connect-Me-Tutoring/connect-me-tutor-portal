@@ -21,8 +21,8 @@ export default function AuthError() {
                 <h1 className="text-2xl text-center font-bold">This link has expired</h1>
                 <p className="text-sm text-center text-gray-600">
                   Email links only work for a limited time and can only be used once. If you were
-                  invited to Connect Me, or need to reset your password, get a new 6-digit code
-                  sent to your email and set your password from there.
+                  invited to Connect Me, or need to reset your password, get a new 6-digit code sent
+                  to your email and set your password from there.
                 </p>
               </div>
               <Button asChild className="w-full bg-blue-400">

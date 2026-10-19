@@ -42,13 +42,13 @@ export default function PrivacyPage() {
         Connect Me values the privacy of its students, parents and guardians, and tutors. This
         Privacy Policy (&ldquo;Policy&rdquo;) explains what personal information the Connect Me
         tutor portal (the &ldquo;Portal&rdquo;) collects, why we collect it, who it is shared with,
-        and what choices you have. It applies to the Portal. Our public website at
-        connectmego.org has its own privacy policy.
+        and what choices you have. It applies to the Portal. Our public website at connectmego.org
+        has its own privacy policy.
       </p>
       <p>
-        Connect Me is a 501(c)(3) non-profit organization registered in Michigan and is student
-        run. By using the Portal you agree to this Policy. If you are a parent or guardian, you
-        agree to it on behalf of your child when you give permission for their account.
+        Connect Me is a 501(c)(3) non-profit organization registered in Michigan and is student run.
+        By using the Portal you agree to this Policy. If you are a parent or guardian, you agree to
+        it on behalf of your child when you give permission for their account.
       </p>
 
       <Section title="Information we collect">
@@ -72,9 +72,9 @@ export default function PrivacyPage() {
               number, entered for each student.
             </>,
             <>
-              <strong>Tutoring records:</strong> pairings between students and tutors, scheduled
-              and completed sessions, session summaries and feedback forms, hours logged, and
-              reschedule or cancellation requests.
+              <strong>Tutoring records:</strong> pairings between students and tutors, scheduled and
+              completed sessions, session summaries and feedback forms, hours logged, and reschedule
+              or cancellation requests.
             </>,
             <>
               <strong>Messages and files:</strong> in-app chat messages and attachments between
@@ -116,9 +116,9 @@ export default function PrivacyPage() {
       <Section title="How we share information">
         <p>
           Connect Me does not sell, rent, or lease personal information to anyone. Within the
-          Portal, information is visible only to people who need it: a student&rsquo;s paired
-          tutor can see the details needed to run their sessions, and Connect Me administrators can
-          see records needed to operate the program.
+          Portal, information is visible only to people who need it: a student&rsquo;s paired tutor
+          can see the details needed to run their sessions, and Connect Me administrators can see
+          records needed to operate the program.
         </p>
         <p>
           We use service providers who process information on our behalf, only to run the Portal:
@@ -173,20 +173,20 @@ export default function PrivacyPage() {
         </p>
         <p>
           <strong>Parents and guardians</strong> can at any time ask to review the personal
-          information we hold about their child, ask us to correct or delete it, and refuse
-          further collection or use of it. To do so, contact us using the details below. If
-          information about a child under 13 was collected without parental permission, we will
-          delete it promptly.
+          information we hold about their child, ask us to correct or delete it, and refuse further
+          collection or use of it. To do so, contact us using the details below. If information
+          about a child under 13 was collected without parental permission, we will delete it
+          promptly.
         </p>
       </Section>
 
       <Section title="How long we keep information">
         <p>
-          We keep account and tutoring records while you take part in Connect Me, and afterward
-          only as long as needed for program records (for example, verifying volunteer hours) and
-          to meet legal obligations. You can ask us to delete your or your child&rsquo;s
-          information at any time; some records may be kept where the law requires or where
-          needed to resolve a dispute or protect safety.
+          We keep account and tutoring records while you take part in Connect Me, and afterward only
+          as long as needed for program records (for example, verifying volunteer hours) and to meet
+          legal obligations. You can ask us to delete your or your child&rsquo;s information at any
+          time; some records may be kept where the law requires or where needed to resolve a dispute
+          or protect safety.
         </p>
       </Section>
 
@@ -202,8 +202,8 @@ export default function PrivacyPage() {
 
       <Section title="Non-marketing messages">
         <p>
-          We may contact you for non-marketing purposes such as session reminders, check-ins,
-          bug or security alerts, account issues, and changes to the Portal or this Policy.
+          We may contact you for non-marketing purposes such as session reminders, check-ins, bug or
+          security alerts, account issues, and changes to the Portal or this Policy.
         </p>
       </Section>
 
@@ -211,10 +211,9 @@ export default function PrivacyPage() {
         <p>
           The Portal uses cookies and similar technologies. Session cookies keep you signed in.
           Analytics tools (PostHog) record pages viewed, features used, and errors so we can
-          understand how the Portal is used and fix problems. Analytics are not linked to your
-          name, but error reports may include your account email so we can investigate. We do
-          not use analytics for advertising. You can remove or block cookies in your browser
-          settings.
+          understand how the Portal is used and fix problems. Analytics are not linked to your name,
+          but error reports may include your account email so we can investigate. We do not use
+          analytics for advertising. You can remove or block cookies in your browser settings.
         </p>
       </Section>
 
@@ -230,9 +229,9 @@ export default function PrivacyPage() {
 
       <Section title="Users outside the United States">
         <p>
-          Connect Me operates primarily in the United States. If you use the Portal from outside
-          the United States, your information will be transferred to and stored in the United
-          States. By providing information, you consent to this transfer.
+          Connect Me operates primarily in the United States. If you use the Portal from outside the
+          United States, your information will be transferred to and stored in the United States. By
+          providing information, you consent to this transfer.
         </p>
       </Section>
 
@@ -253,13 +252,14 @@ export default function PrivacyPage() {
       </Section>
 
       <Section title="Contact us">
-        <p>
-          Questions, or requests to review, correct, or delete information? Contact us:
-        </p>
+        <p>Questions, or requests to review, correct, or delete information? Contact us:</p>
         <List
           items={[
             <>
-              Email: <a href="mailto:info@connectmego.org" className="underline">info@connectmego.org</a>
+              Email:{" "}
+              <a href="mailto:info@connectmego.org" className="underline">
+                info@connectmego.org
+              </a>
             </>,
             "Telephone: 1-248-916-4100",
             <>

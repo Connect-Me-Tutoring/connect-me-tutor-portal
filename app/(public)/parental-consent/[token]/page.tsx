@@ -42,8 +42,8 @@ export default async function ParentalConsentPage({
         <>
           <p>
             {request.parentName ? `${request.parentName}, ` : ""}
-            {request.studentFirstName} has been signed up for free tutoring with Connect Me.
-            Because they are under 13, we need your permission before creating their account.
+            {request.studentFirstName} has been signed up for free tutoring with Connect Me. Because
+            they are under 13, we need your permission before creating their account.
           </p>
           <section className="space-y-2">
             <h2 className="font-semibold">What we collect</h2>

@@ -19,7 +19,6 @@ import { createConsentRequest } from "@/lib/consent/parental-consent.server";
 import { requiresParentalConsent } from "@/lib/consent/requires-parental-consent";
 import type { PendingParentalConsent } from "@/lib/consent/types";
 
-
 /**
  * Creates a new user through an email invite. Students under 13 are not created
  * here: the parent is emailed for consent first and the account is created when
@@ -76,8 +75,6 @@ export const getUser = async () => {
   } = await supabase.auth.getUser();
   return user;
 };
-
-
 
 const replaceLastActiveProfile = async (
   userId: string,
