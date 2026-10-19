@@ -6,7 +6,6 @@ import { getSessionMeetingSlots } from "../meeting/occupancy.server.actions";
 type SessionStatus = Database["public"]["Enums"]["session_status"];
 import {
   deleteScheduledEmailBeforeSessions,
-  sendScheduledEmailsBeforeSessions,
   updateScheduledEmailBeforeSessions,
 } from "../email/server.actions";
 import { getProfileWithProfileId, getProfileByEmail } from "../user/client.actions";

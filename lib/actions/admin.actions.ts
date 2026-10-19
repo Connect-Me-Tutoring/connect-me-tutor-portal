@@ -6,7 +6,6 @@ import { getSupabase, supabase, supabaseClient } from "@/lib/supabase/client";
 import { Profile, Session, Notification, Event, Enrollment, Meeting } from "@/types";
 import {
   deleteScheduledEmailBeforeSessions,
-  sendScheduledEmailsBeforeSessions,
   updateScheduledEmailBeforeSessions,
 } from "./email/server.actions";
 import { getProfileWithProfileId, getProfileByEmail } from "./user/client.actions";

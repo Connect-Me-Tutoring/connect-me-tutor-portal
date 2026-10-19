@@ -1,6 +1,6 @@
 import { getProfileByEmail } from "@/lib/actions/user/client.actions";
 import { Profile } from "@/types";
-import { createClient } from "@/lib/supabase/server";
+import { createAdminClient, createClient } from "@/lib/supabase/server";
 import { NextRequest, NextResponse } from "next/server";
 import { sendMail } from "@/lib/email/mailer";
 import { Table } from "@/lib/supabase/tables";
@@ -16,6 +16,7 @@ const emailSchema = z.object({
   subject: z.string().trim(),
   body: z.string().trim(),
   sessionId: z.string().trim(),
+  scheduledFor: z.string().trim().optional(),
 });
 
 export async function POST(request: NextRequest) {
@@ -28,7 +29,7 @@ export async function POST(request: NextRequest) {
     const supabase = await createClient();
 
     const data = await request.json();
-    const { to, subject, body, sessionId } = emailSchema.parse(data);
+    const { to, subject, body, sessionId, scheduledFor } = emailSchema.parse(data);
 
     const { data: session, error: sessionError } = await supabase
       .from(Table.Sessions)
@@ -48,6 +49,39 @@ export async function POST(request: NextRequest) {
         status: 400,
         message: "Session no longer active",
       });
+    }
+
+    // The session was moved after this reminder was queued; a replacement was (or will be)
+    // scheduled for the new time, so this one is stale.
+    if (
+      scheduledFor &&
+      session.date &&
+      new Date(session.date).getTime() !== new Date(scheduledFor).getTime()
+    ) {
+      return NextResponse.json({
+        status: 200,
+        message: "Session time changed since reminder was scheduled",
+      });
+    }
+
+    // Messages queued before scheduledFor existed can't be checked against the session time.
+    // Their duplicates were dropped from session_reminders (never cancelled in QStash), so
+    // only deliver if this message is still tracked.
+    const messageId = request.headers.get("upstash-message-id");
+    if (!scheduledFor && messageId) {
+      const admin = await createAdminClient();
+      const { data: tracked, error: trackedError } = await admin
+        .from(Table.SessionReminders)
+        .select("id")
+        .eq("message_id", messageId)
+        .limit(1);
+      if (trackedError) throw trackedError;
+      if (!tracked || tracked.length === 0) {
+        return NextResponse.json({
+          status: 200,
+          message: "Reminder is no longer tracked; skipping",
+        });
+      }
     }
 
     const recipient: Profile | null = await getProfileByEmail(to);
