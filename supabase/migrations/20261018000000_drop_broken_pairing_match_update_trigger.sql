@@ -1,0 +1,12 @@
+-- insert_pairing_from_matches_updates (from the baseline pull) reads
+-- OLD.status / NEW.status, but pairing_matches has no status column (it is
+-- tutor_status). Every UPDATE on pairing_matches therefore fails with
+-- 42703 "record "old" has no field "status"", which breaks:
+--   * a tutor accepting/declining a match (updatePairingMatchStatus), and
+--   * deactivating a profile with a pending match (on_profile_status_change,
+--     20260926000000_profile_deactivation.sql).
+--
+-- It is dropped rather than fixed: updatePairingMatchStatus already inserts
+-- the Pairings row itself and treats a duplicate (23505) as an error, so a
+-- working version of this trigger would break accepting instead.
+drop trigger if exists insert_pairing_from_matches_updates on public.pairing_matches;

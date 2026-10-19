@@ -31,6 +31,7 @@ import { withRetry } from "@/lib/utils";
 import EarlySessionCheckInEmail from "@/components/emails/check-in/early-session-check-in-email";
 import { getAllActiveEnrollmentsForCron } from "../enrollment/server.actions";
 import { Table } from "../../supabase/tables";
+import { z } from "zod";
 import { formatInTimeZone } from "date-fns-tz";
 import { requireAdmin } from "../auth/authz.server";
 import { logError } from "@/lib/posthog";
@@ -781,4 +782,76 @@ function normalizeEnrollmentStartDate(startDate: string) {
     return startDate;
   }
   return formatInTimeZone(startDate, EASTERN_TIMEZONE, "yyyy-MM-dd");
+}
+
+const EMAIL_LOG_PAGE_SIZES = [10, 25, 50, 100] as const;
+
+const emailLogQuerySchema = z.object({
+  page: z.number().int().min(1).max(100_000),
+  pageSize: z
+    .number()
+    .int()
+    .refine((n) => (EMAIL_LOG_PAGE_SIZES as readonly number[]).includes(n)),
+  search: z.string().max(200).default(""),
+});
+
+export type EmailLogRow = {
+  id: string;
+  created_at: string;
+  recipient_email: string;
+  subject: string | null;
+};
+
+/**
+ * One page of the emails log for the admin Email Manager. Paging and search
+ * run in the database so the list isn't cut off at PostgREST's max_rows, and
+ * the rendered HTML is left out (see getEmailLogContent).
+ * Uses the cookie-bound client so RLS (emails_log_admin_all) checks admin too.
+ */
+export async function getEmailLogs(
+  query: z.input<typeof emailLogQuerySchema>,
+): Promise<{ rows: EmailLogRow[]; total: number }> {
+  await requireAdmin();
+  const { page, pageSize, search } = emailLogQuerySchema.parse(query);
+  const supabase = await createClient();
+
+  const from = (page - 1) * pageSize;
+  let request = supabase
+    .from(Table.Emails)
+    .select("id, created_at, recipient_email, subject", { count: "exact" })
+    .order("created_at", { ascending: false })
+    .range(from, from + pageSize - 1);
+
+  // Characters that would break out of a PostgREST or() filter or act as wildcards.
+  const term = search.replace(/[,()*%\\"]/g, " ").trim();
+  if (term) {
+    request = request.or(`recipient_email.ilike.%${term}%,subject.ilike.%${term}%`);
+  }
+
+  const { data, error, count } = await request;
+  if (error) {
+    console.error("Error fetching email logs:", error);
+    await logError(error, {}, "email_error");
+    throw new Error("Unable to load email logs");
+  }
+
+  return { rows: data ?? [], total: count ?? 0 };
+}
+
+/** Rendered HTML of one logged email, loaded only when an admin opens its preview. */
+export async function getEmailLogContent(id: string): Promise<string | null> {
+  await requireAdmin();
+  const emailId = z.string().uuid().parse(id);
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from(Table.Emails)
+    .select("content")
+    .eq("id", emailId)
+    .maybeSingle();
+
+  if (error) {
+    await logError(error, { emailId }, "email_error");
+    throw new Error("Unable to load email content");
+  }
+  return data?.content ?? null;
 }
