@@ -153,6 +153,7 @@ const EnrollmentList = ({
   const [timeFilterDay, setTimeFilterDay] = useState("all");
   const [timeFilterStart, setTimeFilterStart] = useState("");
   const [timeFilterEnd, setTimeFilterEnd] = useState("");
+  const [zoomLinkFilter, setZoomLinkFilter] = useState("all");
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
@@ -210,14 +211,21 @@ const EnrollmentList = ({
         (studentFirstName + " " + studentLastName).includes(searchTerm) ||
         (tutorFirstName + " " + tutorLastName).includes(searchTerm);
 
+      const matchesZoomLink =
+        zoomLinkFilter === "all" ||
+        (zoomLinkFilter === "none"
+          ? !enrollment.meetingId
+          : String(enrollment.meetingId) === zoomLinkFilter);
+
       return (
         matchesSearch &&
+        matchesZoomLink &&
         enrollmentMatchesTimeFilter(enrollment, timeFilterDay, timeFilterStart, timeFilterEnd)
       );
     });
     setFilteredEnrollments(filtered);
     setCurrentPage(1);
-  }, [filterValue, enrollments, timeFilterDay, timeFilterStart, timeFilterEnd]);
+  }, [filterValue, enrollments, timeFilterDay, timeFilterStart, timeFilterEnd, zoomLinkFilter]);
 
   const normalizeText = (text: string) => text.toLowerCase().trim();
 
@@ -774,7 +782,25 @@ const EnrollmentList = ({
                 value={timeFilterEnd}
                 onChange={(e) => setTimeFilterEnd(e.target.value)}
               />
-              {(filterValue || timeFilterDay !== "all" || timeFilterStart || timeFilterEnd) && (
+              <Select value={zoomLinkFilter} onValueChange={setZoomLinkFilter}>
+                <SelectTrigger className="w-[180px]" aria-label="Filter by Zoom link">
+                  <SelectValue placeholder="Any Zoom link" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Any Zoom link</SelectItem>
+                  <SelectItem value="none">No Zoom link</SelectItem>
+                  {meetings.map((meeting) => (
+                    <SelectItem key={meeting.id} value={String(meeting.id)}>
+                      {meeting.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {(filterValue ||
+                timeFilterDay !== "all" ||
+                timeFilterStart ||
+                timeFilterEnd ||
+                zoomLinkFilter !== "all") && (
                 <Button
                   variant="outline"
                   onClick={() => {
@@ -782,6 +808,7 @@ const EnrollmentList = ({
                     setTimeFilterDay("all");
                     setTimeFilterStart("");
                     setTimeFilterEnd("");
+                    setZoomLinkFilter("all");
                   }}
                 >
                   Clear
