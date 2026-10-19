@@ -15,6 +15,7 @@ import {
   requireTutorProfileAccess,
 } from "../auth/authz.server";
 import { logError } from "@/lib/posthog";
+import { z } from "zod";
 
 export const switchProfile = async (userId: string, profileId: string) => {
   try {
@@ -328,18 +329,27 @@ export async function editProfile(profile: Profile) {
     subjects_of_interest,
     languages_spoken,
     studentNumber,
-    status, // pull status out so we can actually persist it instead of just ignoring
   } = profile;
   try {
-    const { data: emailData } = await supabase
+    const { data: current } = await supabase
       .from(Table.Profiles)
-      .select("email")
+      .select("email, user_id")
       .eq("id", id)
       .single()
       .throwOnError();
 
-    if (emailData.email != email) {
-      await supabase.auth.updateUser({ email: email });
+    // The login email lives on the auth user, not the profile row.
+    // supabase.auth.updateUser() would change the *signed-in* user's email
+    // (the admin's, when an admin edits someone else), so it isn't used here:
+    // admins go through the admin API for the target account, and users
+    // change their own email with requestEmailChange().
+    const nextEmail = email?.trim().toLowerCase() ?? "";
+    if (nextEmail && nextEmail !== current.email?.trim().toLowerCase()) {
+      if (actor.role !== "Admin") {
+        throw new Error("Use requestEmailChange to change your own email");
+      }
+      const { error: emailError } = await updateAccountEmail(current.user_id, id, nextEmail);
+      if (emailError) throw new Error(emailError);
     }
 
     const { data, error } = await supabase
@@ -351,7 +361,6 @@ export async function editProfile(profile: Profile) {
         age: age,
         grade: grade,
         gender: gender,
-        email: email,
         phone_number: phoneNumber,
         start_date: startDate,
         parent_name: parentName,
@@ -362,7 +371,6 @@ export async function editProfile(profile: Profile) {
         availability: availability,
         subjects_of_interest: subjects_of_interest,
         languages_spoken: languages_spoken,
-        status: status, // without this, status changes from the edit form just get ignored and dont hit db
       })
       .eq("id", id)
       .single();
@@ -373,4 +381,112 @@ export async function editProfile(profile: Profile) {
     await logError(error, { action: "editProfile", profileId: id }, "profile_error");
     throw new Error("Unable to edit User");
   }
+}
+
+/*
+ * #807: deactivate instead of delete.
+ *
+ * Deliberately uses the cookie-bound client, NOT createAdminClient():
+ * guard_profile_columns only allows status changes when private.is_admin()
+ * is true, and is_admin() depends on auth.uid(), which is NULL for the
+ * service-role client. The admin's own session is what makes this pass.
+ *
+ * deactivated_at, the profile_status_changes history row, and removing the
+ * profile from the pairing queue are all handled by DB triggers
+ * (20260926000000_profile_deactivation.sql), so a self-pause from Settings
+ * gets the same behavior without going through this function. This is the
+ * only admin path for status; editProfile deliberately doesn't write it.
+ */
+export async function setProfileStatus(
+  profileId: string,
+  status: "Active" | "Inactive",
+): Promise<Profile> {
+  await requireAdmin();
+  const supabase = await createClient();
+  try {
+    const { data, error } = await supabase
+      .from(Table.Profiles)
+      .update({ status })
+      .eq("id", profileId)
+      .select("*")
+      .single();
+    if (error) throw error;
+    return tableToInterfaceProfiles(data) as Profile;
+  } catch (error) {
+    await logError(error, { action: "setProfileStatus", profileId, status }, "profile_error");
+    throw new Error(`Unable to set profile status to ${status}`);
+  }
+}
+
+export async function deactivateProfile(profileId: string) {
+  return setProfileStatus(profileId, "Inactive");
+}
+
+export async function reactivateProfile(profileId: string) {
+  return setProfileStatus(profileId, "Active");
+}
+
+const emailSchema = z.string().trim().toLowerCase().email().max(254);
+
+/*
+ * Admin-only: change the login email of the account that owns profileId and
+ * copy it to every profile under that account (profiles share one login, see
+ * createUser). Confirmed immediately since an admin made the change. The
+ * profile rows are only touched once auth accepts the new address.
+ */
+async function updateAccountEmail(
+  userId: string | null,
+  profileId: string,
+  email: string,
+): Promise<{ error: string | null }> {
+  const admin = await createAdminClient();
+  if (userId) {
+    const { error } = await admin.auth.admin.updateUserById(userId, {
+      email,
+      email_confirm: true,
+    });
+    if (error) {
+      await logError(error, { action: "updateAccountEmail", profileId }, "profile_error");
+      return { error: error.message };
+    }
+  }
+
+  const query = admin.from(Table.Profiles).update({ email });
+  const { error: syncError } = await (userId
+    ? query.eq("user_id", userId)
+    : query.eq("id", profileId));
+  if (syncError) {
+    await logError(syncError, { action: "updateAccountEmail", profileId }, "email_sync_error");
+    return { error: "Login email changed, but the profile could not be updated" };
+  }
+  return { error: null };
+}
+
+/*
+ * Starts a self-service email change. Supabase Auth emails confirmation
+ * links to the old and new addresses (double_confirm_changes); Profiles.email
+ * is NOT touched here and is synced in /auth/confirm once both are confirmed.
+ * Returns the error instead of throwing because Next.js hides thrown
+ * server-action messages in production ("already registered", rate limits).
+ */
+export async function requestEmailChange(newEmail: string): Promise<{ error: string | null }> {
+  const { user } = await requireAuthenticatedProfile();
+  const parsed = emailSchema.safeParse(newEmail);
+  if (!parsed.success) return { error: "Enter a valid email address" };
+  const email = parsed.data;
+  if (email === user.email?.toLowerCase()) {
+    return { error: "That's already your current email address" };
+  }
+
+  const supabase = await createClient();
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.connectmego.app";
+  const { error } = await supabase.auth.updateUser(
+    { email },
+    { emailRedirectTo: `${siteUrl}/auth/confirm?next=/dashboard/settings` },
+  );
+  if (error) {
+    await logError(error, { action: "requestEmailChange" }, "profile_error");
+    return { error: error.message };
+  }
+  return { error: null };
 }

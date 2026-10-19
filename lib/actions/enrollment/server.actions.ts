@@ -322,7 +322,7 @@ export const removeFutureSessions = async (enrollmentId: string, supabase: any) 
       .from(Table.Sessions)
       .delete()
       .eq("enrollment_id", enrollmentId)
-      .neq("status", "Complete")
+      .not("status", "in", '(Complete,"Student Did Not Attend")')
       .gte("date", now)
       .throwOnError();
   } catch (error) {
@@ -428,7 +428,7 @@ const updateFutureSessions = async (enrollment: Enrollment) => {
     .select("id, date")
     .eq("enrollment_id", enrollment.id)
     .gte("date", now)
-    .not("status", "in", "(Cancelled,Rescheduled)");
+    .not("status", "in", '(Cancelled,Rescheduled,"Student Did Not Attend")');
 
   if (fetchError) throw fetchError;
   if (!futureSessions || futureSessions.length === 0) return;

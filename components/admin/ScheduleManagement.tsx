@@ -175,6 +175,7 @@ const Schedule = () => {
     },
     date: new Date().toISOString(),
     summary: "",
+    isFirstSession: false,
   });
 
   const formatDurationLabel = (hours: number): string => {
@@ -553,6 +554,8 @@ const Schedule = () => {
       fetchSessions(weekStart, weekEnd);
       toast.success("Added Session");
       setIsAddSessionOpen(false);
+      // Don't carry "First Session" over to the next session added from this dialog.
+      setNewSession((prev) => ({ ...prev, isFirstSession: false }));
     } catch (error) {
       toast.error("Unable to add session");
     }
@@ -646,19 +649,31 @@ const Schedule = () => {
       className={cn(
         "rounded-md px-2 py-1 text-xs cursor-pointer border-l-2 truncate hover:shadow-md transition-shadow",
         session.status === "Complete"
-          ? "bg-green-50 border-l-green-500 text-green-900"
+          ? "bg-green-100 border-l-4 border-l-green-500 text-green-900"
           : session.status === "Cancelled"
-            ? "bg-red-50 border-l-red-500 text-red-900"
-            : session.status === "Unconfirmed"
-              ? "bg-amber-50 border-l-amber-500 text-amber-900"
-              : session.isStandalone == true
-                ? "bg-purple-50  border-l-purple-500 text-purple-900"
-                : "bg-blue-50 border-l-blue-500 text-blue-900",
+            ? "bg-red-100 border-l-4 border-l-red-500 text-red-900 line-through opacity-80"
+            : session.status === "Student Did Not Attend"
+              ? "bg-orange-100 border-l-4 border-l-orange-500 text-orange-900"
+              : session.status === "Unconfirmed"
+                ? "bg-amber-100 border-l-4 border-l-amber-500 text-amber-900"
+                : session.isStandalone == true
+                  ? "bg-purple-100 border-l-4 border-l-purple-500 text-purple-900"
+                  : "bg-blue-100 border-l-4 border-l-blue-500 text-blue-900",
       )}
     >
-      <p className="font-medium truncate">
-        {session.tutor?.firstName} {session.tutor?.lastName}
-      </p>
+      <div className="flex items-center justify-between gap-1">
+        <p className="font-medium truncate">
+          {session.tutor?.firstName} {session.tutor?.lastName}
+        </p>
+        {session.isFirstSession && (
+          <span
+            title="First Session"
+            className="shrink-0 inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-semibold bg-indigo-100 text-indigo-700 border border-indigo-200"
+          >
+            1st
+          </span>
+        )}
+      </div>
       <p className="truncate text-[11px] opacity-80">
         {session.student?.firstName} {session.student?.lastName}
       </p>
@@ -716,6 +731,7 @@ const Schedule = () => {
                 {[
                   { color: "bg-green-500", label: "Complete" },
                   { color: "bg-red-500", label: "Cancelled" },
+                  { color: "bg-orange-500", label: "Student Did Not Attend" },
                   { color: "bg-amber-500", label: "Unconfirmed" },
                   { color: "bg-blue-500", label: "Active" },
                   { color: "bg-purple-500", label: "Standalone" },
@@ -725,6 +741,12 @@ const Schedule = () => {
                     {label}
                   </span>
                 ))}
+                <span className="flex items-center gap-1.5 border-l pl-3">
+                  <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-indigo-100 text-indigo-700 border border-indigo-200">
+                    1st
+                  </span>
+                  First Session
+                </span>
               </div>
 
               <div className="flex flex-wrap items-center gap-2">
@@ -897,6 +919,26 @@ const Schedule = () => {
                               </SelectContent>
                             </Select>
                           </div>
+                        </div>
+                        <div className="flex items-center space-x-2 pt-1">
+                          <input
+                            type="checkbox"
+                            id="newIsFirstSession"
+                            checked={Boolean(newSession.isFirstSession)}
+                            onChange={(e) =>
+                              setNewSession({
+                                ...newSession,
+                                isFirstSession: e.target.checked,
+                              })
+                            }
+                            className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
+                          />
+                          <Label
+                            htmlFor="newIsFirstSession"
+                            className="text-sm font-medium cursor-pointer"
+                          >
+                            First Session
+                          </Label>
                         </div>
                         <Button
                           onClick={handleAddSession}
@@ -1112,19 +1154,31 @@ const Schedule = () => {
                                   setIsModalOpen(true);
                                 }}
                                 className={cn(
-                                  "cursor-pointer truncate rounded px-1 py-0.5 text-[10px]",
+                                  "cursor-pointer truncate rounded px-1 py-0.5 text-[10px] flex items-center justify-between gap-1",
                                   session.status === "Complete"
                                     ? "bg-green-100 text-green-800"
                                     : session.status === "Cancelled"
-                                      ? "bg-red-100 text-red-800"
-                                      : session.status === "Unconfirmed"
-                                        ? "bg-amber-100 text-amber-800"
-                                        : session.isStandalone
-                                          ? "bg-purple-100 text-purple-800"
-                                          : "bg-blue-100 text-blue-800",
+                                      ? "bg-red-100 text-red-800 line-through opacity-80"
+                                      : session.status === "Student Did Not Attend"
+                                        ? "bg-orange-100 text-orange-800 font-medium"
+                                        : session.status === "Unconfirmed"
+                                          ? "bg-amber-100 text-amber-800"
+                                          : session.isStandalone
+                                            ? "bg-purple-100 text-purple-800"
+                                            : "bg-blue-100 text-blue-800",
                                 )}
                               >
-                                {session.tutor?.firstName} / {session.student?.firstName}
+                                <span className="truncate">
+                                  {session.tutor?.firstName} / {session.student?.firstName}
+                                </span>
+                                {session.isFirstSession && (
+                                  <span
+                                    title="First Session"
+                                    className="shrink-0 text-[8px] font-bold px-1 rounded bg-indigo-200 text-indigo-800"
+                                  >
+                                    1st
+                                  </span>
+                                )}
                               </div>
                             ))}
                           </div>
@@ -1141,7 +1195,15 @@ const Schedule = () => {
         <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>Session Details</DialogTitle>
+              {/* pr-8 keeps the badge clear of the dialog's close button */}
+              <div className="flex items-center justify-between pr-8">
+                <DialogTitle>Session Details</DialogTitle>
+                {selectedSession?.isFirstSession && (
+                  <Badge className="bg-indigo-100 text-indigo-800 border-indigo-200 hover:bg-indigo-100 text-xs font-semibold">
+                    First Session
+                  </Badge>
+                )}
+              </div>
             </DialogHeader>
             {selectedSession && (
               <div className="space-y-4">
@@ -1149,7 +1211,9 @@ const Schedule = () => {
                   <Label>Status</Label>
                   <Select
                     value={selectedSession?.status}
-                    onValueChange={(value: "Active" | "Complete" | "Cancelled") => {
+                    onValueChange={(
+                      value: "Active" | "Complete" | "Cancelled" | "Student Did Not Attend",
+                    ) => {
                       if (value && selectedSession) {
                         setSelectedSession({
                           ...selectedSession,
@@ -1165,6 +1229,7 @@ const Schedule = () => {
                       <SelectItem value="Active">Active</SelectItem>
                       <SelectItem value="Complete">Complete</SelectItem>
                       <SelectItem value="Cancelled">Cancelled</SelectItem>
+                      <SelectItem value="Student Did Not Attend">Student Did Not Attend</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -1293,6 +1358,23 @@ const Schedule = () => {
                     }
                   />
                 </div>
+                <div className="flex items-center space-x-2 pt-1">
+                  <input
+                    type="checkbox"
+                    id="isFirstSession"
+                    checked={Boolean(selectedSession?.isFirstSession)}
+                    onChange={(e) =>
+                      setSelectedSession({
+                        ...selectedSession,
+                        isFirstSession: e.target.checked,
+                      })
+                    }
+                    className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
+                  />
+                  <Label htmlFor="isFirstSession" className="text-sm font-medium cursor-pointer">
+                    First Session
+                  </Label>
+                </div>
                 {(() => {
                   const rawSef = (selectedSession as any)?.session_exit_form as
                     string | null | undefined;
@@ -1301,6 +1383,8 @@ const Schedule = () => {
                     sefFlags.push("question/concern");
                   if ((selectedSession as any)?.isFirstSession) sefFlags.push("first session");
                   if (selectedSession.status === "Cancelled") sefFlags.push("cancelled");
+                  if (selectedSession.status === "Student Did Not Attend")
+                    sefFlags.push("student did not attend");
                   if (selectedSession.status === "Unconfirmed") sefFlags.push("unconfirmed");
                   let sefReasonText = rawSef ?? "";
                   if (rawSef && rawSef.trim().startsWith("{")) {

@@ -239,6 +239,12 @@ content_path = "./supabase/templates/otp_code.html"
 subject = "Your Connect Me login code"
 content_path = "./supabase/templates/otp_code.html"
 
+# Must link to /auth/confirm with token_hash so Profiles.email is synced
+# after the change is confirmed (requestEmailChange).
+[auth.email.template.email_change]
+subject = "Confirm your new Connect Me email"
+content_path = "./supabase/templates/email_change.html"
+
 # Uncomment to customize notification email template
 # [auth.email.notification.password_changed]
 # enabled = true

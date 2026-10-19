@@ -1,6 +1,6 @@
 import "server-only";
 import { Resend } from "resend";
-import nodemailer, { type Transporter } from "nodemailer";
+import { createTransport, type Transporter } from "nodemailer";
 import { render } from "@react-email/components";
 import type { ReactElement } from "react";
 import { createAdminClient } from "@/lib/supabase/server";
@@ -41,7 +41,7 @@ function getResendClient(): Resend {
 let mailpitTransport: Transporter | null = null;
 function getMailpitTransport(): Transporter {
   if (!mailpitTransport) {
-    mailpitTransport = nodemailer.createTransport({
+    mailpitTransport = createTransport({
       host: "localhost",
       port: Number(process.env.MAILPIT_SMTP_PORT) || 1025,
     });
