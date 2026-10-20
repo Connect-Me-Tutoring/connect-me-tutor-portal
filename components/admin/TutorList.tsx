@@ -225,8 +225,7 @@ const TutorList = ({ initialTutors }: any) => {
   const handleAddTutorWithParam = async (tutor: Partial<Profile>) => {
     try {
       setAddingTutor(true);
-      // Only students are gated on parental consent, so a tutor always comes back as a Profile
-      const addedTutor = (await addUser(tutor, "Tutor", true)) as Profile;
+      const addedTutor = await addUser(tutor, "Tutor", true);
 
       if (addedTutor) {
         setIsModalOpen(false);
