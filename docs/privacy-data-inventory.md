@@ -22,33 +22,34 @@ accurate?"_
 
 ## What is in place
 
-- **Parental consent before an under-13 account exists:** `lib/consent/`,
-  `app/(public)/parental-consent/`. The consent record lives in `parental_consents`.
+- **Parental consent for under-13 students is collected at intake**, outside the
+  portal, before an admin adds the student. The portal keeps no consent record of its
+  own; the intake forms are the record. `parental_consents` holds only rows from the
+  retired emailed approval link (`lib/consent/`).
 - **Public signup off:** prod Supabase has `disable_signup: true`, and the OTP pages
   pass `shouldCreateUser: false`. Accounts come only from admin invites.
 - **Login pages don't reveal which emails exist:** they show a generic "If an account
   exists…" message.
-- **Privacy Policy** at `/privacy`, linked from login, set-password, and the consent
-  page.
+- **Privacy Policy** at `/privacy`, linked from login and set-password.
 
 ## Personal data by table
 
-| Table                                                                                     | Personal data                                                                                                                                                 | Notes                                        |
-| ----------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------- |
-| `Profiles`                                                                                | first/last name, email, phone_number, date_of_birth, age, grade, gender, timezone, languages_spoken, subjects_of_interest, availability, student_number, role | Core account record                          |
-| `Profiles` (parent fields)                                                                | parent_name, parent_phone, parent_email                                                                                                                       | Consent email goes here                      |
-| `Profiles.subject_embed`                                                                  | vector derived from interests                                                                                                                                 | Derived data                                 |
-| `Profiles.ai_tutor_chatlogs`                                                              | —                                                                                                                                                             | Column exists but is unused by the app       |
-| `parental_consents`                                                                       | parent email/name, child first name, IP and user agent at approval                                                                                            | Child's form data is held only while pending |
-| `user_settings`, notification settings tables                                             | email, preferences                                                                                                                                            |                                              |
-| `Sessions`                                                                                | ids, date, duration, summary, session_exit_form, concern flag                                                                                                 | Free text                                    |
-| `Enrollments`, `Pairings`, `pairing_*`, `weekly_meeting_schedules`, `User_Availabilities` | relationships, schedules, notes                                                                                                                               |                                              |
-| `Meetings`                                                                                | Zoom link, meeting id, password                                                                                                                               |                                              |
-| `zoom_participant_events`                                                                 | Zoom display name, email, join/leave times                                                                                                                    | From Zoom webhooks                           |
-| `messages`, `conversations`, `conversation_participant`                                   | chat content and attachments                                                                                                                                  |                                              |
-| `discord_chatbot_conversations`                                                           | —                                                                                                                                                             | Table exists but is unused by the app        |
-| `emails`                                                                                  | recipient, subject, rendered content                                                                                                                          | Log of sent email                            |
-| `Notifications`, `Requests`, `Forms`, `Events`                                            | reschedule requests, forms, hours                                                                                                                             |                                              |
+| Table                                                                                     | Personal data                                                                                                                                                 | Notes                                  |
+| ----------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------- |
+| `Profiles`                                                                                | first/last name, email, phone_number, date_of_birth, age, grade, gender, timezone, languages_spoken, subjects_of_interest, availability, student_number, role | Core account record                    |
+| `Profiles` (parent fields)                                                                | parent_name, parent_phone, parent_email                                                                                                                       |                                        |
+| `Profiles.subject_embed`                                                                  | vector derived from interests                                                                                                                                 | Derived data                           |
+| `Profiles.ai_tutor_chatlogs`                                                              | —                                                                                                                                                             | Column exists but is unused by the app |
+| `parental_consents`                                                                       | parent email/name, child first name, IP and user agent at approval                                                                                            | Retired email-link flow only           |
+| `user_settings`, notification settings tables                                             | email, preferences                                                                                                                                            |                                        |
+| `Sessions`                                                                                | ids, date, duration, summary, session_exit_form, concern flag                                                                                                 | Free text                              |
+| `Enrollments`, `Pairings`, `pairing_*`, `weekly_meeting_schedules`, `User_Availabilities` | relationships, schedules, notes                                                                                                                               |                                        |
+| `Meetings`                                                                                | Zoom link, meeting id, password                                                                                                                               |                                        |
+| `zoom_participant_events`                                                                 | Zoom display name, email, join/leave times                                                                                                                    | From Zoom webhooks                     |
+| `messages`, `conversations`, `conversation_participant`                                   | chat content and attachments                                                                                                                                  |                                        |
+| `discord_chatbot_conversations`                                                           | —                                                                                                                                                             | Table exists but is unused by the app  |
+| `emails`                                                                                  | recipient, subject, rendered content                                                                                                                          | Log of sent email                      |
+| `Notifications`, `Requests`, `Forms`, `Events`                                            | reschedule requests, forms, hours                                                                                                                             |                                        |
 
 ## Processors
 
@@ -65,7 +66,6 @@ accurate?"_
 
 ## Deferred (revisit if counsel says these laws apply, or as we grow)
 
-- Backfill parental consent for under-13 students created before the consent flow.
 - Data processing agreements with each processor.
-- A written retention schedule, plus a cleanup job for expired `parental_consents` rows.
+- A written retention schedule, including how long intake consent forms are kept.
 - Terms of Service page (the placeholder was removed so it doesn't ship half-written).

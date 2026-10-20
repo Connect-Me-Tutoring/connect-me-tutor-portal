@@ -64,7 +64,7 @@ import { ResponsiveList, ResponsiveListColumn } from "@/components/ui/responsive
 import toast, { Toaster } from "react-hot-toast";
 import { set } from "date-fns";
 import { AlertDialogCancel } from "@radix-ui/react-alert-dialog";
-import { isPendingParentalConsent } from "@/lib/consent/types";
+import LegacyConsentBanner from "./components/LegacyConsentBanner";
 import AddStudentForm from "./components/AddStudentForm";
 import ProfileStatusForm from "./components/ProfileStatusForm";
 import { inactiveLast } from "@/lib/utils/inactive-last";
@@ -284,23 +284,14 @@ const StudentList = ({ initialStudents }: any) =>
     const handleAddStudentWithParam = async (student: Partial<Profile>) => {
       try {
         setAddingStudent(true);
-        const result = await addUser(student, "Student", true);
-        const pendingConsent = isPendingParentalConsent(result);
-        const addedStudent = pendingConsent ? null : (result as Profile);
+        const addedStudent = await addUser(student, "Student", true);
 
-        if (addedStudent || pendingConsent) {
+        if (addedStudent) {
           // Close modal and show success toast
           setIsModalOpen(false);
-          if (addedStudent) {
-            setStudents((prevStudents) => [...prevStudents, addedStudent]);
-            setFilteredStudents((prev) => [...prev, addedStudent]);
-            toast.success("Successfully added student.");
-          } else {
-            toast.success(
-              "Student is under 13. We emailed their parent/guardian for permission; the account is created once they approve.",
-              { duration: 8000 },
-            );
-          }
+          setStudents((prevStudents) => [...prevStudents, addedStudent]);
+          setFilteredStudents((prev) => [...prev, addedStudent]);
+          toast.success("Successfully added student.");
 
           // Reset form
           setNewStudent({
@@ -344,9 +335,7 @@ const StudentList = ({ initialStudents }: any) =>
     const handleAddStudent = async () => {
       try {
         setAddingStudent(true);
-        const result = await addUser(newStudent, "Student", true);
-        const pendingConsent = isPendingParentalConsent(result);
-        const addedStudent = pendingConsent ? null : (result as Profile);
+        const addedStudent = await addUser(newStudent, "Student", true);
 
         // Update local state
         setStudents((prevStudents) => {
@@ -365,18 +354,11 @@ const StudentList = ({ initialStudents }: any) =>
           return prevFiltered; // Return previous state if addedStudent is not valid
         });
 
-        if (addedStudent || pendingConsent) {
+        if (addedStudent) {
           // Close modal and show success toast
           setIsModalOpen(false);
-          if (addedStudent) {
-            setStudents((prevStudents) => [...prevStudents, addedStudent]);
-            toast.success("Successfully added student.");
-          } else {
-            toast.success(
-              "Student is under 13. We emailed their parent/guardian for permission; the account is created once they approve.",
-              { duration: 8000 },
-            );
-          }
+          setStudents((prevStudents) => [...prevStudents, addedStudent]);
+          toast.success("Successfully added student.");
 
           // Reset form
           setNewStudent({
@@ -617,6 +599,7 @@ const StudentList = ({ initialStudents }: any) =>
 
     return (
       <>
+        <LegacyConsentBanner />
         <div className="flex justify-between items-center mb-4">
           <div className="flex space-x-2">
             <Input

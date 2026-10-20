@@ -15,26 +15,30 @@ import { isCronRequestAuthorized } from "@/lib/security/cron";
 import { logError } from "@/lib/posthog";
 import type { Database } from "@/types/database.types";
 import { provisionUser } from "@/lib/auth/provision-user.server";
-import { createConsentRequest } from "@/lib/consent/parental-consent.server";
-import { requiresParentalConsent } from "@/lib/consent/requires-parental-consent";
-import type { PendingParentalConsent } from "@/lib/consent/types";
+import {
+  countLegacyPendingConsentRequests,
+  provisionLegacyPendingConsentRequests,
+} from "@/lib/consent/parental-consent.server";
 
 /**
- * Creates a new user through an email invite. Students under 13 are not created
- * here: the parent is emailed for consent first and the account is created when
- * they approve (see lib/consent/parental-consent.server.ts).
+ * Creates a new user through an email invite. Parental consent for students under
+ * 13 is collected at intake, outside the portal, before an admin adds them.
  */
-export const createUser = async (
-  newProfileData: CreatedProfileData,
-): Promise<Profile | PendingParentalConsent> => {
+export const createUser = async (newProfileData: CreatedProfileData): Promise<Profile> => {
   await verifyAdmin();
-
-  if (requiresParentalConsent(newProfileData.role, newProfileData.age)) {
-    const admin = await getUser();
-    return createConsentRequest(newProfileData, admin?.id ?? null);
-  }
-
   return provisionUser(newProfileData);
+};
+
+/** Students still waiting on the retired parent-approval email link. */
+export const countLegacyPendingParentalConsents = async (): Promise<number> => {
+  await verifyAdmin();
+  return countLegacyPendingConsentRequests();
+};
+
+/** Creates the accounts for those students; their consent is on file from intake. */
+export const provisionLegacyPendingParentalConsents = async () => {
+  await verifyAdmin();
+  return provisionLegacyPendingConsentRequests();
 };
 
 export const isAuthorized = async (request: NextRequest) => {
