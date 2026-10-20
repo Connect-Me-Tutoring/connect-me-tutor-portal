@@ -1,31 +1,13 @@
 "use client";
 
 import Logo from "@/components/ui/logo";
-
 import { createClient } from "@/lib/supabase/client";
-import { setDefaultAutoSelectFamily } from "net";
-import { useRouter, useSearchParams } from "next/navigation";
-import { useState, useEffect } from "react";
-import { string } from "zod";
+import { withAuthTimeout, passwordResetError } from "@/lib/auth/password-reset";
+import { useState, useRef, type ChangeEvent, type FormEvent } from "react";
 import { Button } from "@/components/ui/button";
-
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
 import * as z from "zod";
 import Link from "next/link";
-import toast, { Toaster, ValueFunction } from "react-hot-toast";
-
-import {
-  Form,
-  FormControl,
-  FormDescription,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
-import { Router } from "lucide-react";
+import toast, { Toaster } from "react-hot-toast";
 
 const formSchema = z
   .object({
@@ -43,10 +25,9 @@ const formSchema = z
 
 export default function ResetPassword() {
   const supabase = createClient();
-  const router = useRouter();
-
-  // const [isVerifying, setIsVerifying ] = useState(true)
-  // const [verificationError, setVerificationError ] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
+  const pending = useRef(false);
 
   const [data, setData] = useState<{
     password: string;
@@ -57,37 +38,52 @@ export default function ResetPassword() {
   });
 
   const [showPassword, setShowPassword] = useState<boolean>(false);
-  const confirmPasswords = async () => {
+  const confirmPasswords = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (pending.current) return;
+    setErrorMessage("");
+    const parsed = formSchema.safeParse(data);
+    if (!parsed.success) {
+      setErrorMessage(parsed.error.issues[0].message);
+      return;
+    }
+    pending.current = true;
+    setIsLoading(true);
     try {
-      const { password, confirmPassword } = data;
-      if (password !== confirmPassword) {
-        toast.error("Passwords do not match");
-        return alert("Passwords do not match");
-      }
-
-      const { data: resetData, error } = await supabase.auth.updateUser({
-        password: data.password,
-      });
+      const { data: resetData, error } = await withAuthTimeout(
+        supabase.auth.updateUser({
+          password: parsed.data.password,
+        }),
+      );
       if (error) {
+        if (error.code === "session_not_found" || error.name === "AuthSessionMissingError") {
+          setErrorMessage(
+            "Your reset session has expired. Request a new code to reset your password.",
+          );
+          return;
+        }
+        if (error.code === "same_password" || error.code === "weak_password") {
+          setErrorMessage(error.message);
+          return;
+        }
         throw error;
       }
-
-      if (resetData.user) {
-        toast.success("Login information updated");
-        router.push("/");
-      }
+      if (!resetData.user) throw new Error("Password update returned no user");
+      toast.success("Login information updated");
+      window.location.assign("/");
     } catch (error) {
-      console.error("Password update error:", error);
-      toast.error(error instanceof Error ? error.message : "Failed to update password");
+      setErrorMessage(
+        passwordResetError(error, "We couldn't update your password. Please try again."),
+      );
+    } finally {
+      pending.current = false;
+      setIsLoading(false);
     }
   };
 
-  const handleChange = (e: any) => {
-    const { name, value } = e.target;
-    setData((prev: any) => ({
-      ...prev,
-      [name]: value,
-    }));
+  const handleChange = (event: ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = event.target;
+    setData((prev) => ({ ...prev, [name]: value }));
   };
 
   return (
@@ -106,36 +102,60 @@ export default function ResetPassword() {
                 <h1 className="text-2xl text-center font-bold">Set your Password</h1>
                 <p className="text-sm text-gray-600"></p>
               </div>
-              <div className="container mx-auto w-[400px] grid gap-4">
+              <form
+                method="post"
+                onSubmit={confirmPasswords}
+                className="container mx-auto w-full max-w-[400px] grid gap-4"
+              >
                 <div className="grid gap-4">
-                  <label className="text-sm font-medium">Enter your new password</label>
+                  <label htmlFor="password" className="text-sm font-medium">
+                    Enter your new password
+                  </label>
                   <input
                     type={showPassword ? "text" : "password"}
+                    id="password"
                     name="password"
+                    autoComplete="new-password"
+                    disabled={isLoading}
                     value={data?.password}
                     onChange={handleChange}
                     className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                   />
                 </div>
                 <div className="grid gap-4">
-                  <label className="text-sm font-medium">Confirm your new password</label>
+                  <label htmlFor="confirmPassword" className="text-sm font-medium">
+                    Confirm your new password
+                  </label>
                   <input
                     type={showPassword ? "text" : "password"}
+                    id="confirmPassword"
                     name="confirmPassword"
+                    autoComplete="new-password"
+                    disabled={isLoading}
                     value={data?.confirmPassword}
                     onChange={handleChange}
                     className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                   />
                 </div>
-                <div
+                <button
+                  type="button"
                   className="cursor-pointer hover:underline"
                   onClick={() => setShowPassword(!showPassword)}
+                  aria-pressed={showPassword}
                 >
-                  Show passwords
-                </div>
-                <Button type="submit" className="w-full bg-blue-400" onClick={confirmPasswords}>
-                  Set Password
+                  {showPassword ? "Hide passwords" : "Show passwords"}
+                </button>
+                {errorMessage && (
+                  <p role="alert" className="text-sm text-red-600">
+                    {errorMessage}
+                  </p>
+                )}
+                <Button type="submit" className="w-full bg-blue-400" disabled={isLoading}>
+                  {isLoading ? "Updating..." : "Set Password"}
                 </Button>
+                <Link href="/forgot-password" className="text-sm text-center underline">
+                  Request a new reset code
+                </Link>
                 <p className="text-xs text-center text-gray-600">
                   By setting your password you agree to our{" "}
                   <Link href="/privacy" className="underline">
@@ -143,7 +163,7 @@ export default function ResetPassword() {
                   </Link>
                   .
                 </p>
-              </div>
+              </form>
             </div>
           </div>
         </section>
