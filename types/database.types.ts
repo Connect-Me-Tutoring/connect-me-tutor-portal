@@ -8,6 +8,40 @@ export type Database = {
   };
   public: {
     Tables: {
+      tutor_deletion_audit: {
+        Row: {
+          id: string;
+          actor_id: string;
+          profile_id: string;
+          auth_user_id: string | null;
+          settings_id: string | null;
+          email: string | null;
+          reason: string;
+          recovery_attempted: boolean;
+          first_access_failure: boolean;
+          status: string;
+          failure: string | null;
+          created_at: string;
+          completed_at: string | null;
+        };
+        Insert: {
+          id?: string;
+          actor_id: string;
+          profile_id: string;
+          auth_user_id?: string | null;
+          settings_id?: string | null;
+          email?: string | null;
+          reason: string;
+          recovery_attempted: boolean;
+          first_access_failure: boolean;
+          status: string;
+          failure?: string | null;
+          created_at?: string;
+          completed_at?: string | null;
+        };
+        Update: Partial<Database["public"]["Tables"]["tutor_deletion_audit"]["Insert"]>;
+        Relationships: [];
+      };
       chat_room_notification_preferences: {
         Row: {
           created_at: string;
@@ -1153,6 +1187,16 @@ export type Database = {
       };
     };
     Functions: {
+      prepare_tutor_onboarding_deletion: {
+        Args: {
+          p_profile_id: string;
+          p_email: string;
+          p_reason: string;
+          p_recovery_attempted: boolean;
+          p_first_access_failure: boolean;
+        };
+        Returns: Database["public"]["Tables"]["tutor_deletion_audit"]["Row"];
+      };
       availability_overlap: {
         Args: { slots1: Json; slots2: Json };
         Returns: boolean;

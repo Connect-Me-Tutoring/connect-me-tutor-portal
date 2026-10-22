@@ -124,12 +124,9 @@ export const provisionUser = async (newProfileData: CreatedProfileData) => {
     if (!userId) {
       const { newUserId, authError } = await inviteUser(newProfileData);
       if (!newUserId || authError) {
-        const { data } = await supabase.rpc("get_user_by_email", {
-          email: newProfileData.email,
-        });
-        const userRecord = data as unknown as { id: string } | null;
-        if (userRecord) await supabase.auth.admin.deleteUser(userRecord.id);
-        throw authError;
+        // An invite failure is never permission to delete a pre-existing account.
+        // Only the deliberate onboarding recovery action may reset a Tutor.
+        throw authError ?? new Error("Invitation did not return an authentication account");
       }
       userId = newUserId;
     }
