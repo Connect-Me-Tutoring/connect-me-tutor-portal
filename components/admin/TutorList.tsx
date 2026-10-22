@@ -69,6 +69,7 @@ import { Combobox } from "@/components/ui/combobox";
 
 import AddTutorForm from "./components/AddTutorForm";
 import ProfileStatusForm from "./components/ProfileStatusForm";
+import DeleteTutorForm from "./components/DeleteTutorForm";
 import { inactiveLast } from "@/lib/utils/inactive-last";
 import EditTutorForm from "./components/EditTutorForm";
 import ManageTutorSessions from "./components/ManageTutorSessionForm";
@@ -470,8 +471,8 @@ const TutorList = ({ initialTutors }: any) => {
   return (
     <>
       {" "}
-      <div className="flex justify-between items-center mb-4">
-        <div className="flex space-x-2">
+      <div className="flex flex-wrap justify-between items-center gap-2 mb-4">
+        <div className="flex flex-wrap items-center gap-2">
           <Input
             type="text"
             placeholder="Filter tutors..."
@@ -502,6 +503,19 @@ const TutorList = ({ initialTutors }: any) => {
             roleLabel="Tutor"
             mode="reactivate"
             onConfirm={handleReactivateTutor}
+          />
+
+          <DeleteTutorForm
+            tutors={tutors}
+            onDeleted={(profileId, email) => {
+              setTutors((previous) => previous.filter((tutor) => tutor.id !== profileId));
+              setSelectedTutor(null);
+              setSelectedTutorId(null);
+              setNewTutor((previous) => ({ ...previous, email }));
+              toast.success(`Tutor removed. Use Add Tutor to recreate and reinvite ${email}.`, {
+                duration: 8000,
+              });
+            }}
           />
 
           {/*Reactivate Student*/}
