@@ -1,7 +1,6 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import { hasTutorOrientationAccess } from "@/lib/orientation/config.server";
-import { requiresTutorOrientation } from "@/lib/orientation/navigation";
 import { isCronRequestAuthorized } from "@/lib/security/cron";
 import { isBearerTokenAuthorized } from "@/lib/security/bearer-token";
 
@@ -84,7 +83,8 @@ export async function proxy(request: NextRequest) {
     const selectedProfile = settings?.profile;
     const profile = Array.isArray(selectedProfile) ? selectedProfile[0] : selectedProfile;
     const orientationRequired =
-      requiresTutorOrientation(profile?.role, profile?.orientation_completed_at) &&
+      profile?.role === "Tutor" &&
+      !profile.orientation_completed_at &&
       (await hasTutorOrientationAccess(profile));
     const isPublicAccountPath = isPublicPath(path) && path !== "/";
 
