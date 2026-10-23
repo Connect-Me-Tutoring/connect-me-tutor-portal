@@ -27,6 +27,18 @@ vi.mock("@supabase/ssr", () => ({
 
 import { config, proxy } from "./proxy";
 
+const incompleteTutor = {
+  email: "tutor@example.com",
+  id: "profile-1",
+  orientation_completed_at: null,
+  role: "Tutor",
+};
+
+function authenticateAs(profile: Record<string, unknown>) {
+  mocks.getUser.mockResolvedValue({ data: { user: { id: "user-1" } } });
+  mocks.getActiveProfile.mockResolvedValue({ data: { profile }, error: null });
+}
+
 describe("orientation proxy coverage", () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -55,11 +67,7 @@ describe("orientation proxy coverage", () => {
   });
 
   it("sends an incomplete tutor directly to orientation after login", async () => {
-    mocks.getUser.mockResolvedValue({ data: { user: { id: "user-1" } } });
-    mocks.getActiveProfile.mockResolvedValue({
-      data: { profile: { role: "Tutor", orientation_completed_at: null } },
-      error: null,
-    });
+    authenticateAs(incompleteTutor);
 
     const response = await proxy(new NextRequest("http://localhost/"));
 
@@ -68,11 +76,7 @@ describe("orientation proxy coverage", () => {
   });
 
   it("blocks direct portal URLs until a tutor completes orientation", async () => {
-    mocks.getUser.mockResolvedValue({ data: { user: { id: "user-1" } } });
-    mocks.getActiveProfile.mockResolvedValue({
-      data: { profile: { role: "Tutor", orientation_completed_at: null } },
-      error: null,
-    });
+    authenticateAs(incompleteTutor);
 
     const response = await proxy(new NextRequest("http://localhost/dashboard/my-students"));
 
@@ -81,11 +85,7 @@ describe("orientation proxy coverage", () => {
   });
 
   it("allows incomplete tutors to use orientation pages and assets", async () => {
-    mocks.getUser.mockResolvedValue({ data: { user: { id: "user-1" } } });
-    mocks.getActiveProfile.mockResolvedValue({
-      data: { profile: { role: "Tutor", orientation_completed_at: null } },
-      error: null,
-    });
+    authenticateAs(incompleteTutor);
 
     const pageResponse = await proxy(new NextRequest("http://localhost/orientation/walkthrough"));
     const assetResponse = await proxy(
@@ -99,11 +99,7 @@ describe("orientation proxy coverage", () => {
   });
 
   it("rejects non-orientation API requests for incomplete tutors", async () => {
-    mocks.getUser.mockResolvedValue({ data: { user: { id: "user-1" } } });
-    mocks.getActiveProfile.mockResolvedValue({
-      data: { profile: { role: "Tutor", orientation_completed_at: null } },
-      error: null,
-    });
+    authenticateAs(incompleteTutor);
 
     const response = await proxy(new NextRequest("http://localhost/api/ai-chatbot"));
 
@@ -114,18 +110,7 @@ describe("orientation proxy coverage", () => {
   });
 
   it("allows incomplete tutors into the portal when the PostHog flag is disabled", async () => {
-    mocks.getUser.mockResolvedValue({ data: { user: { id: "user-1" } } });
-    mocks.getActiveProfile.mockResolvedValue({
-      data: {
-        profile: {
-          email: "tutor@example.com",
-          id: "profile-1",
-          orientation_completed_at: null,
-          role: "Tutor",
-        },
-      },
-      error: null,
-    });
+    authenticateAs(incompleteTutor);
     mocks.hasTutorOrientationAccess.mockResolvedValue(false);
 
     const pageResponse = await proxy(new NextRequest("http://localhost/dashboard/my-students"));
@@ -137,27 +122,6 @@ describe("orientation proxy coverage", () => {
     expect(apiResponse.status).toBe(200);
     expect(rootResponse.status).toBe(307);
     expect(rootResponse.headers.get("location")).toBe("http://localhost/dashboard");
-  });
-
-  it("fails open when the PostHog orientation check is unavailable", async () => {
-    mocks.getUser.mockResolvedValue({ data: { user: { id: "user-1" } } });
-    mocks.getActiveProfile.mockResolvedValue({
-      data: {
-        profile: {
-          email: "tutor@example.com",
-          id: "profile-1",
-          orientation_completed_at: null,
-          role: "Tutor",
-        },
-      },
-      error: null,
-    });
-    mocks.hasTutorOrientationAccess.mockResolvedValue(false);
-
-    const response = await proxy(new NextRequest("http://localhost/dashboard/my-students"));
-
-    expect(response.status).toBe(200);
-    expect(response.headers.get("location")).toBeNull();
   });
 
   it("allows completed tutors and non-tutors into the portal", async () => {

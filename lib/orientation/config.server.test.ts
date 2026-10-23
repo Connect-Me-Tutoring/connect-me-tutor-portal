@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("server-only", () => ({}));
 
@@ -16,7 +16,6 @@ import {
   canViewTutorOrientation,
   hasTutorOrientationAccess,
   TUTOR_ORIENTATION_FLAG,
-  TUTOR_ORIENTATION_FLAG_TIMEOUT_MS,
 } from "@/lib/orientation/config.server";
 
 describe("tutor orientation configuration", () => {
@@ -24,10 +23,6 @@ describe("tutor orientation configuration", () => {
     vi.clearAllMocks();
     mocks.getClient.mockReturnValue({ evaluateFlags: mocks.evaluateFlags });
     mocks.evaluateFlags.mockResolvedValue({ isEnabled: mocks.isEnabled });
-  });
-
-  afterEach(() => {
-    vi.useRealTimers();
   });
 
   it("allows tutors and admins to view orientation content", () => {
@@ -77,18 +72,21 @@ describe("tutor orientation configuration", () => {
     it("treats evaluation failures and incomplete profile data as disabled", async () => {
       vi.mocked(mocks.evaluateFlags).mockRejectedValueOnce(new Error("network"));
 
-      await expect(hasTutorOrientationAccess(tutor)).resolves.toBe(false);
+      await expect(hasTutorOrientationAccess({ ...tutor, id: "tutor-error" })).resolves.toBe(false);
       await expect(hasTutorOrientationAccess({ role: "Tutor" })).resolves.toBe(false);
     });
 
-    it("fails open without waiting for the PostHog SDK timeout", async () => {
-      vi.useFakeTimers();
-      mocks.evaluateFlags.mockReturnValue(new Promise(() => undefined));
+    it("deduplicates repeated checks for the same tutor", async () => {
+      mocks.isEnabled.mockReturnValue(true);
+      const cachedTutor = { ...tutor, id: "tutor-cache" };
 
-      const access = hasTutorOrientationAccess(tutor);
-      await vi.advanceTimersByTimeAsync(TUTOR_ORIENTATION_FLAG_TIMEOUT_MS);
-
-      await expect(access).resolves.toBe(false);
+      await expect(
+        Promise.all([
+          hasTutorOrientationAccess(cachedTutor),
+          hasTutorOrientationAccess(cachedTutor),
+        ]),
+      ).resolves.toEqual([true, true]);
+      expect(mocks.evaluateFlags).toHaveBeenCalledOnce();
     });
   });
 });
