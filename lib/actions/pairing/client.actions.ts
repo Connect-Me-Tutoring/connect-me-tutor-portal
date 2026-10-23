@@ -470,7 +470,7 @@ export const deletePairing = async (tutorId: string, studentId: string) => {
         .from("Sessions")
         .delete()
         .in("enrollment_id", enrollmentIds)
-        .neq("status", "Complete")
+        .not("status", "in", '(Complete,"Student Did Not Attend")')
         .gte("date", now);
 
       if (deleteSessionsError) throw deleteSessionsError;

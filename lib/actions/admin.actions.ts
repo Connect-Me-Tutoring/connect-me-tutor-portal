@@ -6,7 +6,6 @@ import { getSupabase, supabase, supabaseClient } from "@/lib/supabase/client";
 import { Profile, Session, Notification, Event, Enrollment, Meeting } from "@/types";
 import {
   deleteScheduledEmailBeforeSessions,
-  sendScheduledEmailsBeforeSessions,
   updateScheduledEmailBeforeSessions,
 } from "./email/server.actions";
 import { getProfileWithProfileId, getProfileByEmail } from "./user/client.actions";
@@ -190,39 +189,6 @@ export async function getUserFromId(profileId: string) {
   } catch (error) {
     console.error("Failed to fetch user");
     return null;
-  }
-}
-
-export async function deactivateUser(profileId: string) {
-  try {
-    const { data, error } = await supabase
-      .from(Table.Profiles)
-      .update({ status: "Inactive" })
-      .eq("id", profileId)
-      .select("*")
-      .single();
-    if (error) throw error;
-    return data;
-  } catch (error) {
-    console.error("Error deactivating user:", error);
-    throw error;
-  }
-}
-
-export async function reactivateUser(profileId: string) {
-  try {
-    const { data, error } = await supabase
-      .from(Table.Profiles)
-      .update({ status: "Active" })
-      .eq("id", profileId)
-      .select("*")
-      .single();
-
-    if (error) throw error;
-    return data;
-  } catch (error) {
-    console.error("Error reactivating user:", error);
-    throw error;
   }
 }
 

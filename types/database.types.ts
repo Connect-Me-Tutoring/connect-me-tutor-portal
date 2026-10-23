@@ -4,7 +4,7 @@ export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "12.2.3 (519615d)";
+    PostgrestVersion: "12.2.3";
   };
   public: {
     Tables: {
@@ -569,6 +569,98 @@ export type Database = {
           },
         ];
       };
+      parental_consents: {
+        Row: {
+          consent_text_version: string | null;
+          created_at: string;
+          expires_at: string;
+          id: string;
+          parent_email: string;
+          parent_name: string | null;
+          pending_profile: Json | null;
+          profile_id: string | null;
+          requested_by: string | null;
+          resolved_at: string | null;
+          resolved_ip: string | null;
+          resolved_user_agent: string | null;
+          status: string;
+          student_first_name: string;
+          token_hash: string;
+        };
+        Insert: {
+          consent_text_version?: string | null;
+          created_at?: string;
+          expires_at: string;
+          id?: string;
+          parent_email: string;
+          parent_name?: string | null;
+          pending_profile?: Json | null;
+          profile_id?: string | null;
+          requested_by?: string | null;
+          resolved_at?: string | null;
+          resolved_ip?: string | null;
+          resolved_user_agent?: string | null;
+          status?: string;
+          student_first_name: string;
+          token_hash: string;
+        };
+        Update: {
+          consent_text_version?: string | null;
+          created_at?: string;
+          expires_at?: string;
+          id?: string;
+          parent_email?: string;
+          parent_name?: string | null;
+          pending_profile?: Json | null;
+          profile_id?: string | null;
+          requested_by?: string | null;
+          resolved_at?: string | null;
+          resolved_ip?: string | null;
+          resolved_user_agent?: string | null;
+          status?: string;
+          student_first_name?: string;
+          token_hash?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "parental_consents_profile_id_fkey";
+            columns: ["profile_id"];
+            isOneToOne: false;
+            referencedRelation: "Profiles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      profile_status_changes: {
+        Row: {
+          changed_at: string;
+          changed_by: string | null;
+          from_status: string | null;
+          id: number;
+          profile_id: string;
+          role: string | null;
+          to_status: string;
+        };
+        Insert: {
+          changed_at?: string;
+          changed_by?: string | null;
+          from_status?: string | null;
+          id?: never;
+          profile_id: string;
+          role?: string | null;
+          to_status: string;
+        };
+        Update: {
+          changed_at?: string;
+          changed_by?: string | null;
+          from_status?: string | null;
+          id?: never;
+          profile_id?: string;
+          role?: string | null;
+          to_status?: string;
+        };
+        Relationships: [];
+      };
       Profiles: {
         Row: {
           age: string | null;
@@ -576,6 +668,8 @@ export type Database = {
           availability: Json[] | null;
           created_at: string;
           date_of_birth: string | null;
+          deactivated_at: string | null;
+          deactivated_by: string | null;
           email: string | null;
           first_name: string;
           gender: string | null;
@@ -606,6 +700,8 @@ export type Database = {
           availability?: Json[] | null;
           created_at?: string;
           date_of_birth?: string | null;
+          deactivated_at?: string | null;
+          deactivated_by?: string | null;
           email?: string | null;
           first_name: string;
           gender?: string | null;
@@ -636,6 +732,8 @@ export type Database = {
           availability?: Json[] | null;
           created_at?: string;
           date_of_birth?: string | null;
+          deactivated_at?: string | null;
+          deactivated_by?: string | null;
           email?: string | null;
           first_name?: string;
           gender?: string | null;

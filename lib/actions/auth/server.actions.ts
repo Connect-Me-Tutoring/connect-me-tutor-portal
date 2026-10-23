@@ -2,7 +2,7 @@
 
 import { createAdminClient, createClient } from "@/lib/supabase/server";
 import { NextRequest, NextResponse } from "next/server";
-import { Profile, CreatedProfileData } from "@/types";
+import { Profile, CreatedProfileData, Availability } from "@/types";
 import { User } from "@supabase/supabase-js";
 import { Table } from "../../supabase/tables";
 import { admin } from "googleapis/build/src/apis/admin";
@@ -14,52 +14,31 @@ import { getProfileRole } from "../user/server.actions";
 import { isCronRequestAuthorized } from "@/lib/security/cron";
 import { logError } from "@/lib/posthog";
 import type { Database } from "@/types/database.types";
-import { buildUserMetadata } from "./profile-insert";
+import { provisionUser } from "@/lib/auth/provision-user.server";
+import {
+  countLegacyPendingConsentRequests,
+  provisionLegacyPendingConsentRequests,
+} from "@/lib/consent/parental-consent.server";
 
-const ensurePairingQueueForNewProfile = async (
-  supabase: Awaited<ReturnType<typeof createAdminClient>>,
-  profile: { id: string; role: string | null },
-) => {
-  const normalizedRole = profile.role?.toLowerCase();
-  if (normalizedRole !== "student" && normalizedRole !== "tutor") return;
+/**
+ * Creates a new user through an email invite. Parental consent for students under
+ * 13 is collected at intake, outside the portal, before an admin adds them.
+ */
+export const createUser = async (newProfileData: CreatedProfileData): Promise<Profile> => {
+  await verifyAdmin();
+  return provisionUser(newProfileData);
+};
 
-  const { data: existing, error: existingError } = await supabase
-    .from(Table.PairingRequests)
-    .select("id, in_queue, priority")
-    .eq("user_id", profile.id)
-    .order("created_at", { ascending: false })
-    .limit(1)
-    .maybeSingle();
+/** Students still waiting on the retired parent-approval email link. */
+export const countLegacyPendingParentalConsents = async (): Promise<number> => {
+  await verifyAdmin();
+  return countLegacyPendingConsentRequests();
+};
 
-  if (existingError) throw existingError;
-
-  if (existing?.id) {
-    if (existing.in_queue === false) {
-      const { error: updateError } = await supabase
-        .from(Table.PairingRequests)
-        .update({
-          in_queue: true,
-          status: "pending",
-          type: normalizedRole,
-          priority: existing.priority ?? 1,
-        })
-        .eq("id", existing.id);
-      if (updateError) throw updateError;
-    }
-    return;
-  }
-
-  const { error: insertError } = await supabase.from(Table.PairingRequests).insert([
-    {
-      user_id: profile.id,
-      type: normalizedRole,
-      status: "pending",
-      priority: 1,
-      in_queue: true,
-      notes: "Auto-enqueued on account creation",
-    },
-  ]);
-  if (insertError) throw insertError;
+/** Creates the accounts for those students; their consent is on file from intake. */
+export const provisionLegacyPendingParentalConsents = async () => {
+  await verifyAdmin();
+  return provisionLegacyPendingConsentRequests();
 };
 
 export const isAuthorized = async (request: NextRequest) => {
@@ -99,109 +78,6 @@ export const getUser = async () => {
     data: { user },
   } = await supabase.auth.getUser();
   return user;
-};
-
-const inviteUser = async (newProfileData: CreatedProfileData) => {
-  const supabase = await createAdminClient();
-
-  const { data: authData, error: authError } = await supabase.auth.admin.inviteUserByEmail(
-    newProfileData.email,
-    {
-      data: {
-        first_name: newProfileData.firstName,
-        last_name: newProfileData.lastName,
-      },
-    },
-  );
-
-  // await supabase.auth.admin.createUser({
-  //   email: newProfileData.email,
-  //   password: newProfileData.password,
-  // });
-
-  // if (authError) {
-  //   console.log("Unable to invite user " + authError.message);
-  //   throw new Error("Unable to invite user " + authError.message);
-  // }
-
-  const newUserId = authData?.user?.id;
-  return { newUserId, authError };
-};
-
-/**
- * Creates a new user through an email invite
- * @param newProfileData
- * @returns
- */
-
-export const createUser = async (newProfileData: CreatedProfileData) => {
-  await verifyAdmin();
-  const supabase = await createAdminClient();
-  try {
-    const { data: prevProfile } = await supabase
-      .from("Profiles")
-      .select("user_id, role")
-      .eq("email", newProfileData.email)
-      .limit(1)
-      .maybeSingle()
-      .throwOnError();
-
-    if (prevProfile?.role === "Admin") {
-      throw new Error("Multiple profiles prohibited for provided email");
-    }
-
-    let userId = prevProfile?.user_id;
-    if (!userId) {
-      const { newUserId, authError } = await inviteUser(newProfileData);
-      if (!newUserId || authError) {
-        const { data } = await supabase.rpc("get_user_by_email", {
-          email: newProfileData.email,
-        });
-        const userRecord = data as unknown as { id: string } | null;
-        if (userRecord) await supabase.auth.admin.deleteUser(userRecord.id);
-        throw authError;
-      }
-      userId = newUserId;
-    }
-
-    const userMetadata = buildUserMetadata(newProfileData, userId);
-
-    const { data: createdProfile, error: profileError } = await supabase
-      .from("Profiles")
-      .insert(userMetadata as unknown as Database["public"]["Tables"]["Profiles"]["Insert"])
-      .select()
-      .single();
-
-    /*
-     * Should only delete if we do not already have another profile under the same email
-     * and we encounter an error inserting a Profile record to the table
-     */
-    if (!prevProfile && profileError) {
-      console.error("Unable to create profile", profileError);
-      await logError(
-        profileError,
-        { action: "createUser", email: newProfileData.email },
-        "auth_error",
-      );
-      await supabase.auth.admin.deleteUser(userId);
-      throw profileError;
-    }
-
-    const createdProfileData: Profile = tableToInterfaceProfiles(createdProfile);
-
-    if (createdProfile?.id) {
-      await ensurePairingQueueForNewProfile(supabase, {
-        id: createdProfile.id,
-        role: createdProfile.role ?? null,
-      });
-    }
-
-    return createdProfileData;
-  } catch (error) {
-    console.error("Error creating user:", error);
-    await logError(error, { action: "createUser", email: newProfileData.email }, "auth_error");
-    throw error;
-  }
 };
 
 const replaceLastActiveProfile = async (
