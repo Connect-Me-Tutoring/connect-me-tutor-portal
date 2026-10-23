@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 const mocks = vi.hoisted(() => ({
   eq: vi.fn(),
   from: vi.fn(),
+  hasTutorOrientationAccess: vi.fn(),
   maybeSingle: vi.fn(),
   requireAuthenticatedProfile: vi.fn(),
   revalidatePath: vi.fn(),
@@ -27,11 +28,11 @@ vi.mock("@/lib/actions/auth/authz.server", () => ({
 }));
 
 vi.mock("@/lib/orientation/config.server", () => ({
-  hasTutorOrientationAccess: async () => true,
+  hasTutorOrientationAccess: (...args: unknown[]) => mocks.hasTutorOrientationAccess(...args),
 }));
 
 vi.mock("@/lib/supabase/server", () => ({
-  createClient: vi.fn().mockResolvedValue({ from: mocks.from }),
+  createAdminClient: vi.fn().mockResolvedValue({ from: mocks.from }),
 }));
 
 vi.mock("next/cache", () => ({
@@ -52,6 +53,7 @@ describe("submitQuizCompletion", () => {
     mocks.update.mockReturnValue(query);
     mocks.eq.mockReturnValue(query);
     mocks.select.mockReturnValue(query);
+    mocks.hasTutorOrientationAccess.mockResolvedValue(true);
     mocks.requireAuthenticatedProfile.mockResolvedValue({
       profile: {
         firstName: "Taylor",
@@ -104,5 +106,20 @@ describe("submitQuizCompletion", () => {
     const webhookRequest = fetchMock.mock.calls[0][1];
     const webhookBody = JSON.parse(webhookRequest.body as string);
     expect(webhookBody.embeds[0].description).toBe("Could you explain the cancellation policy?");
+  });
+
+  it("does not save completion while the PostHog flag is disabled", async () => {
+    mocks.hasTutorOrientationAccess.mockResolvedValue(false);
+
+    await expect(
+      submitQuizCompletion({
+        questionsText: null,
+        retries: 0,
+        totalAttempts: policyQuizQuestions.length,
+        totalQuestions: policyQuizQuestions.length,
+      }),
+    ).rejects.toThrow("Tutor orientation is not enabled.");
+
+    expect(mocks.update).not.toHaveBeenCalled();
   });
 });

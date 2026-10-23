@@ -60,7 +60,7 @@ export default async function AdminHome() {
       icon: <ClipboardX className="h-5 w-5" />,
       needsAttention: summary.unloggedSessionsLast7Days > 0,
     },
-    ...(summary.tutorsOrientationIncomplete !== null
+    ...(summary.tutorsOrientationIncomplete > 0
       ? [
           {
             title: "Orientation incomplete",
