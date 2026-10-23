@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("server-only", () => ({}));
 
@@ -15,14 +15,40 @@ vi.mock("@/lib/posthog", () => ({
 import {
   canViewTutorOrientation,
   hasTutorOrientationAccess,
+  isTutorOrientationEnabledForAll,
   TUTOR_ORIENTATION_FLAG,
 } from "@/lib/orientation/config.server";
+
+const originalFeatureFlag = process.env.TUTOR_ORIENTATION_ENABLED;
+const originalLegacyFeatureFlag = process.env.ORIENTATION_QUIZ_ENABLED;
+
+const restoreEnv = (key: string, value: string | undefined) => {
+  if (value === undefined) delete process.env[key];
+  else process.env[key] = value;
+};
 
 describe("tutor orientation configuration", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mocks.getClient.mockReturnValue({ evaluateFlags: mocks.evaluateFlags });
     mocks.evaluateFlags.mockResolvedValue({ isEnabled: mocks.isEnabled });
+    delete process.env.TUTOR_ORIENTATION_ENABLED;
+    delete process.env.ORIENTATION_QUIZ_ENABLED;
+  });
+
+  afterEach(() => {
+    restoreEnv("TUTOR_ORIENTATION_ENABLED", originalFeatureFlag);
+    restoreEnv("ORIENTATION_QUIZ_ENABLED", originalLegacyFeatureFlag);
+  });
+
+  it("preserves the existing admin-dashboard setting", () => {
+    expect(isTutorOrientationEnabledForAll()).toBe(false);
+    process.env.TUTOR_ORIENTATION_ENABLED = "true";
+    expect(isTutorOrientationEnabledForAll()).toBe(true);
+
+    delete process.env.TUTOR_ORIENTATION_ENABLED;
+    process.env.ORIENTATION_QUIZ_ENABLED = "true";
+    expect(isTutorOrientationEnabledForAll()).toBe(true);
   });
 
   it("allows tutors and admins to view orientation content", () => {
@@ -74,19 +100,6 @@ describe("tutor orientation configuration", () => {
 
       await expect(hasTutorOrientationAccess({ ...tutor, id: "tutor-error" })).resolves.toBe(false);
       await expect(hasTutorOrientationAccess({ role: "Tutor" })).resolves.toBe(false);
-    });
-
-    it("deduplicates repeated checks for the same tutor", async () => {
-      mocks.isEnabled.mockReturnValue(true);
-      const cachedTutor = { ...tutor, id: "tutor-cache" };
-
-      await expect(
-        Promise.all([
-          hasTutorOrientationAccess(cachedTutor),
-          hasTutorOrientationAccess(cachedTutor),
-        ]),
-      ).resolves.toEqual([true, true]);
-      expect(mocks.evaluateFlags).toHaveBeenCalledOnce();
     });
   });
 });

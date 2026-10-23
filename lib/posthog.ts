@@ -124,9 +124,6 @@ function getPostHogClient(): PostHog | null {
   if (!posthogClient) {
     posthogClient = new PostHog(process.env.NEXT_PUBLIC_POSTHOG_KEY, {
       host: process.env.NEXT_PUBLIC_POSTHOG_HOST,
-      // PostHog is observability and feature-control infrastructure, not a
-      // reason to hold a user request open during an outage.
-      requestTimeout: 1_500,
       flushAt: 1, // Flush immediately for real-time debugging
       flushInterval: 0, // Disable interval flushing, use immediate
     });
