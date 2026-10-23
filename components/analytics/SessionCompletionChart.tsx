@@ -12,6 +12,8 @@ import {
 } from "recharts";
 import { supabase } from "@/lib/supabase/client";
 import toast from "react-hot-toast";
+import { Info } from "lucide-react";
+import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 
 interface PeriodStat {
   period: string; // "YYYY-MM-DD" (first day of the period)
@@ -181,7 +183,32 @@ const SessionCompletionChart = () => {
 
   return (
     <div>
-      <div className="flex items-center justify-end mb-3">
+      <div className="flex items-center justify-end gap-3 mb-3">
+        <Popover>
+          <PopoverTrigger asChild>
+            <button
+              type="button"
+              className="text-gray-400 hover:text-gray-600 transition-colors p-0.5"
+              aria-label="First session tracking info"
+              title="First session tracking info"
+            >
+              <Info className="h-4 w-4" />
+            </button>
+          </PopoverTrigger>
+          <PopoverContent align="end" className="w-80 p-4 text-xs text-gray-600 space-y-2 shadow-md">
+            <p className="font-medium text-gray-900">First Session Tracking</p>
+            <p>
+              Measures the share of pairings that turn into active tutoring relationships.
+            </p>
+            <p>
+              A pairing is counted as a successful first session on the date of its first completed session (green SEF), even if pushed to the following week.
+            </p>
+            <p>
+              Pairings only count as unsuccessful if they have zero completed sessions across their entire history.
+            </p>
+          </PopoverContent>
+        </Popover>
+
         <button
           onClick={() => fetchStats(granularity, firstOnly, true)}
           disabled={isRefreshing}
