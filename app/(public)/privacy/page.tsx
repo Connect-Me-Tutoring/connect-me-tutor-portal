@@ -7,9 +7,8 @@ export const metadata: Metadata = {
 };
 
 // Adapted from the connectmego.org policy (last modified 2021-02-22).
-// When this text changes materially, update LAST_MODIFIED and bump
-// CONSENT_TEXT_VERSION in lib/consent/types.ts.
-const LAST_MODIFIED = "October 19, 2026";
+// When this text changes materially, update LAST_MODIFIED.
+const LAST_MODIFIED = "October 20, 2026";
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
@@ -157,14 +156,15 @@ export default function PrivacyPage() {
           parent or guardian, following the standards of the Children&rsquo;s Online Privacy
           Protection Act (COPPA).
         </p>
-        <p>How this works:</p>
-        <List
-          items={[
-            "When a Connect Me administrator signs up a student under 13, we email the parent or guardian a link to review what we collect and to approve or decline.",
-            "No account is created for the child until the parent or guardian approves. If they decline, or do not respond within 7 days, no account is created and the information entered about the child is deleted.",
-            "We record when permission was given and which version of this Policy was shown.",
-          ]}
-        />
+        <p>
+          A parent or guardian gives permission when their child signs up for Connect Me through our
+          website,{" "}
+          <a href="https://connectmego.org" className="underline">
+            connectmego.org
+          </a>
+          . A Connect Me administrator creates the child&rsquo;s portal account only after that
+          permission is on file.
+        </p>
         <p>
           We use a child&rsquo;s information only to provide tutoring and run the program, as
           described in this Policy. We do not require a child to provide more information than is
