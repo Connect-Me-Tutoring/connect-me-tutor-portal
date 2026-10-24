@@ -10,6 +10,7 @@ import { rescheduleSession, cancelSession } from "@/lib/actions/session/server.a
 import { getTutorEnrollmentsMissingSEF } from "@/lib/actions/enrollment/server.actions";
 import { Session, Profile, Meeting } from "@/types";
 import toast from "react-hot-toast";
+import { submitSessionExitFormFlow, type SessionExitFormOutcome } from "@/lib/session-exit-form";
 import { useDashboardContext } from "@/lib/contexts/dashboardContext";
 import { undoSessionExitForm } from "@/lib/actions/tutor/actions";
 import {
@@ -168,66 +169,43 @@ const TutorDashboard = () => {
     }
   };
 
+  /**
+   * Returns the outcome instead of swallowing it, so the Session Exit Form knows whether to
+   * close. Dashboard state is only updated from the session the server sends back.
+   */
   const handleSessionComplete = async (
     session: Session,
     notes: string,
     isQuestionOrConcern: boolean,
     isFirstSession: boolean,
     category?: string,
-  ) => {
-    try {
-      const updatedSession = session;
-      updatedSession.session_exit_form = notes;
-      updatedSession.status = "Complete";
-      updatedSession.isQuestionOrConcern = isQuestionOrConcern;
-      updatedSession.isFirstSession = isFirstSession;
-      await updateSession(updatedSession);
-      try {
-        await sendStudentSEFFeedbackEmail(session);
-      } catch (error) {
-        console.error("Failed to send student SEF feedback email:", error);
-      }
-      TC.setCurrentSessions(
-        TC.currentSessions.map((e: Session) => (e.id === updatedSession.id ? updatedSession : e)),
-      );
-      TC.setSessions(
-        TC.sessions.map((e: Session) => (e.id === updatedSession.id ? updatedSession : e)),
-      );
-      toast.success("Session Marked Complete");
-      TC.setIsSessionExitFormOpen(false);
-      TC.setNotes("");
-      TC.setNextClassConfirmed(false);
+  ): Promise<SessionExitFormOutcome> => {
+    const outcome = await submitSessionExitFormFlow({
+      session,
+      notes,
+      isQuestionOrConcern,
+      isFirstSession,
+      category,
+    });
+    if (!outcome.ok) return outcome;
 
-      //API Call to update operation logs
+    const saved = outcome.session;
+    TC.setCurrentSessions(TC.currentSessions.map((e: Session) => (e.id === saved.id ? saved : e)));
+    TC.setSessions(TC.sessions.map((e: Session) => (e.id === saved.id ? saved : e)));
+    TC.setIsSessionExitFormOpen(false);
+    TC.setNotes("");
+    TC.setNextClassConfirmed(false);
 
-      if (isQuestionOrConcern) {
-        const response = await fetch("/api/session-exit-form/questions-concerns", {
-          headers: {
-            "Content-Type": "application/json",
-          },
-          method: "POST",
-          body: JSON.stringify({
-            tutorFirstName: session.tutor?.firstName,
-            tutorLastName: session.tutor?.lastName,
-            studentFirstName: session.student?.firstName,
-            studentLastName: session.student?.lastName,
-            formContent: notes,
-            tutorEmail: session.tutor?.email,
-            studentEmail: session.student?.email,
-            category,
-          }),
-        });
-        const data = await response.json();
-
-        if (!data.success) {
-          toast.error("Unable to record question or concern");
-          throw new Error(data.error);
-        }
-      }
-    } catch (error) {
-      console.error("Failed to record Session Exit Form", error);
-      toast.error("Failed to record Session Exit Form");
+    if (outcome.alreadySubmitted) {
+      toast("This Session Exit Form was already submitted.");
+      return outcome;
     }
+
+    toast.success("Session Marked Complete");
+    // Only after a confirmed save, and only once. Failures toast on their own and don't
+    // affect the saved form.
+    sendStudentSEFFeedbackEmail(saved).catch(() => {});
+    return outcome;
   };
 
   const handleUndoSessionExitForm = async (sessionId: string) => {
