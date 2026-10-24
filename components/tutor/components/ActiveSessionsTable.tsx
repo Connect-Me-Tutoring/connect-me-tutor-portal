@@ -2,6 +2,7 @@ import React from "react";
 import { useState } from "react";
 import { formatSessionDate, formatSessionDuration } from "@/lib/utils";
 import { Session, Meeting } from "@/types";
+import type { SessionExitFormOutcome } from "@/lib/session-exit-form";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
@@ -92,7 +93,7 @@ interface SessionsTableProps {
     isQuestionOrConcern: boolean,
     isFirstSession: boolean,
     category?: string,
-  ) => void;
+  ) => Promise<SessionExitFormOutcome>;
   handlePageChange: (page: number) => void;
   handleRowsPerPageChange: (value: string) => void;
   handleInputChange: (e: { target: { name: string; value: string } }) => void;
@@ -112,33 +113,6 @@ const ActiveSessionsTable = ({
   handleRowsPerPageChange,
 }: any) => {
   const TC = useDashboardContext();
-  const markSessionComplete = async (
-    updatedSession: Session,
-    notes: string,
-    isQuestionOrConcern: boolean,
-    isFirstSession: boolean,
-    category?: string,
-  ) => {
-    await handleSessionComplete(
-      updatedSession,
-      notes,
-      isQuestionOrConcern,
-      isFirstSession,
-      category,
-    );
-    try {
-      await fetch("/api/send-feedback-email", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          studentEmail: updatedSession.student?.email,
-          studentName: updatedSession.student?.firstName,
-        }),
-      });
-    } catch (emailError) {
-      console.error("Failed to send feedback email:", emailError);
-    }
-  };
   return (
     <>
       <div className="hidden md:block w-full">
@@ -186,7 +160,7 @@ const ActiveSessionsTable = ({
                   <SessionExitForm
                     currSession={session}
                     setNextClassConfirmed={setNextClassConfirmed}
-                    handleSessionComplete={markSessionComplete}
+                    handleSessionComplete={handleSessionComplete}
                     handleStatusChange={handleStatusChange}
                   />
                 </TableCell>
@@ -339,7 +313,7 @@ const ActiveSessionsTable = ({
               <SessionExitForm
                 currSession={session}
                 setNextClassConfirmed={setNextClassConfirmed}
-                handleSessionComplete={markSessionComplete}
+                handleSessionComplete={handleSessionComplete}
                 handleStatusChange={handleStatusChange}
               />
             </div>
