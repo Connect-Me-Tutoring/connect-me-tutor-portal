@@ -11,6 +11,7 @@ import { IncomingPairingMatch } from "./client.actions";
 import { NextResponse } from "next/server";
 import { PairingLogSchemaType } from "../../pairing/types";
 import { getOverlappingAvailabilites } from "../enrollment/client.actions";
+import { removeFutureSessions } from "../enrollment/server.actions";
 import { formatDateAdmin, to12Hour } from "../../utils";
 import { requireAdmin, requireEnrollmentAccess, requireSelfOrAdmin } from "../auth/authz.server";
 import { getPairingRejectionCooldown } from "../../pairing/rejection-config";
@@ -233,15 +234,7 @@ export const deletePairingServer = async (tutorId: string, studentId: string) =>
     const enrollmentIdList = Array.from(enrollmentIds);
 
     if (enrollmentIdList.length > 0) {
-      const now = new Date().toISOString();
-      const { error: deleteSessionsError } = await adminSupabase
-        .from("Sessions")
-        .delete()
-        .in("enrollment_id", enrollmentIdList)
-        .not("status", "in", '(Complete,"Student Did Not Attend")')
-        .gte("date", now);
-
-      if (deleteSessionsError) throw deleteSessionsError;
+      await removeFutureSessions(enrollmentIdList, adminSupabase);
 
       const { error: deleteEnrollmentsError } = await adminSupabase
         .from("Enrollments")
