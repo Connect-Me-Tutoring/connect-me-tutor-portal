@@ -74,6 +74,15 @@ const ensurePairingQueueForNewProfile = async (
   if (insertError) throw insertError;
 };
 
+const getAuthUserIdByEmail = async (
+  supabase: Awaited<ReturnType<typeof createAdminClient>>,
+  email: string,
+): Promise<string | null> => {
+  const { data, error } = await supabase.rpc("get_user_by_email", { email });
+  if (error) throw error;
+  return (data as { id?: string } | null)?.id ?? null;
+};
+
 const inviteUser = async (newProfileData: CreatedProfileData) => {
   const supabase = await createAdminClient();
 
@@ -105,34 +114,44 @@ const inviteUser = async (newProfileData: CreatedProfileData) => {
  * Creates the auth user (via email invite), the Profiles row, and the pairing queue entry.
  * No authorization check: callers must have already verified an admin or a parental consent.
  */
-export const provisionUser = async (newProfileData: CreatedProfileData) => {
+export const provisionUser = async (input: CreatedProfileData) => {
   const supabase = await createAdminClient();
+  // Auth stores emails lowercased; match it so the lookups below find the login.
+  const newProfileData = { ...input, email: input.email.trim().toLowerCase() };
   try {
-    const { data: prevProfile } = await supabase
-      .from("Profiles")
-      .select("user_id, role")
-      .eq("email", newProfileData.email)
-      .limit(1)
-      .maybeSingle()
-      .throwOnError();
+    // The login email (auth.users) is the source of truth for which account owns an
+    // address; Profiles.email is a copy.
+    const existingUserId = await getAuthUserIdByEmail(supabase, newProfileData.email);
 
-    if (prevProfile?.role === "Admin") {
-      throw new Error("Multiple profiles prohibited for provided email");
-    }
-
-    let userId = prevProfile?.user_id;
-    if (!userId) {
+    let userId = existingUserId;
+    if (existingUserId) {
+      const { data: existingProfiles } = await supabase
+        .from("Profiles")
+        .select("role")
+        .eq("user_id", existingUserId)
+        .throwOnError();
+      if (existingProfiles?.some((p) => p.role === "Admin")) {
+        throw new Error("Multiple profiles prohibited for provided email");
+      }
+    } else {
       const { newUserId, authError } = await inviteUser(newProfileData);
       if (!newUserId || authError) {
-        const { data } = await supabase.rpc("get_user_by_email", {
-          email: newProfileData.email,
-        });
-        const userRecord = data as unknown as { id: string } | null;
-        if (userRecord) await supabase.auth.admin.deleteUser(userRecord.id);
-        throw authError;
+        // The invite can create the auth user and then fail (e.g. sending the email). Remove
+        // only a user created by this call, and only if it has no profiles.
+        const createdUserId = await getAuthUserIdByEmail(supabase, newProfileData.email);
+        if (createdUserId) {
+          const { count } = await supabase
+            .from("Profiles")
+            .select("id", { count: "exact", head: true })
+            .eq("user_id", createdUserId)
+            .throwOnError();
+          if (!count) await supabase.auth.admin.deleteUser(createdUserId);
+        }
+        throw authError ?? new Error("Unable to invite user");
       }
       userId = newUserId;
     }
+    if (!userId) throw new Error("Unable to resolve user for new profile");
 
     const userMetadata: UserMetadata = {
       email: newProfileData.email,
@@ -162,18 +181,15 @@ export const provisionUser = async (newProfileData: CreatedProfileData) => {
       .select()
       .single();
 
-    /*
-     * Should only delete if we do not already have another profile under the same email
-     * and we encounter an error inserting a Profile record to the table
-     */
-    if (!prevProfile && profileError) {
+    if (profileError) {
       console.error("Unable to create profile", profileError);
       await logError(
         profileError,
         { action: "createUser", email: newProfileData.email },
         "auth_error",
       );
-      await supabase.auth.admin.deleteUser(userId);
+      // Only remove a login this call created; an existing login keeps its other profiles.
+      if (!existingUserId) await supabase.auth.admin.deleteUser(userId);
       throw profileError;
     }
 
