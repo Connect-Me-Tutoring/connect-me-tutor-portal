@@ -6,6 +6,7 @@ import { createAdminClient } from "@/lib/supabase/server";
 import { Table } from "@/lib/supabase/tables";
 import { withRetry } from "@/lib/utils";
 import { logError } from "@/lib/posthog";
+import { resolveQstashCredentials } from "@/lib/qstash/credentials";
 
 // Unauthenticated internals for session reminders. This file is deliberately not a
 // "use server" module: everything here trusts its arguments, so it must only be reached
@@ -15,9 +16,8 @@ import { logError } from "@/lib/posthog";
 export const SESSION_REMINDER_DESCRIPTION = "Session Reminder";
 
 export const getQstashClient = () => {
-  const token = process.env.US_EAST_1_QSTASH_TOKEN;
-  if (!token) throw new Error("US_EAST_1_QSTASH_TOKEN is not set");
-  return new Client({ token });
+  const { token, baseUrl } = resolveQstashCredentials();
+  return new Client({ token, baseUrl });
 };
 
 const isNotFound = (error: unknown) => (error as { status?: number })?.status === 404;
