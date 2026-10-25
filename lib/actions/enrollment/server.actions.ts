@@ -551,6 +551,36 @@ export const addEnrollment = async (
 
     const duration = await handleCalculateDuration(schedule.startTime, schedule.endTime);
 
+    const studentId = enrollment.student?.id;
+    if (!studentId) {
+      throw new Error("Student ID is required to create an enrollment");
+    }
+
+    const { data: existing, error: dupCheckError } = await supabase
+      .from(Table.Enrollments)
+      .select("id")
+      .eq("student_id", studentId)
+      .eq("tutor_id", enrollmentTutorId)
+      .eq("day", schedule.day)
+      .eq("start_time", schedule.startTime)
+      .limit(1);
+
+    if (dupCheckError) {
+      console.error("Error checking for duplicate enrollment:", dupCheckError);
+      await logError(
+        dupCheckError,
+        { function: "addEnrollment", step: "duplicate_check" },
+        "enrollment_error",
+      );
+      throw dupCheckError;
+    }
+
+    if (existing && existing.length > 0) {
+      throw new Error(
+        "An enrollment already exists for this student and tutor at the same day and time. Please edit the existing enrollment instead.",
+      );
+    }
+
     if (enrollment.duration <= 0) throw new Error("Duration should be a positive amount");
 
     if (!enrollment.student) throw new Error("Please select a Student");

@@ -58,7 +58,7 @@ interface EnrollmentFormDialogProps {
   isCheckingMeetingAvailability: boolean;
   onMeetingDropdownOpen: () => void;
 
-  onSubmit: () => void;
+  onSubmit: () => Promise<void> | void;
 }
 
 const EnrollmentFormDialog: React.FC<EnrollmentFormDialogProps> = ({
@@ -85,6 +85,17 @@ const EnrollmentFormDialog: React.FC<EnrollmentFormDialogProps> = ({
   const [openTutorOptions, setOpenTutorOptions] = useState(false);
   const [studentSearch, setStudentSearch] = useState("");
   const [tutorSearch, setTutorSearch] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const handleSubmit = async () => {
+    if (isSubmitting) return;
+    setIsSubmitting(true);
+    try {
+      await onSubmit();
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   const title = mode === "add" ? "Add New Enrollment" : "Edit Enrollment";
   const submitLabel = mode === "add" ? "Add Enrollment" : "Update Enrollment";
@@ -302,7 +313,10 @@ const EnrollmentFormDialog: React.FC<EnrollmentFormDialogProps> = ({
         )}
       </ScrollArea>
 
-      <Button onClick={onSubmit}>{submitLabel}</Button>
+      <Button onClick={handleSubmit} disabled={isSubmitting}>
+        {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+        {isSubmitting ? "Saving..." : submitLabel}
+      </Button>
     </DialogContent>
   );
 };
