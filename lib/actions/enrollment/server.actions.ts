@@ -572,7 +572,7 @@ export const addEnrollment = async (
     if (!studentId) {
       throw new Error("Student ID is required to create an enrollment");
     }
-    
+
     const { data: existing, error: dupCheckError } = await supabase
       .from(Table.Enrollments)
       .select("id")
