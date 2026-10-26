@@ -4,6 +4,7 @@ import { Input } from "@/components/ui/input";
 import ActiveSessionsTable from "../components/ActiveSessionsTable";
 import CurrentSessionsTable from "../components/CurrentSessionsTable";
 import CompletedSessionsTable from "../components/CompletedSessionsTable";
+import SessionExitForm from "../components/SessionExitForm";
 import { updateSession } from "@/lib/actions/session/server.actions";
 import { undoCancelSession } from "@/lib/actions/tutor/actions";
 import { rescheduleSession, cancelSession } from "@/lib/actions/session/server.actions";
@@ -175,36 +176,53 @@ const TutorDashboard = () => {
     isFirstSession: boolean,
     category?: string,
   ) => {
+    let savedSession: Session;
     try {
-      const updatedSession = session;
-      updatedSession.session_exit_form = notes;
-      updatedSession.status = "Complete";
-      updatedSession.isQuestionOrConcern = isQuestionOrConcern;
-      updatedSession.isFirstSession = isFirstSession;
-      await updateSession(updatedSession);
-      try {
-        await sendStudentSEFFeedbackEmail(session);
-      } catch (error) {
-        console.error("Failed to send student SEF feedback email:", error);
+      savedSession = await updateSession({
+        ...session,
+        session_exit_form: notes,
+        status: "Complete",
+        isQuestionOrConcern,
+        isFirstSession,
+      });
+      if (
+        !savedSession ||
+        savedSession.status !== "Complete" ||
+        savedSession.session_exit_form !== notes
+      ) {
+        throw new Error("The saved session did not contain the submitted exit form");
       }
-      TC.setCurrentSessions(
-        TC.currentSessions.map((e: Session) => (e.id === updatedSession.id ? updatedSession : e)),
+    } catch (error) {
+      console.error("Failed to record Session Exit Form", error);
+      toast.error(
+        "Failed to record Session Exit Form. Your notes have been kept; please try again.",
       );
-      TC.setSessions(
-        TC.sessions.map((e: Session) => (e.id === updatedSession.id ? updatedSession : e)),
-      );
-      toast.success("Session Marked Complete");
-      TC.setIsSessionExitFormOpen(false);
-      TC.setNotes("");
-      TC.setNextClassConfirmed(false);
+      throw error;
+    }
 
-      //API Call to update operation logs
+    TC.setCurrentSessions((prev) => prev.map((s) => (s.id === savedSession.id ? savedSession : s)));
+    TC.setSessions((prev) => prev.filter((s) => s.id !== savedSession.id));
+    TC.setPastSessions((prev) =>
+      [savedSession, ...prev.filter((s) => s.id !== savedSession.id)].sort(
+        (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime(),
+      ),
+    );
+    toast.success("Session Marked Complete");
+    TC.setIsSessionExitFormOpen(false);
+    TC.setNotes("");
+    TC.setNextClassConfirmed(false);
 
-      if (isQuestionOrConcern) {
+    try {
+      await sendStudentSEFFeedbackEmail(savedSession);
+    } catch (error) {
+      console.error("Failed to send student SEF feedback email:", error);
+    }
+
+    // A concern delivery failure must not tell the tutor that their saved SEF failed.
+    if (isQuestionOrConcern) {
+      try {
         const response = await fetch("/api/session-exit-form/questions-concerns", {
-          headers: {
-            "Content-Type": "application/json",
-          },
+          headers: { "Content-Type": "application/json" },
           method: "POST",
           body: JSON.stringify({
             tutorFirstName: session.tutor?.firstName,
@@ -218,15 +236,13 @@ const TutorDashboard = () => {
           }),
         });
         const data = await response.json();
-
-        if (!data.success) {
-          toast.error("Unable to record question or concern");
-          throw new Error(data.error);
-        }
+        if (!response.ok || !data.success) throw new Error(data.error || "Concern delivery failed");
+      } catch (error) {
+        console.error("SEF saved, but unable to record question or concern:", error);
+        toast.error(
+          "Your SEF was saved, but your question or concern could not be sent. Please contact support.",
+        );
       }
-    } catch (error) {
-      console.error("Failed to record Session Exit Form", error);
-      toast.error("Failed to record Session Exit Form");
     }
   };
 
@@ -241,7 +257,11 @@ const TutorDashboard = () => {
       const session = await undoSessionExitForm(sessionId);
       if (!session) return;
 
-      TC.setSessions((prev) => prev.map((s) => (s.id === sessionId ? session : s)));
+      TC.setSessions((prev) =>
+        [session, ...prev.filter((s) => s.id !== sessionId)].sort(
+          (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime(),
+        ),
+      );
 
       TC.setPastSessions((prev) => prev.filter((s) => s.id !== sessionId));
       TC.setCurrentSessions((prev) => [session, ...prev.filter((s) => s.id !== sessionId)]);
@@ -327,6 +347,13 @@ const TutorDashboard = () => {
 
   return (
     <>
+      {TC.selectedSession && (
+        <SessionExitForm
+          currSession={TC.selectedSession}
+          handleSessionComplete={handleSessionComplete}
+          handleStatusChange={handleStatusChange}
+        />
+      )}
       <div className="p-8">
         <h1 className="text-3xl font-bold mb-6">This Week</h1>
         <div className="flex space-x-6">
@@ -336,7 +363,6 @@ const TutorDashboard = () => {
               totalPages={totalActiveSessionsPages}
               handleStatusChange={handleStatusChange}
               handleReschedule={handleReschedule}
-              handleSessionComplete={handleSessionComplete}
               handleUndoCancel={handleUndoCancel}
               handlePageChange={handleActiveSessionsPageChange}
               handleRowsPerPageChange={handleActiveSessionsRowsPerPageChange}
@@ -371,7 +397,6 @@ const TutorDashboard = () => {
               totalPages={totalActiveSessionsPages}
               handleStatusChange={handleStatusChange}
               handleReschedule={handleReschedule}
-              handleSessionComplete={handleSessionComplete}
               handlePageChange={handleActiveSessionsPageChange}
               handleRowsPerPageChange={handleActiveSessionsRowsPerPageChange}
               handleInputChange={handleInputChange}
