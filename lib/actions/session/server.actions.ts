@@ -353,7 +353,16 @@ export async function getActiveSessionFromMeetingID(meetingID: string) {
   return data || [];
 }
 
-export async function cancelSession(session: Session, actor: "tutor" | "student") {
+/**
+ * Cancels a session and emails the other party. Pass `notify: false` when the
+ * session is already in the past (e.g. an Unconfirmed session being resolved
+ * after the fact), where a cancellation email would only confuse the recipient.
+ */
+export async function cancelSession(
+  session: Session,
+  actor: "tutor" | "student",
+  { notify = true }: { notify?: boolean } = {},
+) {
   const authSupabase = await createClient();
   const adminSupabase = await createAdminClient();
 
@@ -389,6 +398,10 @@ export async function cancelSession(session: Session, actor: "tutor" | "student"
     console.error("Error cancelling session:", error);
     await logError(error, { session_id: session.id, actor }, "session_error");
     throw error;
+  }
+
+  if (!notify) {
+    return { ...session, status: "Cancelled" as const };
   }
 
   try {

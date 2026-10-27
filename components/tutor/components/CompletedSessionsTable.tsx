@@ -39,6 +39,9 @@ import {
 import { useDashboardContext } from "@/lib/contexts/dashboardContext";
 import { MobileCard } from "@/components/ui/mobile-card";
 import { LoadMoreButton } from "@/components/ui/load-more-button";
+import { AlertDialog } from "@/components/ui/alert-dialog";
+import CancellationForm from "./CancellationForm";
+import ReopenSessionExitFormDialog from "./ReopenSessionExitFormDialog";
 
 const CompletedSessionsTable = ({
   paginatedSessions,
@@ -49,9 +52,52 @@ const CompletedSessionsTable = ({
   handlePageChange,
   handleRowsPerPageChange,
   handleUndoSessionExitForm,
+  handleUnconfirmedSessionCancel,
 }: any) => {
   const TC = useDashboardContext();
   const [isMeetingNotesOpen, setIsMeetingNotesOpen] = useState(false);
+  const [sessionToCancel, setSessionToCancel] = useState<Session | null>(null);
+  const [sessionToReopen, setSessionToReopen] = useState<Session | null>(null);
+
+  const renderActions = (session: Session) => (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button variant="ghost" size="icon">
+          <Ellipsis />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent>
+        <DropdownMenuGroup>
+          <DropdownMenuLabel>Actions</DropdownMenuLabel>
+          {session.status === "Unconfirmed" ? (
+            <>
+              {/* The exit form deadline has passed, so the tutor can either record the
+                  session as cancelled or ask operations to reopen the form. */}
+              <DropdownMenuItem onSelect={() => setSessionToCancel(session)}>
+                Mark as Cancelled
+              </DropdownMenuItem>
+              <DropdownMenuItem onSelect={() => setSessionToReopen(session)}>
+                Request to Reopen Session Exit Form
+              </DropdownMenuItem>
+            </>
+          ) : (
+            <DropdownMenuItem
+              onClick={() => {
+                if (session.status === "Complete" || session.status === "Student Did Not Attend") {
+                  handleUndoSessionExitForm(session.id);
+                } else {
+                  TC.setSelectedSession(session);
+                  TC.setIsSessionExitFormOpen(true);
+                }
+              }}
+            >
+              Undo
+            </DropdownMenuItem>
+          )}
+        </DropdownMenuGroup>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
 
   return (
     <>
@@ -104,35 +150,7 @@ const CompletedSessionsTable = ({
                     </Dialog>
                   </div>
                 </TableCell>
-                <TableCell>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="icon">
-                        <Ellipsis />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent>
-                      <DropdownMenuGroup>
-                        <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                        <DropdownMenuItem
-                          onClick={() => {
-                            if (
-                              session.status === "Complete" ||
-                              session.status === "Student Did Not Attend"
-                            ) {
-                              handleUndoSessionExitForm(session.id);
-                            } else {
-                              TC.setSelectedSession(session);
-                              TC.setIsSessionExitFormOpen(true);
-                            }
-                          }}
-                        >
-                          Undo
-                        </DropdownMenuItem>
-                      </DropdownMenuGroup>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </TableCell>
+                <TableCell>{renderActions(session)}</TableCell>
               </TableRow>
             ))}
           </TableBody>
@@ -227,38 +245,34 @@ const CompletedSessionsTable = ({
                   <Textarea readOnly>{TC.selectedSession?.session_exit_form}</Textarea>
                 </DialogContent>
               </Dialog>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="icon">
-                    <Ellipsis />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent>
-                  <DropdownMenuGroup>
-                    <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                    <DropdownMenuItem
-                      onClick={() => {
-                        if (
-                          session.status === "Complete" ||
-                          session.status === "Student Did Not Attend"
-                        ) {
-                          handleUndoSessionExitForm(session.id);
-                        } else {
-                          TC.setSelectedSession(session);
-                          TC.setIsSessionExitFormOpen(true);
-                        }
-                      }}
-                    >
-                      Undo
-                    </DropdownMenuItem>
-                  </DropdownMenuGroup>
-                </DropdownMenuContent>
-              </DropdownMenu>
+              {renderActions(session)}
             </div>
           </MobileCard>
         ))}
         <LoadMoreButton hasMore={!!hasMore} onClick={() => loadMore?.()} />
       </div>
+
+      <AlertDialog
+        open={!!sessionToCancel}
+        onOpenChange={(open) => {
+          if (!open) setSessionToCancel(null);
+        }}
+      >
+        {sessionToCancel && (
+          <CancellationForm
+            session={sessionToCancel}
+            handleStatusChange={handleUnconfirmedSessionCancel}
+            onClose={() => setSessionToCancel(null)}
+          />
+        )}
+      </AlertDialog>
+
+      <ReopenSessionExitFormDialog
+        session={sessionToReopen}
+        onOpenChange={(open) => {
+          if (!open) setSessionToReopen(null);
+        }}
+      />
     </>
   );
 };

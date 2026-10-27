@@ -168,6 +168,31 @@ const TutorDashboard = () => {
     }
   };
 
+  // Resolves an Unconfirmed past session as Cancelled (or Student Did Not Attend).
+  // The session already happened, so no cancellation email goes out.
+  const handleUnconfirmedSessionCancel = async (updatedSession: Session) => {
+    try {
+      if (updatedSession.status === "Cancelled") {
+        await cancelSession(updatedSession, "tutor", { notify: false });
+      } else {
+        await updateSession(updatedSession);
+      }
+      TC.setSessions((prev) => prev.map((s) => (s.id === updatedSession.id ? updatedSession : s)));
+      TC.setPastSessions((prev) =>
+        prev.map((s) => (s.id === updatedSession.id ? updatedSession : s)),
+      );
+
+      toast.success(
+        updatedSession.status === "Cancelled"
+          ? "Session marked as cancelled"
+          : "Session marked as Student Did Not Attend",
+      );
+    } catch (error) {
+      console.error("Failed to update unconfirmed session:", error);
+      toast.error("Failed to update session");
+    }
+  };
+
   const handleSessionComplete = async (
     session: Session,
     notes: string,
@@ -405,6 +430,7 @@ const TutorDashboard = () => {
               handlePageChange={handlePastSessionsPageChange}
               handleRowsPerPageChange={handlePastSessionsRowsPerPageChange}
               handleUndoSessionExitForm={handleUndoSessionExitForm}
+              handleUnconfirmedSessionCancel={handleUnconfirmedSessionCancel}
             />
           </div>
         </div>

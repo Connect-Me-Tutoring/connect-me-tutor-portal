@@ -2,9 +2,13 @@
 import React from "react";
 import { createClient } from "../../supabase/server";
 import { Table } from "../../supabase/tables";
-import { requireAdmin, requireAuthenticatedProfile } from "../auth/authz.server";
+import {
+  requireAdmin,
+  requireAuthenticatedProfile,
+  requireSessionAccessById,
+} from "../auth/authz.server";
 import { sendMail } from "@/lib/email/mailer";
-import { withRetry } from "@/lib/utils";
+import { formatSessionDate, withRetry } from "@/lib/utils";
 import { logError, logEvent } from "@/lib/posthog";
 import NewTicketNotificationEmail from "@/components/emails/tickets/new-ticket-notification";
 import {
@@ -102,6 +106,63 @@ export async function submitTicket(input: TicketFormValues): Promise<SubmitTicke
   }
 
   return { ok: true, ticketId: data.id };
+}
+
+/**
+ * Files a "sessions" ticket asking operations to reopen the Session Exit Form of an
+ * Unconfirmed session. The session details are looked up server-side so the ticket
+ * always names the right session.
+ */
+export async function requestSessionExitFormReopen(
+  sessionId: string,
+  reason: string,
+  pageUrl?: string,
+): Promise<SubmitTicketResult> {
+  const trimmedReason = reason.trim();
+  if (trimmedReason.length < 10) {
+    return { ok: false, error: "Please explain why the form should be reopened." };
+  }
+
+  const supabase = await requireSessionAccessById(sessionId);
+  const { data: session, error } = await supabase
+    .from(Table.Sessions)
+    .select(
+      `id, date, status,
+       student:Profiles!student_id(first_name, last_name)`,
+    )
+    .eq("id", sessionId)
+    .single();
+
+  if (error || !session) {
+    console.error("Unable to load session for reopen request", error);
+    return { ok: false, error: "We couldn't find that session." };
+  }
+
+  if (session.status !== "Unconfirmed") {
+    return { ok: false, error: "Only Unconfirmed sessions can be reopened." };
+  }
+
+  const studentName =
+    `${session.student?.first_name ?? ""} ${session.student?.last_name ?? ""}`.trim() ||
+    "Unknown student";
+  const sessionDate = session.date ? formatSessionDate(session.date) : "Unknown date";
+
+  return submitTicket({
+    category: "sessions",
+    urgency: "medium",
+    subject: `Reopen Session Exit Form: ${studentName} (${sessionDate})`,
+    description: [
+      "Request to reopen the Session Exit Form for an Unconfirmed session.",
+      "",
+      `Session ID: ${session.id}`,
+      `Student: ${studentName}`,
+      `Session date: ${sessionDate}`,
+      "",
+      "Reason:",
+      trimmedReason,
+    ].join("\n"),
+    pageUrl,
+  });
 }
 
 /** All tickets, newest first, with the submitting profile's name and role. Admin only. */
