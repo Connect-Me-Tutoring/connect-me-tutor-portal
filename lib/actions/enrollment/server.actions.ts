@@ -14,7 +14,8 @@ import { addDays, format, subDays, subWeeks } from "date-fns";
 import { addStandaloneSession } from "../session/server.actions";
 import { getMeeting } from "../meeting/server.actions";
 import { fromZonedTime } from "date-fns-tz";
-import { computeSessionDateForSchedule } from "../../utils/timezone";
+import { computeSessionDateForSchedule, getEasternWeekBounds } from "../../utils/timezone";
+import { assertRoomFreeForEnrollment } from "../meeting/room-conflicts.server";
 import { sendMail } from "@/lib/email/mailer";
 import InactiveEnrollmentWarning from "@/components/emails/enrollments/inactve-enrollment-warning";
 import InactiveEnrollmentEarlyWarning from "@/components/emails/enrollments/inactive-enrollment-early-warning";
@@ -377,6 +378,46 @@ export const removeEnrollment = async (enrollmentId: string) => {
   }
 };
 
+const DUPLICATE_ENROLLMENT_MESSAGE =
+  "An enrollment already exists for this student and tutor at the same day and time. Please edit the existing enrollment instead.";
+
+/**
+ * Rejects a second enrollment for the same student, tutor, day and start time. The
+ * enrollments_unique_slot index enforces this too (it also catches concurrent requests
+ * that both pass this check); this check just gives the friendly message up front.
+ */
+async function assertNoDuplicateEnrollment(
+  supabase: any,
+  slot: { studentId: string; tutorId: string; day: string; startTime: string },
+  excludeEnrollmentId?: string,
+) {
+  let query = supabase
+    .from(Table.Enrollments)
+    .select("id")
+    .eq("student_id", slot.studentId)
+    .eq("tutor_id", slot.tutorId)
+    .eq("day", slot.day)
+    .eq("start_time", slot.startTime)
+    .limit(1);
+  if (excludeEnrollmentId) query = query.neq("id", excludeEnrollmentId);
+
+  const { data: existing, error } = await query;
+
+  if (error) {
+    console.error("Error checking for duplicate enrollment:", error);
+    await logError(error, { function: "assertNoDuplicateEnrollment" }, "enrollment_error");
+    throw error;
+  }
+
+  if (existing && existing.length > 0) {
+    throw new Error(DUPLICATE_ENROLLMENT_MESSAGE);
+  }
+}
+
+/** Maps a unique-violation from enrollments_unique_slot to the duplicate message. */
+const duplicateSlotError = (error: { code?: string }) =>
+  error.code === "23505" ? new Error(DUPLICATE_ENROLLMENT_MESSAGE) : error;
+
 export const updateEnrollment = async (enrollment: Enrollment) => {
   await requireEnrollmentAccess(enrollment.id);
   const supabase = await createClient();
@@ -385,6 +426,31 @@ export const updateEnrollment = async (enrollment: Enrollment) => {
 
     if (!schedule.day || !schedule.startTime || !schedule.endTime) {
       throw new Error("Please add an enrollment schedule");
+    }
+
+    if (enrollment.student?.id && enrollment.tutor?.id) {
+      await assertNoDuplicateEnrollment(
+        supabase,
+        {
+          studentId: enrollment.student.id,
+          tutorId: enrollment.tutor.id,
+          day: schedule.day,
+          startTime: schedule.startTime,
+        },
+        enrollment.id,
+      );
+    }
+
+    if (enrollment.meetingId) {
+      await assertRoomFreeForEnrollment(
+        {
+          meetingId: enrollment.meetingId,
+          day: schedule.day,
+          startTime: schedule.startTime,
+          endTime: schedule.endTime,
+        },
+        enrollment.id,
+      );
     }
 
     enrollment.duration = await handleCalculateDuration(schedule.startTime, schedule.endTime);
@@ -415,7 +481,7 @@ export const updateEnrollment = async (enrollment: Enrollment) => {
         { function: "updateEnrollment", enrollment_id: enrollment.id },
         "enrollment_error",
       );
-      throw updateEnrollmentError;
+      throw duplicateSlotError(updateEnrollmentError);
     }
 
     await updateFutureSessions(enrollment);
@@ -465,6 +531,17 @@ const updateFutureSessions = async (enrollment: Enrollment) => {
   if (updateError) throw updateError;
 };
 
+/**
+ * Distinct America/New_York weeks that have an Unconfirmed session. The thresholds are in
+ * weeks, so a moved or duplicated session in the same week must not count twice.
+ */
+const countMissedWeeks = (sessions: { date: string | null }[]) =>
+  new Set(
+    sessions
+      .filter((session) => session.date)
+      .map((session) => getEasternWeekBounds(new Date(session.date!)).weekStart.toISOString()),
+  ).size;
+
 export const getEnrollmentsWithMissingSEF = async (timeProvided: Date, weeksMissingSEF: number) => {
   const supabase = await createAdminClient();
   try {
@@ -490,7 +567,7 @@ export const getEnrollmentsWithMissingSEF = async (timeProvided: Date, weeksMiss
       .throwOnError();
 
     const enrollmentsWithTwoMissingSessions = enrollments.filter(
-      (enrollment) => enrollment.sessions.length >= weeksMissingSEF,
+      (enrollment) => countMissedWeeks(enrollment.sessions) >= weeksMissingSEF,
     );
 
     return enrollmentsWithTwoMissingSessions;
@@ -534,7 +611,7 @@ export const getTutorEnrollmentsMissingSEF = async (
       .throwOnError();
 
     return (enrollments ?? []).filter(
-      (enrollment) => enrollment.sessions.length >= weeksMissingSEF,
+      (enrollment) => countMissedWeeks(enrollment.sessions) >= weeksMissingSEF,
     );
   } catch (error) {
     await logError(
@@ -573,30 +650,12 @@ export const addEnrollment = async (
       throw new Error("Student ID is required to create an enrollment");
     }
 
-    const { data: existing, error: dupCheckError } = await supabase
-      .from(Table.Enrollments)
-      .select("id")
-      .eq("student_id", studentId)
-      .eq("tutor_id", enrollmentTutorId)
-      .eq("day", schedule.day)
-      .eq("start_time", schedule.startTime)
-      .limit(1);
-
-    if (dupCheckError) {
-      console.error("Error checking for duplicate enrollment:", dupCheckError);
-      await logError(
-        dupCheckError,
-        { function: "addEnrollment", step: "duplicate_check" },
-        "enrollment_error",
-      );
-      throw dupCheckError;
-    }
-
-    if (existing && existing.length > 0) {
-      throw new Error(
-        "An enrollment already exists for this student and tutor at the same day and time. Please edit the existing enrollment instead.",
-      );
-    }
+    await assertNoDuplicateEnrollment(supabase, {
+      studentId,
+      tutorId: enrollmentTutorId,
+      day: schedule.day,
+      startTime: schedule.startTime,
+    });
 
     if (enrollment.duration <= 0) throw new Error("Duration should be a positive amount");
 
@@ -604,6 +663,15 @@ export const addEnrollment = async (
 
     if (enrollment.meetingId && !isValidUUID(enrollment.meetingId)) {
       throw new Error("Invalid or no meeting link");
+    }
+
+    if (enrollment.meetingId) {
+      await assertRoomFreeForEnrollment({
+        meetingId: enrollment.meetingId,
+        day: schedule.day,
+        startTime: schedule.startTime,
+        endTime: schedule.endTime,
+      });
     }
 
     const { data, error } = await supabase
@@ -641,7 +709,7 @@ export const addEnrollment = async (
         },
         "enrollment_error",
       );
-      throw error;
+      throw duplicateSlotError(error);
     }
 
     if (data) {

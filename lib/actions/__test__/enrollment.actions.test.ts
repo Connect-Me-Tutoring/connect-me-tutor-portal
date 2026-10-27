@@ -74,16 +74,39 @@ describe("getEnrollmentsWithMissingSEF", () => {
     expect(filters.lte?.[0]).toBe("sessions.date");
   });
 
-  it("keeps only enrollments at or past the missing-session threshold", async () => {
+  // One Unconfirmed session per Eastern week (Mondays, 4pm ET).
+  const weekly = (count: number) =>
+    ["2026-06-15", "2026-06-22", "2026-06-29", "2026-07-06"]
+      .slice(0, count)
+      .map((day, i) => ({ id: `s${i}`, date: `${day}T20:00:00.000Z` }));
+
+  it("keeps only enrollments at or past the missing-week threshold", async () => {
     mockQuery([
-      { id: "under", sessions: [{ id: "a" }, { id: "b" }] },
-      { id: "at", sessions: [{ id: "a" }, { id: "b" }, { id: "c" }] },
-      { id: "over", sessions: [{ id: "a" }, { id: "b" }, { id: "c" }, { id: "d" }] },
+      { id: "under", sessions: weekly(2) },
+      { id: "at", sessions: weekly(3) },
+      { id: "over", sessions: weekly(4) },
     ]);
 
     const result = await getEnrollmentsWithMissingSEF(DEADLINE, 3);
 
     expect(result.map((e: { id: string }) => e.id)).toEqual(["at", "over"]);
+  });
+
+  it("counts two Unconfirmed sessions in the same week as one missed week", async () => {
+    mockQuery([
+      {
+        id: "moved",
+        sessions: [
+          ...weekly(2),
+          // Sat Jun 27 and Sun Jun 28 ET are different weeks; Mon Jun 22 + Sat Jun 27 are not.
+          { id: "same-week", date: "2026-06-27T14:00:00.000Z" },
+        ],
+      },
+    ]);
+
+    const result = await getEnrollmentsWithMissingSEF(DEADLINE, 3);
+
+    expect(result).toEqual([]);
   });
 });
 
@@ -107,7 +130,15 @@ describe("warnInactiveEnrollmentsEarly", () => {
 
   const missingSef = (ids: string[]) =>
     chain({
-      data: ids.map((id) => ({ id, sessions: [{ id: "a" }, { id: "b" }, { id: "c" }] })),
+      data: ids.map((id) => ({
+        id,
+        // Three different Eastern weeks.
+        sessions: [
+          { id: "a", date: "2026-10-05T20:00:00.000Z" },
+          { id: "b", date: "2026-10-12T20:00:00.000Z" },
+          { id: "c", date: "2026-10-19T20:00:00.000Z" },
+        ],
+      })),
       error: null,
     });
 

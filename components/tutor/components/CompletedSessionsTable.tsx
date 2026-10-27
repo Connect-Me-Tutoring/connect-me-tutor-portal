@@ -49,9 +49,17 @@ const CompletedSessionsTable = ({
   handlePageChange,
   handleRowsPerPageChange,
   handleUndoSessionExitForm,
+  handleUndoCancel,
 }: any) => {
   const TC = useDashboardContext();
   const [isMeetingNotesOpen, setIsMeetingNotesOpen] = useState(false);
+
+  // A cancellation has no exit form to undo, and undoSessionExitForm would also wipe the
+  // cancellation reason and the first-session flag.
+  const handleUndo = (session: Session) =>
+    session.status === "Cancelled"
+      ? handleUndoCancel(session.id)
+      : handleUndoSessionExitForm(session.id);
 
   return (
     <>
@@ -114,11 +122,7 @@ const CompletedSessionsTable = ({
                     <DropdownMenuContent>
                       <DropdownMenuGroup>
                         <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                        <DropdownMenuItem
-                          onClick={() => {
-                              handleUndoSessionExitForm(session.id);
-                          }}
-                        >
+                        <DropdownMenuItem onClick={() => handleUndo(session)}>
                           Undo
                         </DropdownMenuItem>
                       </DropdownMenuGroup>
@@ -228,13 +232,7 @@ const CompletedSessionsTable = ({
                 <DropdownMenuContent>
                   <DropdownMenuGroup>
                     <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                    <DropdownMenuItem
-                      onClick={() => {
-                          handleUndoSessionExitForm(session.id);
-                      }}
-                    >
-                      Undo
-                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => handleUndo(session)}>Undo</DropdownMenuItem>
                   </DropdownMenuGroup>
                 </DropdownMenuContent>
               </DropdownMenu>

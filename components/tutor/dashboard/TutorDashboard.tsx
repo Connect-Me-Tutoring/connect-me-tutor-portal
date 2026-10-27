@@ -126,16 +126,21 @@ const TutorDashboard = () => {
         const formattedTime = format(new Date(newDate), "h:mm a");
 
         if (updatedSession.student?.email) {
-          await sendSessionRescheduleEmail(
-            {
-              studentName: `${updatedSession.student.firstName} ${updatedSession.student.lastName}`,
-              tutorName: `${TC.profile.firstName} ${TC.profile.lastName}`,
-              newDate: formattedDate,
-              newTime: formattedTime,
-              meetingLink: updatedSession.meeting?.link,
-            },
-            updatedSession.student.email,
-          );
+          // The reschedule already persisted; an email failure must not report it as failed.
+          try {
+            await sendSessionRescheduleEmail(
+              {
+                studentName: `${updatedSession.student.firstName} ${updatedSession.student.lastName}`,
+                tutorName: `${TC.profile.firstName} ${TC.profile.lastName}`,
+                newDate: formattedDate,
+                newTime: formattedTime,
+                meetingLink: updatedSession.meeting?.link,
+              },
+              updatedSession.student.email,
+            );
+          } catch (error) {
+            console.error("Failed to send reschedule email:", error);
+          }
         }
       }
       TC.setSelectedSession(null);
@@ -233,7 +238,11 @@ const TutorDashboard = () => {
   const handleUndoSessionExitForm = async (sessionId: string) => {
     console.log("Undo clicked:", sessionId);
     try {
-      const timePassed = await getSessionTimePassed(sessionId);
+      // Unconfirmed means no exit form was ever submitted: "undo" here reopens the session
+      // for a late submission rather than reverting one, so the 7-day window doesn't apply.
+      const isUnconfirmed =
+        TC.pastSessions.find((s) => s.id === sessionId)?.status === "Unconfirmed";
+      const timePassed = isUnconfirmed ? 0 : await getSessionTimePassed(sessionId);
       if (timePassed > 1000 * 60 * 60 * 24 * 7) {
         const err = new Error("Undo Expired");
         throw new Error("Undo Expired");
@@ -266,8 +275,13 @@ const TutorDashboard = () => {
     }
     try {
       await undoCancelSession(sessionId, "Active");
+      // Undo from the Completed table: the session only exists in the past list, so move it
+      // into the current list instead of mapping over a list that doesn't contain it.
+      const pastSession = TC.pastSessions.find((s) => s.id === sessionId);
       TC.setCurrentSessions(
-        TC.currentSessions.map((s) => (s.id === sessionId ? { ...s, status: "Active" } : s)),
+        pastSession && !TC.currentSessions.some((s) => s.id === sessionId)
+          ? [{ ...pastSession, status: "Active" }, ...TC.currentSessions]
+          : TC.currentSessions.map((s) => (s.id === sessionId ? { ...s, status: "Active" } : s)),
       );
       TC.setPastSessions(TC.pastSessions.filter((s) => s.id !== sessionId));
       TC.setFilteredPastSessions(TC.filteredPastSessions.filter((s) => s.id !== sessionId));
@@ -405,6 +419,7 @@ const TutorDashboard = () => {
               handlePageChange={handlePastSessionsPageChange}
               handleRowsPerPageChange={handlePastSessionsRowsPerPageChange}
               handleUndoSessionExitForm={handleUndoSessionExitForm}
+              handleUndoCancel={handleUndoCancel}
             />
           </div>
         </div>

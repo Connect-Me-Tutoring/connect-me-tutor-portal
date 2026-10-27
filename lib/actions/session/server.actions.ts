@@ -38,6 +38,7 @@ import { startOfWeek, endOfWeek, subDays, parseISO, format, addDays } from "date
 
 import * as DateFNS from "date-fns-tz";
 import { ZoomSessionResolution } from "./actions";
+import { assertRoomFreeForSession } from "../meeting/room-conflicts.server";
 const { fromZonedTime } = DateFNS;
 
 async function isSessioninPastWeek(enrollmentId: string, midWeek: Date) {
@@ -1252,6 +1253,12 @@ export async function rescheduleSession(
   if (!existing) {
     throw new Error("Session not found");
   }
+  if (meetingId) {
+    await assertRoomFreeForSession(
+      { meetingId, date: newDate, durationHours: existing.duration || 1 },
+      sessionId,
+    );
+  }
   const supabase = await createClient();
   try {
     const { data: sessionData, error } = await supabase
@@ -1271,9 +1278,12 @@ export async function rescheduleSession(
 
     if (error) throw error;
 
+    // The session has already moved, so a notification failure must not surface as a
+    // failed reschedule. previous_date comes from the pre-update row; sessionData.date
+    // is already the new date.
     const { error: notificationError } = await supabase.from("Notifications").insert({
       session_id: sessionId,
-      previous_date: sessionData.date,
+      previous_date: existing.date,
       suggested_date: newDate,
       tutor_id: sessionData.tutor_id,
       student_id: sessionData.student_id,
@@ -1281,7 +1291,13 @@ export async function rescheduleSession(
       status: "Active",
     });
 
-    if (notificationError) throw notificationError;
+    if (notificationError) {
+      await logError(
+        notificationError,
+        { function: "rescheduleSession", step: "notification", session_id: sessionId },
+        "session_error",
+      );
+    }
     if (sessionData) {
       return tableToInterfaceSessions(sessionData);
     }
@@ -1306,6 +1322,13 @@ export async function addStandaloneSession(
     if (!tutorId || profile.id !== tutorId) {
       throw new Error("Unauthorized");
     }
+  }
+  if (session.meeting?.id && session.date) {
+    await assertRoomFreeForSession({
+      meetingId: session.meeting.id,
+      date: session.date,
+      durationHours: session.duration || 1,
+    });
   }
   const supabase = await createClient();
 
