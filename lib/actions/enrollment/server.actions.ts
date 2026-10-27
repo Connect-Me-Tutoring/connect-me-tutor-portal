@@ -10,7 +10,7 @@ import {
 } from "../../utils/type-utils";
 import { cache } from "react";
 import { handleCalculateDuration, isValidUUID } from "../../utils";
-import { addDays, format, subWeeks } from "date-fns";
+import { addDays, format, subDays, subWeeks } from "date-fns";
 import { addStandaloneSession } from "../session/server.actions";
 import { getMeeting } from "../meeting/server.actions";
 import { fromZonedTime } from "date-fns-tz";
@@ -782,6 +782,7 @@ export async function warnInactiveEnrollments() {
     deadline: fourWeeksAgo,
     weeksMissing: 4,
     emailFn: sendInactiveEnrollmentWarning,
+    claimWarning: true,
   });
 }
 
@@ -791,23 +792,64 @@ export async function warnInactiveEnrollmentsEarly() {
     deadline: threeWeeksAgo,
     weeksMissing: 3,
     emailFn: sendInactiveEnrollmentEarlyWarning,
+    claimWarning: true,
   });
+}
+
+// Short of the week between the 3-week and 4-week warnings, so both still go out once
+// each, with a day of slack for cron timing.
+const INACTIVITY_WARNING_COOLDOWN_DAYS = 6;
+
+/**
+ * Stamps inactivity_warning_sent_at on the enrollments not warned within the cooldown and
+ * returns only those ids. The conditional UPDATE is the claim, so overlapping or retried
+ * cron runs cannot both email the same tutor.
+ */
+async function claimInactivityWarnings(enrollmentIds: string[], supabase: any): Promise<string[]> {
+  const now = new Date();
+  const stamp = now.toISOString();
+  const cooldownStart = subDays(now, INACTIVITY_WARNING_COOLDOWN_DAYS).toISOString();
+
+  // No .select() here: PostgREST re-applies .or() filters to the returned rows, which
+  // would drop every row this UPDATE just stamped. Read the claim back by its stamp instead.
+  await supabase
+    .from(Table.Enrollments)
+    .update({ inactivity_warning_sent_at: stamp })
+    .in("id", enrollmentIds)
+    .or(`inactivity_warning_sent_at.is.null,inactivity_warning_sent_at.lt.${cooldownStart}`)
+    .throwOnError();
+
+  const { data } = await supabase
+    .from(Table.Enrollments)
+    .select("id")
+    .in("id", enrollmentIds)
+    .eq("inactivity_warning_sent_at", stamp)
+    .throwOnError();
+
+  return (data ?? []).map((row: { id: string }) => row.id);
 }
 
 async function inactiveEnrollmentsHelper(params: {
   deadline: Date;
   weeksMissing: number;
   emailFn: (params: { tutor: Profile; student: Profile; enrollment: Enrollment }) => Promise<void>;
+  // Warnings are throttled per enrollment; the deletion notice is not.
+  claimWarning?: boolean;
 }) {
   const supabase = await createAdminClient();
-  const { deadline, weeksMissing, emailFn } = params;
+  const { deadline, weeksMissing, emailFn, claimWarning = false } = params;
   const targetEnrollments = await getEnrollmentsWithMissingSEF(deadline, weeksMissing);
 
   if (!targetEnrollments || targetEnrollments.length === 0) {
     return [];
   }
 
-  const enrollmentIds = targetEnrollments.map((e) => e.id);
+  let enrollmentIds = targetEnrollments.map((e) => e.id);
+
+  if (claimWarning) {
+    enrollmentIds = await claimInactivityWarnings(enrollmentIds, supabase);
+    if (enrollmentIds.length === 0) return [];
+  }
 
   const { data } = await supabase
     .from(Table.Enrollments)
@@ -839,13 +881,24 @@ async function inactiveEnrollmentsHelper(params: {
   await Promise.all(
     enrollments
       .filter((enrollment) => enrollment.tutor && enrollment.student)
-      .map((enrollment) =>
-        emailFn({
-          tutor: enrollment.tutor!,
-          student: enrollment.student!,
-          enrollment: enrollment,
-        }),
-      ),
+      .map(async (enrollment) => {
+        try {
+          await emailFn({
+            tutor: enrollment.tutor!,
+            student: enrollment.student!,
+            enrollment: enrollment,
+          });
+        } catch (error) {
+          // Release the claim so the next nightly run retries this warning.
+          if (claimWarning) {
+            await supabase
+              .from(Table.Enrollments)
+              .update({ inactivity_warning_sent_at: null })
+              .eq("id", enrollment.id);
+          }
+          throw error;
+        }
+      }),
   );
   return enrollments;
 }
@@ -879,6 +932,8 @@ async function sendTutorProbationEmail(tutor: Profile, reason: string) {
     from: "Connect Me Free Tutoring & mentoring <reminder@connectmego.app>",
     to: tutor.email,
     cc: [process.env.OPERATIONS_EMAIL!],
+    // Sent from an unmonitored address; route replies to operations.
+    replyTo: process.env.OPERATIONS_EMAIL!,
     subject: "Connect Me Membership Status: Probation",
     react: TutorProbationEmail({ tutor, reason }),
   });
@@ -892,16 +947,17 @@ async function sendEmailHelper(
   },
   msgTemplate: (params: { tutor: Profile; student: Profile; enrollment: Enrollment }) => string,
 ) {
-  try {
-    const { tutor } = params;
-    await sendMail({
-      from: "Connect Me Free Tutoring & mentoring <reminder@connectmego.app>",
-      to: tutor.email,
-      cc: [process.env.OPERATIONS_EMAIL!],
-      subject: "Inactivating Connect Me Enrollment",
-      html: msgTemplate(params),
-    });
-  } catch (error) {
-    throw error;
-  }
+  const { tutor } = params;
+  const { error } = await sendMail({
+    from: "Connect Me Free Tutoring & mentoring <reminder@connectmego.app>",
+    to: tutor.email,
+    cc: [process.env.OPERATIONS_EMAIL!],
+    // Sent from an unmonitored address; route replies to operations.
+    replyTo: process.env.OPERATIONS_EMAIL!,
+    subject: "Inactivating Connect Me Enrollment",
+    html: msgTemplate(params),
+  });
+  // Resend reports failures in the result rather than throwing; surface them so a
+  // claimed warning is released and retried instead of silently skipped.
+  if (error) throw error;
 }

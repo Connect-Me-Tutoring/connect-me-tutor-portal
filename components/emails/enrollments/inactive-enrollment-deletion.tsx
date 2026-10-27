@@ -10,6 +10,9 @@ const InactiveEnrollmentDeletion = (params: {
     ${student.firstName} ${student.lastName} has deactivated to free up 
     space for additional tutoring sessions. If you plan to continue sessions with ${student.firstName}, please
     create a new enrollment with your student
+    <br><br>
+    If you were unable to submit a Session Exit Form because of a technical issue, just reply to
+    this email and our team will sort it out.
   `;
 };
 
