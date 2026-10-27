@@ -259,6 +259,33 @@ describe("addSessionsForCron", () => {
     ]);
   });
 
+  it("schedules biweekly enrollments every other week from their start week", async () => {
+    vi.setSystemTime(new Date("2026-10-25T00:00:00.000Z")); // Sat Oct 24, 8pm ET
+    captureInsert();
+
+    await addSessionsForCron(
+      WEEK_START,
+      WEEK_END,
+      [
+        // Week of Aug 30 → 8 weeks before Oct 25: an on week.
+        enrollment({ id: "on", frequency: "biweekly", startDate: "2026-09-01T04:00:00.000Z" }),
+        // Week of Sep 6 → 7 weeks before Oct 25: an off week.
+        enrollment({ id: "off", frequency: "biweekly", startDate: "2026-09-08T04:00:00.000Z" }),
+        enrollment({
+          id: "weekly",
+          frequency: "weekly",
+          startDate: "2026-09-08T04:00:00.000Z",
+          student: { id: "student-2" },
+        }),
+      ],
+      [],
+    );
+
+    expect(
+      mockInsert.mock.calls[0][0].map((s: { enrollment_id: string }) => s.enrollment_id),
+    ).toEqual(["on", "weekly"]);
+  });
+
   it("inserts nothing when every slot in the week has passed", async () => {
     vi.setSystemTime(new Date("2026-11-01T00:00:00.000Z")); // Sat Oct 31, 8pm ET
 

@@ -48,8 +48,8 @@ export async function GET(req: NextRequest) {
     results.markUnconfirmedSEF = unconfirmedResult;
 
     // Task 2a: Warn inactive enrollments (4+ weeks missing SEF). Runs before the early
-    // warning because both share one cooldown stamp: an enrollment that qualifies for
-    // both should get this stronger notice, not the early one.
+    // warning so an enrollment that qualifies for both gets only this stronger notice: the
+    // level-4 stamp then holds back the early one.
     const warnResult = await warnInactiveEnrollments();
     results.warnInactiveEnrollments = {
       warned: warnResult.length,

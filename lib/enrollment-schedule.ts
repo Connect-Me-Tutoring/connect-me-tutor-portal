@@ -27,6 +27,24 @@ export function getEnrollmentAvailability(enrollment: EnrollmentScheduleSource):
   return hasCompleteSchedule(schedule) ? [schedule] : [];
 }
 
+const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
+
+/**
+ * Whether an enrollment meets in the week starting at `weekStart`. Biweekly enrollments meet
+ * every other week, counted from the week of their start date; everything else is weekly.
+ * Both arguments should be Eastern week starts (getEasternWeekBounds).
+ */
+export function enrollmentMeetsInWeek(
+  enrollment: { frequency?: string | null },
+  enrollmentStartWeek: Date | null,
+  weekStart: Date,
+) {
+  if (enrollment.frequency !== "biweekly" || !enrollmentStartWeek) return true;
+  // Rounded because a DST change makes one week an hour shorter or longer.
+  const weeks = Math.round((weekStart.getTime() - enrollmentStartWeek.getTime()) / WEEK_MS);
+  return weeks % 2 === 0;
+}
+
 export function getEnrollmentScheduleFields(schedule?: Partial<Availability> | null) {
   const normalizedSchedule = getEnrollmentSchedule({
     day: schedule?.day,
