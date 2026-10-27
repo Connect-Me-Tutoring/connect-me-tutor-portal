@@ -17,7 +17,7 @@ import {
   sendStudentPairingConfirmationEmail,
   sendTutorPairingConfirmationEmail,
 } from "../email/server.actions";
-import { addEnrollment } from "../enrollment/server.actions";
+import { addEnrollment, removeEnrollment } from "../enrollment/server.actions";
 import { getOverlappingAvailabilites } from "../enrollment/client.actions";
 import { getProfileWithProfileId } from "../user/client.actions";
 import { getMeeting } from "../meeting/client.actions";
@@ -775,12 +775,16 @@ export const updatePairingMatchStatus = async (
       await sendStudentPairingConfirmationEmail(emailData, studentData.email);
       await sendTutorPairingConfirmationEmail(emailData, tutorData.email);
     } catch (error) {
-      //rollback if error
-      await supabase
+      //rollback if error. removeEnrollment also removes the first session addEnrollment created.
+      const { data: createdEnrollments } = await supabase
         .from("Enrollments")
-        .delete()
+        .select("id")
         .eq("tutor_id", tutor.id)
         .eq("student_id", student.id);
+
+      await Promise.all(
+        (createdEnrollments ?? []).map((enrollment) => removeEnrollment(enrollment.id)),
+      );
 
       await supabase
         .from("Pairings")
