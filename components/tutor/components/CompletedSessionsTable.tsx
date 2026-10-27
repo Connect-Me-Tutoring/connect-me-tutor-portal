@@ -116,15 +116,7 @@ const CompletedSessionsTable = ({
                         <DropdownMenuLabel>Actions</DropdownMenuLabel>
                         <DropdownMenuItem
                           onClick={() => {
-                            if (
-                              session.status === "Complete" ||
-                              session.status === "Student Did Not Attend"
-                            ) {
                               handleUndoSessionExitForm(session.id);
-                            } else {
-                              TC.setSelectedSession(session);
-                              TC.setIsSessionExitFormOpen(true);
-                            }
                           }}
                         >
                           Undo
@@ -238,15 +230,7 @@ const CompletedSessionsTable = ({
                     <DropdownMenuLabel>Actions</DropdownMenuLabel>
                     <DropdownMenuItem
                       onClick={() => {
-                        if (
-                          session.status === "Complete" ||
-                          session.status === "Student Did Not Attend"
-                        ) {
                           handleUndoSessionExitForm(session.id);
-                        } else {
-                          TC.setSelectedSession(session);
-                          TC.setIsSessionExitFormOpen(true);
-                        }
                       }}
                     >
                       Undo

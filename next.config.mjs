@@ -8,6 +8,8 @@ const nextConfig = {
     ignoreBuildErrors: false,
   },
   turbopack: {},
+  // Keep `next dev` from re-inserting its managed block into AGENTS.md.
+  agentRules: false,
 
   webpack: (config, { isServer }) => {
     if (!isServer) {

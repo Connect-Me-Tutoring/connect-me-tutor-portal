@@ -2,7 +2,8 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 
 const mockSelect = vi.fn();
 const mockUpdate = vi.fn();
-const mockFrom = vi.fn(() => ({ select: mockSelect, update: mockUpdate }));
+const mockInsert = vi.fn();
+const mockFrom = vi.fn(() => ({ select: mockSelect, update: mockUpdate, insert: mockInsert }));
 
 vi.mock("@/lib/supabase/server", () => ({
   createClient: vi.fn().mockResolvedValue({ from: mockFrom }),
@@ -26,7 +27,7 @@ vi.mock("@/lib/posthog", () => ({
   logEvent: vi.fn().mockResolvedValue(undefined),
 }));
 
-const { getCompletedSessionsCount, markUnconfirmedSEFCron } =
+const { getCompletedSessionsCount, markUnconfirmedSEFCron, addSessionsForCron } =
   await import("../session/server.actions");
 
 const START = "2026-08-02T04:00:00.000Z";
@@ -189,5 +190,81 @@ describe("markUnconfirmedSEFCron", () => {
     const result = await markUnconfirmedSEFCron();
 
     expect(result).toEqual({ success: false, error: "deadlock detected", unconfirmed: 0 });
+  });
+});
+
+describe("addSessionsForCron", () => {
+  // Sun Oct 25 – Sat Oct 31 2026 in America/New_York (EDT, UTC-4).
+  const WEEK_START = "2026-10-25T04:00:00.000Z";
+  const WEEK_END = "2026-11-01T03:59:59.999Z";
+
+  const enrollment = (overrides: Record<string, unknown>) =>
+    ({
+      id: "e1",
+      student: { id: "student-1" },
+      tutor: { id: "tutor-1" },
+      day: "Monday",
+      startTime: "16:00",
+      endTime: "17:00",
+      meetingId: "m1",
+      summary: "Math",
+      startDate: "2026-09-01T04:00:00.000Z",
+      duration: 1,
+      paused: false,
+      ...overrides,
+    }) as any;
+
+  const captureInsert = () => {
+    const select = vi.fn().mockResolvedValue({ data: [], error: null });
+    mockInsert.mockReturnValue({ select });
+  };
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.useFakeTimers();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it("creates the week's sessions when run before the week starts", async () => {
+    vi.setSystemTime(new Date("2026-10-25T00:00:00.000Z")); // Sat Oct 24, 8pm ET
+    captureInsert();
+
+    await addSessionsForCron(WEEK_START, WEEK_END, [enrollment({})], []);
+
+    expect(mockInsert).toHaveBeenCalledWith([
+      expect.objectContaining({ enrollment_id: "e1", date: "2026-10-26T20:00:00.000Z" }),
+    ]);
+  });
+
+  it("does not backfill slots that have already passed", async () => {
+    vi.setSystemTime(new Date("2026-10-28T12:00:00.000Z")); // Wed Oct 28
+    captureInsert();
+
+    await addSessionsForCron(
+      WEEK_START,
+      WEEK_END,
+      [
+        enrollment({ id: "past", day: "Monday" }),
+        enrollment({ id: "future", day: "Saturday", startTime: "10:00", endTime: "11:00" }),
+      ],
+      [],
+    );
+
+    expect(mockInsert).toHaveBeenCalledTimes(1);
+    expect(mockInsert.mock.calls[0][0]).toEqual([
+      expect.objectContaining({ enrollment_id: "future", date: "2026-10-31T14:00:00.000Z" }),
+    ]);
+  });
+
+  it("inserts nothing when every slot in the week has passed", async () => {
+    vi.setSystemTime(new Date("2026-11-01T00:00:00.000Z")); // Sat Oct 31, 8pm ET
+
+    const result = await addSessionsForCron(WEEK_START, WEEK_END, [enrollment({})], []);
+
+    expect(mockInsert).not.toHaveBeenCalled();
+    expect(result).toEqual([]);
   });
 });

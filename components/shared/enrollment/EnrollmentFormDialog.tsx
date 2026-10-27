@@ -241,10 +241,9 @@ const EnrollmentFormDialog: React.FC<EnrollmentFormDialogProps> = ({
                     <SelectValue placeholder="weekly" />
                   </SelectTrigger>
                   <SelectContent>
+                    {/* Weekly only: the add-sessions cron ignores frequency, so a biweekly
+                        enrollment would still get a session every week. */}
                     <SelectItem value="weekly">Weekly</SelectItem>
-                    <SelectItem value="biweekly" disabled={mode === "edit"}>
-                      Biweekly
-                    </SelectItem>
                   </SelectContent>
                 </Select>
               </div>

@@ -78,6 +78,7 @@ export async function addSessionsForCron(
   try {
     // Cron context has no user session; callers must gate with isCronRequestAuthorized.
     const supabase = await createAdminClient();
+    const now = new Date();
     const weekStart = parseISO(weekStartString);
     const weekEnd = parseISO(weekEndString);
 
@@ -179,6 +180,13 @@ export async function addSessionsForCron(
 
           const dateString = `${format(currentDate, "yyyy-MM-dd")}T${startTime}:00`;
           const sessionStartTime = fromZonedTime(dateString, "America/New_York");
+
+          // Never backfill: a session created after its slot has passed is flipped to
+          // Unconfirmed by markUnconfirmedSEFCron and counts as a missed exit form.
+          if (sessionStartTime < now) {
+            currentDate = addDays(currentDate, 1);
+            continue;
+          }
 
           if (sessionStartTime < startDate_asDate) {
             throw new Error("Session occurs before start date");
