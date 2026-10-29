@@ -1433,21 +1433,10 @@ export async function updateSession(updatedSession: Session, updateEmail: boolea
       )
       .single();
 
-    if (error) {
-      console.error("Error updating session:", error);
-      await logError(error, { session_id: id }, "session_error");
-      return null;
-    }
-
-    if (!data) {
-      console.error("NO DATA");
-      await logError(
-        new Error("No data returned when updating session"),
-        { session_id: id },
-        "session_error",
-      );
-      return null;
-    }
+    // Throw rather than return null: callers ignore the return value, so a null
+    // here showed a success toast for writes the DB rejected (e.g. guard triggers).
+    if (error) throw error;
+    if (!data) throw new Error("No data returned when updating session");
 
     const newSession: Session = tableToInterfaceSessions(data);
 

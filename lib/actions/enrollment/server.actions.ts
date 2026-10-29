@@ -314,22 +314,39 @@ export async function getEnrollments(tutorId: string): Promise<Enrollment[] | nu
 
 export const cachedGetEnrollments = cache(getEnrollments);
 
-// added this in order to remove future sessions on the SCHEDULE after an enrollment is deleted.
-export const removeFutureSessions = async (enrollmentId: string, supabase: any) => {
+// Call before deleting enrollments. Sessions.enrollment_id is ON DELETE SET NULL, so
+// skipping this leaves the future sessions Active with no enrollment: they keep their
+// Zoom room, send reminders and turn Unconfirmed.
+export const removeFutureSessions = async (enrollmentIds: string | string[], supabase: any) => {
+  const ids = Array.isArray(enrollmentIds) ? enrollmentIds : [enrollmentIds];
+  if (ids.length === 0) return;
   try {
     const now: string = new Date().toISOString();
-    await supabase
+    const { data: sessions } = await supabase
       .from(Table.Sessions)
-      .delete()
-      .eq("enrollment_id", enrollmentId)
+      .select("id")
+      .in("enrollment_id", ids)
       .not("status", "in", '(Complete,"Student Did Not Attend")')
       .gte("date", now)
       .throwOnError();
+
+    const sessionIds: string[] = (sessions ?? []).map((session: { id: string }) => session.id);
+    if (sessionIds.length === 0) return;
+
+    // zoom_participant_events.session_id has no ON DELETE action, so an early Zoom join
+    // would block the delete. Keep the events, as removeSessionServer does.
+    await supabase
+      .from("zoom_participant_events")
+      .update({ session_id: null })
+      .in("session_id", sessionIds)
+      .throwOnError();
+
+    await supabase.from(Table.Sessions).delete().in("id", sessionIds).throwOnError();
   } catch (error) {
     console.error("Unable to remove future sessions", error);
     await logError(
       error,
-      { function: "removeFutureSessions", enrollment_id: enrollmentId },
+      { function: "removeFutureSessions", enrollment_ids: ids },
       "enrollment_error",
     );
     throw error;
@@ -551,6 +568,36 @@ export const addEnrollment = async (
 
     const duration = await handleCalculateDuration(schedule.startTime, schedule.endTime);
 
+    const studentId = enrollment.student?.id;
+    if (!studentId) {
+      throw new Error("Student ID is required to create an enrollment");
+    }
+
+    const { data: existing, error: dupCheckError } = await supabase
+      .from(Table.Enrollments)
+      .select("id")
+      .eq("student_id", studentId)
+      .eq("tutor_id", enrollmentTutorId)
+      .eq("day", schedule.day)
+      .eq("start_time", schedule.startTime)
+      .limit(1);
+
+    if (dupCheckError) {
+      console.error("Error checking for duplicate enrollment:", dupCheckError);
+      await logError(
+        dupCheckError,
+        { function: "addEnrollment", step: "duplicate_check" },
+        "enrollment_error",
+      );
+      throw dupCheckError;
+    }
+
+    if (existing && existing.length > 0) {
+      throw new Error(
+        "An enrollment already exists for this student and tutor at the same day and time. Please edit the existing enrollment instead.",
+      );
+    }
+
     if (enrollment.duration <= 0) throw new Error("Duration should be a positive amount");
 
     if (!enrollment.student) throw new Error("Please select a Student");
@@ -688,6 +735,12 @@ export async function deleteInactiveEnrollments() {
 
   const enrollmentIds = enrollments.map((e) => e.id);
   const supabase = await createAdminClient();
+
+  try {
+    await removeFutureSessions(enrollmentIds, supabase);
+  } catch (error) {
+    return { success: false, error: (error as Error).message, deleted: 0 };
+  }
 
   const { error: deleteError } = await supabase
     .from(Table.Enrollments)

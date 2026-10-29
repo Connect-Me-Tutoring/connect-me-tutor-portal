@@ -15,6 +15,7 @@ import { isCronRequestAuthorized } from "@/lib/security/cron";
 import { logError } from "@/lib/posthog";
 import type { Database } from "@/types/database.types";
 import { provisionUser } from "@/lib/auth/provision-user.server";
+import { removeFutureSessions } from "../enrollment/server.actions";
 import {
   countLegacyPendingConsentRequests,
   provisionLegacyPendingConsentRequests,
@@ -144,6 +145,18 @@ export const deleteUser = async (profileId: string) => {
 
     const relatedProfiles = res1.data;
     const userSettings = res2.data;
+
+    // Deleting the profile cascades to its Enrollments, which leaves their future
+    // sessions behind unless they are removed first.
+    const { data: enrollments } = await adminSupabase
+      .from(Table.Enrollments)
+      .select("id")
+      .or(`tutor_id.eq.${profileId},student_id.eq.${profileId}`)
+      .throwOnError();
+    await removeFutureSessions(
+      enrollments.map((enrollment) => enrollment.id),
+      adminSupabase,
+    );
 
     if (relatedProfiles.length == 1) {
       const relatedUserId = relatedProfiles[0].user_id;
