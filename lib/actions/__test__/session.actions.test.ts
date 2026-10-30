@@ -259,6 +259,31 @@ describe("addSessionsForCron", () => {
     ]);
   });
 
+  it("skips the off week of a biweekly enrollment", async () => {
+    vi.setSystemTime(new Date("2026-10-25T00:00:00.000Z"));
+    captureInsert();
+
+    // Mon Oct 26 is 8 weeks after Mon Sep 28 (on week) and 7 weeks after Mon Oct 5 (off week).
+    await addSessionsForCron(
+      WEEK_START,
+      WEEK_END,
+      [
+        enrollment({ id: "on", frequency: "biweekly", startDate: "2026-09-28T04:00:00.000Z" }),
+        enrollment({
+          id: "off",
+          student: { id: "student-2" },
+          frequency: "biweekly",
+          startDate: "2026-10-05T04:00:00.000Z",
+        }),
+      ],
+      [],
+    );
+
+    expect(mockInsert.mock.calls[0][0]).toEqual([
+      expect.objectContaining({ enrollment_id: "on", date: "2026-10-26T20:00:00.000Z" }),
+    ]);
+  });
+
   it("inserts nothing when every slot in the week has passed", async () => {
     vi.setSystemTime(new Date("2026-11-01T00:00:00.000Z")); // Sat Oct 31, 8pm ET
 

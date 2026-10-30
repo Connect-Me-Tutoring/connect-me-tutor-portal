@@ -33,6 +33,7 @@ import {
   updateScheduledEmailBeforeSessions,
 } from "../email/server.actions";
 import { logError } from "@/lib/posthog";
+import { isEnrollmentSessionDate } from "@/lib/enrollment-schedule";
 
 import { startOfWeek, endOfWeek, subDays, parseISO, format, addDays } from "date-fns"; // Only use date-fns
 
@@ -177,6 +178,11 @@ export async function addSessionsForCron(
 
           if (isNaN(startHour) || isNaN(startMinute) || isNaN(endHour) || isNaN(endMinute)) {
             throw new Error(`Invalid time format: start=${startTime}, end=${endTime}`);
+          }
+
+          if (!isEnrollmentSessionDate(enrollment, format(currentDate, "yyyy-MM-dd"))) {
+            currentDate = addDays(currentDate, 1);
+            continue;
           }
 
           const dateString = `${format(currentDate, "yyyy-MM-dd")}T${startTime}:00`;
