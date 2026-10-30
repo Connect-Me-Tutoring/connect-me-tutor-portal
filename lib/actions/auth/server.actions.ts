@@ -12,7 +12,12 @@ import { createPassword } from "../../utils";
 import { cachedGetUser } from "../user/actions";
 import { getProfileRole } from "../user/server.actions";
 import { isCronRequestAuthorized } from "@/lib/security/cron";
-import { logError } from "@/lib/posthog";
+import {
+  DestructiveActivityContext,
+  logDestructiveActivities,
+  logDestructiveActivity,
+  logError,
+} from "@/lib/posthog";
 import type { Database } from "@/types/database.types";
 import { provisionUser } from "@/lib/auth/provision-user.server";
 import { removeFutureSessions } from "../enrollment/server.actions";
@@ -20,6 +25,20 @@ import {
   countLegacyPendingConsentRequests,
   provisionLegacyPendingConsentRequests,
 } from "@/lib/consent/parental-consent.server";
+import {
+  buildEnrollmentDeletionSnapshot,
+  buildPairingDeletionSnapshot,
+  buildProfileDeletionSnapshot,
+  DELETION_AUDIT_PROFILE_SELECT,
+  ENROLLMENT_DELETION_AUDIT_SELECT,
+  enrollmentDeletionProperties,
+  PAIRING_DELETION_AUDIT_SELECT,
+  pairingDeletionProperties,
+  profileDeletionProperties,
+  type EnrollmentDeletionSnapshot,
+  type PairingDeletionSnapshot,
+  type ProfileDeletionSnapshot,
+} from "@/lib/audit/deletion-audit";
 
 /**
  * Creates a new user through an email invite. Parental consent for students under
@@ -61,6 +80,7 @@ export const verifyAdmin = async () => {
   if (!user) throw new Error("Unauthenticated access");
   const role = await getProfileRole(user.id);
   if (role !== "Admin") throw new Error("Unauthorized Access");
+  return { user, role };
 };
 
 /**
@@ -111,13 +131,13 @@ const replaceLastActiveProfile = async (
 };
 
 export const deleteUser = async (profileId: string) => {
-  await verifyAdmin();
+  const { user: actorUser, role: actorRole } = await verifyAdmin();
   const adminSupabase = await createAdminClient();
 
   try {
     const { data: profile } = await adminSupabase
       .from(Table.Profiles)
-      .select("user_id")
+      .select(DELETION_AUDIT_PROFILE_SELECT)
       .eq("id", profileId)
       .single()
       .throwOnError();
@@ -150,12 +170,36 @@ export const deleteUser = async (profileId: string) => {
     // sessions behind unless they are removed first.
     const { data: enrollments } = await adminSupabase
       .from(Table.Enrollments)
-      .select("id")
+      .select(ENROLLMENT_DELETION_AUDIT_SELECT)
       .or(`tutor_id.eq.${profileId},student_id.eq.${profileId}`)
       .throwOnError();
+
+    const { data: pairings } = await adminSupabase
+      .from(Table.Pairings)
+      .select(PAIRING_DELETION_AUDIT_SELECT)
+      .or(`tutor_id.eq.${profileId},student_id.eq.${profileId}`)
+      .throwOnError();
+
+    const profileSnapshot = buildProfileDeletionSnapshot(profile);
+    const enrollmentSnapshots = enrollments.map((enrollment) =>
+      buildEnrollmentDeletionSnapshot(enrollment, enrollment.student, enrollment.tutor),
+    );
+    const pairingSnapshots = pairings.map((pairing) =>
+      buildPairingDeletionSnapshot(pairing, pairing.student, pairing.tutor),
+    );
+
+    const auditContext: DestructiveActivityContext = {
+      actor: { type: "user", userId: actorUser.id, role: actorRole },
+      source: "deleteUser",
+      reason: "manual_profile_deletion",
+      relatedResourceType: "profile",
+      relatedResourceIds: [profileId],
+    };
+
     await removeFutureSessions(
-      enrollments.map((enrollment) => enrollment.id),
+      enrollmentSnapshots.map((enrollment) => enrollment.id),
       adminSupabase,
+      auditContext,
     );
 
     if (relatedProfiles.length == 1) {
@@ -175,6 +219,28 @@ export const deleteUser = async (profileId: string) => {
     }
 
     await adminSupabase.from(Table.Profiles).delete().eq("id", profileId).throwOnError();
+
+    await logDestructiveActivities({
+      ...auditContext,
+      resourceType: "enrollment",
+      deletedObjects: enrollmentSnapshots,
+      getResourceProperties: (deletedObject) =>
+        enrollmentDeletionProperties(deletedObject as EnrollmentDeletionSnapshot),
+    });
+    await logDestructiveActivities({
+      ...auditContext,
+      resourceType: "pairing",
+      deletedObjects: pairingSnapshots,
+      getResourceProperties: (deletedObject) =>
+        pairingDeletionProperties(deletedObject as PairingDeletionSnapshot),
+    });
+    await logDestructiveActivity({
+      ...auditContext,
+      resourceType: "profile",
+      resourceId: profileId,
+      deletedObject: profileSnapshot,
+      resourceProperties: profileDeletionProperties(profileSnapshot as ProfileDeletionSnapshot),
+    });
   } catch (error: any) {
     console.error("Failed to delete user", error);
     await logError(error, { action: "deleteUser", profileId }, "auth_error");

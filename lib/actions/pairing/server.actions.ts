@@ -15,7 +15,17 @@ import { removeFutureSessions } from "../enrollment/server.actions";
 import { formatDateAdmin, to12Hour } from "../../utils";
 import { requireAdmin, requireEnrollmentAccess, requireSelfOrAdmin } from "../auth/authz.server";
 import { getPairingRejectionCooldown } from "../../pairing/rejection-config";
-import { logError } from "@/lib/posthog";
+import { DestructiveActivityContext, logDestructiveActivities, logError } from "@/lib/posthog";
+import {
+  buildEnrollmentDeletionSnapshot,
+  buildPairingDeletionSnapshot,
+  ENROLLMENT_DELETION_AUDIT_SELECT,
+  enrollmentDeletionProperties,
+  PAIRING_DELETION_AUDIT_SELECT,
+  pairingDeletionProperties,
+  type EnrollmentDeletionSnapshot,
+  type PairingDeletionSnapshot,
+} from "@/lib/audit/deletion-audit";
 
 export const getPairingFromEnrollmentId = async (enrollmentId: string) => {
   try {
@@ -198,59 +208,114 @@ export const deletePairingServer = async (tutorId: string, studentId: string) =>
 
     const { data: pairings, error: pairingsError } = await adminSupabase
       .from("Pairings")
-      .select("id")
+      .select(PAIRING_DELETION_AUDIT_SELECT)
       .eq("tutor_id", tutorId)
       .eq("student_id", studentId);
 
     if (pairingsError) throw pairingsError;
 
     const pairingIds = (pairings || []).map((pairing: any) => pairing.id).filter(Boolean);
+    const pairingSnapshots = (pairings ?? []).map((pairing) =>
+      buildPairingDeletionSnapshot(pairing, pairing.student, pairing.tutor),
+    );
 
-    const enrollmentIds = new Set<string>();
+    const enrollmentSnapshots = new Map<string, EnrollmentDeletionSnapshot>();
 
     const { data: matchingEnrollments, error: matchingEnrollmentsError } = await adminSupabase
       .from("Enrollments")
-      .select("id")
+      .select(ENROLLMENT_DELETION_AUDIT_SELECT)
       .eq("tutor_id", tutorId)
       .eq("student_id", studentId);
 
     if (matchingEnrollmentsError) throw matchingEnrollmentsError;
     matchingEnrollments?.forEach((enrollment: any) => {
-      if (enrollment.id) enrollmentIds.add(enrollment.id);
+      if (enrollment.id) {
+        enrollmentSnapshots.set(
+          enrollment.id,
+          buildEnrollmentDeletionSnapshot(enrollment, enrollment.student, enrollment.tutor),
+        );
+      }
     });
 
     if (pairingIds.length > 0) {
       const { data: pairingEnrollments, error: pairingEnrollmentsError } = await adminSupabase
         .from("Enrollments")
-        .select("id")
+        .select(ENROLLMENT_DELETION_AUDIT_SELECT)
         .in("pairing_id", pairingIds);
 
       if (pairingEnrollmentsError) throw pairingEnrollmentsError;
       pairingEnrollments?.forEach((enrollment: any) => {
-        if (enrollment.id) enrollmentIds.add(enrollment.id);
+        if (enrollment.id) {
+          enrollmentSnapshots.set(
+            enrollment.id,
+            buildEnrollmentDeletionSnapshot(enrollment, enrollment.student, enrollment.tutor),
+          );
+        }
       });
     }
 
-    const enrollmentIdList = Array.from(enrollmentIds);
+    const enrollmentIdList = Array.from(enrollmentSnapshots.keys());
+    const auditContext: DestructiveActivityContext = {
+      actor: {
+        type: "user",
+        userId: user.id,
+        profileId: requestorProfile.id,
+        role: requestorProfile.role ?? undefined,
+      },
+      source: "deletePairingServer",
+      reason: "manual_pairing_removal",
+    };
 
     if (enrollmentIdList.length > 0) {
-      await removeFutureSessions(enrollmentIdList, adminSupabase);
+      await removeFutureSessions(enrollmentIdList, adminSupabase, auditContext);
 
-      const { error: deleteEnrollmentsError } = await adminSupabase
+      const { data: deletedEnrollments, error: deleteEnrollmentsError } = await adminSupabase
         .from("Enrollments")
         .delete()
-        .in("id", enrollmentIdList);
+        .in("id", enrollmentIdList)
+        .select("id");
 
       if (deleteEnrollmentsError) throw deleteEnrollmentsError;
+
+      const deletedEnrollmentIds = new Set(
+        (deletedEnrollments ?? []).map((enrollment) => enrollment.id),
+      );
+      const deletedEnrollmentSnapshots = Array.from(enrollmentSnapshots.values()).filter(
+        (enrollment) => deletedEnrollmentIds.has(enrollment.id),
+      );
+
+      await logDestructiveActivities({
+        ...auditContext,
+        resourceType: "enrollment",
+        deletedObjects: deletedEnrollmentSnapshots,
+        relatedResourceType: "pairing",
+        relatedResourceIds: pairingIds,
+        getResourceProperties: (deletedObject) =>
+          enrollmentDeletionProperties(deletedObject as EnrollmentDeletionSnapshot),
+      });
     }
 
-    const { error: deletePairingError } = await adminSupabase
+    const { data: deletedPairings, error: deletePairingError } = await adminSupabase
       .from("Pairings")
       .delete()
       .eq("tutor_id", tutorId)
-      .eq("student_id", studentId);
+      .eq("student_id", studentId)
+      .select("id");
 
     if (deletePairingError) throw deletePairingError;
+
+    const deletedPairingIds = new Set((deletedPairings ?? []).map((pairing) => pairing.id));
+    const deletedPairingSnapshots = pairingSnapshots.filter((pairing) =>
+      deletedPairingIds.has(pairing.id),
+    );
+
+    await logDestructiveActivities({
+      ...auditContext,
+      resourceType: "pairing",
+      deletedObjects: deletedPairingSnapshots,
+      getResourceProperties: (deletedObject) =>
+        pairingDeletionProperties(deletedObject as PairingDeletionSnapshot),
+    });
 
     return { success: true };
   } catch (error) {

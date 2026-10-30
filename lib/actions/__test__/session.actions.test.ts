@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 
 const mockSelect = vi.fn();
 const mockUpdate = vi.fn();
-const mockFrom = vi.fn(() => ({ select: mockSelect, update: mockUpdate }));
+const mockFrom = vi.fn((_table?: string): any => ({ select: mockSelect, update: mockUpdate }));
 
 vi.mock("@/lib/supabase/server", () => ({
   createClient: vi.fn().mockResolvedValue({ from: mockFrom }),
@@ -11,6 +11,7 @@ vi.mock("@/lib/supabase/server", () => ({
 }));
 
 const requireAdmin = vi.fn().mockResolvedValue({});
+const logDestructiveActivity = vi.fn().mockResolvedValue(undefined);
 vi.mock("../auth/authz.server", () => ({
   requireAdmin: (...args: unknown[]) => requireAdmin(...args),
   requireAuthenticatedProfile: vi.fn(),
@@ -24,9 +25,10 @@ vi.mock("../auth/authz.server", () => ({
 vi.mock("@/lib/posthog", () => ({
   logError: vi.fn().mockResolvedValue(undefined),
   logEvent: vi.fn().mockResolvedValue(undefined),
+  logDestructiveActivity: (...args: unknown[]) => logDestructiveActivity(...args),
 }));
 
-const { getCompletedSessionsCount, markUnconfirmedSEFCron } =
+const { getCompletedSessionsCount, markUnconfirmedSEFCron, removeSessionServer } =
   await import("../session/server.actions");
 
 const START = "2026-08-02T04:00:00.000Z";
@@ -189,5 +191,68 @@ describe("markUnconfirmedSEFCron", () => {
     const result = await markUnconfirmedSEFCron();
 
     expect(result).toEqual({ success: false, error: "deadlock detected", unconfirmed: 0 });
+  });
+});
+
+describe("removeSessionServer deletion audit", () => {
+  const sessionSnapshot = {
+    id: "session-1",
+    enrollment_id: "enrollment-1",
+    date: "2026-08-20T15:00:00.000Z",
+  };
+
+  const query = (result: unknown, throwResult?: unknown) => {
+    const builder: Record<string, any> = {};
+    for (const method of ["select", "delete", "update", "eq", "single"]) {
+      builder[method] = vi.fn(() => builder);
+    }
+    builder.throwOnError = vi.fn().mockResolvedValue(throwResult ?? result);
+    builder.then = (resolve: (value: unknown) => unknown) => Promise.resolve(result).then(resolve);
+    return builder;
+  };
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    requireAdmin.mockResolvedValue({
+      user: { id: "auth-user-1" },
+      profile: { id: "profile-1", role: "Admin" },
+    });
+  });
+
+  it("logs the deleted row returned by the successful session delete", async () => {
+    mockFrom.mockImplementation((table?: string) => {
+      if (table === "Sessions") {
+        return query({ data: sessionSnapshot, error: null });
+      }
+      return query({ error: null });
+    });
+
+    await removeSessionServer("session-1", false);
+
+    expect(logDestructiveActivity).toHaveBeenCalledWith({
+      actor: {
+        type: "user",
+        userId: "auth-user-1",
+        profileId: "profile-1",
+        role: "Admin",
+      },
+      source: "removeSessionServer",
+      reason: "manual_session_deletion",
+      resourceType: "session",
+      resourceId: "session-1",
+      deletedObject: sessionSnapshot,
+    });
+  });
+
+  it("does not log a completed deletion when deleting the session fails", async () => {
+    mockFrom.mockImplementation((table?: string) => {
+      if (table === "Sessions") {
+        return query({ data: null, error: new Error("delete failed") });
+      }
+      return query({ error: null });
+    });
+
+    await expect(removeSessionServer("session-1", false)).rejects.toThrow("delete failed");
+    expect(logDestructiveActivity).not.toHaveBeenCalled();
   });
 });

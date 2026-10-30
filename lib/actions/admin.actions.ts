@@ -4,10 +4,8 @@
 // lib/student.actions.ts
 import { getSupabase, supabase, supabaseClient } from "@/lib/supabase/client";
 import { Profile, Session, Notification, Event, Enrollment, Meeting } from "@/types";
-import {
-  deleteScheduledEmailBeforeSessions,
-  updateScheduledEmailBeforeSessions,
-} from "./email/server.actions";
+import { updateScheduledEmailBeforeSessions } from "./email/server.actions";
+import { removeSessionServer } from "./session/server.actions";
 import { getProfileWithProfileId, getProfileByEmail } from "./user/client.actions";
 import {
   addDays,
@@ -407,33 +405,7 @@ async function isSessioninPastWeek(enrollmentId: string, midWeek: Date) {
 }
 
 export async function removeSession(sessionId: string, updateEmail: boolean = true) {
-  const { error: notificationError } = await supabase
-    .from(Table.Notifications)
-    .delete()
-    .eq("session_id", sessionId);
-
-  if (notificationError) {
-    throw notificationError;
-  }
-
-  const { error: participantEventError } = await supabase
-    .from("zoom_participant_events")
-    .update({ session_id: null })
-    .eq("session_id", sessionId);
-
-  if (participantEventError) {
-    throw participantEventError;
-  }
-
-  const { error: eventError } = await supabase.from(Table.Sessions).delete().eq("id", sessionId);
-
-  if (eventError) {
-    throw eventError;
-  }
-
-  if (updateEmail) {
-    await deleteScheduledEmailBeforeSessions(sessionId);
-  }
+  return removeSessionServer(sessionId, updateEmail);
 }
 
 /* MEETINGS */
@@ -663,39 +635,6 @@ export async function createEventsBatch(events: Event[]) {
 
   const { error } = await supabase.from("Events").insert(rows);
   if (error) throw error;
-}
-
-export async function removeEvent(eventId: string): Promise<boolean> {
-  try {
-    // Validate eventId format
-    if (!eventId || typeof eventId !== "string") {
-      console.error("Invalid event ID provided:", eventId);
-      return false;
-    }
-
-    // Attempt to delete the event
-    const { data, error, count } = await supabase
-      .from("Events")
-      .delete()
-      .eq("id", eventId)
-      .select(); // Add this to get back the deleted record
-
-    if (error) {
-      console.error("Error deleting event:", error);
-      throw error;
-    }
-
-    // Check if any records were actually deleted
-    if (!data || data.length === 0) {
-      console.warn(`No event found with ID: ${eventId}`);
-      return false;
-    }
-
-    return true;
-  } catch (error) {
-    console.error("Failed to remove event:", error);
-    throw error;
-  }
 }
 
 /* NOTIFICATIONS */

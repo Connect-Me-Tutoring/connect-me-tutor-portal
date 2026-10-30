@@ -124,8 +124,10 @@ function getPostHogClient(): PostHog | null {
   if (!posthogClient) {
     posthogClient = new PostHog(process.env.NEXT_PUBLIC_POSTHOG_KEY, {
       host: process.env.NEXT_PUBLIC_POSTHOG_HOST,
-      flushAt: 1, // Flush immediately for real-time debugging
-      flushInterval: 0, // Disable interval flushing, use immediate
+      // Ordinary events explicitly flush below. A larger queue lets bulk audit events
+      // enqueue all rows and make one network request instead of one request per row.
+      flushAt: 100,
+      flushInterval: 0,
     });
   }
 
@@ -140,6 +142,7 @@ export async function logEvent(
   eventName: string,
   properties?: Record<string, any>,
   distinctId?: string,
+  options?: { flush?: boolean; includePropertiesJson?: boolean },
 ) {
   const client = getPostHogClient();
   if (!client) {
@@ -163,16 +166,127 @@ export async function logEvent(
       event: eventName,
       properties: {
         ...normalized,
-        properties_json: serializeForPosthog(flatProps),
+        ...(options?.includePropertiesJson === false
+          ? {}
+          : { properties_json: serializeForPosthog(flatProps) }),
       },
     });
 
-    // Flush immediately for real-time debugging
-    await client.flush();
+    if (options?.flush !== false) {
+      await client.flush();
+    }
   } catch (error) {
     // Log error but don't throw - we don't want PostHog failures to break webhooks
     console.error("PostHog logging error:", error);
   }
+}
+
+async function flushPostHog(): Promise<void> {
+  const client = getPostHogClient();
+  if (!client) return;
+
+  try {
+    await client.flush();
+  } catch (error) {
+    console.error("PostHog flush error:", error);
+  }
+}
+
+export type DestructiveActivityActor = {
+  type: "user" | "system";
+  userId?: string;
+  profileId?: string;
+  role?: string;
+};
+
+export type DestructiveActivityContext = {
+  actor: DestructiveActivityActor;
+  source: string;
+  reason?: string;
+  relatedResourceType?: string;
+  relatedResourceIds?: string[];
+};
+
+type DestructiveActivityInput = DestructiveActivityContext & {
+  resourceType: string;
+  resourceId?: string | null;
+  deletedObject: unknown;
+  resourceProperties?: Record<string, unknown>;
+  flush?: boolean;
+};
+
+function getDeletedObjectId(value: unknown): string | undefined {
+  if (!value || typeof value !== "object" || !("id" in value)) return undefined;
+  const id = (value as { id?: unknown }).id;
+  return typeof id === "string" || typeof id === "number" ? String(id) : undefined;
+}
+
+/**
+ * Record a completed destructive action with a redacted snapshot of the deleted row.
+ * Logging is best-effort: PostHog failures never make the already-completed deletion fail.
+ */
+export async function logDestructiveActivity({
+  actor,
+  source,
+  reason,
+  relatedResourceType,
+  relatedResourceIds,
+  resourceType,
+  resourceId,
+  deletedObject,
+  resourceProperties,
+  flush = true,
+}: DestructiveActivityInput): Promise<void> {
+  const resolvedResourceId = resourceId ?? getDeletedObjectId(deletedObject);
+  const distinctId = actor.userId ?? actor.profileId ?? `system:${source}`;
+
+  await logEvent(
+    "destructive_activity",
+    {
+      ...resourceProperties,
+      action: "delete",
+      resource_type: resourceType,
+      resource_id: resolvedResourceId,
+      source,
+      reason,
+      actor_type: actor.type,
+      actor_user_id: actor.userId,
+      actor_profile_id: actor.profileId,
+      actor_role: actor.role,
+      related_resource_type: relatedResourceType,
+      related_resource_ids_json: relatedResourceIds
+        ? serializeForPosthog(relatedResourceIds)
+        : undefined,
+      deleted_object_json: serializeForPosthog(deletedObject),
+    },
+    distinctId,
+    {
+      flush,
+      // The deleted snapshot already has a dedicated property. Copying it into the
+      // aggregate JSON property doubles sensitive data and can truncate useful context.
+      includePropertiesJson: false,
+    },
+  );
+}
+
+/** Log bulk deletions as individual events so every deleted row keeps a complete snapshot. */
+export async function logDestructiveActivities(
+  input: DestructiveActivityContext & {
+    resourceType: string;
+    deletedObjects: unknown[];
+    getResourceProperties?: (deletedObject: unknown) => Record<string, unknown>;
+  },
+): Promise<void> {
+  const { getResourceProperties, ...context } = input;
+  for (const deletedObject of input.deletedObjects) {
+    await logDestructiveActivity({
+      ...context,
+      deletedObject,
+      resourceProperties: getResourceProperties?.(deletedObject),
+      flush: false,
+    });
+  }
+  await flushPostHog();
 }
 
 function messageFromUnknown(error: unknown): string {
