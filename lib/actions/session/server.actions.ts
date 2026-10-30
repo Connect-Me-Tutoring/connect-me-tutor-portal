@@ -34,11 +34,13 @@ import {
   updateScheduledEmailBeforeSessions,
 } from "../email/server.actions";
 import { logError, logEvent } from "@/lib/posthog";
+import { isEnrollmentSessionDate } from "@/lib/enrollment-schedule";
 
 import { startOfWeek, endOfWeek, subDays, parseISO, format, addDays } from "date-fns"; // Only use date-fns
 
 import * as DateFNS from "date-fns-tz";
 import { ZoomSessionResolution } from "./actions";
+import { assertRoomFreeForSession } from "../meeting/room-conflicts.server";
 const { fromZonedTime } = DateFNS;
 
 async function isSessioninPastWeek(enrollmentId: string, midWeek: Date) {
@@ -79,6 +81,7 @@ export async function addSessionsForCron(
   try {
     // Cron context has no user session; callers must gate with isCronRequestAuthorized.
     const supabase = await createAdminClient();
+    const now = new Date();
     const weekStart = parseISO(weekStartString);
     const weekEnd = parseISO(weekEndString);
 
@@ -178,8 +181,20 @@ export async function addSessionsForCron(
             throw new Error(`Invalid time format: start=${startTime}, end=${endTime}`);
           }
 
+          if (!isEnrollmentSessionDate(enrollment, format(currentDate, "yyyy-MM-dd"))) {
+            currentDate = addDays(currentDate, 1);
+            continue;
+          }
+
           const dateString = `${format(currentDate, "yyyy-MM-dd")}T${startTime}:00`;
           const sessionStartTime = fromZonedTime(dateString, "America/New_York");
+
+          // Never backfill: a session created after its slot has passed is flipped to
+          // Unconfirmed by markUnconfirmedSEFCron and counts as a missed exit form.
+          if (sessionStartTime < now) {
+            currentDate = addDays(currentDate, 1);
+            continue;
+          }
 
           if (sessionStartTime < startDate_asDate) {
             throw new Error("Session occurs before start date");
@@ -1245,6 +1260,15 @@ export async function rescheduleSession(
   if (!existing) {
     throw new Error("Session not found");
   }
+  // No meetingId means the session keeps its current room, which still has to be free at
+  // the new time.
+  const roomId = meetingId || existing.meeting?.id;
+  if (roomId) {
+    await assertRoomFreeForSession(
+      { meetingId: roomId, date: newDate, durationHours: existing.duration || 1 },
+      { sessionId, enrollmentId: existing.enrollmentId },
+    );
+  }
   const supabase = await createClient();
   try {
     const { data: sessionData, error } = await supabase
@@ -1264,9 +1288,12 @@ export async function rescheduleSession(
 
     if (error) throw error;
 
+    // The session has already moved, so a notification failure must not surface as a
+    // failed reschedule. previous_date comes from the pre-update row; sessionData.date
+    // is already the new date.
     const { error: notificationError } = await supabase.from("Notifications").insert({
       session_id: sessionId,
-      previous_date: sessionData.date,
+      previous_date: existing.date,
       suggested_date: newDate,
       tutor_id: sessionData.tutor_id,
       student_id: sessionData.student_id,
@@ -1274,7 +1301,13 @@ export async function rescheduleSession(
       status: "Active",
     });
 
-    if (notificationError) throw notificationError;
+    if (notificationError) {
+      await logError(
+        notificationError,
+        { function: "rescheduleSession", step: "notification", session_id: sessionId },
+        "session_error",
+      );
+    }
     if (sessionData) {
       return tableToInterfaceSessions(sessionData);
     }
@@ -1299,6 +1332,16 @@ export async function addStandaloneSession(
     if (!tutorId || profile.id !== tutorId) {
       throw new Error("Unauthorized");
     }
+  }
+  if (session.meeting?.id && session.date) {
+    await assertRoomFreeForSession(
+      {
+        meetingId: session.meeting.id,
+        date: session.date,
+        durationHours: session.duration || 1,
+      },
+      { enrollmentId: session.enrollmentId },
+    );
   }
   const supabase = await createClient();
 
@@ -1434,6 +1477,8 @@ export async function updateSession(updatedSession: Session, updateEmail: boolea
       )
       .single();
 
+    // Throw rather than return null: callers ignore the return value, so a null
+    // here showed a success toast for writes the DB rejected (e.g. guard triggers).
     if (error) throw error;
     if (!data) throw new Error("No data returned when updating session");
 
