@@ -40,6 +40,8 @@ import { startOfWeek, endOfWeek, subDays, parseISO, format, addDays } from "date
 import * as DateFNS from "date-fns-tz";
 import { ZoomSessionResolution } from "./actions";
 import { assertRoomFreeForSession } from "../meeting/room-conflicts.server";
+import { enrollmentMeetsInWeek } from "@/lib/enrollment-schedule";
+import { getEasternWeekBounds } from "@/lib/utils/timezone";
 const { fromZonedTime } = DateFNS;
 
 async function isSessioninPastWeek(enrollmentId: string, midWeek: Date) {
@@ -123,6 +125,12 @@ export async function addSessionsForCron(
       } = enrollment;
 
       if (enrollment.paused) {
+        continue;
+      }
+
+      // Biweekly enrollments skip every other week, counted from their start week.
+      const startWeek = startDate ? getEasternWeekBounds(new Date(startDate)).weekStart : null;
+      if (!enrollmentMeetsInWeek(enrollment, startWeek, weekStart)) {
         continue;
       }
 
@@ -1259,10 +1267,13 @@ export async function rescheduleSession(
   if (!existing) {
     throw new Error("Session not found");
   }
-  if (meetingId) {
+  // No meetingId means the session keeps its current room, which still has to be free at
+  // the new time.
+  const roomId = meetingId || existing.meeting?.id;
+  if (roomId) {
     await assertRoomFreeForSession(
-      { meetingId, date: newDate, durationHours: existing.duration || 1 },
-      sessionId,
+      { meetingId: roomId, date: newDate, durationHours: existing.duration || 1 },
+      { sessionId, enrollmentId: existing.enrollmentId },
     );
   }
   const supabase = await createClient();
@@ -1330,11 +1341,14 @@ export async function addStandaloneSession(
     }
   }
   if (session.meeting?.id && session.date) {
-    await assertRoomFreeForSession({
-      meetingId: session.meeting.id,
-      date: session.date,
-      durationHours: session.duration || 1,
-    });
+    await assertRoomFreeForSession(
+      {
+        meetingId: session.meeting.id,
+        date: session.date,
+        durationHours: session.duration || 1,
+      },
+      { enrollmentId: session.enrollmentId },
+    );
   }
   const supabase = await createClient();
 

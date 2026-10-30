@@ -30,6 +30,7 @@ import {
 } from "@/components/ui/dialog";
 import AvailabilityForm from "@/components/ui/availability-form";
 import type { Availability, Enrollment, Meeting, Profile } from "@/types";
+import { SHAREABLE_MEETING_NAME } from "@/constants/meetings";
 
 export type EnrollmentDraft = Omit<Enrollment, "id" | "createdAt">;
 
@@ -242,7 +243,9 @@ const EnrollmentFormDialog: React.FC<EnrollmentFormDialogProps> = ({
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="weekly">Weekly</SelectItem>
-                    <SelectItem value="biweekly">Biweekly</SelectItem>
+                    <SelectItem value="biweekly" disabled={mode === "edit"}>
+                      Biweekly
+                    </SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -291,7 +294,8 @@ const EnrollmentFormDialog: React.FC<EnrollmentFormDialogProps> = ({
                       className="flex items-center justify-between"
                       disabled={
                         isCheckingMeetingAvailability ||
-                        (!meetingAvailability[meeting.id] && meeting.name !== "Zoom Link HQ")
+                        (!meetingAvailability[meeting.id] &&
+                          meeting.name !== SHAREABLE_MEETING_NAME)
                       }
                     >
                       <span>

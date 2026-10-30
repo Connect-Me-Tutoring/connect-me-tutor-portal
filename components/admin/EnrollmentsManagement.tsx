@@ -40,6 +40,7 @@ import { z } from "zod";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { checkAvailableMeetingForEnrollments } from "@/lib/actions/meeting/client.actions";
+import { getEnrollmentMeetingSlots } from "@/lib/actions/meeting/occupancy.server.actions";
 import { WeeklyMeetingSchedule } from "@/types/meeting";
 import { formatDateServer } from "@/lib/actions/utils.server.actions";
 import { QueryClient } from "@tanstack/react-query";
@@ -229,17 +230,28 @@ const EnrollmentList = ({
 
   const normalizeText = (text: string) => text.toLowerCase().trim();
 
-  const checkMeetingAvailabilities = async (enroll: Omit<Enrollment, "id" | "createdAt">) => {
+  const checkMeetingAvailabilities = async (
+    enroll: Omit<Enrollment, "id" | "createdAt"> & { id?: string },
+  ) => {
     setIsCheckingMeetingAvailability(true);
 
-    const updatedMeetingAvailability = await checkAvailableMeetingForEnrollments(
-      enroll,
-      enrollments,
-      meetings,
-      weeklySchedules,
-    );
-    setIsCheckingMeetingAvailability(false);
-    setMeetingAvailability(updatedMeetingAvailability);
+    // Read every booking through the same query the server-side room guard uses, rather
+    // than the (paginated) list on screen, and leave out the enrollment being edited.
+    try {
+      const slots = await getEnrollmentMeetingSlots();
+      const updatedMeetingAvailability = await checkAvailableMeetingForEnrollments(
+        enroll,
+        slots.filter((slot) => slot.id !== enroll.id),
+        meetings,
+        weeklySchedules,
+      );
+      setIsCheckingMeetingAvailability(false);
+      setMeetingAvailability(updatedMeetingAvailability);
+    } catch (error) {
+      // Stays in the checking state so a room can't be picked without a successful check.
+      console.error("Failed to check meeting availability:", error);
+      toast.error("Unable to check meeting link availability");
+    }
   };
 
   const fetchMeetings = async () => {

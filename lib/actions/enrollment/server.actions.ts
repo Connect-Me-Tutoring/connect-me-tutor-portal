@@ -441,7 +441,28 @@ export const updateEnrollment = async (enrollment: Enrollment) => {
       );
     }
 
-    if (enrollment.meetingId) {
+    // Only a changed booking (room, day or time) needs a free room. Re-checking an unchanged
+    // one would lock admins out of editing enrollments that were double-booked before the
+    // guard existed.
+    const { data: current } = await supabase
+      .from(Table.Enrollments)
+      .select("meetingId, day, start_time, end_time")
+      .eq("id", enrollment.id)
+      .maybeSingle()
+      .throwOnError();
+    const currentSchedule = getEnrollmentSchedule({
+      day: current?.day,
+      startTime: current?.start_time,
+      endTime: current?.end_time,
+    });
+    const bookingChanged =
+      !current ||
+      current.meetingId !== enrollment.meetingId ||
+      currentSchedule.day !== schedule.day ||
+      currentSchedule.startTime !== schedule.startTime ||
+      currentSchedule.endTime !== schedule.endTime;
+
+    if (enrollment.meetingId && bookingChanged) {
       await assertRoomFreeForEnrollment(
         {
           meetingId: enrollment.meetingId,
@@ -791,7 +812,8 @@ export const sessionTimeFromEnrollment = async (
 export async function deleteInactiveEnrollments() {
   const fiveWeeksAgo = subWeeks(new Date(), 5);
 
-  const enrollments = await inactiveEnrollmentsHelper({
+  // Deletion goes ahead even if a tutor's notice failed to send; the failure is logged.
+  const { enrollments } = await inactiveEnrollmentsHelper({
     deadline: fiveWeeksAgo,
     weeksMissing: 5,
     emailFn: sendDeleteEnrollmentEmail,
@@ -846,45 +868,64 @@ export async function deleteInactiveEnrollments() {
 
 export async function warnInactiveEnrollments() {
   const fourWeeksAgo = subWeeks(new Date(), 4);
-  return await inactiveEnrollmentsHelper({
+  const { notified } = await inactiveEnrollmentsHelper({
     deadline: fourWeeksAgo,
     weeksMissing: 4,
     emailFn: sendInactiveEnrollmentWarning,
-    claimWarning: true,
+    warningLevel: 4,
   });
+  return notified;
 }
 
 export async function warnInactiveEnrollmentsEarly() {
   const threeWeeksAgo = subWeeks(new Date(), 3);
-  return await inactiveEnrollmentsHelper({
+  const { notified } = await inactiveEnrollmentsHelper({
     deadline: threeWeeksAgo,
     weeksMissing: 3,
     emailFn: sendInactiveEnrollmentEarlyWarning,
-    claimWarning: true,
+    warningLevel: 3,
   });
+  return notified;
 }
 
-// Short of the week between the 3-week and 4-week warnings, so both still go out once
-// each, with a day of slack for cron timing.
-const INACTIVITY_WARNING_COOLDOWN_DAYS = 6;
+// The same warning is not repeated within this window, which is longer than an enrollment
+// stays at one level (a week), so each warning goes out once per stretch of inactivity. A
+// higher level is never held back by a lower one: the 4-week warning always follows the
+// 3-week one.
+const INACTIVITY_WARNING_COOLDOWN_DAYS = 14;
 
 /**
- * Stamps inactivity_warning_sent_at on the enrollments not warned within the cooldown and
- * returns only those ids. The conditional UPDATE is the claim, so overlapping or retried
- * cron runs cannot both email the same tutor.
+ * Stamps inactivity_warning_sent_at/level on the enrollments that may get this warning now
+ * (never warned, last warned outside the cooldown, or last warned at a lower level) and
+ * returns only those ids with the stamp used. The conditional UPDATE is the claim, so
+ * overlapping or retried cron runs cannot both email the same tutor.
  */
-async function claimInactivityWarnings(enrollmentIds: string[], supabase: any): Promise<string[]> {
+async function claimInactivityWarnings(
+  enrollmentIds: string[],
+  level: number,
+  supabase: any,
+): Promise<{ claimedIds: string[]; stamp: string; previous: Map<string, any> }> {
   const now = new Date();
   const stamp = now.toISOString();
   const cooldownStart = subDays(now, INACTIVITY_WARNING_COOLDOWN_DAYS).toISOString();
+
+  // Kept so a failed email can put the enrollment back exactly as it was.
+  const { data: before } = await supabase
+    .from(Table.Enrollments)
+    .select("id, inactivity_warning_sent_at, inactivity_warning_level")
+    .in("id", enrollmentIds)
+    .throwOnError();
+  const previous = new Map<string, any>((before ?? []).map((row: any) => [row.id, row]));
 
   // No .select() here: PostgREST re-applies .or() filters to the returned rows, which
   // would drop every row this UPDATE just stamped. Read the claim back by its stamp instead.
   await supabase
     .from(Table.Enrollments)
-    .update({ inactivity_warning_sent_at: stamp })
+    .update({ inactivity_warning_sent_at: stamp, inactivity_warning_level: level })
     .in("id", enrollmentIds)
-    .or(`inactivity_warning_sent_at.is.null,inactivity_warning_sent_at.lt.${cooldownStart}`)
+    .or(
+      `inactivity_warning_sent_at.is.null,inactivity_warning_sent_at.lt.${cooldownStart},inactivity_warning_level.lt.${level}`,
+    )
     .throwOnError();
 
   const { data } = await supabase
@@ -894,29 +935,39 @@ async function claimInactivityWarnings(enrollmentIds: string[], supabase: any): 
     .eq("inactivity_warning_sent_at", stamp)
     .throwOnError();
 
-  return (data ?? []).map((row: { id: string }) => row.id);
+  return { claimedIds: (data ?? []).map((row: { id: string }) => row.id), stamp, previous };
 }
 
+/**
+ * Finds enrollments missing `weeksMissing` weeks of exit forms and emails each tutor. One
+ * failed email never stops the others or the caller: failures are logged, and a claimed
+ * warning is released so the next nightly run retries it.
+ *
+ * Returns every enrollment found (`enrollments`) and the ones whose email went out
+ * (`notified`).
+ */
 async function inactiveEnrollmentsHelper(params: {
   deadline: Date;
   weeksMissing: number;
   emailFn: (params: { tutor: Profile; student: Profile; enrollment: Enrollment }) => Promise<void>;
   // Warnings are throttled per enrollment; the deletion notice is not.
-  claimWarning?: boolean;
-}) {
+  warningLevel?: number;
+}): Promise<{ enrollments: Enrollment[]; notified: Enrollment[] }> {
   const supabase = await createAdminClient();
-  const { deadline, weeksMissing, emailFn, claimWarning = false } = params;
+  const { deadline, weeksMissing, emailFn, warningLevel } = params;
   const targetEnrollments = await getEnrollmentsWithMissingSEF(deadline, weeksMissing);
 
   if (!targetEnrollments || targetEnrollments.length === 0) {
-    return [];
+    return { enrollments: [], notified: [] };
   }
 
   let enrollmentIds = targetEnrollments.map((e) => e.id);
+  let claim: Awaited<ReturnType<typeof claimInactivityWarnings>> | undefined;
 
-  if (claimWarning) {
-    enrollmentIds = await claimInactivityWarnings(enrollmentIds, supabase);
-    if (enrollmentIds.length === 0) return [];
+  if (warningLevel !== undefined) {
+    claim = await claimInactivityWarnings(enrollmentIds, warningLevel, supabase);
+    enrollmentIds = claim.claimedIds;
+    if (enrollmentIds.length === 0) return { enrollments: [], notified: [] };
   }
 
   const { data } = await supabase
@@ -946,29 +997,48 @@ async function inactiveEnrollmentsHelper(params: {
   const enrollments: Enrollment[] =
     data?.map((enrollment: any) => tableToInterfaceEnrollments(enrollment)) ?? [];
 
-  await Promise.all(
-    enrollments
-      .filter((enrollment) => enrollment.tutor && enrollment.student)
-      .map(async (enrollment) => {
-        try {
-          await emailFn({
-            tutor: enrollment.tutor!,
-            student: enrollment.student!,
-            enrollment: enrollment,
-          });
-        } catch (error) {
-          // Release the claim so the next nightly run retries this warning.
-          if (claimWarning) {
-            await supabase
-              .from(Table.Enrollments)
-              .update({ inactivity_warning_sent_at: null })
-              .eq("id", enrollment.id);
-          }
-          throw error;
-        }
+  const recipients = enrollments.filter((enrollment) => enrollment.tutor && enrollment.student);
+  const results = await Promise.allSettled(
+    recipients.map((enrollment) =>
+      emailFn({
+        tutor: enrollment.tutor!,
+        student: enrollment.student!,
+        enrollment: enrollment,
       }),
+    ),
   );
-  return enrollments;
+
+  const notified: Enrollment[] = [];
+  await Promise.all(
+    results.map(async (result, i) => {
+      const enrollment = recipients[i];
+      if (result.status === "fulfilled") {
+        notified.push(enrollment);
+        return;
+      }
+      console.error("Failed to send inactive enrollment email:", result.reason);
+      await logError(
+        result.reason,
+        { function: "inactiveEnrollmentsHelper", weeksMissing, enrollment_id: enrollment.id },
+        "enrollment_error",
+      );
+      if (claim) {
+        // Release the claim so the next nightly run retries this warning. Only if it is
+        // still ours: a later run may have stamped it since.
+        const prior = claim.previous.get(enrollment.id);
+        await supabase
+          .from(Table.Enrollments)
+          .update({
+            inactivity_warning_sent_at: prior?.inactivity_warning_sent_at ?? null,
+            inactivity_warning_level: prior?.inactivity_warning_level ?? null,
+          })
+          .eq("id", enrollment.id)
+          .eq("inactivity_warning_sent_at", claim.stamp);
+      }
+    }),
+  );
+
+  return { enrollments, notified };
 }
 
 export async function sendInactiveEnrollmentWarning(params: {

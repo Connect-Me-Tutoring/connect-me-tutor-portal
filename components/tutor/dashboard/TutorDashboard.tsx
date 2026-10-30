@@ -238,11 +238,7 @@ const TutorDashboard = () => {
   const handleUndoSessionExitForm = async (sessionId: string) => {
     console.log("Undo clicked:", sessionId);
     try {
-      // Unconfirmed means no exit form was ever submitted: "undo" here reopens the session
-      // for a late submission rather than reverting one, so the 7-day window doesn't apply.
-      const isUnconfirmed =
-        TC.pastSessions.find((s) => s.id === sessionId)?.status === "Unconfirmed";
-      const timePassed = isUnconfirmed ? 0 : await getSessionTimePassed(sessionId);
+      const timePassed = await getSessionTimePassed(sessionId);
       if (timePassed > 1000 * 60 * 60 * 24 * 7) {
         const err = new Error("Undo Expired");
         throw new Error("Undo Expired");

@@ -259,29 +259,46 @@ describe("addSessionsForCron", () => {
     ]);
   });
 
-  it("skips the off week of a biweekly enrollment", async () => {
-    vi.setSystemTime(new Date("2026-10-25T00:00:00.000Z"));
+  it("schedules biweekly enrollments every other week from their start week", async () => {
+    vi.setSystemTime(new Date("2026-10-25T00:00:00.000Z")); // Sat Oct 24, 8pm ET
     captureInsert();
 
-    // Mon Oct 26 is 8 weeks after Mon Sep 28 (on week) and 7 weeks after Mon Oct 5 (off week).
     await addSessionsForCron(
       WEEK_START,
       WEEK_END,
       [
+<<<<<<< HEAD
         enrollment({ id: "on", frequency: "biweekly", startDate: "2026-09-28T04:00:00.000Z" }),
         enrollment({
           id: "off",
           student: { id: "student-2" },
           frequency: "biweekly",
           startDate: "2026-10-05T04:00:00.000Z",
+=======
+        // Week of Aug 30 → 8 weeks before Oct 25: an on week.
+        enrollment({ id: "on", frequency: "biweekly", startDate: "2026-09-01T04:00:00.000Z" }),
+        // Week of Sep 6 → 7 weeks before Oct 25: an off week.
+        enrollment({ id: "off", frequency: "biweekly", startDate: "2026-09-08T04:00:00.000Z" }),
+        enrollment({
+          id: "weekly",
+          frequency: "weekly",
+          startDate: "2026-09-08T04:00:00.000Z",
+          student: { id: "student-2" },
+>>>>>>> aa1dfb69e7c3dc3fefd8431be2abe4f5195414ab
         }),
       ],
       [],
     );
 
+<<<<<<< HEAD
     expect(mockInsert.mock.calls[0][0]).toEqual([
       expect.objectContaining({ enrollment_id: "on", date: "2026-10-26T20:00:00.000Z" }),
     ]);
+=======
+    expect(
+      mockInsert.mock.calls[0][0].map((s: { enrollment_id: string }) => s.enrollment_id),
+    ).toEqual(["on", "weekly"]);
+>>>>>>> aa1dfb69e7c3dc3fefd8431be2abe4f5195414ab
   });
 
   it("inserts nothing when every slot in the week has passed", async () => {
