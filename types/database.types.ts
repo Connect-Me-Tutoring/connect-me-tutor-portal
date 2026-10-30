@@ -152,7 +152,6 @@ export type Database = {
           end_time: string | null;
           frequency: Database["public"]["Enums"]["session_frequency"];
           id: string;
-          inactivity_warning_level: number | null;
           inactivity_warning_sent_at: string | null;
           meetingId: string | null;
           pairing_id: string | null;
@@ -172,7 +171,6 @@ export type Database = {
           end_time?: string | null;
           frequency?: Database["public"]["Enums"]["session_frequency"];
           id?: string;
-          inactivity_warning_level?: number | null;
           inactivity_warning_sent_at?: string | null;
           meetingId?: string | null;
           pairing_id?: string | null;
@@ -192,7 +190,6 @@ export type Database = {
           end_time?: string | null;
           frequency?: Database["public"]["Enums"]["session_frequency"];
           id?: string;
-          inactivity_warning_level?: number | null;
           inactivity_warning_sent_at?: string | null;
           meetingId?: string | null;
           pairing_id?: string | null;
