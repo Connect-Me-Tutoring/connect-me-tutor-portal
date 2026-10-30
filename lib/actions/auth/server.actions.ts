@@ -239,9 +239,7 @@ export const deleteUser = async (profileId: string) => {
       resourceType: "profile",
       resourceId: profileId,
       deletedObject: profileSnapshot,
-      resourceProperties: profileDeletionProperties(
-        profileSnapshot as ProfileDeletionSnapshot,
-      ),
+      resourceProperties: profileDeletionProperties(profileSnapshot as ProfileDeletionSnapshot),
     });
   } catch (error: any) {
     console.error("Failed to delete user", error);

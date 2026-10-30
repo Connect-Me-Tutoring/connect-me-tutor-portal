@@ -15,11 +15,7 @@ import { removeFutureSessions } from "../enrollment/server.actions";
 import { formatDateAdmin, to12Hour } from "../../utils";
 import { requireAdmin, requireEnrollmentAccess, requireSelfOrAdmin } from "../auth/authz.server";
 import { getPairingRejectionCooldown } from "../../pairing/rejection-config";
-import {
-  DestructiveActivityContext,
-  logDestructiveActivities,
-  logError,
-} from "@/lib/posthog";
+import { DestructiveActivityContext, logDestructiveActivities, logError } from "@/lib/posthog";
 import {
   buildEnrollmentDeletionSnapshot,
   buildPairingDeletionSnapshot,

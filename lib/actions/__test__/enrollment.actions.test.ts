@@ -121,16 +121,7 @@ describe("removeEnrollment deletion audit", () => {
 
   const query = (result: unknown, throwResult?: unknown) => {
     const builder: Record<string, any> = {};
-    for (const method of [
-      "select",
-      "delete",
-      "update",
-      "eq",
-      "single",
-      "in",
-      "not",
-      "gte",
-    ]) {
+    for (const method of ["select", "delete", "update", "eq", "single", "in", "not", "gte"]) {
       builder[method] = vi.fn(() => builder);
     }
     builder.throwOnError = vi.fn().mockResolvedValue(throwResult ?? result);
