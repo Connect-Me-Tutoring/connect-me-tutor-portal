@@ -3,6 +3,7 @@ import {
   getEnrollmentAvailability,
   getEnrollmentSchedule,
   getEnrollmentScheduleFields,
+  isEnrollmentSessionDate,
 } from "./enrollment-schedule";
 
 describe("enrollment schedule column adapters", () => {
@@ -52,5 +53,28 @@ describe("enrollment schedule column adapters", () => {
       startTime: "15:00",
       endTime: "16:00",
     });
+  });
+});
+
+describe("isEnrollmentSessionDate", () => {
+  const biweekly = { frequency: "biweekly", startDate: "2026-10-07T04:00:00.000Z" }; // Wed
+
+  it("treats every week as a session week for weekly enrollments", () => {
+    expect(
+      isEnrollmentSessionDate({ frequency: "weekly", startDate: "2026-10-07" }, "2026-10-19"),
+    ).toBe(true);
+  });
+
+  it("meets on the first slot after the start date, then every other week", () => {
+    expect(isEnrollmentSessionDate(biweekly, "2026-10-12")).toBe(true); // Mon, 5 days in
+    expect(isEnrollmentSessionDate(biweekly, "2026-10-19")).toBe(false);
+    expect(isEnrollmentSessionDate(biweekly, "2026-10-26")).toBe(true);
+    expect(isEnrollmentSessionDate(biweekly, "2026-11-02")).toBe(false);
+  });
+
+  it("falls back to weekly when the start date is missing", () => {
+    expect(isEnrollmentSessionDate({ frequency: "biweekly", startDate: "" }, "2026-10-19")).toBe(
+      true,
+    );
   });
 });

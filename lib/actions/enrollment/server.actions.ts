@@ -10,11 +10,12 @@ import {
 } from "../../utils/type-utils";
 import { cache } from "react";
 import { handleCalculateDuration, isValidUUID } from "../../utils";
-import { addDays, format, subWeeks } from "date-fns";
+import { addDays, format, subDays, subWeeks } from "date-fns";
 import { addStandaloneSession } from "../session/server.actions";
 import { getMeeting } from "../meeting/server.actions";
 import { fromZonedTime } from "date-fns-tz";
-import { computeSessionDateForSchedule } from "../../utils/timezone";
+import { computeSessionDateForSchedule, getEasternWeekBounds } from "../../utils/timezone";
+import { assertRoomFreeForEnrollment } from "../meeting/room-conflicts.server";
 import { sendMail } from "@/lib/email/mailer";
 import InactiveEnrollmentWarning from "@/components/emails/enrollments/inactve-enrollment-warning";
 import InactiveEnrollmentEarlyWarning from "@/components/emails/enrollments/inactive-enrollment-early-warning";
@@ -377,6 +378,46 @@ export const removeEnrollment = async (enrollmentId: string) => {
   }
 };
 
+const DUPLICATE_ENROLLMENT_MESSAGE =
+  "An enrollment already exists for this student and tutor at the same day and time. Please edit the existing enrollment instead.";
+
+/**
+ * Rejects a second enrollment for the same student, tutor, day and start time. The
+ * enrollments_unique_slot index enforces this too (it also catches concurrent requests
+ * that both pass this check); this check just gives the friendly message up front.
+ */
+async function assertNoDuplicateEnrollment(
+  supabase: any,
+  slot: { studentId: string; tutorId: string; day: string; startTime: string },
+  excludeEnrollmentId?: string,
+) {
+  let query = supabase
+    .from(Table.Enrollments)
+    .select("id")
+    .eq("student_id", slot.studentId)
+    .eq("tutor_id", slot.tutorId)
+    .eq("day", slot.day)
+    .eq("start_time", slot.startTime)
+    .limit(1);
+  if (excludeEnrollmentId) query = query.neq("id", excludeEnrollmentId);
+
+  const { data: existing, error } = await query;
+
+  if (error) {
+    console.error("Error checking for duplicate enrollment:", error);
+    await logError(error, { function: "assertNoDuplicateEnrollment" }, "enrollment_error");
+    throw error;
+  }
+
+  if (existing && existing.length > 0) {
+    throw new Error(DUPLICATE_ENROLLMENT_MESSAGE);
+  }
+}
+
+/** Maps a unique-violation from enrollments_unique_slot to the duplicate message. */
+const duplicateSlotError = (error: { code?: string }) =>
+  error.code === "23505" ? new Error(DUPLICATE_ENROLLMENT_MESSAGE) : error;
+
 export const updateEnrollment = async (enrollment: Enrollment) => {
   await requireEnrollmentAccess(enrollment.id);
   const supabase = await createClient();
@@ -385,6 +426,52 @@ export const updateEnrollment = async (enrollment: Enrollment) => {
 
     if (!schedule.day || !schedule.startTime || !schedule.endTime) {
       throw new Error("Please add an enrollment schedule");
+    }
+
+    if (enrollment.student?.id && enrollment.tutor?.id) {
+      await assertNoDuplicateEnrollment(
+        supabase,
+        {
+          studentId: enrollment.student.id,
+          tutorId: enrollment.tutor.id,
+          day: schedule.day,
+          startTime: schedule.startTime,
+        },
+        enrollment.id,
+      );
+    }
+
+    // Only a changed booking (room, day or time) needs a free room. Re-checking an unchanged
+    // one would lock admins out of editing enrollments that were double-booked before the
+    // guard existed.
+    const { data: current } = await supabase
+      .from(Table.Enrollments)
+      .select("meetingId, day, start_time, end_time")
+      .eq("id", enrollment.id)
+      .maybeSingle()
+      .throwOnError();
+    const currentSchedule = getEnrollmentSchedule({
+      day: current?.day,
+      startTime: current?.start_time,
+      endTime: current?.end_time,
+    });
+    const bookingChanged =
+      !current ||
+      current.meetingId !== enrollment.meetingId ||
+      currentSchedule.day !== schedule.day ||
+      currentSchedule.startTime !== schedule.startTime ||
+      currentSchedule.endTime !== schedule.endTime;
+
+    if (enrollment.meetingId && bookingChanged) {
+      await assertRoomFreeForEnrollment(
+        {
+          meetingId: enrollment.meetingId,
+          day: schedule.day,
+          startTime: schedule.startTime,
+          endTime: schedule.endTime,
+        },
+        enrollment.id,
+      );
     }
 
     enrollment.duration = await handleCalculateDuration(schedule.startTime, schedule.endTime);
@@ -415,7 +502,7 @@ export const updateEnrollment = async (enrollment: Enrollment) => {
         { function: "updateEnrollment", enrollment_id: enrollment.id },
         "enrollment_error",
       );
-      throw updateEnrollmentError;
+      throw duplicateSlotError(updateEnrollmentError);
     }
 
     await updateFutureSessions(enrollment);
@@ -465,6 +552,17 @@ const updateFutureSessions = async (enrollment: Enrollment) => {
   if (updateError) throw updateError;
 };
 
+/**
+ * Distinct America/New_York weeks that have an Unconfirmed session. The thresholds are in
+ * weeks, so a moved or duplicated session in the same week must not count twice.
+ */
+const countMissedWeeks = (sessions: { date: string | null }[]) =>
+  new Set(
+    sessions
+      .filter((session) => session.date)
+      .map((session) => getEasternWeekBounds(new Date(session.date!)).weekStart.toISOString()),
+  ).size;
+
 export const getEnrollmentsWithMissingSEF = async (timeProvided: Date, weeksMissingSEF: number) => {
   const supabase = await createAdminClient();
   try {
@@ -490,7 +588,7 @@ export const getEnrollmentsWithMissingSEF = async (timeProvided: Date, weeksMiss
       .throwOnError();
 
     const enrollmentsWithTwoMissingSessions = enrollments.filter(
-      (enrollment) => enrollment.sessions.length >= weeksMissingSEF,
+      (enrollment) => countMissedWeeks(enrollment.sessions) >= weeksMissingSEF,
     );
 
     return enrollmentsWithTwoMissingSessions;
@@ -534,7 +632,7 @@ export const getTutorEnrollmentsMissingSEF = async (
       .throwOnError();
 
     return (enrollments ?? []).filter(
-      (enrollment) => enrollment.sessions.length >= weeksMissingSEF,
+      (enrollment) => countMissedWeeks(enrollment.sessions) >= weeksMissingSEF,
     );
   } catch (error) {
     await logError(
@@ -573,30 +671,12 @@ export const addEnrollment = async (
       throw new Error("Student ID is required to create an enrollment");
     }
 
-    const { data: existing, error: dupCheckError } = await supabase
-      .from(Table.Enrollments)
-      .select("id")
-      .eq("student_id", studentId)
-      .eq("tutor_id", enrollmentTutorId)
-      .eq("day", schedule.day)
-      .eq("start_time", schedule.startTime)
-      .limit(1);
-
-    if (dupCheckError) {
-      console.error("Error checking for duplicate enrollment:", dupCheckError);
-      await logError(
-        dupCheckError,
-        { function: "addEnrollment", step: "duplicate_check" },
-        "enrollment_error",
-      );
-      throw dupCheckError;
-    }
-
-    if (existing && existing.length > 0) {
-      throw new Error(
-        "An enrollment already exists for this student and tutor at the same day and time. Please edit the existing enrollment instead.",
-      );
-    }
+    await assertNoDuplicateEnrollment(supabase, {
+      studentId,
+      tutorId: enrollmentTutorId,
+      day: schedule.day,
+      startTime: schedule.startTime,
+    });
 
     if (enrollment.duration <= 0) throw new Error("Duration should be a positive amount");
 
@@ -604,6 +684,15 @@ export const addEnrollment = async (
 
     if (enrollment.meetingId && !isValidUUID(enrollment.meetingId)) {
       throw new Error("Invalid or no meeting link");
+    }
+
+    if (enrollment.meetingId) {
+      await assertRoomFreeForEnrollment({
+        meetingId: enrollment.meetingId,
+        day: schedule.day,
+        startTime: schedule.startTime,
+        endTime: schedule.endTime,
+      });
     }
 
     const { data, error } = await supabase
@@ -641,7 +730,7 @@ export const addEnrollment = async (
         },
         "enrollment_error",
       );
-      throw error;
+      throw duplicateSlotError(error);
     }
 
     if (data) {
@@ -723,7 +812,8 @@ export const sessionTimeFromEnrollment = async (
 export async function deleteInactiveEnrollments() {
   const fiveWeeksAgo = subWeeks(new Date(), 5);
 
-  const enrollments = await inactiveEnrollmentsHelper({
+  // Deletion goes ahead even if a tutor's notice failed to send; the failure is logged.
+  const { enrollments } = await inactiveEnrollmentsHelper({
     deadline: fiveWeeksAgo,
     weeksMissing: 5,
     emailFn: sendDeleteEnrollmentEmail,
@@ -778,36 +868,107 @@ export async function deleteInactiveEnrollments() {
 
 export async function warnInactiveEnrollments() {
   const fourWeeksAgo = subWeeks(new Date(), 4);
-  return await inactiveEnrollmentsHelper({
+  const { notified } = await inactiveEnrollmentsHelper({
     deadline: fourWeeksAgo,
     weeksMissing: 4,
     emailFn: sendInactiveEnrollmentWarning,
+    warningLevel: 4,
   });
+  return notified;
 }
 
 export async function warnInactiveEnrollmentsEarly() {
   const threeWeeksAgo = subWeeks(new Date(), 3);
-  return await inactiveEnrollmentsHelper({
+  const { notified } = await inactiveEnrollmentsHelper({
     deadline: threeWeeksAgo,
     weeksMissing: 3,
     emailFn: sendInactiveEnrollmentEarlyWarning,
+    warningLevel: 3,
   });
+  return notified;
 }
 
+// The same warning is not repeated within this window, which is longer than an enrollment
+// stays at one level (a week), so each warning goes out once per stretch of inactivity. A
+// higher level is never held back by a lower one: the 4-week warning always follows the
+// 3-week one.
+const INACTIVITY_WARNING_COOLDOWN_DAYS = 14;
+
+/**
+ * Stamps inactivity_warning_sent_at/level on the enrollments that may get this warning now
+ * (never warned, last warned outside the cooldown, or last warned at a lower level) and
+ * returns only those ids with the stamp used. The conditional UPDATE is the claim, so
+ * overlapping or retried cron runs cannot both email the same tutor.
+ */
+async function claimInactivityWarnings(
+  enrollmentIds: string[],
+  level: number,
+  supabase: any,
+): Promise<{ claimedIds: string[]; stamp: string; previous: Map<string, any> }> {
+  const now = new Date();
+  const stamp = now.toISOString();
+  const cooldownStart = subDays(now, INACTIVITY_WARNING_COOLDOWN_DAYS).toISOString();
+
+  // Kept so a failed email can put the enrollment back exactly as it was.
+  const { data: before } = await supabase
+    .from(Table.Enrollments)
+    .select("id, inactivity_warning_sent_at, inactivity_warning_level")
+    .in("id", enrollmentIds)
+    .throwOnError();
+  const previous = new Map<string, any>((before ?? []).map((row: any) => [row.id, row]));
+
+  // No .select() here: PostgREST re-applies .or() filters to the returned rows, which
+  // would drop every row this UPDATE just stamped. Read the claim back by its stamp instead.
+  await supabase
+    .from(Table.Enrollments)
+    .update({ inactivity_warning_sent_at: stamp, inactivity_warning_level: level })
+    .in("id", enrollmentIds)
+    .or(
+      `inactivity_warning_sent_at.is.null,inactivity_warning_sent_at.lt.${cooldownStart},inactivity_warning_level.lt.${level}`,
+    )
+    .throwOnError();
+
+  const { data } = await supabase
+    .from(Table.Enrollments)
+    .select("id")
+    .in("id", enrollmentIds)
+    .eq("inactivity_warning_sent_at", stamp)
+    .throwOnError();
+
+  return { claimedIds: (data ?? []).map((row: { id: string }) => row.id), stamp, previous };
+}
+
+/**
+ * Finds enrollments missing `weeksMissing` weeks of exit forms and emails each tutor. One
+ * failed email never stops the others or the caller: failures are logged, and a claimed
+ * warning is released so the next nightly run retries it.
+ *
+ * Returns every enrollment found (`enrollments`) and the ones whose email went out
+ * (`notified`).
+ */
 async function inactiveEnrollmentsHelper(params: {
   deadline: Date;
   weeksMissing: number;
   emailFn: (params: { tutor: Profile; student: Profile; enrollment: Enrollment }) => Promise<void>;
-}) {
+  // Warnings are throttled per enrollment; the deletion notice is not.
+  warningLevel?: number;
+}): Promise<{ enrollments: Enrollment[]; notified: Enrollment[] }> {
   const supabase = await createAdminClient();
-  const { deadline, weeksMissing, emailFn } = params;
+  const { deadline, weeksMissing, emailFn, warningLevel } = params;
   const targetEnrollments = await getEnrollmentsWithMissingSEF(deadline, weeksMissing);
 
   if (!targetEnrollments || targetEnrollments.length === 0) {
-    return [];
+    return { enrollments: [], notified: [] };
   }
 
-  const enrollmentIds = targetEnrollments.map((e) => e.id);
+  let enrollmentIds = targetEnrollments.map((e) => e.id);
+  let claim: Awaited<ReturnType<typeof claimInactivityWarnings>> | undefined;
+
+  if (warningLevel !== undefined) {
+    claim = await claimInactivityWarnings(enrollmentIds, warningLevel, supabase);
+    enrollmentIds = claim.claimedIds;
+    if (enrollmentIds.length === 0) return { enrollments: [], notified: [] };
+  }
 
   const { data } = await supabase
     .from(Table.Enrollments)
@@ -836,18 +997,48 @@ async function inactiveEnrollmentsHelper(params: {
   const enrollments: Enrollment[] =
     data?.map((enrollment: any) => tableToInterfaceEnrollments(enrollment)) ?? [];
 
-  await Promise.all(
-    enrollments
-      .filter((enrollment) => enrollment.tutor && enrollment.student)
-      .map((enrollment) =>
-        emailFn({
-          tutor: enrollment.tutor!,
-          student: enrollment.student!,
-          enrollment: enrollment,
-        }),
-      ),
+  const recipients = enrollments.filter((enrollment) => enrollment.tutor && enrollment.student);
+  const results = await Promise.allSettled(
+    recipients.map((enrollment) =>
+      emailFn({
+        tutor: enrollment.tutor!,
+        student: enrollment.student!,
+        enrollment: enrollment,
+      }),
+    ),
   );
-  return enrollments;
+
+  const notified: Enrollment[] = [];
+  await Promise.all(
+    results.map(async (result, i) => {
+      const enrollment = recipients[i];
+      if (result.status === "fulfilled") {
+        notified.push(enrollment);
+        return;
+      }
+      console.error("Failed to send inactive enrollment email:", result.reason);
+      await logError(
+        result.reason,
+        { function: "inactiveEnrollmentsHelper", weeksMissing, enrollment_id: enrollment.id },
+        "enrollment_error",
+      );
+      if (claim) {
+        // Release the claim so the next nightly run retries this warning. Only if it is
+        // still ours: a later run may have stamped it since.
+        const prior = claim.previous.get(enrollment.id);
+        await supabase
+          .from(Table.Enrollments)
+          .update({
+            inactivity_warning_sent_at: prior?.inactivity_warning_sent_at ?? null,
+            inactivity_warning_level: prior?.inactivity_warning_level ?? null,
+          })
+          .eq("id", enrollment.id)
+          .eq("inactivity_warning_sent_at", claim.stamp);
+      }
+    }),
+  );
+
+  return { enrollments, notified };
 }
 
 export async function sendInactiveEnrollmentWarning(params: {
@@ -879,6 +1070,8 @@ async function sendTutorProbationEmail(tutor: Profile, reason: string) {
     from: "Connect Me Free Tutoring & mentoring <reminder@connectmego.app>",
     to: tutor.email,
     cc: [process.env.OPERATIONS_EMAIL!],
+    // Sent from an unmonitored address; route replies to operations.
+    replyTo: process.env.OPERATIONS_EMAIL!,
     subject: "Connect Me Membership Status: Probation",
     react: TutorProbationEmail({ tutor, reason }),
   });
@@ -892,16 +1085,17 @@ async function sendEmailHelper(
   },
   msgTemplate: (params: { tutor: Profile; student: Profile; enrollment: Enrollment }) => string,
 ) {
-  try {
-    const { tutor } = params;
-    await sendMail({
-      from: "Connect Me Free Tutoring & mentoring <reminder@connectmego.app>",
-      to: tutor.email,
-      cc: [process.env.OPERATIONS_EMAIL!],
-      subject: "Inactivating Connect Me Enrollment",
-      html: msgTemplate(params),
-    });
-  } catch (error) {
-    throw error;
-  }
+  const { tutor } = params;
+  const { error } = await sendMail({
+    from: "Connect Me Free Tutoring & mentoring <reminder@connectmego.app>",
+    to: tutor.email,
+    cc: [process.env.OPERATIONS_EMAIL!],
+    // Sent from an unmonitored address; route replies to operations.
+    replyTo: process.env.OPERATIONS_EMAIL!,
+    subject: "Inactivating Connect Me Enrollment",
+    html: msgTemplate(params),
+  });
+  // Resend reports failures in the result rather than throwing; surface them so a
+  // claimed warning is released and retried instead of silently skipped.
+  if (error) throw error;
 }

@@ -49,9 +49,25 @@ const CompletedSessionsTable = ({
   handlePageChange,
   handleRowsPerPageChange,
   handleUndoSessionExitForm,
+  handleUndoCancel,
 }: any) => {
   const TC = useDashboardContext();
   const [isMeetingNotesOpen, setIsMeetingNotesOpen] = useState(false);
+
+  const handleUndo = (session: Session) => {
+    if (session.status === "Complete" || session.status === "Student Did Not Attend") {
+      handleUndoSessionExitForm(session.id);
+    } else if (session.status === "Cancelled" && new Date(session.date) > new Date()) {
+      // Restoring an upcoming cancellation is safe. A cancellation has no exit form to undo,
+      // and undoSessionExitForm would also wipe the cancellation reason and first-session flag.
+      handleUndoCancel(session.id);
+    } else {
+      // A past cancellation or an Unconfirmed session: open the exit form to record what
+      // happened. Setting it back to Active would just be re-flagged Unconfirmed overnight.
+      TC.setSelectedSession(session);
+      TC.setIsSessionExitFormOpen(true);
+    }
+  };
 
   return (
     <>
@@ -114,19 +130,7 @@ const CompletedSessionsTable = ({
                     <DropdownMenuContent>
                       <DropdownMenuGroup>
                         <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                        <DropdownMenuItem
-                          onClick={() => {
-                            if (
-                              session.status === "Complete" ||
-                              session.status === "Student Did Not Attend"
-                            ) {
-                              handleUndoSessionExitForm(session.id);
-                            } else {
-                              TC.setSelectedSession(session);
-                              TC.setIsSessionExitFormOpen(true);
-                            }
-                          }}
-                        >
+                        <DropdownMenuItem onClick={() => handleUndo(session)}>
                           Undo
                         </DropdownMenuItem>
                       </DropdownMenuGroup>
@@ -236,21 +240,7 @@ const CompletedSessionsTable = ({
                 <DropdownMenuContent>
                   <DropdownMenuGroup>
                     <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                    <DropdownMenuItem
-                      onClick={() => {
-                        if (
-                          session.status === "Complete" ||
-                          session.status === "Student Did Not Attend"
-                        ) {
-                          handleUndoSessionExitForm(session.id);
-                        } else {
-                          TC.setSelectedSession(session);
-                          TC.setIsSessionExitFormOpen(true);
-                        }
-                      }}
-                    >
-                      Undo
-                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => handleUndo(session)}>Undo</DropdownMenuItem>
                   </DropdownMenuGroup>
                 </DropdownMenuContent>
               </DropdownMenu>

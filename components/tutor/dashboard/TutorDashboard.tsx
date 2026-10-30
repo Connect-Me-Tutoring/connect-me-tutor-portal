@@ -127,16 +127,21 @@ const TutorDashboard = () => {
         const formattedTime = format(new Date(newDate), "h:mm a");
 
         if (updatedSession.student?.email) {
-          await sendSessionRescheduleEmail(
-            {
-              studentName: `${updatedSession.student.firstName} ${updatedSession.student.lastName}`,
-              tutorName: `${TC.profile.firstName} ${TC.profile.lastName}`,
-              newDate: formattedDate,
-              newTime: formattedTime,
-              meetingLink: updatedSession.meeting?.link,
-            },
-            updatedSession.student.email,
-          );
+          // The reschedule already persisted; an email failure must not report it as failed.
+          try {
+            await sendSessionRescheduleEmail(
+              {
+                studentName: `${updatedSession.student.firstName} ${updatedSession.student.lastName}`,
+                tutorName: `${TC.profile.firstName} ${TC.profile.lastName}`,
+                newDate: formattedDate,
+                newTime: formattedTime,
+                meetingLink: updatedSession.meeting?.link,
+              },
+              updatedSession.student.email,
+            );
+          } catch (error) {
+            console.error("Failed to send reschedule email:", error);
+          }
         }
       }
       TC.setSelectedSession(null);
@@ -244,8 +249,13 @@ const TutorDashboard = () => {
     }
     try {
       await undoCancelSession(sessionId, "Active");
+      // Undo from the Completed table: the session only exists in the past list, so move it
+      // into the current list instead of mapping over a list that doesn't contain it.
+      const pastSession = TC.pastSessions.find((s) => s.id === sessionId);
       TC.setCurrentSessions(
-        TC.currentSessions.map((s) => (s.id === sessionId ? { ...s, status: "Active" } : s)),
+        pastSession && !TC.currentSessions.some((s) => s.id === sessionId)
+          ? [{ ...pastSession, status: "Active" }, ...TC.currentSessions]
+          : TC.currentSessions.map((s) => (s.id === sessionId ? { ...s, status: "Active" } : s)),
       );
       TC.setPastSessions(TC.pastSessions.filter((s) => s.id !== sessionId));
       TC.setFilteredPastSessions(TC.filteredPastSessions.filter((s) => s.id !== sessionId));
@@ -383,6 +393,7 @@ const TutorDashboard = () => {
               handlePageChange={handlePastSessionsPageChange}
               handleRowsPerPageChange={handlePastSessionsRowsPerPageChange}
               handleUndoSessionExitForm={handleUndoSessionExitForm}
+              handleUndoCancel={handleUndoCancel}
             />
           </div>
         </div>
