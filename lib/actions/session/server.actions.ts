@@ -32,7 +32,7 @@ import {
   sendTutorSessionCancellationEmail,
   updateScheduledEmailBeforeSessions,
 } from "../email/server.actions";
-import { logError } from "@/lib/posthog";
+import { logDestructiveActivity, logError } from "@/lib/posthog";
 
 import { startOfWeek, endOfWeek, subDays, parseISO, format, addDays } from "date-fns"; // Only use date-fns
 
@@ -421,7 +421,7 @@ export async function cancelSession(session: Session, actor: "tutor" | "student"
 }
 
 export async function removeSessionServer(sessionId: string, updateEmail: boolean = true) {
-  await requireAdmin();
+  const auth = await requireAdmin();
   const supabase = await createAdminClient();
 
   const { error: notificationError } = await supabase
@@ -438,9 +438,28 @@ export async function removeSessionServer(sessionId: string, updateEmail: boolea
 
   if (participantEventError) throw participantEventError;
 
-  const { error: sessionError } = await supabase.from(Table.Sessions).delete().eq("id", sessionId);
+  const { data: deletedSession, error: sessionError } = await supabase
+    .from(Table.Sessions)
+    .delete()
+    .eq("id", sessionId)
+    .select("*")
+    .single();
 
   if (sessionError) throw sessionError;
+
+  await logDestructiveActivity({
+    actor: {
+      type: "user",
+      userId: auth.user.id,
+      profileId: auth.profile.id,
+      role: auth.profile.role,
+    },
+    source: "removeSessionServer",
+    reason: "manual_session_deletion",
+    resourceType: "session",
+    resourceId: sessionId,
+    deletedObject: deletedSession,
+  });
 
   if (updateEmail) {
     await deleteScheduledEmailBeforeSessions(sessionId);

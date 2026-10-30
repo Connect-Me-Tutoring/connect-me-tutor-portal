@@ -55,8 +55,11 @@ accurate?"_
 
 - **Supabase:** database, auth, storage
 - **Vercel:** hosting
-- **PostHog:** browser pageviews, autocapture, exceptions; server error logs. No
-  `identify` call in the browser, but server `logError` contexts can include account
+- **PostHog:** browser pageviews, autocapture, exceptions; server error logs; and
+  server-side deletion audit events. Deletion events include the acting account/profile
+  identifiers and a snapshot of the deleted enrollment, session, pairing, event, or
+  non-contact profile metadata. No `identify` call is made in the browser, but server
+  events can be linked to account identifiers and error contexts can include account
   emails.
 - **Zoom:** sessions and participant webhooks
 - **Resend:** transactional email

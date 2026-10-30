@@ -19,6 +19,8 @@ vi.mock("../auth/authz.server", () => ({
 vi.mock("@/lib/posthog", () => ({
   logError: vi.fn().mockResolvedValue(undefined),
   logEvent: vi.fn().mockResolvedValue(undefined),
+  logDestructiveActivity: vi.fn().mockResolvedValue(undefined),
+  logDestructiveActivities: vi.fn().mockResolvedValue(undefined),
 }));
 
 const { getEnrollmentsWithMissingSEF } = await import("../enrollment/server.actions");

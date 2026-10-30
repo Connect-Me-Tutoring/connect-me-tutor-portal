@@ -8,7 +8,7 @@ export const metadata: Metadata = {
 
 // Adapted from the connectmego.org policy (last modified 2021-02-22).
 // When this text changes materially, update LAST_MODIFIED.
-const LAST_MODIFIED = "October 20, 2026";
+const LAST_MODIFIED = "October 29, 2026";
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
@@ -126,7 +126,7 @@ export default function PrivacyPage() {
           items={[
             "Supabase (database, sign-in, and file storage)",
             "Vercel (hosting)",
-            "PostHog (product analytics and error logging)",
+            "PostHog (product analytics, error logging, and operational audit records)",
             "Zoom (video sessions and attendance events)",
             "Resend (email delivery)",
             "Google Gemini (an AI lesson-planning assistant available to tutors only; students do not use it)",
@@ -211,9 +211,12 @@ export default function PrivacyPage() {
         <p>
           The Portal uses cookies and similar technologies. Session cookies keep you signed in.
           Analytics tools (PostHog) record pages viewed, features used, and errors so we can
-          understand how the Portal is used and fix problems. Analytics are not linked to your name,
-          but error reports may include your account email so we can investigate. We do not use
-          analytics for advertising. You can remove or block cookies in your browser settings.
+          understand how the Portal is used and fix problems. We also keep server-side audit events
+          for completed deletions. Those events can include account or profile identifiers and a
+          snapshot of the deleted scheduling or program record so administrators can investigate
+          and reconstruct what happened. Error reports may include your account email. We do not
+          use this information for advertising. You can remove or block cookies in your browser
+          settings.
         </p>
       </Section>
 

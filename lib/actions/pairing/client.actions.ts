@@ -21,7 +21,7 @@ import { addEnrollment, removeEnrollment } from "../enrollment/server.actions";
 import { getOverlappingAvailabilites } from "../enrollment/client.actions";
 import { getProfileWithProfileId } from "../user/client.actions";
 import { getMeeting } from "../meeting/client.actions";
-import { sendPairingAlertToWebhook } from "./server.actions";
+import { deletePairingServer, sendPairingAlertToWebhook } from "./server.actions";
 
 export const getAllPairingRequests = async (profileType: "student" | "tutor") => {
   if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
@@ -453,50 +453,7 @@ export const getIncomingPairingMatches = async (profileId: string) => {
 };
 
 export const deletePairing = async (tutorId: string, studentId: string) => {
-  try {
-    const { data: enrollments, error: enrollmentsError } = await supabase
-      .from("Enrollments")
-      .select("id")
-      .eq("tutor_id", tutorId)
-      .eq("student_id", studentId);
-
-    if (enrollmentsError) throw enrollmentsError;
-
-    if (enrollments && enrollments.length > 0) {
-      const now = new Date().toISOString();
-      const enrollmentIds = enrollments.map((enrollment: any) => enrollment.id).filter(Boolean);
-
-      const { error: deleteSessionsError } = await supabase
-        .from("Sessions")
-        .delete()
-        .in("enrollment_id", enrollmentIds)
-        .not("status", "in", '(Complete,"Student Did Not Attend")')
-        .gte("date", now);
-
-      if (deleteSessionsError) throw deleteSessionsError;
-
-      // Delete enrollments
-      const { error: deleteEnrollmentsError } = await supabase
-        .from("Enrollments")
-        .delete()
-        .eq("tutor_id", tutorId)
-        .eq("student_id", studentId);
-
-      if (deleteEnrollmentsError) throw deleteEnrollmentsError;
-    }
-
-    // Delete Pairings
-    const { data, error } = await supabase
-      .from("Pairings")
-      .delete()
-      .eq("tutor_id", tutorId)
-      .eq("student_id", studentId);
-
-    if (error) throw error;
-  } catch (error) {
-    console.error("Failed to delete pairing", error);
-    throw error;
-  }
+  return deletePairingServer(tutorId, studentId);
 };
 
 export const handleResolveQueues = () => {
@@ -786,11 +743,7 @@ export const updatePairingMatchStatus = async (
         (createdEnrollments ?? []).map((enrollment) => removeEnrollment(enrollment.id)),
       );
 
-      await supabase
-        .from("Pairings")
-        .delete()
-        .eq("tutor_id", tutor.id)
-        .eq("student_id", student.id);
+      await deletePairingServer(tutor.id, student.id);
     }
     // Replace the fetch with:
 

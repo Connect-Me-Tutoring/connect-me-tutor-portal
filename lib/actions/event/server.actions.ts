@@ -1,8 +1,9 @@
 "use server";
 
-import { createClient } from "@/lib/supabase/server";
+import { createAdminClient, createClient } from "@/lib/supabase/server";
 import { Event } from "@/types";
-import { logEvent, logError } from "@/lib/posthog";
+import { logDestructiveActivity, logEvent, logError } from "@/lib/posthog";
+import { requireAdmin } from "../auth/authz.server";
 
 /* EVENTS */
 export async function getEvents(
@@ -69,4 +70,40 @@ export async function getEvents(
     );
     throw error;
   }
+}
+
+export async function removeEvent(eventId: string): Promise<boolean> {
+  if (!eventId || typeof eventId !== "string") return false;
+
+  const auth = await requireAdmin();
+  const supabase = await createAdminClient();
+  const { data, error } = await supabase
+    .from("Events")
+    .delete()
+    .eq("id", eventId)
+    .select("*")
+    .maybeSingle();
+
+  if (error) {
+    await logError(error, { action: "removeEvent", event_id: eventId }, "event_error");
+    throw error;
+  }
+
+  if (!data) return false;
+
+  await logDestructiveActivity({
+    actor: {
+      type: "user",
+      userId: auth.user.id,
+      profileId: auth.profile.id,
+      role: auth.profile.role,
+    },
+    source: "removeEvent",
+    reason: "manual_event_deletion",
+    resourceType: "event",
+    resourceId: eventId,
+    deletedObject: data,
+  });
+
+  return true;
 }

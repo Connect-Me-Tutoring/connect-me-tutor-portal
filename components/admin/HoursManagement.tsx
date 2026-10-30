@@ -44,8 +44,8 @@ import {
   getEventsWithTutorMonth,
   createEvent,
   createEventsBatch,
-  removeEvent,
 } from "@/lib/actions/admin.actions";
+import { removeEvent } from "@/lib/actions/event/server.actions";
 import { getEvents } from "@/lib/actions/event/client.actions";
 import { getTutorSessions } from "@/lib/actions/tutor/actions";
 import { Profile, Session, Event } from "@/types";

@@ -12,7 +12,12 @@ import { createPassword } from "../../utils";
 import { cachedGetUser } from "../user/actions";
 import { getProfileRole } from "../user/server.actions";
 import { isCronRequestAuthorized } from "@/lib/security/cron";
-import { logError } from "@/lib/posthog";
+import {
+  DestructiveActivityContext,
+  logDestructiveActivities,
+  logDestructiveActivity,
+  logError,
+} from "@/lib/posthog";
 import type { Database } from "@/types/database.types";
 import { provisionUser } from "@/lib/auth/provision-user.server";
 import { removeFutureSessions } from "../enrollment/server.actions";
@@ -61,6 +66,7 @@ export const verifyAdmin = async () => {
   if (!user) throw new Error("Unauthenticated access");
   const role = await getProfileRole(user.id);
   if (role !== "Admin") throw new Error("Unauthorized Access");
+  return { user, role };
 };
 
 /**
@@ -111,13 +117,13 @@ const replaceLastActiveProfile = async (
 };
 
 export const deleteUser = async (profileId: string) => {
-  await verifyAdmin();
+  const { user: actorUser, role: actorRole } = await verifyAdmin();
   const adminSupabase = await createAdminClient();
 
   try {
     const { data: profile } = await adminSupabase
       .from(Table.Profiles)
-      .select("user_id")
+      .select("*")
       .eq("id", profileId)
       .single()
       .throwOnError();
@@ -150,12 +156,28 @@ export const deleteUser = async (profileId: string) => {
     // sessions behind unless they are removed first.
     const { data: enrollments } = await adminSupabase
       .from(Table.Enrollments)
-      .select("id")
+      .select("*")
       .or(`tutor_id.eq.${profileId},student_id.eq.${profileId}`)
       .throwOnError();
+
+    const { data: pairings } = await adminSupabase
+      .from(Table.Pairings)
+      .select("*")
+      .or(`tutor_id.eq.${profileId},student_id.eq.${profileId}`)
+      .throwOnError();
+
+    const auditContext: DestructiveActivityContext = {
+      actor: { type: "user", userId: actorUser.id, role: actorRole },
+      source: "deleteUser",
+      reason: "manual_profile_deletion",
+      relatedResourceType: "profile",
+      relatedResourceIds: [profileId],
+    };
+
     await removeFutureSessions(
       enrollments.map((enrollment) => enrollment.id),
       adminSupabase,
+      auditContext,
     );
 
     if (relatedProfiles.length == 1) {
@@ -175,6 +197,33 @@ export const deleteUser = async (profileId: string) => {
     }
 
     await adminSupabase.from(Table.Profiles).delete().eq("id", profileId).throwOnError();
+
+    await logDestructiveActivities({
+      ...auditContext,
+      resourceType: "enrollment",
+      deletedObjects: enrollments,
+    });
+    await logDestructiveActivities({
+      ...auditContext,
+      resourceType: "pairing",
+      deletedObjects: pairings,
+    });
+    await logDestructiveActivity({
+      ...auditContext,
+      resourceType: "profile",
+      resourceId: profileId,
+      deletedObject: {
+        id: profile.id,
+        created_at: profile.created_at,
+        role: profile.role,
+        user_id: profile.user_id,
+        start_date: profile.start_date,
+        status: profile.status,
+        timezone: profile.timezone,
+        settings_id: profile.settings_id,
+        orientation_completed_at: profile.orientation_completed_at,
+      },
+    });
   } catch (error: any) {
     console.error("Failed to delete user", error);
     await logError(error, { action: "deleteUser", profileId }, "auth_error");

@@ -1,7 +1,12 @@
 "use server";
 import { Availability, Enrollment, Profile, Session } from "@/types";
 import { createAdminClient, createClient } from "../../supabase/server";
-import { logError } from "@/lib/posthog";
+import {
+  DestructiveActivityContext,
+  logDestructiveActivities,
+  logDestructiveActivity,
+  logError,
+} from "@/lib/posthog";
 import { Table } from "../../supabase/tables";
 import {
   tableToInterfaceEnrollments,
@@ -317,14 +322,18 @@ export const cachedGetEnrollments = cache(getEnrollments);
 // Call before deleting enrollments. Sessions.enrollment_id is ON DELETE SET NULL, so
 // skipping this leaves the future sessions Active with no enrollment: they keep their
 // Zoom room, send reminders and turn Unconfirmed.
-export const removeFutureSessions = async (enrollmentIds: string | string[], supabase: any) => {
+export const removeFutureSessions = async (
+  enrollmentIds: string | string[],
+  supabase: any,
+  auditContext: DestructiveActivityContext,
+) => {
   const ids = Array.isArray(enrollmentIds) ? enrollmentIds : [enrollmentIds];
   if (ids.length === 0) return;
   try {
     const now: string = new Date().toISOString();
     const { data: sessions } = await supabase
       .from(Table.Sessions)
-      .select("id")
+      .select("*")
       .in("enrollment_id", ids)
       .not("status", "in", '(Complete,"Student Did Not Attend")')
       .gte("date", now)
@@ -341,7 +350,20 @@ export const removeFutureSessions = async (enrollmentIds: string | string[], sup
       .in("session_id", sessionIds)
       .throwOnError();
 
-    await supabase.from(Table.Sessions).delete().in("id", sessionIds).throwOnError();
+    const { data: deletedSessions } = await supabase
+      .from(Table.Sessions)
+      .delete()
+      .in("id", sessionIds)
+      .select("*")
+      .throwOnError();
+
+    await logDestructiveActivities({
+      ...auditContext,
+      resourceType: "session",
+      deletedObjects: deletedSessions ?? [],
+      relatedResourceType: "enrollment",
+      relatedResourceIds: ids,
+    });
   } catch (error) {
     console.error("Unable to remove future sessions", error);
     await logError(
@@ -355,16 +377,28 @@ export const removeFutureSessions = async (enrollmentIds: string | string[], sup
 // before, it used createClient() which respects Supabase RLS
 // now tho it uses createAdminCLient() to bypass RLS and guarentee deletion succeeds
 export const removeEnrollment = async (enrollmentId: string) => {
-  await requireEnrollmentAccess(enrollmentId);
+  const auth = await requireEnrollmentAccess(enrollmentId);
   const adminSupabase = await createAdminClient();
-  await removeFutureSessions(enrollmentId, adminSupabase);
 
-  const supabase = await createClient();
+  const auditContext: DestructiveActivityContext = {
+    actor: {
+      type: "user",
+      userId: auth.user.id,
+      profileId: auth.profile.id,
+      role: auth.profile.role,
+    },
+    source: "removeEnrollment",
+    reason: "manual_enrollment_deletion",
+  };
 
-  const { data: deleteEnrollmentData, error: deleteEnrollmentError } = await supabase
+  await removeFutureSessions(enrollmentId, adminSupabase, auditContext);
+
+  const { data: deletedEnrollment, error: deleteEnrollmentError } = await adminSupabase
     .from("Enrollments")
     .delete()
-    .eq("id", enrollmentId);
+    .eq("id", enrollmentId)
+    .select("*")
+    .single();
 
   if (deleteEnrollmentError) {
     console.error("Error removing enrollment:", deleteEnrollmentError);
@@ -375,6 +409,13 @@ export const removeEnrollment = async (enrollmentId: string) => {
     );
     throw deleteEnrollmentError;
   }
+
+  await logDestructiveActivity({
+    ...auditContext,
+    resourceType: "enrollment",
+    resourceId: enrollmentId,
+    deletedObject: deletedEnrollment,
+  });
 };
 
 export const updateEnrollment = async (enrollment: Enrollment) => {
@@ -735,21 +776,33 @@ export async function deleteInactiveEnrollments() {
 
   const enrollmentIds = enrollments.map((e) => e.id);
   const supabase = await createAdminClient();
+  const auditContext: DestructiveActivityContext = {
+    actor: { type: "system" },
+    source: "deleteInactiveEnrollments",
+    reason: "five_consecutive_weeks_without_session_exit_forms",
+  };
 
   try {
-    await removeFutureSessions(enrollmentIds, supabase);
+    await removeFutureSessions(enrollmentIds, supabase, auditContext);
   } catch (error) {
     return { success: false, error: (error as Error).message, deleted: 0 };
   }
 
-  const { error: deleteError } = await supabase
+  const { data: deletedEnrollments, error: deleteError } = await supabase
     .from(Table.Enrollments)
     .delete()
-    .in("id", enrollmentIds);
+    .in("id", enrollmentIds)
+    .select("*");
 
   if (deleteError) {
     return { success: false, error: deleteError.message, deleted: 0 };
   }
+
+  await logDestructiveActivities({
+    ...auditContext,
+    resourceType: "enrollment",
+    deletedObjects: deletedEnrollments ?? [],
+  });
 
   const tutors = new Map<string, Profile>();
   enrollments.forEach((e) => {
