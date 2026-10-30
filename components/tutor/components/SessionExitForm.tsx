@@ -1,5 +1,6 @@
 import React from "react";
-import { useState } from "react";
+import { useRef, useState } from "react";
+import { Loader2 } from "lucide-react";
 import {
   Dialog,
   DialogTrigger,
@@ -24,6 +25,7 @@ import {
 import CancellationForm from "./CancellationForm";
 import { useDashboardContext } from "@/lib/contexts/dashboardContext";
 import { CATEGORY_LABELS } from "@/constants/sessionExitForm";
+import type { SessionExitFormOutcome } from "@/lib/session-exit-form";
 
 interface SessionExitFormProps {
   currSession: Session;
@@ -41,7 +43,7 @@ interface SessionExitFormProps {
     isQuestionOrConcern: boolean,
     isFirstSession: boolean,
     category?: string,
-  ) => Promise<void>;
+  ) => Promise<SessionExitFormOutcome>;
   handleStatusChange: (session: Session) => void;
 }
 
@@ -105,11 +107,48 @@ const SessionExitForm = ({
   const [isFirstSession, setIsFirstSession] = useState(false);
   const [isQuestionOrConcern, setIsQuestionOrConcern] = useState(false);
   const [category, setCategory] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
+  // State updates don't land until the next render, so two clicks in the same frame would both
+  // see isSubmitting === false. The ref flips synchronously and closes that gap.
+  const submittingRef = useRef(false);
 
   const resetLocalFormState = () => {
     setIsQuestionOrConcern(false);
     setCategory("");
     setIsFirstSession(false);
+    setSubmitError(null);
+  };
+
+  const handleSubmit = async () => {
+    if (submittingRef.current || !TC.selectedSession) return;
+    submittingRef.current = true;
+    setIsSubmitting(true);
+    setSubmitError(null);
+    try {
+      const outcome: SessionExitFormOutcome = await handleSessionComplete(
+        TC.selectedSession,
+        TC.notes,
+        isQuestionOrConcern,
+        isFirstSession,
+        category,
+      );
+      if (outcome.ok) {
+        // The handler has closed the dialog and cleared the shared fields.
+        resetLocalFormState();
+      } else {
+        // Keep the dialog open with everything the user typed; show one error.
+        setSubmitError(outcome.error);
+      }
+    } catch (error) {
+      console.error("Session Exit Form submit failed", error);
+      setSubmitError(
+        "We couldn't save your Session Exit Form. Your notes are still here. Please try again.",
+      );
+    } finally {
+      submittingRef.current = false;
+      setIsSubmitting(false);
+    }
   };
 
   const isThisSessionOpen = TC.isSessionExitFormOpen && TC.selectedSession?.id === currSession.id;
@@ -118,6 +157,8 @@ const SessionExitForm = ({
     <Dialog
       open={isThisSessionOpen}
       onOpenChange={(open) => {
+        // Don't let the dialog be dismissed mid-save; the result would land on a closed form.
+        if (!open && submittingRef.current) return;
         TC.setIsSessionExitFormOpen(open);
         if (!open) {
           resetLocalFormState();
@@ -157,7 +198,9 @@ const SessionExitForm = ({
             Session Exit Form
             <AlertDialog>
               <AlertDialogTrigger asChild>
-                <Button variant="outline">The session did not happen</Button>
+                <Button variant="outline" disabled={isSubmitting}>
+                  The session did not happen
+                </Button>
               </AlertDialogTrigger>
               {TC.selectedSession ? (
                 <CancellationForm
@@ -180,6 +223,7 @@ const SessionExitForm = ({
           <Checkbox
             id="question-or-concern"
             checked={isQuestionOrConcern}
+            disabled={isSubmitting}
             onCheckedChange={(checked) => {
               const isChecked = checked === true;
               setIsQuestionOrConcern(isChecked);
@@ -195,7 +239,7 @@ const SessionExitForm = ({
             <label htmlFor="category" className="text-sm font-medium">
               Issue Category <span className="text-red-500">*</span>
             </label>
-            <Select value={category} onValueChange={setCategory}>
+            <Select value={category} onValueChange={setCategory} disabled={isSubmitting}>
               <SelectTrigger id="category">
                 <SelectValue placeholder="Select a category..." />
               </SelectTrigger>
@@ -213,6 +257,7 @@ const SessionExitForm = ({
         <Textarea
           value={TC.notes}
           onChange={(e) => TC.setNotes(e.target.value)}
+          disabled={isSubmitting}
           placeholder={
             isQuestionOrConcern
               ? "What is your question or concern?"
@@ -225,6 +270,7 @@ const SessionExitForm = ({
             <Checkbox
               id="next-class"
               checked={TC.nextClassConfirmed}
+              disabled={isSubmitting}
               onCheckedChange={(checked) => TC.setNextClassConfirmed(checked === true)}
             />
             <label htmlFor="next-class" className="text-sm font-medium flex">
@@ -232,26 +278,29 @@ const SessionExitForm = ({
             </label>
           </div>
         </div>
+        {submitError && (
+          <p role="alert" className="text-sm text-red-600">
+            {submitError}
+          </p>
+        )}
         <Button
-          onClick={async () => {
-            if (TC.selectedSession) {
-              await handleSessionComplete(
-                TC.selectedSession,
-                TC.notes,
-                isQuestionOrConcern,
-                isFirstSession,
-                category,
-              );
-              resetLocalFormState();
-            }
-          }}
+          onClick={handleSubmit}
+          aria-busy={isSubmitting}
           disabled={
-            !TC.notes ||
+            isSubmitting ||
+            !TC.notes.trim() ||
             (!TC.nextClassConfirmed && !isQuestionOrConcern) ||
             (isQuestionOrConcern && !category)
           }
         >
-          Submit
+          {isSubmitting ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              Saving…
+            </>
+          ) : (
+            "Submit"
+          )}
         </Button>
       </DialogContent>
     </Dialog>
