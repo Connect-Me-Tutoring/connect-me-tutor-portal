@@ -4,7 +4,7 @@ import { toZonedTime } from "date-fns-tz";
 import { createAdminClient } from "@/lib/supabase/server";
 import { Table } from "@/lib/supabase/tables";
 import { SHAREABLE_MEETING_NAME } from "@/constants/meetings";
-import { enrollmentMeetsInWeek } from "@/lib/enrollment-schedule";
+import { isEnrollmentSessionDate } from "@/lib/enrollment-schedule";
 import { EASTERN_TIMEZONE, getEasternWeekBounds } from "@/lib/utils/timezone";
 import {
   SESSION_LOOKBACK_HOURS,
@@ -116,16 +116,13 @@ export async function assertRoomFreeForSession(
 
   // Enrollments that will meet in this slot that week. Paused ones generate no sessions.
   const { weekStart, weekEnd } = getEasternWeekBounds(start);
+  const slotDate = format(toZonedTime(start, EASTERN_TIMEZONE), "yyyy-MM-dd");
   const candidates = enrollments.filter(
     (e) =>
       e.id !== exclude.enrollmentId &&
       !e.paused &&
       (!e.startDate || new Date(e.startDate) <= end) &&
-      enrollmentMeetsInWeek(
-        e,
-        e.startDate ? getEasternWeekBounds(new Date(e.startDate)).weekStart : null,
-        weekStart,
-      ) &&
+      isEnrollmentSessionDate(e, slotDate) &&
       weeklySlotsOverlap(weekly, e),
   );
   if (candidates.length === 0) return;

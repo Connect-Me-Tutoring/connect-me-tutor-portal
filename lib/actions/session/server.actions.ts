@@ -40,8 +40,6 @@ import { startOfWeek, endOfWeek, subDays, parseISO, format, addDays } from "date
 import * as DateFNS from "date-fns-tz";
 import { ZoomSessionResolution } from "./actions";
 import { assertRoomFreeForSession } from "../meeting/room-conflicts.server";
-import { enrollmentMeetsInWeek } from "@/lib/enrollment-schedule";
-import { getEasternWeekBounds } from "@/lib/utils/timezone";
 const { fromZonedTime } = DateFNS;
 
 async function isSessioninPastWeek(enrollmentId: string, midWeek: Date) {
@@ -125,12 +123,6 @@ export async function addSessionsForCron(
       } = enrollment;
 
       if (enrollment.paused) {
-        continue;
-      }
-
-      // Biweekly enrollments skip every other week, counted from their start week.
-      const startWeek = startDate ? getEasternWeekBounds(new Date(startDate)).weekStart : null;
-      if (!enrollmentMeetsInWeek(enrollment, startWeek, weekStart)) {
         continue;
       }
 
