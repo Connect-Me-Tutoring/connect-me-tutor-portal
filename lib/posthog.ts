@@ -211,6 +211,7 @@ type DestructiveActivityInput = DestructiveActivityContext & {
   resourceType: string;
   resourceId?: string | null;
   deletedObject: unknown;
+  resourceProperties?: Record<string, unknown>;
   flush?: boolean;
 };
 
@@ -233,6 +234,7 @@ export async function logDestructiveActivity({
   resourceType,
   resourceId,
   deletedObject,
+  resourceProperties,
   flush = true,
 }: DestructiveActivityInput): Promise<void> {
   const resolvedResourceId = resourceId ?? getDeletedObjectId(deletedObject);
@@ -241,6 +243,7 @@ export async function logDestructiveActivity({
   await logEvent(
     "destructive_activity",
     {
+      ...resourceProperties,
       action: "delete",
       resource_type: resourceType,
       resource_id: resolvedResourceId,
@@ -271,12 +274,15 @@ export async function logDestructiveActivities(
   input: DestructiveActivityContext & {
     resourceType: string;
     deletedObjects: unknown[];
+    getResourceProperties?: (deletedObject: unknown) => Record<string, unknown>;
   },
 ): Promise<void> {
+  const { getResourceProperties, ...context } = input;
   for (const deletedObject of input.deletedObjects) {
     await logDestructiveActivity({
-      ...input,
+      ...context,
       deletedObject,
+      resourceProperties: getResourceProperties?.(deletedObject),
       flush: false,
     });
   }

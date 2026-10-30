@@ -52,6 +52,9 @@ describe("destructive activity logging", () => {
       source: "removeSessionServer",
       reason: "manual_session_deletion",
       resourceType: "session",
+      resourceProperties: {
+        session_date: "2026-08-20T15:00:00.000Z",
+      },
       deletedObject: {
         id: "session-1",
         enrollment_id: "enrollment-1",
@@ -74,6 +77,7 @@ describe("destructive activity logging", () => {
         actor_user_id: "auth-user-1",
         actor_profile_id: "profile-1",
         actor_role: "Admin",
+        session_date: "2026-08-20T15:00:00.000Z",
       },
     });
     expect(JSON.parse(event.properties.deleted_object_json)).toEqual({
@@ -102,10 +106,17 @@ describe("destructive activity logging", () => {
       source: "deleteInactiveEnrollments",
       resourceType: "enrollment",
       deletedObjects: [{ id: "enrollment-1" }, { id: "enrollment-2" }],
+      getResourceProperties: (deletedObject) => ({
+        enrollment_id: (deletedObject as { id: string }).id,
+      }),
     });
 
     expect(capture).toHaveBeenCalledTimes(2);
     expect(capture.mock.calls.map(([event]) => event.properties.resource_id)).toEqual([
+      "enrollment-1",
+      "enrollment-2",
+    ]);
+    expect(capture.mock.calls.map(([event]) => event.properties.enrollment_id)).toEqual([
       "enrollment-1",
       "enrollment-2",
     ]);

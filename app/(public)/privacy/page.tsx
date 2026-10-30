@@ -212,8 +212,8 @@ export default function PrivacyPage() {
           The Portal uses cookies and similar technologies. Session cookies keep you signed in.
           Analytics tools (PostHog) record pages viewed, features used, and errors so we can
           understand how the Portal is used and fix problems. We also keep server-side audit events
-          for completed deletions. Those events can include account or profile identifiers and a
-          snapshot of the deleted scheduling or program record so administrators can investigate
+          for completed deletions. Those events can include account or profile identifiers, names,
+          email addresses, and limited scheduling information so administrators can investigate
           and reconstruct what happened. Error reports may include your account email. We do not
           use this information for advertising. You can remove or block cookies in your browser
           settings.

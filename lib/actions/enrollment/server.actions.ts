@@ -32,6 +32,12 @@ import {
   requireEnrollmentAccess,
   requireTutorProfileAccess,
 } from "../auth/authz.server";
+import {
+  buildEnrollmentDeletionSnapshot,
+  ENROLLMENT_DELETION_AUDIT_SELECT,
+  enrollmentDeletionProperties,
+  type EnrollmentDeletionSnapshot,
+} from "@/lib/audit/deletion-audit";
 
 /* ENROLLMENTS */
 export async function getAllActiveEnrollmentsServer(endOfWeek: string): Promise<Enrollment[]> {
@@ -379,6 +385,12 @@ export const removeFutureSessions = async (
 export const removeEnrollment = async (enrollmentId: string) => {
   const auth = await requireEnrollmentAccess(enrollmentId);
   const adminSupabase = await createAdminClient();
+  const { data: enrollmentWithProfiles } = await adminSupabase
+    .from(Table.Enrollments)
+    .select(ENROLLMENT_DELETION_AUDIT_SELECT)
+    .eq("id", enrollmentId)
+    .single()
+    .throwOnError();
 
   const auditContext: DestructiveActivityContext = {
     actor: {
@@ -393,11 +405,11 @@ export const removeEnrollment = async (enrollmentId: string) => {
 
   await removeFutureSessions(enrollmentId, adminSupabase, auditContext);
 
-  const { data: deletedEnrollment, error: deleteEnrollmentError } = await adminSupabase
+  const { error: deleteEnrollmentError } = await adminSupabase
     .from("Enrollments")
     .delete()
     .eq("id", enrollmentId)
-    .select("*")
+    .select("id")
     .single();
 
   if (deleteEnrollmentError) {
@@ -410,11 +422,18 @@ export const removeEnrollment = async (enrollmentId: string) => {
     throw deleteEnrollmentError;
   }
 
+  const enrollmentSnapshot = buildEnrollmentDeletionSnapshot(
+    enrollmentWithProfiles,
+    enrollmentWithProfiles.student,
+    enrollmentWithProfiles.tutor,
+  );
+
   await logDestructiveActivity({
     ...auditContext,
     resourceType: "enrollment",
     resourceId: enrollmentId,
-    deletedObject: deletedEnrollment,
+    deletedObject: enrollmentSnapshot,
+    resourceProperties: enrollmentDeletionProperties(enrollmentSnapshot),
   });
 };
 
@@ -776,6 +795,7 @@ export async function deleteInactiveEnrollments() {
 
   const enrollmentIds = enrollments.map((e) => e.id);
   const supabase = await createAdminClient();
+  let enrollmentSnapshots: EnrollmentDeletionSnapshot[] = [];
   const auditContext: DestructiveActivityContext = {
     actor: { type: "system" },
     source: "deleteInactiveEnrollments",
@@ -783,6 +803,14 @@ export async function deleteInactiveEnrollments() {
   };
 
   try {
+    const { data: enrollmentRows } = await supabase
+      .from(Table.Enrollments)
+      .select(ENROLLMENT_DELETION_AUDIT_SELECT)
+      .in("id", enrollmentIds)
+      .throwOnError();
+    enrollmentSnapshots = enrollmentRows.map((enrollment) =>
+      buildEnrollmentDeletionSnapshot(enrollment, enrollment.student, enrollment.tutor),
+    );
     await removeFutureSessions(enrollmentIds, supabase, auditContext);
   } catch (error) {
     return { success: false, error: (error as Error).message, deleted: 0 };
@@ -792,16 +820,25 @@ export async function deleteInactiveEnrollments() {
     .from(Table.Enrollments)
     .delete()
     .in("id", enrollmentIds)
-    .select("*");
+    .select("id");
 
   if (deleteError) {
     return { success: false, error: deleteError.message, deleted: 0 };
   }
 
+  const deletedEnrollmentIds = new Set(
+    (deletedEnrollments ?? []).map((enrollment) => enrollment.id),
+  );
+  const deletedEnrollmentSnapshots = enrollmentSnapshots.filter((enrollment) =>
+    deletedEnrollmentIds.has(enrollment.id),
+  );
+
   await logDestructiveActivities({
     ...auditContext,
     resourceType: "enrollment",
-    deletedObjects: deletedEnrollments ?? [],
+    deletedObjects: deletedEnrollmentSnapshots,
+    getResourceProperties: (deletedObject) =>
+      enrollmentDeletionProperties(deletedObject as EnrollmentDeletionSnapshot),
   });
 
   const tutors = new Map<string, Profile>();

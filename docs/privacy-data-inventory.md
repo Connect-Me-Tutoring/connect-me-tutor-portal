@@ -58,9 +58,11 @@ accurate?"_
 - **PostHog:** browser pageviews, autocapture, exceptions; server error logs; and
   server-side deletion audit events. Deletion events include the acting account/profile
   identifiers and a snapshot of the deleted enrollment, session, pairing, event, or
-  non-contact profile metadata. No `identify` call is made in the browser, but server
+  profile. Profile audit events retain only name and email; enrollment audit events retain
+  date, duration, and the student/tutor names and emails; pairing audit events retain only
+  the student/tutor names and emails. No `identify` call is made in the browser, but server
   events can be linked to account identifiers and error contexts can include account
-  emails.
+  emails. The exact audit schema is documented in `docs/posthog-deletion-audit.md`.
 - **Zoom:** sessions and participant webhooks
 - **Resend:** transactional email
 - **Google Gemini:** via Mastra, used by the tutor-only AI assistant at

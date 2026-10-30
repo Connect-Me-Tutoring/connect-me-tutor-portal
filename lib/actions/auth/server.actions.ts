@@ -25,6 +25,20 @@ import {
   countLegacyPendingConsentRequests,
   provisionLegacyPendingConsentRequests,
 } from "@/lib/consent/parental-consent.server";
+import {
+  buildEnrollmentDeletionSnapshot,
+  buildPairingDeletionSnapshot,
+  buildProfileDeletionSnapshot,
+  DELETION_AUDIT_PROFILE_SELECT,
+  ENROLLMENT_DELETION_AUDIT_SELECT,
+  enrollmentDeletionProperties,
+  PAIRING_DELETION_AUDIT_SELECT,
+  pairingDeletionProperties,
+  profileDeletionProperties,
+  type EnrollmentDeletionSnapshot,
+  type PairingDeletionSnapshot,
+  type ProfileDeletionSnapshot,
+} from "@/lib/audit/deletion-audit";
 
 /**
  * Creates a new user through an email invite. Parental consent for students under
@@ -123,7 +137,7 @@ export const deleteUser = async (profileId: string) => {
   try {
     const { data: profile } = await adminSupabase
       .from(Table.Profiles)
-      .select("*")
+      .select(DELETION_AUDIT_PROFILE_SELECT)
       .eq("id", profileId)
       .single()
       .throwOnError();
@@ -156,15 +170,23 @@ export const deleteUser = async (profileId: string) => {
     // sessions behind unless they are removed first.
     const { data: enrollments } = await adminSupabase
       .from(Table.Enrollments)
-      .select("*")
+      .select(ENROLLMENT_DELETION_AUDIT_SELECT)
       .or(`tutor_id.eq.${profileId},student_id.eq.${profileId}`)
       .throwOnError();
 
     const { data: pairings } = await adminSupabase
       .from(Table.Pairings)
-      .select("*")
+      .select(PAIRING_DELETION_AUDIT_SELECT)
       .or(`tutor_id.eq.${profileId},student_id.eq.${profileId}`)
       .throwOnError();
+
+    const profileSnapshot = buildProfileDeletionSnapshot(profile);
+    const enrollmentSnapshots = enrollments.map((enrollment) =>
+      buildEnrollmentDeletionSnapshot(enrollment, enrollment.student, enrollment.tutor),
+    );
+    const pairingSnapshots = pairings.map((pairing) =>
+      buildPairingDeletionSnapshot(pairing, pairing.student, pairing.tutor),
+    );
 
     const auditContext: DestructiveActivityContext = {
       actor: { type: "user", userId: actorUser.id, role: actorRole },
@@ -175,7 +197,7 @@ export const deleteUser = async (profileId: string) => {
     };
 
     await removeFutureSessions(
-      enrollments.map((enrollment) => enrollment.id),
+      enrollmentSnapshots.map((enrollment) => enrollment.id),
       adminSupabase,
       auditContext,
     );
@@ -201,28 +223,25 @@ export const deleteUser = async (profileId: string) => {
     await logDestructiveActivities({
       ...auditContext,
       resourceType: "enrollment",
-      deletedObjects: enrollments,
+      deletedObjects: enrollmentSnapshots,
+      getResourceProperties: (deletedObject) =>
+        enrollmentDeletionProperties(deletedObject as EnrollmentDeletionSnapshot),
     });
     await logDestructiveActivities({
       ...auditContext,
       resourceType: "pairing",
-      deletedObjects: pairings,
+      deletedObjects: pairingSnapshots,
+      getResourceProperties: (deletedObject) =>
+        pairingDeletionProperties(deletedObject as PairingDeletionSnapshot),
     });
     await logDestructiveActivity({
       ...auditContext,
       resourceType: "profile",
       resourceId: profileId,
-      deletedObject: {
-        id: profile.id,
-        created_at: profile.created_at,
-        role: profile.role,
-        user_id: profile.user_id,
-        start_date: profile.start_date,
-        status: profile.status,
-        timezone: profile.timezone,
-        settings_id: profile.settings_id,
-        orientation_completed_at: profile.orientation_completed_at,
-      },
+      deletedObject: profileSnapshot,
+      resourceProperties: profileDeletionProperties(
+        profileSnapshot as ProfileDeletionSnapshot,
+      ),
     });
   } catch (error: any) {
     console.error("Failed to delete user", error);
