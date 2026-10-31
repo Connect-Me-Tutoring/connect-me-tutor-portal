@@ -1,4 +1,5 @@
 import { CircleAlert, CircleCheckBig, CircleX, Clock, UserX } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { Session } from "@/types";
 
@@ -23,7 +24,7 @@ const STATUS_STYLES: Partial<
     icon: CircleX,
   },
   "Student Did Not Attend": {
-    label: "Student Did Not Attend",
+    label: "No-show",
     className: "bg-orange-100 text-orange-800 border-orange-200",
     icon: UserX,
   },
@@ -42,15 +43,18 @@ export function SessionStatusBadge({ status, className }: { status: Status; clas
   const Icon = style.icon;
 
   return (
-    <span
+    // outline: no hover tint, since the badge isn't clickable. Padding, inherited text size
+    // and normal weight keep the original pill size instead of Badge's smaller text-xs/semibold default.
+    <Badge
+      variant="outline"
       className={cn(
-        "px-3 py-1 inline-flex items-center rounded-full border",
+        "gap-1 px-3 py-1 text-[length:inherit] font-normal",
         style.className,
         className,
       )}
     >
-      <Icon size={14} className="mr-1" />
+      <Icon size={14} />
       {style.label}
-    </span>
+    </Badge>
   );
 }

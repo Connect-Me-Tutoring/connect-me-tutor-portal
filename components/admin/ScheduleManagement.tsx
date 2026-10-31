@@ -731,7 +731,7 @@ const Schedule = () => {
                 {[
                   { color: "bg-green-500", label: "Complete" },
                   { color: "bg-red-500", label: "Cancelled" },
-                  { color: "bg-orange-500", label: "Student Did Not Attend" },
+                  { color: "bg-orange-500", label: "No-show" },
                   { color: "bg-amber-500", label: "Unconfirmed" },
                   { color: "bg-blue-500", label: "Active" },
                   { color: "bg-purple-500", label: "Standalone" },
