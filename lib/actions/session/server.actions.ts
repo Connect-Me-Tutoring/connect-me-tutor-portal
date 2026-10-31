@@ -13,6 +13,7 @@ import {
   requireAuthenticatedProfile,
   requireEnrollmentAccess,
   requireSessionAccess,
+  requireSessionAccessById,
   requireStudentProfileAccess,
   requireTutorProfileAccess,
 } from "../auth/authz.server";
@@ -32,7 +33,7 @@ import {
   sendTutorSessionCancellationEmail,
   updateScheduledEmailBeforeSessions,
 } from "../email/server.actions";
-import { logError } from "@/lib/posthog";
+import { logError, logEvent } from "@/lib/posthog";
 import { isEnrollmentSessionDate } from "@/lib/enrollment-schedule";
 
 import { startOfWeek, endOfWeek, subDays, parseISO, format, addDays } from "date-fns"; // Only use date-fns
@@ -1452,7 +1453,7 @@ export async function updateSession(updatedSession: Session, updateEmail: boolea
       isQuestionOrConcern,
       isFirstSession,
     } = updatedSession;
-    const supabase = await createClient();
+    const supabase = await requireSessionAccessById(id);
     const { data, error } = await supabase
       .from(Table.Sessions)
       .update({
@@ -1483,8 +1484,22 @@ export async function updateSession(updatedSession: Session, updateEmail: boolea
 
     const newSession: Session = tableToInterfaceSessions(data);
 
+    // The session is already saved. Reminder cleanup must not turn that into a save failure.
     if (updateEmail) {
-      await updateScheduledEmailBeforeSessions(newSession.id);
+      try {
+        await updateScheduledEmailBeforeSessions(newSession.id);
+      } catch (error) {
+        console.error("Session saved, but reminder cleanup failed:", error);
+        await logError(error, { session_id: id }, "email_error").catch(console.error);
+      }
+    }
+
+    if (newSession.status === "Complete") {
+      await logEvent("session_exit_form_saved", {
+        session_id: newSession.id,
+        tutor_id: newSession.tutor?.id,
+        late: Date.now() > new Date(newSession.date).getTime() + 48 * 60 * 60 * 1000,
+      }).catch(console.error);
     }
 
     return newSession;

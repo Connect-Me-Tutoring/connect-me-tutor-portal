@@ -11,13 +11,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import {
   Select,
   SelectContent,
@@ -52,7 +46,7 @@ const CompletedSessionsTable = ({
   handleUndoCancel,
 }: any) => {
   const TC = useDashboardContext();
-  const [isMeetingNotesOpen, setIsMeetingNotesOpen] = useState(false);
+  const [notesSession, setNotesSession] = useState<Session | null>(null);
 
   const handleUndo = (session: Session) => {
     if (session.status === "Complete" || session.status === "Student Did Not Attend") {
@@ -75,12 +69,12 @@ const CompletedSessionsTable = ({
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Mark Status</TableHead>
+              <TableHead>Status</TableHead>
               <TableHead>Date</TableHead>
               <TableHead>Title</TableHead>
               <TableHead>Student</TableHead>
               <TableHead>Duration</TableHead>
-              <TableHead>Meeting Notes</TableHead>
+              <TableHead />
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -98,30 +92,7 @@ const CompletedSessionsTable = ({
                 </TableCell>
                 <TableCell>{formatSessionDuration(session.duration)}</TableCell>
                 <TableCell>
-                  <div className="flex flex-col space-y-2">
-                    <Dialog open={isMeetingNotesOpen} onOpenChange={setIsMeetingNotesOpen}>
-                      <DialogTrigger asChild>
-                        <Button
-                          variant="ghost"
-                          onClick={() => {
-                            setIsMeetingNotesOpen(true);
-                            TC.setSelectedSession(session);
-                          }}
-                        >
-                          View Session Notes
-                        </Button>
-                      </DialogTrigger>
-                      <DialogContent>
-                        <DialogHeader>
-                          <DialogTitle>Meeting Notes</DialogTitle>
-                        </DialogHeader>
-                        <Textarea readOnly>{TC.selectedSession?.session_exit_form}</Textarea>
-                      </DialogContent>
-                    </Dialog>
-                  </div>
-                </TableCell>
-                <TableCell>
-                  <DropdownMenu>
+                  <DropdownMenu modal={false}>
                     <DropdownMenuTrigger asChild>
                       <Button variant="ghost" size="icon">
                         <Ellipsis />
@@ -130,8 +101,23 @@ const CompletedSessionsTable = ({
                     <DropdownMenuContent>
                       <DropdownMenuGroup>
                         <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                        <DropdownMenuItem onClick={() => handleUndo(session)}>
-                          Undo
+                        <DropdownMenuItem onSelect={() => setNotesSession(session)}>
+                          View Session Notes
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          onClick={() => {
+                            if (
+                              session.status === "Complete" ||
+                              session.status === "Student Did Not Attend"
+                            ) {
+                              handleUndoSessionExitForm(session.id);
+                            } else {
+                              TC.setSelectedSession(session);
+                              TC.setIsSessionExitFormOpen(true);
+                            }
+                          }}
+                        >
+                          {session.status === "Unconfirmed" ? "Submit overdue SEF" : "Undo"}
                         </DropdownMenuItem>
                       </DropdownMenuGroup>
                     </DropdownMenuContent>
@@ -211,27 +197,7 @@ const CompletedSessionsTable = ({
             <div className="text-sm text-muted-foreground">{formatSessionDate(session.date)}</div>
             <div className="text-sm">Duration: {formatSessionDuration(session.duration)}</div>
             <div className="flex flex-wrap items-center gap-1">
-              <Dialog open={isMeetingNotesOpen} onOpenChange={setIsMeetingNotesOpen}>
-                <DialogTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => {
-                      setIsMeetingNotesOpen(true);
-                      TC.setSelectedSession(session);
-                    }}
-                  >
-                    View Session Notes
-                  </Button>
-                </DialogTrigger>
-                <DialogContent>
-                  <DialogHeader>
-                    <DialogTitle>Meeting Notes</DialogTitle>
-                  </DialogHeader>
-                  <Textarea readOnly>{TC.selectedSession?.session_exit_form}</Textarea>
-                </DialogContent>
-              </Dialog>
-              <DropdownMenu>
+              <DropdownMenu modal={false}>
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" size="icon">
                     <Ellipsis />
@@ -240,7 +206,24 @@ const CompletedSessionsTable = ({
                 <DropdownMenuContent>
                   <DropdownMenuGroup>
                     <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                    <DropdownMenuItem onClick={() => handleUndo(session)}>Undo</DropdownMenuItem>
+                    <DropdownMenuItem onSelect={() => setNotesSession(session)}>
+                      View Session Notes
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={() => {
+                        if (
+                          session.status === "Complete" ||
+                          session.status === "Student Did Not Attend"
+                        ) {
+                          handleUndoSessionExitForm(session.id);
+                        } else {
+                          TC.setSelectedSession(session);
+                          TC.setIsSessionExitFormOpen(true);
+                        }
+                      }}
+                    >
+                      {session.status === "Unconfirmed" ? "Submit overdue SEF" : "Undo"}
+                    </DropdownMenuItem>
                   </DropdownMenuGroup>
                 </DropdownMenuContent>
               </DropdownMenu>
@@ -249,6 +232,16 @@ const CompletedSessionsTable = ({
         ))}
         <LoadMoreButton hasMore={!!hasMore} onClick={() => loadMore?.()} />
       </div>
+
+      {/* One dialog shared by every row, opened from the row's Actions menu */}
+      <Dialog open={!!notesSession} onOpenChange={(open) => !open && setNotesSession(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Meeting Notes</DialogTitle>
+          </DialogHeader>
+          <Textarea readOnly value={notesSession?.session_exit_form ?? ""} />
+        </DialogContent>
+      </Dialog>
     </>
   );
 };

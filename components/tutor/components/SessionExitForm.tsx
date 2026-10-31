@@ -1,13 +1,6 @@
-import React from "react";
-import { useRef, useState } from "react";
+import React, { useRef, useState } from "react";
 import { Loader2 } from "lucide-react";
-import {
-  Dialog,
-  DialogTrigger,
-  DialogContent,
-  DialogTitle,
-  DialogHeader,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTitle, DialogHeader } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Session } from "@/types";
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
@@ -29,14 +22,6 @@ import type { SessionExitFormOutcome } from "@/lib/session-exit-form";
 
 interface SessionExitFormProps {
   currSession: Session;
-  isSessionExitFormOpen: boolean;
-  setIsSessionExitFormOpen: (open: boolean) => void;
-  selectedSession: Session | null;
-  setSelectedSession: (session: Session | null) => void;
-  notes: string;
-  setNotes: (notes: string) => void;
-  nextClassConfirmed: boolean;
-  setNextClassConfirmed: (open: boolean) => void;
   handleSessionComplete: (
     session: Session,
     notes: string,
@@ -45,6 +30,7 @@ interface SessionExitFormProps {
     category?: string,
   ) => Promise<SessionExitFormOutcome>;
   handleStatusChange: (session: Session) => void;
+  actor?: "tutor" | "student";
 }
 
 const calculateDeadline = (sessionDate: Date) => {
@@ -67,9 +53,9 @@ const sessionExitFormDeadline = (currSession: Session) => {
   if (currSession.status === "Complete") {
     urgencyClass = "bg-green-500 text-white hover:bg-green-600 border-green-500";
     deadlineText = "SEF Submitted";
-  } else if (daysUntilDeadline < 0) {
+  } else if (currSession.status === "Unconfirmed" || daysUntilDeadline < 0) {
     urgencyClass = "bg-gray-400 text-white hover:bg-gray-500 border-gray-400";
-    deadlineText = "Deadline has passed";
+    deadlineText = "Submit overdue SEF";
   } else if (isToday(deadlineDate) || daysUntilDeadline === 0) {
     urgencyClass = "bg-red-500 text-white hover:bg-red-600 border-red-500";
     deadlineText = "SEF Due TODAY by 11:59pm EST";
@@ -87,23 +73,47 @@ const sessionExitFormDeadline = (currSession: Session) => {
   return { urgencyClass, deadlineText };
 };
 
+const canSubmitSessionExitForm = (session: Session) =>
+  !isAfter(parseISO(session.date), Date.now()) &&
+  ["Active", "Unconfirmed"].includes(session.status);
+
+export const SessionExitFormTrigger = ({ currSession }: { currSession: Session }) => {
+  const TC = useDashboardContext();
+  return (
+    <HoverCard>
+      <HoverCardTrigger asChild>
+        <Button
+          variant="outline"
+          disabled={!canSubmitSessionExitForm(currSession)}
+          onClick={() => {
+            TC.setSelectedSession(currSession);
+            TC.setIsSessionExitFormOpen(true);
+          }}
+          className=""
+        >
+          {sessionExitFormDeadline(currSession).deadlineText}
+        </Button>
+      </HoverCardTrigger>
+      <HoverCardContent>
+        <div className="space-y-1 text-sm">
+          <p className="font-medium">Submit by 11:59pm EST</p>
+          <p className="text-muted-foreground">
+            Session Exit Form will be available after your session
+          </p>
+        </div>
+      </HoverCardContent>
+    </HoverCard>
+  );
+};
+
 const SessionExitForm = ({
   currSession,
-  // isSessionExitFormOpen,
-  // setIsSessionExitFormOpen,
-  // selectedSession,
-  // setSelectedSession,
-  // notes,
-  // setNotes,
-  // nextClassConfirmed,
-  // setNextClassConfirmed,
   handleSessionComplete,
   handleStatusChange,
   actor = "tutor",
-}: any) => {
+}: SessionExitFormProps) => {
   const TC = useDashboardContext();
 
-  const [isCancellation, setisCancellation] = useState(false);
   const [isFirstSession, setIsFirstSession] = useState(false);
   const [isQuestionOrConcern, setIsQuestionOrConcern] = useState(false);
   const [category, setCategory] = useState("");
@@ -121,7 +131,12 @@ const SessionExitForm = ({
   };
 
   const handleSubmit = async () => {
-    if (submittingRef.current || !TC.selectedSession) return;
+    if (
+      submittingRef.current ||
+      !TC.selectedSession ||
+      !canSubmitSessionExitForm(TC.selectedSession)
+    )
+      return;
     submittingRef.current = true;
     setIsSubmitting(true);
     setSubmitError(null);
@@ -165,33 +180,6 @@ const SessionExitForm = ({
         }
       }}
     >
-      <DialogTrigger asChild>
-        <HoverCard>
-          <HoverCardTrigger asChild>
-            <Button
-              variant="outline"
-              disabled={
-                isAfter(parseISO(currSession.date), Date.now()) || currSession.status !== "Active"
-              }
-              onClick={() => {
-                TC.setSelectedSession(currSession);
-                TC.setIsSessionExitFormOpen(true);
-              }}
-              className=""
-            >
-              {sessionExitFormDeadline(currSession).deadlineText}
-            </Button>
-          </HoverCardTrigger>
-          <HoverCardContent>
-            <div className="space-y-1 text-sm">
-              <p className="font-medium">Submit by 11:59pm EST</p>
-              <p className="text-muted-foreground">
-                Session Exit Form will be available after your session
-              </p>
-            </div>
-          </HoverCardContent>
-        </HoverCard>
-      </DialogTrigger>
       <DialogContent>
         <DialogHeader>
           <DialogTitle className="flex items-center justify-between">
@@ -222,15 +210,15 @@ const SessionExitForm = ({
         <div className="flex items-center space-x-2">
           <Checkbox
             id="question-or-concern"
-            checked={isQuestionOrConcern}
             disabled={isSubmitting}
+            checked={isQuestionOrConcern}
             onCheckedChange={(checked) => {
               const isChecked = checked === true;
               setIsQuestionOrConcern(isChecked);
               if (!isChecked) setCategory("");
             }}
           />
-          <label htmlFor="next-class" className="text-sm font-medium">
+          <label htmlFor="question-or-concern" className="text-sm font-medium">
             I have a question or a concern
           </label>
         </div>
@@ -239,7 +227,7 @@ const SessionExitForm = ({
             <label htmlFor="category" className="text-sm font-medium">
               Issue Category <span className="text-red-500">*</span>
             </label>
-            <Select value={category} onValueChange={setCategory} disabled={isSubmitting}>
+            <Select disabled={isSubmitting} value={category} onValueChange={setCategory}>
               <SelectTrigger id="category">
                 <SelectValue placeholder="Select a category..." />
               </SelectTrigger>
@@ -255,9 +243,9 @@ const SessionExitForm = ({
         )}
 
         <Textarea
+          disabled={isSubmitting}
           value={TC.notes}
           onChange={(e) => TC.setNotes(e.target.value)}
-          disabled={isSubmitting}
           placeholder={
             isQuestionOrConcern
               ? "What is your question or concern?"
@@ -269,8 +257,8 @@ const SessionExitForm = ({
           <div className="flex items-center space-x-2">
             <Checkbox
               id="next-class"
-              checked={TC.nextClassConfirmed}
               disabled={isSubmitting}
+              checked={TC.nextClassConfirmed}
               onCheckedChange={(checked) => TC.setNextClassConfirmed(checked === true)}
             />
             <label htmlFor="next-class" className="text-sm font-medium flex">
@@ -288,6 +276,7 @@ const SessionExitForm = ({
           aria-busy={isSubmitting}
           disabled={
             isSubmitting ||
+            !canSubmitSessionExitForm(currSession) ||
             !TC.notes.trim() ||
             (!TC.nextClassConfirmed && !isQuestionOrConcern) ||
             (isQuestionOrConcern && !category)

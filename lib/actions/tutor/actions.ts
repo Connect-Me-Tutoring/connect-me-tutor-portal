@@ -177,9 +177,10 @@ const SESSION_WITH_RELATIONS = `*,
         meeting:Meetings!meeting_id(*)`;
 
 /**
- * Completes a session's exit form in one conditional write. The `status = Active` filter is
- * the duplicate guard: a second submit (double click, second tab, retry after a slow response)
- * matches no row instead of completing the session again. Never resolves to a silent null;
+ * Completes a session's exit form in one conditional write. Only Active sessions and overdue
+ * (Unconfirmed) ones can be completed; that status filter is also the duplicate guard: a second
+ * submit (double click, second tab, retry after a slow response) finds the session Complete and
+ * matches no row instead of completing it again. Never resolves to a silent null;
  * callers get a typed result and must check `ok` before telling the user it worked.
  */
 export async function submitSessionExitForm(
@@ -202,7 +203,7 @@ export async function submitSessionExitForm(
         is_first_session: isFirstSession,
       })
       .eq("id", sessionId)
-      .eq("status", "Active")
+      .in("status", ["Active", "Unconfirmed"])
       .select(SESSION_WITH_RELATIONS)
       .maybeSingle();
 

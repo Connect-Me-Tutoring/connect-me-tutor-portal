@@ -37,7 +37,7 @@ async function TutorDashboardPage({
   });
 
   const activeTutorSessions = sessions.then((sessions) =>
-    sessions.filter((session) => session.status == "Active"),
+    sessions.filter((session) => session.status === "Active"),
   );
 
   const pastTutorSessions = sessions.then((sessions) =>

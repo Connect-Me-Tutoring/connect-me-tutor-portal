@@ -49,7 +49,7 @@ import {
 import { SessionStatusBadge } from "@/components/sessions/SessionStatusBadge";
 import { format, parseISO, isAfter, addDays } from "date-fns";
 import { AlertDialogTrigger } from "@radix-ui/react-alert-dialog";
-import SessionExitForm from "./SessionExitForm";
+import { SessionExitFormTrigger } from "./SessionExitForm";
 import CancellationForm from "./CancellationForm";
 import EditSessionForm from "./EditSessionForm";
 import { useDashboardContext } from "@/lib/contexts/dashboardContext";
@@ -59,7 +59,6 @@ const CurrentSessionsTable = ({
   meetings,
   totalPages,
   handleStatusChange,
-  handleSessionComplete,
   handlePageChange,
   handleRowsPerPageChange,
   handleUndoCancel,
@@ -92,7 +91,7 @@ const CurrentSessionsTable = ({
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Mark Status</TableHead>
+              <TableHead>Status</TableHead>
               <TableHead>Date</TableHead>
               <TableHead>Title</TableHead>
               <TableHead>Student</TableHead>
@@ -130,19 +129,7 @@ const CurrentSessionsTable = ({
                   )}
                 </TableCell>
                 <TableCell>
-                  <SessionExitForm
-                    currSession={session}
-                    // isSessionExitFormOpen={isSessionExitFormOpen}
-                    // setIsSessionExitFormOpen={setIsSessionExitFormOpen}
-                    // selectedSession={selectedSession}
-                    // setSelectedSession={setSelectedSession}
-                    // notes={notes}
-                    // setNotes={setNotes}
-                    // nextClassConfirmed={nextClassConfirmed}
-                    // setNextClassConfirmed={setNextClassConfirmed}
-                    handleSessionComplete={handleSessionComplete}
-                    handleStatusChange={handleStatusChange}
-                  />
+                  <SessionExitFormTrigger currSession={session} />
                 </TableCell>
                 <TableCell className="flex content-center">
                   <EditSessionForm
@@ -232,11 +219,7 @@ const CurrentSessionsTable = ({
               </div>
             </div>
             <div>
-              <SessionExitForm
-                currSession={session}
-                handleSessionComplete={handleSessionComplete}
-                handleStatusChange={handleStatusChange}
-              />
+              <SessionExitFormTrigger currSession={session} />
             </div>
             <div className="flex flex-wrap items-center gap-1">
               <EditSessionForm

@@ -4,6 +4,7 @@ import { Input } from "@/components/ui/input";
 import ActiveSessionsTable from "../components/ActiveSessionsTable";
 import CurrentSessionsTable from "../components/CurrentSessionsTable";
 import CompletedSessionsTable from "../components/CompletedSessionsTable";
+import SessionExitForm from "../components/SessionExitForm";
 import { updateSession } from "@/lib/actions/session/server.actions";
 import { undoCancelSession } from "@/lib/actions/tutor/actions";
 import { rescheduleSession, cancelSession } from "@/lib/actions/session/server.actions";
@@ -24,6 +25,13 @@ import {
 import { StudentAnnouncementsRoomId } from "@/constants/chat";
 import { format } from "date-fns";
 import { useLoadMore } from "@/hooks/useLoadMore";
+
+// Replace or insert a session, keeping the list in the order it was loaded in
+const upsertSorted = (list: Session[], session: Session, dir: "asc" | "desc") =>
+  [session, ...list.filter((s) => s.id !== session.id)].sort((a, b) => {
+    const diff = new Date(a.date).getTime() - new Date(b.date).getTime();
+    return dir === "asc" ? diff : -diff;
+  });
 
 const TutorDashboard = () => {
   const TC = useDashboardContext();
@@ -193,10 +201,16 @@ const TutorDashboard = () => {
       category,
     });
     if (!outcome.ok) return outcome;
-
+    // Move the saved session out of the active list (it may have been Unconfirmed) and into
+    // past sessions, keeping that list newest first.
     const saved = outcome.session;
-    TC.setCurrentSessions(TC.currentSessions.map((e: Session) => (e.id === saved.id ? saved : e)));
-    TC.setSessions(TC.sessions.map((e: Session) => (e.id === saved.id ? saved : e)));
+    TC.setCurrentSessions((prev) => prev.map((s) => (s.id === saved.id ? saved : s)));
+    TC.setSessions((prev) => prev.filter((s) => s.id !== saved.id));
+    TC.setPastSessions((prev) =>
+      [saved, ...prev.filter((s) => s.id !== saved.id)].sort(
+        (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime(),
+      ),
+    );
     TC.setIsSessionExitFormOpen(false);
     TC.setNotes("");
     TC.setNextClassConfirmed(false);
@@ -224,10 +238,10 @@ const TutorDashboard = () => {
       const session = await undoSessionExitForm(sessionId);
       if (!session) return;
 
-      TC.setSessions((prev) => prev.map((s) => (s.id === sessionId ? session : s)));
-
+      TC.setSessions((prev) => upsertSorted(prev, session, "asc"));
       TC.setPastSessions((prev) => prev.filter((s) => s.id !== sessionId));
-      TC.setCurrentSessions((prev) => [session, ...prev.filter((s) => s.id !== sessionId)]);
+      // Submit updates currentSessions in place, so the session is only here if it's this week
+      TC.setCurrentSessions((prev) => prev.map((s) => (s.id === sessionId ? session : s)));
 
       toast.success("Session exit form undone");
     } catch (error) {
@@ -315,6 +329,13 @@ const TutorDashboard = () => {
 
   return (
     <>
+      {TC.selectedSession && (
+        <SessionExitForm
+          currSession={TC.selectedSession}
+          handleSessionComplete={handleSessionComplete}
+          handleStatusChange={handleStatusChange}
+        />
+      )}
       <div className="p-8">
         <h1 className="text-3xl font-bold mb-6">This Week</h1>
         <div className="flex space-x-6">
@@ -324,7 +345,6 @@ const TutorDashboard = () => {
               totalPages={totalActiveSessionsPages}
               handleStatusChange={handleStatusChange}
               handleReschedule={handleReschedule}
-              handleSessionComplete={handleSessionComplete}
               handleUndoCancel={handleUndoCancel}
               handlePageChange={handleActiveSessionsPageChange}
               handleRowsPerPageChange={handleActiveSessionsRowsPerPageChange}
@@ -359,7 +379,6 @@ const TutorDashboard = () => {
               totalPages={totalActiveSessionsPages}
               handleStatusChange={handleStatusChange}
               handleReschedule={handleReschedule}
-              handleSessionComplete={handleSessionComplete}
               handlePageChange={handleActiveSessionsPageChange}
               handleRowsPerPageChange={handleActiveSessionsRowsPerPageChange}
               handleInputChange={handleInputChange}

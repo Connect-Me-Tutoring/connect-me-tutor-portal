@@ -1,4 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import type { Session } from "@/types";
+import { logEvent } from "@/lib/posthog";
 
 const mockSelect = vi.fn();
 const mockUpdate = vi.fn();
@@ -12,11 +14,13 @@ vi.mock("@/lib/supabase/server", () => ({
 }));
 
 const requireAdmin = vi.fn().mockResolvedValue({});
+const requireSessionAccessById = vi.fn().mockImplementation(async () => ({ from: mockFrom }));
 vi.mock("../auth/authz.server", () => ({
   requireAdmin: (...args: unknown[]) => requireAdmin(...args),
   requireAuthenticatedProfile: vi.fn(),
   requireEnrollmentAccess: vi.fn(),
   requireSessionAccess: vi.fn(),
+  requireSessionAccessById: (...args: unknown[]) => requireSessionAccessById(...args),
   requireStudentProfileAccess: vi.fn(),
   requireTutorProfileAccess: vi.fn(),
   applySessionScope: vi.fn(),
@@ -27,7 +31,13 @@ vi.mock("@/lib/posthog", () => ({
   logEvent: vi.fn().mockResolvedValue(undefined),
 }));
 
-const { getCompletedSessionsCount, markUnconfirmedSEFCron, addSessionsForCron } =
+const updateScheduledEmailBeforeSessions = vi.fn().mockResolvedValue(undefined);
+vi.mock("../email/server.actions", () => ({
+  updateScheduledEmailBeforeSessions: (...args: unknown[]) =>
+    updateScheduledEmailBeforeSessions(...args),
+}));
+
+const { getCompletedSessionsCount, markUnconfirmedSEFCron, updateSession, addSessionsForCron } =
   await import("../session/server.actions");
 
 const START = "2026-08-02T04:00:00.000Z";
@@ -190,6 +200,98 @@ describe("markUnconfirmedSEFCron", () => {
     const result = await markUnconfirmedSEFCron();
 
     expect(result).toEqual({ success: false, error: "deadlock detected", unconfirmed: 0 });
+  });
+});
+
+describe("updateSession SEF persistence", () => {
+  const session = {
+    id: "session-1",
+    date: "2020-01-01T12:00:00Z",
+    status: "Complete",
+    session_exit_form: "We covered fractions.",
+    isQuestionOrConcern: false,
+    isFirstSession: false,
+    duration: 60,
+    summary: "",
+    tutor: null,
+    student: null,
+    createdAt: "2020-01-01T00:00:00Z",
+    enrollmentId: null,
+    isStandalone: false,
+  } satisfies Session;
+  const row = {
+    ...session,
+    session_exit_form: session.session_exit_form,
+    is_question_or_concern: false,
+    is_first_session: false,
+  };
+
+  function mockSave(result: { data: unknown; error: unknown }) {
+    const builder = { eq: vi.fn(), select: vi.fn(), single: vi.fn().mockResolvedValue(result) };
+    builder.eq.mockReturnValue(builder);
+    builder.select.mockReturnValue(builder);
+    mockUpdate.mockReturnValue(builder);
+  }
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    requireSessionAccessById.mockResolvedValue({ from: mockFrom });
+    updateScheduledEmailBeforeSessions.mockResolvedValue(undefined);
+    vi.mocked(logEvent).mockResolvedValue(undefined);
+  });
+
+  it("rejects a database failure rather than returning null or reporting a save", async () => {
+    mockSave({ data: null, error: new Error("database unavailable") });
+    await expect(updateSession(session)).rejects.toThrow("database unavailable");
+    expect(updateScheduledEmailBeforeSessions).not.toHaveBeenCalled();
+    expect(logEvent).not.toHaveBeenCalled();
+  });
+
+  it("rejects a write that returned no saved row", async () => {
+    mockSave({ data: null, error: null });
+    await expect(updateSession(session)).rejects.toThrow("No data returned");
+    expect(updateScheduledEmailBeforeSessions).not.toHaveBeenCalled();
+  });
+
+  it("authorizes the stored session before attempting to save", async () => {
+    requireSessionAccessById.mockRejectedValue(new Error("Access denied"));
+    await expect(updateSession(session)).rejects.toThrow("Access denied");
+    expect(requireSessionAccessById).toHaveBeenCalledWith(session.id);
+    expect(mockUpdate).not.toHaveBeenCalled();
+  });
+
+  it("saves notes and completion together and returns the database record", async () => {
+    mockSave({ data: row, error: null });
+    await expect(updateSession(session)).resolves.toMatchObject({
+      id: session.id,
+      status: "Complete",
+      session_exit_form: "We covered fractions.",
+    });
+    expect(mockUpdate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        status: "Complete",
+        session_exit_form: "We covered fractions.",
+      }),
+    );
+    expect(logEvent).toHaveBeenCalledWith(
+      "session_exit_form_saved",
+      expect.objectContaining({
+        session_id: session.id,
+        late: true,
+      }),
+    );
+  });
+
+  it("does not turn an audit logging outage into a failed save", async () => {
+    mockSave({ data: row, error: null });
+    vi.mocked(logEvent).mockRejectedValueOnce(new Error("audit unavailable"));
+    await expect(updateSession(session)).resolves.toMatchObject({ status: "Complete" });
+  });
+
+  it("still returns the saved SEF if reminder cleanup fails after commit", async () => {
+    mockSave({ data: row, error: null });
+    updateScheduledEmailBeforeSessions.mockRejectedValue(new Error("reminder service down"));
+    await expect(updateSession(session)).resolves.toMatchObject({ status: "Complete" });
   });
 });
 
