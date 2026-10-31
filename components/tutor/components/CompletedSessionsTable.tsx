@@ -101,7 +101,6 @@ const CompletedSessionsTable = ({
                     <DropdownMenuContent>
                       <DropdownMenuGroup>
                         <DropdownMenuLabel>Actions</DropdownMenuLabel>
-<<<<<<< HEAD
                         <DropdownMenuItem onSelect={() => setNotesSession(session)}>
                           View Session Notes
                         </DropdownMenuItem>
@@ -119,10 +118,6 @@ const CompletedSessionsTable = ({
                           }}
                         >
                           {session.status === "Unconfirmed" ? "Submit overdue SEF" : "Undo"}
-=======
-                        <DropdownMenuItem onClick={() => handleUndo(session)}>
-                          Undo
->>>>>>> 6d4f36cb1c49b0e97961bb544671bcfea76d2ce7
                         </DropdownMenuItem>
                       </DropdownMenuGroup>
                     </DropdownMenuContent>
@@ -211,7 +206,6 @@ const CompletedSessionsTable = ({
                 <DropdownMenuContent>
                   <DropdownMenuGroup>
                     <DropdownMenuLabel>Actions</DropdownMenuLabel>
-<<<<<<< HEAD
                     <DropdownMenuItem onSelect={() => setNotesSession(session)}>
                       View Session Notes
                     </DropdownMenuItem>
@@ -230,9 +224,6 @@ const CompletedSessionsTable = ({
                     >
                       {session.status === "Unconfirmed" ? "Submit overdue SEF" : "Undo"}
                     </DropdownMenuItem>
-=======
-                    <DropdownMenuItem onClick={() => handleUndo(session)}>Undo</DropdownMenuItem>
->>>>>>> 6d4f36cb1c49b0e97961bb544671bcfea76d2ce7
                   </DropdownMenuGroup>
                 </DropdownMenuContent>
               </DropdownMenu>
