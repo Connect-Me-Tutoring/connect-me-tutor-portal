@@ -13,6 +13,7 @@ export type SendMailParams = {
   from: string;
   to: MailAddress;
   cc?: MailAddress;
+  replyTo?: MailAddress;
   subject: string;
   html?: string;
   react?: ReactElement;
@@ -61,6 +62,7 @@ async function sendViaMailpit(params: SendMailParams): Promise<SendMailResult> {
     from: params.from,
     to: params.to,
     cc: params.cc,
+    replyTo: params.replyTo,
     subject: params.subject,
     html,
   });

@@ -7,23 +7,24 @@ import { DashboardContextProvider, useDashboardContext } from "@/lib/contexts/da
 import { SessionExitFormTrigger } from "../components/SessionExitForm";
 import TutorDashboard from "./TutorDashboard";
 
-const { updateSession, sendFeedback, toastSuccess, toastError, undoSessionExitForm } = vi.hoisted(
-  () => ({
-    updateSession: vi.fn(),
+const { submitSessionExitForm, sendFeedback, toastSuccess, toastError, undoSessionExitForm } =
+  vi.hoisted(() => ({
+    submitSessionExitForm: vi.fn(),
     undoSessionExitForm: vi.fn(),
     sendFeedback: vi.fn(),
     toastSuccess: vi.fn(),
     toastError: vi.fn(),
-  }),
-);
+  }));
 vi.mock("@/lib/actions/session/server.actions", () => ({
-  updateSession,
+  updateSession: vi.fn(),
   rescheduleSession: vi.fn(),
   cancelSession: vi.fn(),
 }));
+// The real submit flow (lib/session-exit-form) runs; only the server action is mocked.
 vi.mock("@/lib/actions/tutor/actions", () => ({
   undoCancelSession: vi.fn(),
   undoSessionExitForm,
+  submitSessionExitForm,
 }));
 vi.mock("@/lib/actions/enrollment/server.actions", () => ({
   getTutorEnrollmentsMissingSEF: vi.fn().mockResolvedValue([]),
@@ -132,6 +133,18 @@ function setup(session = { ...originalSession }) {
   );
   return session;
 }
+/** What the server action returns once the conditional write has completed the session. */
+const savedResult = ({ sessionId, notes, isQuestionOrConcern, isFirstSession }: any) => ({
+  ok: true,
+  session: {
+    ...originalSession,
+    id: sessionId,
+    status: "Complete",
+    session_exit_form: notes,
+    isQuestionOrConcern,
+    isFirstSession,
+  },
+});
 function openAndFill() {
   fireEvent.click(screen.getAllByRole("button", { name: "Submit overdue SEF" })[0]);
   fireEvent.change(screen.getByRole("textbox"), { target: { value: "We covered fractions." } });
@@ -140,7 +153,7 @@ function openAndFill() {
 beforeEach(() => {
   vi.clearAllMocks();
   sendFeedback.mockResolvedValue(undefined);
-  updateSession.mockImplementation(async (session: Session) => ({ ...session }));
+  submitSessionExitForm.mockImplementation(async (input: any) => savedResult(input));
   vi.stubGlobal(
     "fetch",
     vi.fn().mockResolvedValue({ ok: true, json: async () => ({ success: true }) }),
@@ -184,7 +197,7 @@ describe("SEF submission", () => {
   });
 
   it("keeps notes and confirmation on save failure, then allows a successful retry", async () => {
-    updateSession.mockRejectedValueOnce(new Error("database unavailable"));
+    submitSessionExitForm.mockResolvedValueOnce({ ok: false, reason: "error" });
     const source = setup();
     openAndFill();
     fireEvent.click(screen.getByRole("button", { name: "Submit" }));
@@ -203,14 +216,14 @@ describe("SEF submission", () => {
     expect(fetch).not.toHaveBeenCalled();
     fireEvent.click(screen.getByRole("button", { name: "Submit" }));
     await waitFor(() => expect(toastSuccess).toHaveBeenCalledOnce());
-    expect(updateSession).toHaveBeenCalledTimes(2);
+    expect(submitSessionExitForm).toHaveBeenCalledTimes(2);
   });
 
   it("blocks repeated submits and dismissal while a save is pending", async () => {
-    let resolveSave!: (session: Session) => void;
-    updateSession.mockImplementation(
+    let resolveSave!: (result: unknown) => void;
+    submitSessionExitForm.mockImplementation(
       () =>
-        new Promise<Session>((resolve) => {
+        new Promise((resolve) => {
           resolveSave = resolve;
         }),
     );
@@ -219,27 +232,30 @@ describe("SEF submission", () => {
     const submit = screen.getByRole("button", { name: "Submit" });
     fireEvent.click(submit);
     fireEvent.click(submit);
-    expect(updateSession).toHaveBeenCalledOnce();
-    expect(
-      (screen.getByRole("button", { name: "Submitting…" }) as HTMLButtonElement).disabled,
-    ).toBe(true);
+    await waitFor(() => expect(submitSessionExitForm).toHaveBeenCalledOnce());
+    expect((screen.getByRole("button", { name: "Saving…" }) as HTMLButtonElement).disabled).toBe(
+      true,
+    );
     fireEvent.keyDown(screen.getByRole("dialog"), { key: "Escape" });
     expect(screen.queryByRole("dialog")).not.toBeNull();
     expect(toastSuccess).not.toHaveBeenCalled();
     await act(async () =>
-      resolveSave({
-        ...originalSession,
-        status: "Complete",
-        session_exit_form: "We covered fractions.",
-      }),
+      resolveSave(
+        savedResult({
+          sessionId: originalSession.id,
+          notes: "We covered fractions.",
+          isQuestionOrConcern: false,
+          isFirstSession: false,
+        }),
+      ),
     );
     await waitFor(() => expect(toastSuccess).toHaveBeenCalledOnce());
   });
 
-  it("rejects null or mismatching save results without clearing the form", async () => {
-    updateSession
-      .mockResolvedValueOnce(null)
-      .mockResolvedValueOnce({ ...originalSession, status: "Complete", session_exit_form: "" });
+  it("shows server refusals without clearing the form", async () => {
+    submitSessionExitForm
+      .mockResolvedValueOnce({ ok: false, reason: "not_active" })
+      .mockRejectedValueOnce(new Error("network down"));
     setup();
     openAndFill();
     for (let i = 0; i < 2; i++) {
@@ -250,10 +266,10 @@ describe("SEF submission", () => {
     }
   });
 
-  it("preserves concern fields on failure and distinguishes concern delivery from saving", async () => {
-    updateSession.mockRejectedValueOnce(new Error("save failed"));
-    vi.mocked(fetch).mockResolvedValue({
+  it("saves nothing when the concern can't be sent, keeps the fields, then saves on retry", async () => {
+    vi.mocked(fetch).mockResolvedValueOnce({
       ok: false,
+      status: 500,
       json: async () => ({ success: false, error: "delivery failed" }),
     } as Response);
     setup();
@@ -261,7 +277,8 @@ describe("SEF submission", () => {
     fireEvent.click(screen.getByRole("checkbox", { name: "I have a question or a concern" }));
     fireEvent.change(screen.getByRole("combobox"), { target: { value: "technical" } });
     fireEvent.click(screen.getByRole("button", { name: "Submit" }));
-    await screen.findByRole("alert");
+    expect((await screen.findByRole("alert")).textContent).toContain("question or concern");
+    expect(submitSessionExitForm).not.toHaveBeenCalled();
     expect(
       screen
         .getByRole("checkbox", { name: "I have a question or a concern" })
@@ -269,10 +286,7 @@ describe("SEF submission", () => {
     ).toBe("true");
     expect((screen.getByRole("combobox") as HTMLSelectElement).value).toBe("technical");
     fireEvent.click(screen.getByRole("button", { name: "Submit" }));
-    await waitFor(() =>
-      expect(toastError).toHaveBeenCalledWith(expect.stringContaining("Your SEF was saved, but")),
-    );
-    expect(toastSuccess).toHaveBeenCalledOnce();
+    await waitFor(() => expect(toastSuccess).toHaveBeenCalledOnce());
     expect(context.pastSessions[0].isQuestionOrConcern).toBe(true);
   });
 
@@ -302,7 +316,7 @@ describe("SEF submission", () => {
     expect((screen.getByRole("button", { name: "Submit" }) as HTMLButtonElement).disabled).toBe(
       true,
     );
-    expect(updateSession).not.toHaveBeenCalled();
+    expect(submitSessionExitForm).not.toHaveBeenCalled();
   });
 
   it("does not allow a future session or whitespace-only notes", () => {

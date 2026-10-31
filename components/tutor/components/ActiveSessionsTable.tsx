@@ -2,6 +2,7 @@ import React from "react";
 import { useState } from "react";
 import { formatSessionDate, formatSessionDuration } from "@/lib/utils";
 import { Session, Meeting } from "@/types";
+import type { SessionExitFormOutcome } from "@/lib/session-exit-form";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
@@ -92,7 +93,7 @@ interface SessionsTableProps {
     isQuestionOrConcern: boolean,
     isFirstSession: boolean,
     category?: string,
-  ) => void;
+  ) => Promise<SessionExitFormOutcome>;
   handlePageChange: (page: number) => void;
   handleRowsPerPageChange: (value: string) => void;
   handleInputChange: (e: { target: { name: string; value: string } }) => void;

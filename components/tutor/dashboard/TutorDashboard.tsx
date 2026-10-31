@@ -11,6 +11,7 @@ import { rescheduleSession, cancelSession } from "@/lib/actions/session/server.a
 import { getTutorEnrollmentsMissingSEF } from "@/lib/actions/enrollment/server.actions";
 import { Session, Profile, Meeting } from "@/types";
 import toast from "react-hot-toast";
+import { submitSessionExitFormFlow, type SessionExitFormOutcome } from "@/lib/session-exit-form";
 import { useDashboardContext } from "@/lib/contexts/dashboardContext";
 import { undoSessionExitForm } from "@/lib/actions/tutor/actions";
 import {
@@ -134,16 +135,21 @@ const TutorDashboard = () => {
         const formattedTime = format(new Date(newDate), "h:mm a");
 
         if (updatedSession.student?.email) {
-          await sendSessionRescheduleEmail(
-            {
-              studentName: `${updatedSession.student.firstName} ${updatedSession.student.lastName}`,
-              tutorName: `${TC.profile.firstName} ${TC.profile.lastName}`,
-              newDate: formattedDate,
-              newTime: formattedTime,
-              meetingLink: updatedSession.meeting?.link,
-            },
-            updatedSession.student.email,
-          );
+          // The reschedule already persisted; an email failure must not report it as failed.
+          try {
+            await sendSessionRescheduleEmail(
+              {
+                studentName: `${updatedSession.student.firstName} ${updatedSession.student.lastName}`,
+                tutorName: `${TC.profile.firstName} ${TC.profile.lastName}`,
+                newDate: formattedDate,
+                newTime: formattedTime,
+                meetingLink: updatedSession.meeting?.link,
+              },
+              updatedSession.student.email,
+            );
+          } catch (error) {
+            console.error("Failed to send reschedule email:", error);
+          }
         }
       }
       TC.setSelectedSession(null);
@@ -176,77 +182,57 @@ const TutorDashboard = () => {
     }
   };
 
+  /**
+   * Returns the outcome instead of swallowing it, so the Session Exit Form knows whether to
+   * close. Dashboard state is only updated from the session the server sends back.
+   */
   const handleSessionComplete = async (
     session: Session,
     notes: string,
     isQuestionOrConcern: boolean,
     isFirstSession: boolean,
     category?: string,
-  ) => {
-    let savedSession: Session;
-    try {
-      savedSession = await updateSession({
-        ...session,
-        session_exit_form: notes,
-        status: "Complete",
-        isQuestionOrConcern,
-        isFirstSession,
-      });
-      if (
-        !savedSession ||
-        savedSession.status !== "Complete" ||
-        savedSession.session_exit_form !== notes
-      ) {
-        throw new Error("The saved session did not contain the submitted exit form");
-      }
-    } catch (error) {
-      console.error("Failed to record Session Exit Form", error);
-      toast.error(
-        "Failed to record Session Exit Form. Your notes have been kept; please try again.",
-      );
-      throw error;
-    }
+  ): Promise<SessionExitFormOutcome> => {
+    const outcome = await submitSessionExitFormFlow({
+      session,
+      notes,
+      isQuestionOrConcern,
+      isFirstSession,
+      category,
+    });
+    if (!outcome.ok) return outcome;
 
+<<<<<<< HEAD
     TC.setCurrentSessions((prev) => prev.map((s) => (s.id === savedSession.id ? savedSession : s)));
     TC.setSessions((prev) => prev.filter((s) => s.id !== savedSession.id));
     TC.setPastSessions((prev) => upsertSorted(prev, savedSession, "desc"));
     toast.success("Session Marked Complete");
+=======
+    // Move the saved session out of the active list (it may have been Unconfirmed) and into
+    // past sessions, keeping that list newest first.
+    const saved = outcome.session;
+    TC.setCurrentSessions((prev) => prev.map((s) => (s.id === saved.id ? saved : s)));
+    TC.setSessions((prev) => prev.filter((s) => s.id !== saved.id));
+    TC.setPastSessions((prev) =>
+      [saved, ...prev.filter((s) => s.id !== saved.id)].sort(
+        (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime(),
+      ),
+    );
+>>>>>>> 6d4f36cb1c49b0e97961bb544671bcfea76d2ce7
     TC.setIsSessionExitFormOpen(false);
     TC.setNotes("");
     TC.setNextClassConfirmed(false);
 
-    try {
-      await sendStudentSEFFeedbackEmail(savedSession);
-    } catch (error) {
-      console.error("Failed to send student SEF feedback email:", error);
+    if (outcome.alreadySubmitted) {
+      toast("This Session Exit Form was already submitted.");
+      return outcome;
     }
 
-    // A concern delivery failure must not tell the tutor that their saved SEF failed.
-    if (isQuestionOrConcern) {
-      try {
-        const response = await fetch("/api/session-exit-form/questions-concerns", {
-          headers: { "Content-Type": "application/json" },
-          method: "POST",
-          body: JSON.stringify({
-            tutorFirstName: session.tutor?.firstName,
-            tutorLastName: session.tutor?.lastName,
-            studentFirstName: session.student?.firstName,
-            studentLastName: session.student?.lastName,
-            formContent: notes,
-            tutorEmail: session.tutor?.email,
-            studentEmail: session.student?.email,
-            category,
-          }),
-        });
-        const data = await response.json();
-        if (!response.ok || !data.success) throw new Error(data.error || "Concern delivery failed");
-      } catch (error) {
-        console.error("SEF saved, but unable to record question or concern:", error);
-        toast.error(
-          "Your SEF was saved, but your question or concern could not be sent. Please contact support.",
-        );
-      }
-    }
+    toast.success("Session Marked Complete");
+    // Only after a confirmed save, and only once. Failures toast on their own and don't
+    // affect the saved form.
+    sendStudentSEFFeedbackEmail(saved).catch(() => {});
+    return outcome;
   };
 
   const handleUndoSessionExitForm = async (sessionId: string) => {
@@ -285,8 +271,13 @@ const TutorDashboard = () => {
     }
     try {
       await undoCancelSession(sessionId, "Active");
+      // Undo from the Completed table: the session only exists in the past list, so move it
+      // into the current list instead of mapping over a list that doesn't contain it.
+      const pastSession = TC.pastSessions.find((s) => s.id === sessionId);
       TC.setCurrentSessions(
-        TC.currentSessions.map((s) => (s.id === sessionId ? { ...s, status: "Active" } : s)),
+        pastSession && !TC.currentSessions.some((s) => s.id === sessionId)
+          ? [{ ...pastSession, status: "Active" }, ...TC.currentSessions]
+          : TC.currentSessions.map((s) => (s.id === sessionId ? { ...s, status: "Active" } : s)),
       );
       TC.setPastSessions(TC.pastSessions.filter((s) => s.id !== sessionId));
       TC.setFilteredPastSessions(TC.filteredPastSessions.filter((s) => s.id !== sessionId));
@@ -429,6 +420,7 @@ const TutorDashboard = () => {
               handlePageChange={handlePastSessionsPageChange}
               handleRowsPerPageChange={handlePastSessionsRowsPerPageChange}
               handleUndoSessionExitForm={handleUndoSessionExitForm}
+              handleUndoCancel={handleUndoCancel}
             />
           </div>
         </div>

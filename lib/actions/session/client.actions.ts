@@ -29,6 +29,7 @@ import toast from "react-hot-toast";
 import { DatabaseIcon } from "lucide-react";
 import { getMeeting } from "../admin.actions";
 import { fromZonedTime } from "date-fns-tz";
+import { isEnrollmentSessionDate } from "@/lib/enrollment-schedule";
 import { Table } from "../../supabase/tables";
 import {
   tableToInterfaceMeetings,
@@ -140,7 +141,6 @@ export async function addSessions(
         summary,
         startDate,
         duration,
-        frequency,
       } = enrollment;
 
       //Check if paused over the summer
@@ -205,6 +205,12 @@ export async function addSessions(
 
           if (isNaN(startHour) || isNaN(startMinute) || isNaN(endHour) || isNaN(endMinute)) {
             throw new Error(`Invalid time format: start=${startTime}, end=${endTime}`);
+          }
+
+          // Biweekly enrollments skip their off weeks
+          if (!isEnrollmentSessionDate(enrollment, format(currentDate, "yyyy-MM-dd"))) {
+            currentDate = addDays(currentDate, 1);
+            continue;
           }
 
           // Create session date with correct time

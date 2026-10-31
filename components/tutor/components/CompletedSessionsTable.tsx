@@ -43,9 +43,25 @@ const CompletedSessionsTable = ({
   handlePageChange,
   handleRowsPerPageChange,
   handleUndoSessionExitForm,
+  handleUndoCancel,
 }: any) => {
   const TC = useDashboardContext();
   const [notesSession, setNotesSession] = useState<Session | null>(null);
+
+  const handleUndo = (session: Session) => {
+    if (session.status === "Complete" || session.status === "Student Did Not Attend") {
+      handleUndoSessionExitForm(session.id);
+    } else if (session.status === "Cancelled" && new Date(session.date) > new Date()) {
+      // Restoring an upcoming cancellation is safe. A cancellation has no exit form to undo,
+      // and undoSessionExitForm would also wipe the cancellation reason and first-session flag.
+      handleUndoCancel(session.id);
+    } else {
+      // A past cancellation or an Unconfirmed session: open the exit form to record what
+      // happened. Setting it back to Active would just be re-flagged Unconfirmed overnight.
+      TC.setSelectedSession(session);
+      TC.setIsSessionExitFormOpen(true);
+    }
+  };
 
   return (
     <>
@@ -85,6 +101,7 @@ const CompletedSessionsTable = ({
                     <DropdownMenuContent>
                       <DropdownMenuGroup>
                         <DropdownMenuLabel>Actions</DropdownMenuLabel>
+<<<<<<< HEAD
                         <DropdownMenuItem onSelect={() => setNotesSession(session)}>
                           View Session Notes
                         </DropdownMenuItem>
@@ -102,6 +119,10 @@ const CompletedSessionsTable = ({
                           }}
                         >
                           {session.status === "Unconfirmed" ? "Submit overdue SEF" : "Undo"}
+=======
+                        <DropdownMenuItem onClick={() => handleUndo(session)}>
+                          Undo
+>>>>>>> 6d4f36cb1c49b0e97961bb544671bcfea76d2ce7
                         </DropdownMenuItem>
                       </DropdownMenuGroup>
                     </DropdownMenuContent>
@@ -190,6 +211,7 @@ const CompletedSessionsTable = ({
                 <DropdownMenuContent>
                   <DropdownMenuGroup>
                     <DropdownMenuLabel>Actions</DropdownMenuLabel>
+<<<<<<< HEAD
                     <DropdownMenuItem onSelect={() => setNotesSession(session)}>
                       View Session Notes
                     </DropdownMenuItem>
@@ -208,6 +230,9 @@ const CompletedSessionsTable = ({
                     >
                       {session.status === "Unconfirmed" ? "Submit overdue SEF" : "Undo"}
                     </DropdownMenuItem>
+=======
+                    <DropdownMenuItem onClick={() => handleUndo(session)}>Undo</DropdownMenuItem>
+>>>>>>> 6d4f36cb1c49b0e97961bb544671bcfea76d2ce7
                   </DropdownMenuGroup>
                 </DropdownMenuContent>
               </DropdownMenu>

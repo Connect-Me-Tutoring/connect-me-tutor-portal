@@ -2,26 +2,21 @@
 import { addHours } from "date-fns";
 import { createAdminClient } from "@/lib/supabase/server";
 import { requireAuthenticatedProfile } from "../auth/authz.server";
+import {
+  SESSION_LOOKBACK_HOURS,
+  queryEnrollmentMeetingSlots,
+  querySessionMeetingSlots,
+  type EnrollmentMeetingSlotRow,
+  type SessionMeetingSlotRow,
+} from "./occupancy.server";
 
-export interface EnrollmentMeetingSlotRow {
-  id: string;
-  meetingId: string;
-  day: string | null;
-  startTime: string | null;
-  endTime: string | null;
-}
-
-export interface SessionMeetingSlotRow {
-  id: string;
-  meetingId: string;
-  date: string;
-  duration: number;
-}
+export type { EnrollmentMeetingSlotRow, SessionMeetingSlotRow };
 
 /**
  * RLS limits tutors to their own enrollments and sessions, but choosing a free
  * Zoom link needs every booking. These read with the service role and return
  * only link + time (no student/tutor identities), gated to admins and tutors.
+ * The queries are shared with the server-side room guards (room-conflicts.server).
  */
 async function requireTutorOrAdmin() {
   const { profile } = await requireAuthenticatedProfile();
@@ -33,18 +28,7 @@ async function requireTutorOrAdmin() {
 export async function getEnrollmentMeetingSlots(): Promise<EnrollmentMeetingSlotRow[]> {
   await requireTutorOrAdmin();
   const supabase = await createAdminClient();
-  const { data, error } = await supabase
-    .from("Enrollments")
-    .select("id, meetingId, day, start_time, end_time")
-    .not("meetingId", "is", null);
-  if (error) throw error;
-  return (data ?? []).map((row) => ({
-    id: row.id,
-    meetingId: row.meetingId as string,
-    day: row.day,
-    startTime: row.start_time,
-    endTime: row.end_time,
-  }));
+  return queryEnrollmentMeetingSlots(supabase);
 }
 
 export async function getSessionMeetingSlots(
@@ -56,17 +40,8 @@ export async function getSessionMeetingSlots(
     throw new Error("Invalid date");
   }
   const supabase = await createAdminClient();
-  const { data, error } = await supabase
-    .from("Sessions")
-    .select("id, meeting_id, date, duration")
-    .not("meeting_id", "is", null)
-    .gte("date", addHours(requestedDate, -12).toISOString())
-    .lte("date", addHours(requestedDate, 12).toISOString());
-  if (error) throw error;
-  return (data ?? []).map((row) => ({
-    id: row.id,
-    meetingId: row.meeting_id as string,
-    date: row.date as string, // non-null: the range filter above excludes null dates
-    duration: row.duration,
-  }));
+  return querySessionMeetingSlots(supabase, {
+    from: addHours(requestedDate, -SESSION_LOOKBACK_HOURS),
+    to: addHours(requestedDate, SESSION_LOOKBACK_HOURS),
+  });
 }

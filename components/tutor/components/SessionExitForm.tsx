@@ -1,4 +1,5 @@
 import React, { useRef, useState } from "react";
+import { Loader2 } from "lucide-react";
 import { Dialog, DialogContent, DialogTitle, DialogHeader } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Session } from "@/types";
@@ -17,6 +18,7 @@ import {
 import CancellationForm from "./CancellationForm";
 import { useDashboardContext } from "@/lib/contexts/dashboardContext";
 import { CATEGORY_LABELS } from "@/constants/sessionExitForm";
+import type { SessionExitFormOutcome } from "@/lib/session-exit-form";
 
 interface SessionExitFormProps {
   currSession: Session;
@@ -26,7 +28,7 @@ interface SessionExitFormProps {
     isQuestionOrConcern: boolean,
     isFirstSession: boolean,
     category?: string,
-  ) => Promise<void>;
+  ) => Promise<SessionExitFormOutcome>;
   handleStatusChange: (session: Session) => void;
   actor?: "tutor" | "student";
 }
@@ -112,18 +114,56 @@ const SessionExitForm = ({
 }: SessionExitFormProps) => {
   const TC = useDashboardContext();
 
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const submissionInFlight = useRef(false);
-  const [submitError, setSubmitError] = useState("");
   const [isFirstSession, setIsFirstSession] = useState(false);
   const [isQuestionOrConcern, setIsQuestionOrConcern] = useState(false);
   const [category, setCategory] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
+  // State updates don't land until the next render, so two clicks in the same frame would both
+  // see isSubmitting === false. The ref flips synchronously and closes that gap.
+  const submittingRef = useRef(false);
 
   const resetLocalFormState = () => {
-    setSubmitError("");
     setIsQuestionOrConcern(false);
     setCategory("");
     setIsFirstSession(false);
+    setSubmitError(null);
+  };
+
+  const handleSubmit = async () => {
+    if (
+      submittingRef.current ||
+      !TC.selectedSession ||
+      !canSubmitSessionExitForm(TC.selectedSession)
+    )
+      return;
+    submittingRef.current = true;
+    setIsSubmitting(true);
+    setSubmitError(null);
+    try {
+      const outcome: SessionExitFormOutcome = await handleSessionComplete(
+        TC.selectedSession,
+        TC.notes,
+        isQuestionOrConcern,
+        isFirstSession,
+        category,
+      );
+      if (outcome.ok) {
+        // The handler has closed the dialog and cleared the shared fields.
+        resetLocalFormState();
+      } else {
+        // Keep the dialog open with everything the user typed; show one error.
+        setSubmitError(outcome.error);
+      }
+    } catch (error) {
+      console.error("Session Exit Form submit failed", error);
+      setSubmitError(
+        "We couldn't save your Session Exit Form. Your notes are still here. Please try again.",
+      );
+    } finally {
+      submittingRef.current = false;
+      setIsSubmitting(false);
+    }
   };
 
   const isThisSessionOpen = TC.isSessionExitFormOpen && TC.selectedSession?.id === currSession.id;
@@ -132,7 +172,8 @@ const SessionExitForm = ({
     <Dialog
       open={isThisSessionOpen}
       onOpenChange={(open) => {
-        if (submissionInFlight.current) return;
+        // Don't let the dialog be dismissed mid-save; the result would land on a closed form.
+        if (!open && submittingRef.current) return;
         TC.setIsSessionExitFormOpen(open);
         if (!open) {
           resetLocalFormState();
@@ -231,35 +272,8 @@ const SessionExitForm = ({
           </p>
         )}
         <Button
+          onClick={handleSubmit}
           aria-busy={isSubmitting}
-          onClick={async () => {
-            if (
-              !TC.selectedSession ||
-              !canSubmitSessionExitForm(TC.selectedSession) ||
-              submissionInFlight.current
-            )
-              return;
-            submissionInFlight.current = true;
-            setIsSubmitting(true);
-            setSubmitError("");
-            try {
-              await handleSessionComplete(
-                TC.selectedSession,
-                TC.notes,
-                isQuestionOrConcern,
-                isFirstSession,
-                category,
-              );
-              resetLocalFormState();
-            } catch {
-              setSubmitError(
-                "Your SEF could not be saved. Your entries have been kept; please try again.",
-              );
-            } finally {
-              submissionInFlight.current = false;
-              setIsSubmitting(false);
-            }
-          }}
           disabled={
             isSubmitting ||
             !canSubmitSessionExitForm(currSession) ||
@@ -268,7 +282,14 @@ const SessionExitForm = ({
             (isQuestionOrConcern && !category)
           }
         >
-          {isSubmitting ? "Submitting…" : "Submit"}
+          {isSubmitting ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              Saving…
+            </>
+          ) : (
+            "Submit"
+          )}
         </Button>
       </DialogContent>
     </Dialog>
