@@ -25,6 +25,13 @@ import { StudentAnnouncementsRoomId } from "@/constants/chat";
 import { format } from "date-fns";
 import { useLoadMore } from "@/hooks/useLoadMore";
 
+// Replace or insert a session, keeping the list in the order it was loaded in
+const upsertSorted = (list: Session[], session: Session, dir: "asc" | "desc") =>
+  [session, ...list.filter((s) => s.id !== session.id)].sort((a, b) => {
+    const diff = new Date(a.date).getTime() - new Date(b.date).getTime();
+    return dir === "asc" ? diff : -diff;
+  });
+
 const TutorDashboard = () => {
   const TC = useDashboardContext();
 
@@ -202,11 +209,7 @@ const TutorDashboard = () => {
 
     TC.setCurrentSessions((prev) => prev.map((s) => (s.id === savedSession.id ? savedSession : s)));
     TC.setSessions((prev) => prev.filter((s) => s.id !== savedSession.id));
-    TC.setPastSessions((prev) =>
-      [savedSession, ...prev.filter((s) => s.id !== savedSession.id)].sort(
-        (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime(),
-      ),
-    );
+    TC.setPastSessions((prev) => upsertSorted(prev, savedSession, "desc"));
     toast.success("Session Marked Complete");
     TC.setIsSessionExitFormOpen(false);
     TC.setNotes("");
@@ -257,14 +260,10 @@ const TutorDashboard = () => {
       const session = await undoSessionExitForm(sessionId);
       if (!session) return;
 
-      TC.setSessions((prev) =>
-        [session, ...prev.filter((s) => s.id !== sessionId)].sort(
-          (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime(),
-        ),
-      );
-
+      TC.setSessions((prev) => upsertSorted(prev, session, "asc"));
       TC.setPastSessions((prev) => prev.filter((s) => s.id !== sessionId));
-      TC.setCurrentSessions((prev) => [session, ...prev.filter((s) => s.id !== sessionId)]);
+      // Submit updates currentSessions in place, so the session is only here if it's this week
+      TC.setCurrentSessions((prev) => prev.map((s) => (s.id === sessionId ? session : s)));
 
       toast.success("Session exit form undone");
     } catch (error) {

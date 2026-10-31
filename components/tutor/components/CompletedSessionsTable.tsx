@@ -127,7 +127,7 @@ const CompletedSessionsTable = ({
                             }
                           }}
                         >
-                          Undo
+                          {session.status === "Unconfirmed" ? "Submit overdue SEF" : "Undo"}
                         </DropdownMenuItem>
                       </DropdownMenuGroup>
                     </DropdownMenuContent>
@@ -249,7 +249,7 @@ const CompletedSessionsTable = ({
                         }
                       }}
                     >
-                      Undo
+                      {session.status === "Unconfirmed" ? "Submit overdue SEF" : "Undo"}
                     </DropdownMenuItem>
                   </DropdownMenuGroup>
                 </DropdownMenuContent>

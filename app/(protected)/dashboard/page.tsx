@@ -37,16 +37,11 @@ async function TutorDashboardPage({
   });
 
   const activeTutorSessions = sessions.then((sessions) =>
-    sessions.filter((session) => session.status === "Active" || session.status === "Unconfirmed"),
+    sessions.filter((session) => session.status === "Active"),
   );
 
   const pastTutorSessions = sessions.then((sessions) =>
-    sessions
-      .filter(
-        (session) =>
-          session.status !== "Unconfirmed" && PAST_SESSION_STATUSES.includes(session.status),
-      )
-      .toReversed(),
+    sessions.filter((session) => PAST_SESSION_STATUSES.includes(session.status)).toReversed(),
   );
 
   const currentTutorSessions = sessions.then((sessions) => {

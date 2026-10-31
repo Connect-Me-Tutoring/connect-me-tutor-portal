@@ -113,14 +113,16 @@ function ObserveContext() {
   }, [tc]);
   return null;
 }
+// Mirrors the dashboard page: only Active sessions are active; everything else is past
 function setup(session = { ...originalSession }) {
+  const isActive = session.status === "Active";
   render(
     <DashboardContextProvider
       initialProfile={{ id: "tutor-1" } as Profile}
       params={{
         initialCurrentSessions: [session],
-        initialActiveSessions: [session],
-        initialPastSessions: [],
+        initialActiveSessions: isActive ? [session] : [],
+        initialPastSessions: isActive ? [] : [session],
         initialMeetings: [],
       }}
     >
@@ -163,6 +165,8 @@ describe("SEF submission", () => {
     expect(screen.getByTestId("past-sessions").textContent).toContain(
       "Complete: We covered fractions.",
     );
+    // The Unconfirmed entry is replaced in place, not duplicated
+    expect(context.pastSessions).toHaveLength(1);
     expect(context.notes).toBe("");
     expect(screen.queryByRole("dialog")).toBeNull();
   });
@@ -192,8 +196,8 @@ describe("SEF submission", () => {
       screen.getByRole("checkbox", { name: /My student knows/ }).getAttribute("aria-checked"),
     ).toBe("true");
     expect(source.status).toBe("Unconfirmed");
-    expect(context.sessions[0].status).toBe("Unconfirmed");
-    expect(context.pastSessions).toEqual([]);
+    expect(context.pastSessions).toEqual([source]);
+    expect(context.sessions).toEqual([]);
     expect(toastSuccess).not.toHaveBeenCalled();
     expect(sendFeedback).not.toHaveBeenCalled();
     expect(fetch).not.toHaveBeenCalled();
