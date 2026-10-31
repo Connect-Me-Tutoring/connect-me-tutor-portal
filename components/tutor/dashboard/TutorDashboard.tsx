@@ -201,10 +201,6 @@ const TutorDashboard = () => {
       category,
     });
     if (!outcome.ok) return outcome;
-    TC.setCurrentSessions((prev) => prev.map((s) => (s.id === savedSession.id ? savedSession : s)));
-    TC.setSessions((prev) => prev.filter((s) => s.id !== savedSession.id));
-    TC.setPastSessions((prev) => upsertSorted(prev, savedSession, "desc"));
-    toast.success("Session Marked Complete");
     // Move the saved session out of the active list (it may have been Unconfirmed) and into
     // past sessions, keeping that list newest first.
     const saved = outcome.session;
