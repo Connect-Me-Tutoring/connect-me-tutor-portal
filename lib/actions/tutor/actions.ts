@@ -10,6 +10,12 @@ import {
   requireTutorProfileAccess,
 } from "../auth/authz.server";
 import type { Database } from "@/types/database.types";
+import type {
+  SubmitSessionExitFormInput,
+  SubmitSessionExitFormResult,
+} from "@/types/sessionExitForm";
+import { removeSessionReminders } from "@/lib/email/session-reminders";
+import { logError } from "@/lib/posthog";
 
 type SessionStatus = Database["public"]["Enums"]["session_status"];
 
@@ -163,6 +169,78 @@ export async function recordSessionExitForm(sessionId: string, notes: string) {
     .eq("id", sessionId)
     .single();
   if (error) throw error;
+}
+
+const SESSION_WITH_RELATIONS = `*,
+        tutor:Profiles!tutor_id(*),
+        student:Profiles!student_id(*),
+        meeting:Meetings!meeting_id(*)`;
+
+/**
+ * Completes a session's exit form in one conditional write. Only Active sessions and overdue
+ * (Unconfirmed) ones can be completed; that status filter is also the duplicate guard: a second
+ * submit (double click, second tab, retry after a slow response) finds the session Complete and
+ * matches no row instead of completing it again. Never resolves to a silent null;
+ * callers get a typed result and must check `ok` before telling the user it worked.
+ */
+export async function submitSessionExitForm(
+  input: SubmitSessionExitFormInput,
+): Promise<SubmitSessionExitFormResult> {
+  const { sessionId, isQuestionOrConcern, isFirstSession } = input;
+  const notes = typeof input.notes === "string" ? input.notes.trim() : "";
+  if (!sessionId || !notes) {
+    return { ok: false, reason: "invalid" };
+  }
+
+  try {
+    const supabase = await requireSessionAccessById(sessionId);
+    const { data, error } = await supabase
+      .from(Table.Sessions)
+      .update({
+        status: "Complete",
+        session_exit_form: notes,
+        is_question_or_concern: isQuestionOrConcern,
+        is_first_session: isFirstSession,
+      })
+      .eq("id", sessionId)
+      .in("status", ["Active", "Unconfirmed"])
+      .select(SESSION_WITH_RELATIONS)
+      .maybeSingle();
+
+    if (error) throw error;
+
+    if (!data) {
+      // Nothing matched: find out why so the form can say something accurate.
+      const { data: current, error: currentError } = await supabase
+        .from(Table.Sessions)
+        .select(SESSION_WITH_RELATIONS)
+        .eq("id", sessionId)
+        .maybeSingle();
+      if (currentError) throw currentError;
+      if (current?.status === "Complete") {
+        return {
+          ok: false,
+          reason: "already_submitted",
+          session: tableToInterfaceSessions(current),
+        };
+      }
+      return { ok: false, reason: "not_active" };
+    }
+
+    // The form is saved at this point; reminder cleanup must not turn that into a failure.
+    // The reminder send route re-checks the session before sending anything.
+    try {
+      await removeSessionReminders(sessionId);
+    } catch (reminderError) {
+      await logError(reminderError, { session_id: sessionId }, "email_error");
+    }
+
+    return { ok: true, session: tableToInterfaceSessions(data) };
+  } catch (error) {
+    console.error("Failed to submit session exit form:", error);
+    await logError(error, { session_id: sessionId }, "sef_error");
+    return { ok: false, reason: "error" };
+  }
 }
 
 export async function undoSessionExitForm(sessionId: string) {
