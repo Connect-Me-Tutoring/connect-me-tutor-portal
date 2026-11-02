@@ -672,14 +672,10 @@ export default function DashboardLayout({
                   {/* The manual is written for tutors; students shouldn't see it. */}
                   {profile && profile.role !== "Student" && (
                     <DropdownMenuItem asChild>
-                      <a
-                        href="https://docs.google.com/document/d/1Tzc0JA90Ghy76UdBPCRFrUcT27jOxTvqh4yxq1_xVXY/edit?tab=t.0#heading=h.kk1966kbedef"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                      >
+                      <Link href="/dashboard/manual">
                         <HelpCircleIcon className="mr-2 h-4 w-4" />
                         Tutor Portal Manual
-                      </a>
+                      </Link>
                     </DropdownMenuItem>
                   )}
                   <DropdownMenuItem onSelect={() => setReportIssueOpen(true)}>
