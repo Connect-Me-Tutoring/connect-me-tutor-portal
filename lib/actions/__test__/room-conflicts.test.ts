@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 
 /** Thenable PostgREST builder: records chained calls and resolves to the next result queued for its table. */
 const results: Record<string, unknown[]> = {};
@@ -107,6 +107,94 @@ describe("assertRoomFreeForEnrollment", () => {
         ["or", [expect.stringMatching(/^end_date\.is\.null,end_date\.gte\./)]],
       ]),
     );
+  });
+
+  describe("one-off sessions that do not follow an enrollment", () => {
+    // Mon Nov 9 2026, 4pm ET: a session rescheduled onto the slot from another day.
+    const rescheduled = (extra: Record<string, unknown> = {}) => ({
+      id: "moved",
+      meeting_id: ROOM,
+      date: "2026-11-09T21:00:00.000Z",
+      duration: 1,
+      enrollment_id: "someone-else",
+      is_standalone: false,
+      ...extra,
+    });
+
+    beforeEach(() => {
+      vi.useFakeTimers({ toFake: ["Date"] });
+      vi.setSystemTime(new Date("2026-11-02T12:00:00.000Z"));
+    });
+    afterEach(() => vi.useRealTimers());
+
+    it("rejects a slot that a rescheduled session already holds", async () => {
+      room("Zoom Link B");
+      queue("Sessions", [rescheduled()]);
+
+      await expect(assertRoomFreeForEnrollment(slot)).rejects.toThrow(ROOM_TAKEN_MESSAGE);
+    });
+
+    it("rejects a slot that a standalone session already holds", async () => {
+      room("Zoom Link B");
+      queue("Sessions", [rescheduled({ enrollment_id: null, is_standalone: true })]);
+
+      await expect(assertRoomFreeForEnrollment(slot)).rejects.toThrow(ROOM_TAKEN_MESSAGE);
+    });
+
+    it("compares on Eastern wall-clock time, not the UTC day", async () => {
+      room("Zoom Link B");
+      // Mon Nov 9, 11pm ET is Tue Nov 10, 04:00 UTC.
+      queue("Sessions", [rescheduled({ date: "2026-11-10T04:00:00.000Z" })]);
+
+      await expect(
+        assertRoomFreeForEnrollment({ ...slot, startTime: "22:30", endTime: "23:30" }),
+      ).rejects.toThrow(ROOM_TAKEN_MESSAGE);
+    });
+
+    it("allows back-to-back sessions, other days, and the enrollment's own sessions", async () => {
+      room("Zoom Link B");
+      queue("Sessions", [
+        rescheduled({ id: "before", date: "2026-11-09T20:00:00.000Z" }),
+        rescheduled({ id: "tuesday", date: "2026-11-10T21:00:00.000Z" }),
+        rescheduled({ id: "own", enrollment_id: "self" }),
+      ]);
+
+      await expect(assertRoomFreeForEnrollment(slot, "self")).resolves.toBeUndefined();
+    });
+
+    it("ignores sessions before the enrollment starts and biweekly off-weeks", async () => {
+      room("Zoom Link B");
+      queue("Sessions", [
+        rescheduled(), // Nov 9: before a Nov 16 start
+        rescheduled({ id: "off-week", date: "2026-11-23T21:00:00.000Z" }),
+      ]);
+
+      await expect(
+        assertRoomFreeForEnrollment({
+          ...slot,
+          startDate: "2026-11-16T05:00:00.000Z",
+          frequency: "biweekly",
+        }),
+      ).resolves.toBeUndefined();
+      expect(chainFor("Sessions")).toEqual(
+        expect.arrayContaining([
+          ["eq", ["meeting_id", ROOM]],
+          ["not", ["status", "in", "(Cancelled,Rescheduled)"]],
+          // Look-back from the start date so a session already running at that time counts.
+          ["gte", ["date", "2026-11-15T17:00:00.000Z"]],
+        ]),
+      );
+    });
+
+    it("only looks up sessions through the enrollment's end date", async () => {
+      room("Zoom Link B");
+
+      await assertRoomFreeForEnrollment({ ...slot, endDate: "2026-12-18T05:00:00.000Z" });
+
+      expect(chainFor("Sessions")).toEqual(
+        expect.arrayContaining([["lte", ["date", "2026-12-19T05:00:00.000Z"]]]),
+      );
+    });
   });
 
   it("never blocks the shared HQ room", async () => {

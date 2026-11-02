@@ -12,6 +12,7 @@ import {
   querySessionMeetingSlots,
   sessionsOverlap,
   weeklySlotsOverlap,
+  type SessionMeetingSlotRow,
   type WeeklySlot,
 } from "./occupancy.server";
 
@@ -48,24 +49,76 @@ async function getWeeklyMeetingSchedules(supabase: any, meetingId: string): Prom
   }));
 }
 
-/** Rejects a weekly slot that overlaps another enrollment or weekly meeting in the room. */
+/**
+ * Rejects a weekly slot that overlaps anything already booked in the room on the days the
+ * enrollment would meet: another enrollment's weekly slot, a weekly meeting, or a one-off
+ * session that sits on that slot without following an enrollment's schedule (a session
+ * rescheduled onto the slot, or a standalone session). Without the session check, a new
+ * enrollment could claim a slot that someone's rescheduled session already holds, and the
+ * add-sessions cron would then generate a double-booked session on top of it.
+ */
 export async function assertRoomFreeForEnrollment(
-  slot: { meetingId: string; day: string; startTime: string; endTime: string },
+  slot: {
+    meetingId: string;
+    day: string;
+    startTime: string;
+    endTime: string;
+    startDate?: string | null;
+    endDate?: string | null;
+    frequency?: string | null;
+  },
   excludeEnrollmentId?: string,
 ) {
   const supabase = await createAdminClient();
   if (await isShareableMeeting(supabase, slot.meetingId)) return;
 
-  const [enrollments, schedules] = await Promise.all([
+  const now = new Date();
+  const termStart = slot.startDate ? new Date(slot.startDate) : null;
+  const from = termStart && termStart > now ? termStart : now;
+  // end_date is a calendar day, so keep sessions anywhere on it.
+  const to = slot.endDate ? addHours(new Date(slot.endDate), 24) : undefined;
+
+  const [enrollments, schedules, sessions] = await Promise.all([
     queryEnrollmentMeetingSlots(supabase, { meetingId: slot.meetingId }),
     getWeeklyMeetingSchedules(supabase, slot.meetingId),
+    querySessionMeetingSlots(
+      supabase,
+      { from: addHours(from, -SESSION_LOOKBACK_HOURS), to },
+      slot.meetingId,
+    ),
   ]);
 
   const clash =
     enrollments.some((e) => e.id !== excludeEnrollmentId && weeklySlotsOverlap(slot, e)) ||
-    schedules.some((schedule) => weeklySlotsOverlap(slot, schedule));
+    schedules.some((schedule) => weeklySlotsOverlap(slot, schedule)) ||
+    sessions.some(
+      (s) =>
+        (!excludeEnrollmentId || s.enrollmentId !== excludeEnrollmentId) &&
+        sessionFallsOnEnrollmentSlot(s, slot, from),
+    );
 
   if (clash) throw new Error(ROOM_TAKEN_MESSAGE);
+}
+
+/**
+ * Whether an existing session would collide with a weekly enrollment slot: it is still
+ * upcoming once the enrollment starts, lands on the same Eastern weekday and time, and
+ * (for biweekly enrollments) falls in one of the enrollment's on-weeks.
+ */
+function sessionFallsOnEnrollmentSlot(
+  session: SessionMeetingSlotRow,
+  slot: WeeklySlot & { startDate?: string | null; frequency?: string | null },
+  from: Date,
+) {
+  const start = new Date(session.date);
+  const end = addHours(start, session.duration || 1);
+  if (end <= from) return false;
+  if (!weeklySlotsOverlap(slot, sessionWeeklySlot(start, end))) return false;
+  const sessionDate = format(toZonedTime(start, EASTERN_TIMEZONE), "yyyy-MM-dd");
+  return isEnrollmentSessionDate(
+    { frequency: slot.frequency, startDate: slot.startDate },
+    sessionDate,
+  );
 }
 
 /** The Eastern weekday and wall-clock times a one-off session occupies. */
