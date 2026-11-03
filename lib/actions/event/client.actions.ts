@@ -17,7 +17,8 @@ export async function getEvents(
         date,
         summary,
         tutor_id,
-        hours
+        hours,
+        type
       `,
     )
     .eq("tutor_id", tutorId);
