@@ -52,8 +52,7 @@ const nextConfig = {
         headers: [
           {
             key: "Content-Security-Policy",
-            value:
-              "frame-src 'self' blob: https://*.zoom.us https://vercel.live; frame-ancestors 'self'; object-src 'none'; base-uri 'self'; form-action 'self';",
+            value: csp,
           },
           { key: "X-Frame-Options", value: "SAMEORIGIN" },
           { key: "X-Content-Type-Options", value: "nosniff" },

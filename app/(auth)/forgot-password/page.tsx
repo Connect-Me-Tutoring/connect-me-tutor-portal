@@ -9,6 +9,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { getErrorMessage } from "@/lib/utils/error";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -58,8 +59,8 @@ export default function ForgotPasswordPage() {
 
       toast.success("Password reset email sent successfully");
     } catch (error) {
-      console.error("Unable to reset password");
-      toast.error(`Unable to send reset password link ${error}`);
+      console.error("Unable to reset password", error);
+      toast.error(getErrorMessage(error, "Unable to send reset password link. Please try again."));
     }
   };
   const emailForm = useForm<z.infer<typeof emailSchema>>({
@@ -123,8 +124,8 @@ export default function ForgotPasswordPage() {
       });
 
       if (error) {
-        toast.error(error.message);
-        throw error;
+        toast.error(getErrorMessage(error, "Invalid code. Please check and try again."));
+        return;
       }
 
       if (session) {

@@ -65,6 +65,7 @@ import { LoadMoreButton } from "@/components/ui/load-more-button";
 import { useLoadMore } from "@/hooks/useLoadMore";
 import { ResponsiveList, ResponsiveListColumn } from "@/components/ui/responsive-list";
 import toast, { Toaster } from "react-hot-toast";
+import { getErrorMessage } from "@/lib/utils/error";
 import { Combobox } from "@/components/ui/combobox";
 
 import AddTutorForm from "./components/AddTutorForm";
@@ -261,9 +262,9 @@ const TutorList = ({ initialTutors }: any) => {
           "Failed to add tutor. Please check the email address and ensure it is valid and unique.",
         );
       } else if (err.message.includes("required")) {
-        toast.error(`Failed to add tutor. Required field error: ${err.message}`);
+        toast.error("Failed to add tutor. Please fill in all required fields.");
       } else {
-        toast.error(`Failed to add tutor: ${err.message || "Please try again"}`);
+        toast.error(getErrorMessage(err, "Failed to add tutor. Please try again."));
       }
     } finally {
       setAddingTutor(false);
