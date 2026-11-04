@@ -42,7 +42,6 @@ import {
   ChevronLeft,
   ChevronRight,
   CalendarX,
-  UserRoundPlus,
   Copy,
   Ellipsis,
   Video,
@@ -53,6 +52,7 @@ import { AlertDialogTrigger } from "@radix-ui/react-alert-dialog";
 import { SessionExitFormTrigger } from "./SessionExitForm";
 import CancellationForm from "./CancellationForm";
 import EditSessionForm from "./EditSessionForm";
+import RequestSubstituteDialog from "./RequestSubstituteDialog";
 import { boolean } from "zod";
 import { useDashboardContext } from "@/lib/contexts/dashboardContext";
 import {
@@ -174,14 +174,7 @@ const ActiveSessionsTable = ({
                           handleStatusChange={handleStatusChange}
                           isDropdownItem
                         />
-                        <DropdownMenuItem
-                          onClick={() =>
-                            (window.location.href = "https://forms.gle/AC4an7K6NSNumDwKA")
-                          }
-                        >
-                          <UserRoundPlus className="h-4 w-4 mr-2" />
-                          Request Substitute
-                        </DropdownMenuItem>
+                        <RequestSubstituteDialog session={session} isDropdownItem />
                         <AlertDialog>
                           <AlertDialogTrigger asChild>
                             <DropdownMenuItem
@@ -322,12 +315,7 @@ const ActiveSessionsTable = ({
                       handleStatusChange={handleStatusChange}
                       isDropdownItem
                     />
-                    <DropdownMenuItem
-                      onClick={() => (window.location.href = "https://forms.gle/AC4an7K6NSNumDwKA")}
-                    >
-                      <UserRoundPlus className="h-4 w-4 mr-2" />
-                      Request Substitute
-                    </DropdownMenuItem>
+                    <RequestSubstituteDialog session={session} isDropdownItem />
                     <AlertDialog>
                       <AlertDialogTrigger asChild>
                         <DropdownMenuItem
