@@ -183,7 +183,7 @@ const ActiveSessionsTable = ({
                   </a>
                 </TableCell>
                 <TableCell>
-                  {session.status === "Active" ? (
+                  {session.status === "Active" || session.status === "Sub-Request" ? (
                     <AlertDialog>
                       <AlertDialogTrigger asChild>
                         <Button
@@ -319,7 +319,7 @@ const ActiveSessionsTable = ({
                 <MessageSquare className="h-4 w-4" />
                 Feedback
               </a>
-              {session.status === "Active" ? (
+              {session.status === "Active" || session.status === "Sub-Request" ? (
                 <AlertDialog>
                   <AlertDialogTrigger asChild>
                     <Button

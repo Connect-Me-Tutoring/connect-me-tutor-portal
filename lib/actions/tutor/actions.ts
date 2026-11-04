@@ -243,6 +243,55 @@ export async function submitSessionExitForm(
   }
 }
 
+export type SubstituteRequestResult =
+  { ok: true; session: Session } | { ok: false; reason: "not_allowed" | "error" };
+
+/**
+ * One conditional status write for the substitute flow. Filtering on the current status keeps a
+ * Cancelled, Complete or already-changed session as it is (no row matches) instead of
+ * overwriting it, and RLS limits the write to the session's tutor or an admin.
+ */
+async function moveSubstituteStatus(
+  sessionId: string,
+  from: SessionStatus,
+  to: SessionStatus,
+): Promise<SubstituteRequestResult> {
+  if (!sessionId) return { ok: false, reason: "not_allowed" };
+
+  try {
+    const supabase = await requireSessionAccessById(sessionId);
+    const { data, error } = await supabase
+      .from(Table.Sessions)
+      .update({ status: to })
+      .eq("id", sessionId)
+      .eq("status", from)
+      .select(SESSION_WITH_RELATIONS)
+      .maybeSingle();
+
+    if (error) throw error;
+    if (!data) return { ok: false, reason: "not_allowed" };
+    return { ok: true, session: tableToInterfaceSessions(data) };
+  } catch (error) {
+    console.error(`Failed to move session ${sessionId} from ${from} to ${to}:`, error);
+    await logError(error, { session_id: sessionId, from, to }, "session_error");
+    return { ok: false, reason: "error" };
+  }
+}
+
+/**
+ * Marks an Active session Sub-Request when its tutor requests a substitute. Hours only count
+ * Complete sessions, so the tutor gets none for it, and the Unconfirmed cron only flips Active
+ * sessions, so it isn't counted as a missed exit form either.
+ */
+export async function requestSubstitute(sessionId: string): Promise<SubstituteRequestResult> {
+  return moveSubstituteStatus(sessionId, "Active", "Sub-Request");
+}
+
+/** Puts a Sub-Request session back to Active, e.g. when the tutor can teach it after all. */
+export async function undoSubstituteRequest(sessionId: string): Promise<SubstituteRequestResult> {
+  return moveSubstituteStatus(sessionId, "Sub-Request", "Active");
+}
+
 export async function undoSessionExitForm(sessionId: string) {
   try {
     const supabase = await requireSessionAccessById(sessionId);
