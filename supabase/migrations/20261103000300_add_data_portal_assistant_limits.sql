@@ -14,8 +14,8 @@
 --
 -- public.data_portal_assistant_claim() is the only way in. It decides who is
 -- asking from auth.uid() on the caller's own session, refuses anyone whose
--- active profile is not an Active Admin (the same gate as
--- data_portal_overview), and then either records the question or says which
+-- active profile is not an Active Admin (private.is_admin(), the check every
+-- policy and data_portal_overview use), and then either records the question or says which
 -- limit it hit. To change a limit, change the numbers in the function.
 
 begin;
@@ -51,16 +51,7 @@ declare
   v_count bigint;
   v_oldest timestamptz;
 begin
-  if v_uid is null or not exists (
-    select 1
-    from public.user_settings us
-    join public."Profiles" p
-      on p.id = us.last_active_profile_id
-     and p.user_id = us.user_id
-    where us.user_id = v_uid
-      and p.role = 'Admin'
-      and p.status = 'Active'
-  ) then
+  if v_uid is null or not coalesce(private.is_admin(), false) then
     raise exception 'Admin access required';
   end if;
 

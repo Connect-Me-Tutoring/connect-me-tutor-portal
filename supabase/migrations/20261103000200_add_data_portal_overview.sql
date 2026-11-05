@@ -1,17 +1,18 @@
 -- Data Portal overview: everything the admin side panel shows, in one call.
 --
 -- public.data_portal_overview(p_date_range) is the only thing the portal
--- calls, with the signed-in user's own session. It refuses unless the
--- caller's ACTIVE profile (user_settings.last_active_profile_id) is an
--- Admin — the same definition the app's authz helpers use — computes four
--- read-only aggregates and returns a single jsonb payload. It writes nothing. One round trip per panel open.
+-- calls, with the signed-in user's own session. It refuses unless
+-- private.is_admin() says the caller is an admin (the active profile is an
+-- Active Admin, the same definition as the app's requireAdmin()), computes
+-- four read-only aggregates and returns a single jsonb payload. It writes
+-- nothing. One round trip per page load.
 --
 -- The aggregate functions live in the `analysis` schema, are aggregate-only
 -- by construction (no name, email, free text beyond subject labels, or
--- per-person row can come back), and are NOT exposed through PostgREST —
--- only the gated wrapper is. Their definitions are identical to the ones in
--- the dataPortalWebsite repo's analysis-backend migration; `create or
--- replace` makes applying both repos' migrations in either order safe.
+-- per-person row can come back), and are NOT exposed through PostgREST:
+-- only the gated wrapper is. These are the definitions to use. The older
+-- copies in the dataPortalWebsite repo's analysis-backend migration predate
+-- the subject_demand fixes below and should not be applied over them.
 --
 -- Measurement definitions encoded here (review with someone who knows the
 -- operational data before treating the numbers as fact):
@@ -24,8 +25,14 @@
 --     the 45 days ending there; a cohort appears in the window where its
 --     youngest member REACHED day 90, and younger cohorts are omitted, never
 --     shown as zero.
---   - Subject demand joins pairing_requests through both id conventions the
---     app tolerates (profile id and auth user id).
+--   - Subject demand joins pairing_requests.user_id to Profiles.id only. It
+--     is a foreign key to Profiles.id, so it always holds a profile id. An
+--     earlier version also matched it against Profiles.user_id, which fires
+--     when a profile's id equals its login's id and then pulled in every
+--     profile on that login, tutor and sibling profiles included. Only a
+--     Student profile counts as demand.
+--   - Subjects are matched without regard to case or surrounding spaces, so
+--     "Math" and "math " are one row, shown with its most common spelling.
 --   - There is deliberately no regional section: the records carry no
 --     region or need data, and a proxy would read like the real thing.
 
@@ -130,13 +137,17 @@ as $$
     select distinct pr.id as request_id, p.id as profile_id, p.subjects_of_interest
     from pairing_requests pr
     join "Profiles" p
-      on p.id = pr.user_id or p.user_id = pr.user_id
+      on p.id = pr.user_id
+     and p.role = 'Student'
     where pr.type = 'student'
       and pr.created_at >= p_start
       and pr.created_at < p_end
   ),
   demand as (
-    select trim(subject_entry) as subject, count(distinct r.profile_id) as students_requesting
+    select
+      lower(trim(subject_entry)) as subject_key,
+      mode() within group (order by trim(subject_entry)) as subject,
+      count(distinct r.profile_id) as students_requesting
     from requests r
     cross join lateral unnest(coalesce(r.subjects_of_interest, '{}')) as subject_entry
     where trim(coalesce(subject_entry, '')) <> ''
@@ -148,7 +159,10 @@ as $$
     where p.role = 'Tutor' and p.status = 'Active'
   ),
   supply as (
-    select trim(subject_entry) as subject, count(distinct t.id) as tutors_available
+    select
+      lower(trim(subject_entry)) as subject_key,
+      mode() within group (order by trim(subject_entry)) as subject,
+      count(distinct t.id) as tutors_available
     from tutors t
     cross join lateral unnest(coalesce(t.subjects_of_interest, '{}')) as subject_entry
     where trim(coalesce(subject_entry, '')) <> ''
@@ -161,7 +175,7 @@ as $$
     (select count(distinct request_id) from requests)::bigint as requests_read,
     (select count(*) from tutors)::bigint as tutors_read
   from demand d
-  full outer join supply s on s.subject = d.subject
+  full outer join supply s on s.subject_key = d.subject_key
   order by students_requesting desc, subject
   limit 100;
 $$;
@@ -241,19 +255,11 @@ declare
   v_retention jsonb;
   v_retention_rows bigint;
 begin
-  -- The gate. auth.uid() comes from the caller's verified JWT, so this
-  -- decides for the calling user only, from the same place the app's own
-  -- requireAdmin() looks: the active profile must be an Active Admin.
-  if not exists (
-    select 1
-    from public.user_settings us
-    join public."Profiles" p
-      on p.id = us.last_active_profile_id
-     and p.user_id = us.user_id
-    where us.user_id = auth.uid()
-      and p.role = 'Admin'
-      and p.status = 'Active'
-  ) then
+  -- The gate. This function is security definer and so bypasses row level
+  -- security, which is why the check has to live in here. It is the same
+  -- check every policy uses; auth.uid() inside it comes from the caller's
+  -- verified JWT, so it decides for the calling user only.
+  if not coalesce(private.is_admin(), false) then
     raise exception 'Admin access required';
   end if;
 

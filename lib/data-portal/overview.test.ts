@@ -1,9 +1,5 @@
 import { describe, expect, it } from "vitest";
-import {
-  mapOverviewToSections,
-  overviewPayloadSchema,
-  type OverviewPayload,
-} from "./overview";
+import { mapOverviewToSections, overviewPayloadSchema, type OverviewPayload } from "./overview";
 
 /**
  * The payload contract and the honesty rules in the mapping: partial periods
@@ -65,9 +61,9 @@ describe("overviewPayloadSchema", () => {
     };
     expect(overviewPayloadSchema.safeParse(negative).success).toBe(false);
 
-    expect(
-      overviewPayloadSchema.safeParse({ ...PAYLOAD, dateRange: "last-week" }).success,
-    ).toBe(false);
+    expect(overviewPayloadSchema.safeParse({ ...PAYLOAD, dateRange: "last-week" }).success).toBe(
+      false,
+    );
   });
 });
 

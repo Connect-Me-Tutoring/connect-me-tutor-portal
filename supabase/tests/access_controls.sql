@@ -73,12 +73,19 @@ end;
 $$;
 
 -- An UPDATE that RLS filters out affects 0 rows rather than raising.
+-- As with reads, a write that changes nothing may also be refused outright
+-- for want of a privilege; both pass.
 create or replace function pg_temp.expect_no_rows_changed(p_label text, p_sql text)
 returns void language plpgsql as $$
 declare
   v_count bigint;
 begin
-  execute p_sql;
+  begin
+    execute p_sql;
+  exception when insufficient_privilege then
+    raise notice 'ok   % (refused: %)', p_label, SQLERRM;
+    return;
+  end;
   get diagnostics v_count = ROW_COUNT;
   if v_count <> 0 then
     raise exception 'FAIL % : changed % row(s), expected none', p_label, v_count;
@@ -87,6 +94,26 @@ begin
 end;
 $$;
 
+-- Reaching nothing can look two ways: row level security returns no rows,
+-- or the role holds no privilege on the table at all and the read is refused.
+-- Either one passes; a single returned row does not.
+create or replace function pg_temp.expect_nothing(p_label text, p_sql text)
+returns void language plpgsql as $$
+declare
+  v_actual bigint;
+begin
+  begin
+    execute 'select count(*) from (' || p_sql || ') _q' into v_actual;
+  exception when insufficient_privilege then
+    raise notice 'ok   % (refused: %)', p_label, SQLERRM;
+    return;
+  end;
+  if v_actual <> 0 then
+    raise exception 'FAIL % : expected nothing, got % row(s)', p_label, v_actual;
+  end if;
+  raise notice 'ok   %', p_label;
+end;
+$$;
 create or replace function pg_temp.expect_rows_changed(p_label text, p_sql text, p_expected bigint)
 returns void language plpgsql as $$
 declare
@@ -161,8 +188,10 @@ insert into pairing_matches (id, tutor_id, student_id, similarity) values
 insert into pairing_logs (id, message, type) values
   ('ffffffff-0000-0000-0000-00000000000a', 'paired a student', 'pairing-match');
 
+-- Tom's own hours, and Uma's, whom nobody but an admin is related to.
 insert into "User_Availabilities" (day_of_the_week, start_time, end_time, profile_id) values
-  (1, '15:00', '16:00', 'aaaaaaaa-0000-0000-0000-00000000000b');
+  (1, '15:00', '16:00', 'aaaaaaaa-0000-0000-0000-00000000000b'),
+  (2, '15:00', '16:00', 'aaaaaaaa-0000-0000-0000-00000000000e');
 
 -- Guard against the fixtures themselves silently vanishing: every table these
 -- tests claim to hide must actually hold something to hide.
@@ -187,14 +216,14 @@ $fixtures$;
 
 select pg_temp.as_role('anon');
 
-select pg_temp.expect_rows('anon reads no Profiles',         'select 1 from "Profiles"',      0);
-select pg_temp.expect_rows('anon reads no Sessions',         'select 1 from "Sessions"',      0);
-select pg_temp.expect_rows('anon reads no Pairings',         'select 1 from "Pairings"',      0);
-select pg_temp.expect_rows('anon reads no pairing_requests', 'select 1 from pairing_requests',0);
-select pg_temp.expect_rows('anon reads no pairing_matches',  'select 1 from pairing_matches', 0);
-select pg_temp.expect_rows('anon reads no pairing_logs',     'select 1 from pairing_logs',    0);
-select pg_temp.expect_rows('anon reads no User_Availabilities',
-                           'select 1 from "User_Availabilities"', 0);
+select pg_temp.expect_nothing('anon reads no Profiles',         'select 1 from "Profiles"');
+select pg_temp.expect_nothing('anon reads no Sessions',         'select 1 from "Sessions"');
+select pg_temp.expect_nothing('anon reads no Pairings',         'select 1 from "Pairings"');
+select pg_temp.expect_nothing('anon reads no pairing_requests', 'select 1 from pairing_requests');
+select pg_temp.expect_nothing('anon reads no pairing_matches',  'select 1 from pairing_matches');
+select pg_temp.expect_nothing('anon reads no pairing_logs',     'select 1 from pairing_logs');
+select pg_temp.expect_nothing('anon reads no User_Availabilities',
+                              'select 1 from "User_Availabilities"');
 
 select pg_temp.expect_error('anon cannot call the overview',
   $q$select public.data_portal_overview('last-90-days')$q$, 'permission denied');
@@ -224,8 +253,12 @@ select pg_temp.expect_rows('tutor sees only their own pairing request',
   'select 1 from pairing_requests', 1);
 select pg_temp.expect_rows('tutor sees no pairing logs',
   'select 1 from pairing_logs', 0);
-select pg_temp.expect_rows('tutor sees no availability rows',
-  'select 1 from "User_Availabilities"', 0);
+select pg_temp.expect_rows('tutor sees only their own availability',
+  $q$select 1 from "User_Availabilities"
+     where profile_id = 'aaaaaaaa-0000-0000-0000-00000000000b'$q$, 1);
+select pg_temp.expect_rows('tutor sees no unrelated tutor''s availability',
+  $q$select 1 from "User_Availabilities"
+     where profile_id = 'aaaaaaaa-0000-0000-0000-00000000000e'$q$, 0);
 
 -- Students and tutors write to the log when they enter the queue or answer a
 -- match, so losing the read must not cost them the write.
@@ -266,7 +299,7 @@ select pg_temp.expect_rows('active admin still sees every pairing request',
 select pg_temp.expect_rows('active admin still sees the pairing logs',
   'select 1 from pairing_logs', 2);
 select pg_temp.expect_rows('active admin still sees availability rows',
-  'select 1 from "User_Availabilities"', 1);
+  'select 1 from "User_Availabilities"', 2);
 
 reset role;
 
@@ -287,16 +320,18 @@ select pg_temp.expect_error('tutor cannot touch the assistant counts',
 
 select pg_temp.expect_error('tutor cannot promote self to Admin',
   $q$update "Profiles" set role = 'Admin' where id = 'aaaaaaaa-0000-0000-0000-00000000000b'$q$,
-  'Only an admin can change a profile role');
+  'Not allowed to modify privileged Profiles columns');
 
 select pg_temp.expect_error('tutor cannot create an Admin profile',
   $q$insert into "Profiles" (user_id, role, status, first_name, last_name, settings_id)
      values ('22222222-2222-2222-2222-222222222222', 'Admin', 'Active', 'E', 'V', gen_random_uuid())$q$,
-  'Only an admin can create an Admin profile');
+  'violates row-level security policy');
 
-select pg_temp.expect_error('tutor cannot change own status',
-  $q$update "Profiles" set status = 'Inactive' where id = 'aaaaaaaa-0000-0000-0000-00000000000b'$q$,
-  'Only an admin can change a profile status');
+-- Pausing yourself (Active to Inactive) is the one status change dev allows
+-- a tutor or student, so it is not tested as refused. Changing anyone else's
+-- status is refused.
+select pg_temp.expect_no_rows_changed('tutor cannot change another profile''s status',
+  $q$update "Profiles" set status = 'Inactive' where id = 'aaaaaaaa-0000-0000-0000-00000000000e'$q$);
 
 select pg_temp.expect_rows_changed('tutor may edit own name',
   $q$update "Profiles" set first_name = 'Tommy' where id = 'aaaaaaaa-0000-0000-0000-00000000000b'$q$, 1);
@@ -309,7 +344,23 @@ select pg_temp.expect_error('tutor cannot activate someone elses admin profile',
      where user_id = '22222222-2222-2222-2222-222222222222'$q$,
   'row-level security');
 
+-- The case above is also stopped by the unique constraint on
+-- last_active_profile_id, because Ada's profile is already her active one.
+-- An Admin profile that is nobody's active profile has only the policy in
+-- front of it. Ada gets a second one for this check and loses it after.
 reset role;
+insert into "Profiles" (id, user_id, role, status, first_name, last_name, created_at, settings_id)
+values ('aaaaaaaa-0000-0000-0000-0000000000ff', '11111111-1111-1111-1111-111111111111',
+        'Admin', 'Active', 'Ada', 'Spare', now(), gen_random_uuid());
+select pg_temp.as_user('22222222-2222-2222-2222-222222222222');
+
+select pg_temp.expect_error('tutor cannot activate an admin profile nobody is using',
+  $q$update user_settings set last_active_profile_id = 'aaaaaaaa-0000-0000-0000-0000000000ff'
+     where user_id = '22222222-2222-2222-2222-222222222222'$q$,
+  'row-level security');
+
+reset role;
+delete from "Profiles" where id = 'aaaaaaaa-0000-0000-0000-0000000000ff';
 
 -- ---------------------------------------------------------------------------
 -- student
@@ -325,12 +376,15 @@ select pg_temp.expect_error('student cannot ask the assistant',
 
 select pg_temp.expect_error('student cannot promote self',
   $q$update "Profiles" set role = 'Admin' where id = 'aaaaaaaa-0000-0000-0000-00000000000c'$q$,
-  'Only an admin can change a profile role');
+  'Not allowed to modify privileged Profiles columns');
 
 -- Students set their own account status from the Settings page, so this one
 -- is deliberately allowed where the tutor case above is not.
 select pg_temp.expect_rows_changed('student may set own status',
   $q$update "Profiles" set status = 'Inactive' where id = 'aaaaaaaa-0000-0000-0000-00000000000c'$q$, 1);
+
+-- Pausing is one way: reactivating takes an admin, so Ada puts Sue back.
+select pg_temp.as_user('11111111-1111-1111-1111-111111111111');
 update "Profiles" set status = 'Active' where id = 'aaaaaaaa-0000-0000-0000-00000000000c';
 
 reset role;
@@ -349,7 +403,7 @@ select pg_temp.expect_error('inactive admin cannot ask the assistant',
 
 select pg_temp.expect_error('inactive admin cannot reactivate self',
   $q$update "Profiles" set status = 'Active' where id = 'aaaaaaaa-0000-0000-0000-00000000000d'$q$,
-  'Only an admin can change a profile status');
+  'Not allowed to modify privileged Profiles columns');
 
 select pg_temp.expect_no_rows_changed('inactive admin cannot edit another profile',
   $q$update "Profiles" set first_name = 'Hacked' where id = 'aaaaaaaa-0000-0000-0000-00000000000b'$q$);
@@ -364,6 +418,47 @@ select pg_temp.as_user('11111111-1111-1111-1111-111111111111');
 
 select pg_temp.expect_rows('active admin gets an overview payload',
   $q$select public.data_portal_overview('last-90-days', 'America/New_York')$q$, 1);
+
+-- Subject demand.
+--
+-- Case: Uma lists her subject as "math " where Tom has "Math". Before the fix
+-- that was two rows, "Math" and "math".
+--
+-- Join: a login whose Student profile has the same id as the login itself,
+-- and which also holds a Tutor profile. The old join matched the request's
+-- user_id against Profiles.user_id too, which counted the Tutor profile's
+-- "Art" as a second student asking for Art.
+reset role;
+update "Profiles" set subjects_of_interest = array['math ']
+  where id = 'aaaaaaaa-0000-0000-0000-00000000000e';
+insert into auth.users (id, email) values
+  ('88888888-8888-8888-8888-888888888888', 'family@test.local');
+insert into "Profiles"
+  (id, user_id, role, status, first_name, last_name, created_at, subjects_of_interest, settings_id)
+values
+  ('88888888-8888-8888-8888-888888888888', '88888888-8888-8888-8888-888888888888',
+   'Student', 'Active', 'Kim', 'Kid', now() - interval '30 days', array['Art'], gen_random_uuid()),
+  ('aaaaaaaa-0000-0000-0000-000000000088', '88888888-8888-8888-8888-888888888888',
+   'Tutor', 'Active', 'Kim', 'Parent', now() - interval '30 days', array['Art'], gen_random_uuid());
+insert into pairing_requests (id, type, user_id, created_at, priority) values
+  ('dddddddd-0000-0000-0000-00000000000c', 'student',
+   '88888888-8888-8888-8888-888888888888', now() - interval '20 days', 1);
+select pg_temp.as_user('11111111-1111-1111-1111-111111111111');
+
+select pg_temp.expect_rows('subject demand has one row for math, whatever the case',
+  $q$select 1
+     from jsonb_array_elements(public.data_portal_overview('last-90-days', 'America/New_York')
+                               -> 'subjectDemand' -> 'rows') r
+     where lower(trim(r ->> 'subject')) = 'math'
+       and (r ->> 'studentsRequesting')::int = 1
+       and (r ->> 'tutorsAvailable')::int = 2$q$, 1);
+select pg_temp.expect_rows('subject demand counts the requesting student, not the tutor on that login',
+  $q$select 1
+     from jsonb_array_elements(public.data_portal_overview('last-90-days', 'America/New_York')
+                               -> 'subjectDemand' -> 'rows') r
+     where r ->> 'subject' = 'Art'
+       and (r ->> 'studentsRequesting')::int = 1
+       and (r ->> 'tutorsAvailable')::int = 1$q$, 1);
 
 select pg_temp.expect_rows('active admin may ask the assistant',
   $q$select 1 where (public.data_portal_assistant_claim()->>'allowed')::boolean$q$, 1);
@@ -451,13 +546,17 @@ select pg_temp.expect_rows('the signup created exactly one Active profile',
 drop trigger test_on_auth_user_created on auth.users;
 
 -- ---------------------------------------------------------------------------
--- service_role: trusted server code is deliberately unrestricted
+-- service_role: trusted server code bypasses row level security
 -- ---------------------------------------------------------------------------
+-- It is not exempt from guard_profile_columns, though. On dev, role and
+-- status changes go through an admin's own session (see
+-- lib/actions/profile/profile-status.test.ts), so only an unguarded column is
+-- written here.
 
 select pg_temp.as_role('service_role');
 
-select pg_temp.expect_rows_changed('service role may set a role',
-  $q$update "Profiles" set role = 'Tutor' where id = 'aaaaaaaa-0000-0000-0000-00000000000b'$q$, 1);
+select pg_temp.expect_rows_changed('service role may edit any profile',
+  $q$update "Profiles" set last_name = 'Edited' where id = 'aaaaaaaa-0000-0000-0000-00000000000e'$q$, 1);
 
 reset role;
 

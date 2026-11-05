@@ -212,18 +212,16 @@ describe("streamAnswer", () => {
   it("ends with a note, not a crash, when the key is rejected", async () => {
     vi.stubGlobal(
       "fetch",
-      vi
-        .fn()
-        .mockImplementation(
-          async () =>
-            new Response(
-              JSON.stringify({
-                type: "error",
-                error: { type: "authentication_error", message: "bad key" },
-              }),
-              { status: 401, headers: { "Content-Type": "application/json" } },
-            ),
-        ),
+      vi.fn().mockImplementation(
+        async () =>
+          new Response(
+            JSON.stringify({
+              type: "error",
+              error: { type: "authentication_error", message: "bad key" },
+            }),
+            { status: 401, headers: { "Content-Type": "application/json" } },
+          ),
+      ),
     );
 
     expect(await readAll(streamAnswer(QUESTION))).toContain("not set up correctly");
