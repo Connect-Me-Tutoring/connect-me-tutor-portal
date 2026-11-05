@@ -232,10 +232,10 @@ export async function runAnalysis(id: string): Promise<AnalysisResult> {
   // The only path to running anything, and it only opens for an id on the list.
   if (!spec) return { ok: false, id, error: "Unknown analysis." };
 
-  const serviceUrl = process.env.ANALYSIS_SERVICE_URL;
-  const serviceKey = process.env.ANALYSIS_SERVICE_KEY;
-  if (serviceUrl && serviceKey) {
-    return runRemote(spec, serviceUrl, serviceKey);
+  const analysisServiceUrl = process.env.ANALYSIS_SERVICE_URL;
+  const analysisServiceKey = process.env.ANALYSIS_SERVICE_KEY;
+  if (analysisServiceUrl && analysisServiceKey) {
+    return runRemote(spec, analysisServiceUrl, analysisServiceKey);
   }
 
   const status = analysisBackendStatus();

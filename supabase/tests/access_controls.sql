@@ -199,6 +199,9 @@ select pg_temp.expect_rows('anon reads no User_Availabilities',
 select pg_temp.expect_error('anon cannot call the overview',
   $q$select public.data_portal_overview('last-90-days')$q$, 'permission denied');
 
+select pg_temp.expect_error('anon cannot ask the assistant',
+  $q$select public.data_portal_assistant_claim()$q$, 'permission denied');
+
 select pg_temp.expect_no_rows_changed('anon cannot promote anyone',
   $q$update "Profiles" set role = 'Admin' where id = 'aaaaaaaa-0000-0000-0000-00000000000b'$q$);
 
@@ -276,6 +279,12 @@ select pg_temp.as_user('22222222-2222-2222-2222-222222222222');
 select pg_temp.expect_error('tutor cannot call the overview',
   $q$select public.data_portal_overview('last-90-days')$q$, 'Admin access required');
 
+select pg_temp.expect_error('tutor cannot ask the assistant',
+  $q$select public.data_portal_assistant_claim()$q$, 'Admin access required');
+
+select pg_temp.expect_error('tutor cannot touch the assistant counts',
+  $q$delete from analysis.assistant_requests$q$, 'permission denied');
+
 select pg_temp.expect_error('tutor cannot promote self to Admin',
   $q$update "Profiles" set role = 'Admin' where id = 'aaaaaaaa-0000-0000-0000-00000000000b'$q$,
   'Only an admin can change a profile role');
@@ -311,6 +320,9 @@ select pg_temp.as_user('33333333-3333-3333-3333-333333333333');
 select pg_temp.expect_error('student cannot call the overview',
   $q$select public.data_portal_overview('last-90-days')$q$, 'Admin access required');
 
+select pg_temp.expect_error('student cannot ask the assistant',
+  $q$select public.data_portal_assistant_claim()$q$, 'Admin access required');
+
 select pg_temp.expect_error('student cannot promote self',
   $q$update "Profiles" set role = 'Admin' where id = 'aaaaaaaa-0000-0000-0000-00000000000c'$q$,
   'Only an admin can change a profile role');
@@ -332,6 +344,9 @@ select pg_temp.as_user('44444444-4444-4444-4444-444444444444');
 select pg_temp.expect_error('inactive admin cannot call the overview',
   $q$select public.data_portal_overview('last-90-days')$q$, 'Admin access required');
 
+select pg_temp.expect_error('inactive admin cannot ask the assistant',
+  $q$select public.data_portal_assistant_claim()$q$, 'Admin access required');
+
 select pg_temp.expect_error('inactive admin cannot reactivate self',
   $q$update "Profiles" set status = 'Active' where id = 'aaaaaaaa-0000-0000-0000-00000000000d'$q$,
   'Only an admin can change a profile status');
@@ -349,6 +364,58 @@ select pg_temp.as_user('11111111-1111-1111-1111-111111111111');
 
 select pg_temp.expect_rows('active admin gets an overview payload',
   $q$select public.data_portal_overview('last-90-days', 'America/New_York')$q$, 1);
+
+select pg_temp.expect_rows('active admin may ask the assistant',
+  $q$select 1 where (public.data_portal_assistant_claim()->>'allowed')::boolean$q$, 1);
+
+select pg_temp.expect_error('active admin cannot edit the assistant counts directly',
+  $q$delete from analysis.assistant_requests$q$, 'permission denied');
+
+do $$
+begin
+  for i in 2..15 loop
+    perform public.data_portal_assistant_claim();
+  end loop;
+end
+$$;
+
+select pg_temp.expect_rows('the 16th question in five minutes is refused',
+  $q$select 1 where public.data_portal_assistant_claim()
+       @> '{"allowed": false, "limit": "admin_burst"}'$q$, 1);
+
+reset role;
+
+-- The other limits count every admin together. Age this admin's questions
+-- past the burst window and fill the rest with someone else's.
+update analysis.assistant_requests set requested_at = now() - interval '1 hour';
+insert into analysis.assistant_requests (user_id, requested_at)
+select gen_random_uuid(), now() - interval '2 hours' from generate_series(1, 85);
+
+select pg_temp.as_user('11111111-1111-1111-1111-111111111111');
+select pg_temp.expect_rows('the 101st question in a day across all admins is refused',
+  $q$select 1 where public.data_portal_assistant_claim()
+       @> '{"allowed": false, "limit": "global_daily"}'$q$, 1);
+reset role;
+
+delete from analysis.assistant_requests where user_id <> '11111111-1111-1111-1111-111111111111';
+insert into analysis.assistant_requests (user_id, requested_at)
+select gen_random_uuid(), now() - (interval '1 day' * (2 + g % 27))
+from generate_series(1, 485) as g;
+insert into analysis.assistant_requests (user_id, requested_at)
+values (gen_random_uuid(), now() - interval '31 days');
+
+select pg_temp.as_user('11111111-1111-1111-1111-111111111111');
+select pg_temp.expect_rows('the 501st question in thirty days is refused',
+  $q$select 1 where public.data_portal_assistant_claim()
+       @> '{"allowed": false, "limit": "global_monthly"}'$q$, 1);
+reset role;
+
+select pg_temp.expect_rows('questions older than thirty days are cleared away',
+  $q$select 1 from analysis.assistant_requests where requested_at < now() - interval '30 days'$q$, 0);
+
+delete from analysis.assistant_requests;
+
+select pg_temp.as_user('11111111-1111-1111-1111-111111111111');
 
 select pg_temp.expect_rows_changed('active admin may deactivate a tutor',
   $q$update "Profiles" set status = 'Inactive' where id = 'aaaaaaaa-0000-0000-0000-00000000000b'$q$, 1);
