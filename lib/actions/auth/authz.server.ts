@@ -50,6 +50,13 @@ async function fetchActiveProfile(userId: string): Promise<Profile | null> {
     return null;
   }
 
+  // last_active_profile_id is only a pointer, and every signed-in user can
+  // read Admin profiles, so the profile it lands on has to be the caller's
+  // own. The database enforces this on write too (user_settings_own).
+  if ((data.profile as { user_id?: string | null }).user_id !== userId) {
+    return null;
+  }
+
   return tableToInterfaceProfiles(data.profile as never);
 }
 
@@ -78,8 +85,8 @@ export async function requireAuthenticatedProfile(): Promise<{
  *
  * Deactivating an admin has to remove their access everywhere, not just from
  * the pages that happened to check status, so every elevated branch below
- * goes through this. It mirrors public.is_active_admin() in the database,
- * which is the authoritative gate for anything RLS covers.
+ * goes through this. It mirrors private.is_admin() in the database, which is
+ * the authoritative gate for anything RLS covers. Change both together.
  */
 export function isActiveAdmin(profile: Pick<Profile, "role" | "status">): boolean {
   return profile.role === "Admin" && profile.status === "Active";
