@@ -1,6 +1,6 @@
-import { getProfileByEmail } from "@/lib/actions/user/client.actions";
 import { Profile } from "@/types";
 import { createAdminClient } from "@/lib/supabase/server";
+import { tableToInterfaceProfiles } from "@/lib/utils/type-utils";
 import { NextRequest, NextResponse } from "next/server";
 import { sendMail } from "@/lib/email/mailer";
 import { Table } from "@/lib/supabase/tables";
@@ -86,7 +86,20 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    const recipient: Profile | null = await getProfileByEmail(to);
+    // Look the recipient up with the same admin client. getProfileByEmail()
+    // in user/client.actions uses the browser client, which on the server
+    // has no session and runs as anon, and anon cannot read Profiles.
+    const { data: recipientSettings, error: recipientError } = await supabase
+      .from("user_settings")
+      .select("profile:Profiles!last_active_profile_id(*)")
+      .eq("email", to)
+      .single();
+
+    if (recipientError) throw recipientError;
+
+    const recipient: Profile | null = recipientSettings?.profile
+      ? tableToInterfaceProfiles(recipientSettings.profile)
+      : null;
 
     if (!recipient) throw new Error("Unable to get recipient details");
 
