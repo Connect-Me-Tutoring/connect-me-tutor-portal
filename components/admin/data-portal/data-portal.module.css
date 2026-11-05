@@ -540,3 +540,93 @@
   background: rgba(0, 0, 0, 0.03);
   border-radius: 0.25rem;
 }
+
+/* Uploaded data --------------------------------------------------------- */
+
+.uploads {
+  margin-top: 1.5rem;
+}
+
+.uploadForm {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 0.75rem;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  min-width: 12rem;
+}
+
+.fieldLabel {
+  color: var(--dp-ink-faint);
+  font-family: var(--dp-mono);
+  font-size: 0.6875rem;
+}
+
+.fileInput {
+  font-size: 0.8125rem;
+  color: var(--dp-ink-muted);
+}
+
+.textInput {
+  height: 2.25rem;
+  border: 1px solid rgba(0, 0, 0, 0.15);
+  border-radius: 0.375rem;
+  background: rgba(255, 255, 255, 0.6);
+  padding: 0 0.65rem;
+  font: inherit;
+  font-size: 0.875rem;
+}
+
+.textInput:focus {
+  outline: 2px solid rgba(0, 0, 0, 0.35);
+  outline-offset: 1px;
+}
+
+.uploadNote {
+  margin-top: 0.75rem;
+  color: var(--dp-ink-muted);
+  font-size: 0.8125rem;
+}
+
+.datasets {
+  margin-top: 1.25rem;
+}
+
+.datasetTable th,
+.datasetTable td {
+  text-align: left;
+  vertical-align: top;
+}
+
+.datasetTable td:last-child {
+  width: 1%;
+  text-align: right;
+}
+
+.datasetFile {
+  display: block;
+  color: var(--dp-ink-faint);
+  font-family: var(--dp-mono);
+  font-size: 0.6875rem;
+  font-weight: 400;
+}
+
+.mono {
+  font-family: var(--dp-mono);
+  font-size: 0.75rem;
+}
+
+.preview {
+  margin-top: 1rem;
+  border-top: 1px solid var(--dp-rule);
+}
+
+.previewTable th,
+.previewTable td {
+  text-align: left;
+}

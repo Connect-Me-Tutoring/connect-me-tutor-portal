@@ -139,7 +139,8 @@ export function DataPortalOverview({
           <DataPortalChat dateRange={dateRange} ready={state.status === "ready"} />
 
           <p className={styles.footNote}>
-            Read-only aggregates; no individual records are shown or retrievable here.
+            The figures above are read-only aggregates; no individual records from the portal's own
+            tables are shown or retrievable.
           </p>
         </>
       )}

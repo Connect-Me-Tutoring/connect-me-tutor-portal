@@ -1201,7 +1201,37 @@ export type Database = {
         Args: { p_captured_on?: string };
         Returns: number;
       };
+      data_portal_append_upload_rows: {
+        Args: { p_upload_id: string; p_rows: Json };
+        Returns: number;
+      };
       data_portal_assistant_claim: { Args: never; Returns: Json };
+      data_portal_begin_upload: {
+        Args: {
+          p_columns: string[];
+          p_filename: string;
+          p_name: string;
+          p_storage_path: string;
+          p_title: string;
+        };
+        Returns: string;
+      };
+      data_portal_cancel_upload: {
+        Args: { p_upload_id: string };
+        Returns: undefined;
+      };
+      data_portal_dataset_preview: {
+        Args: { p_limit?: number; p_name: string };
+        Returns: Json;
+      };
+      data_portal_finish_upload: {
+        Args: { p_upload_id: string };
+        Returns: Json;
+      };
+      data_portal_list_datasets: {
+        Args: never;
+        Returns: Json;
+      };
       data_portal_overview: {
         Args: { p_date_range: string; p_tz?: string };
         Returns: Json;

@@ -521,6 +521,171 @@ select pg_temp.expect_rows_changed('active admin may change a role',
 reset role;
 
 -- ---------------------------------------------------------------------------
+-- uploaded data: Active Admins only, and only through the functions
+-- ---------------------------------------------------------------------------
+-- The storage schema is absent from this image, so the bucket policies are
+-- not exercised here and data_portal_begin_upload skips its file check.
+
+-- A dataset already in place, so every refused read below has rows to hide,
+-- and a second Active Admin, to show an upload belongs to whoever started it.
+create table uploads.fixture_dataset (name text, grade text);
+insert into uploads.fixture_dataset values ('Ana', '9'), ('Lee', '10');
+insert into analysis.uploaded_datasets
+  (name, title, columns, row_count, storage_path, original_filename, uploaded_by_profile)
+values
+  ('fixture_dataset', 'Fixture', array['name', 'grade'], 2,
+   'datasets/fixture_dataset/v1.csv', 'v1.csv', 'aaaaaaaa-0000-0000-0000-00000000000a');
+
+insert into auth.users (id, email) values
+  ('99999999-9999-9999-9999-999999999999', 'second.admin@test.local');
+insert into "Profiles" (id, user_id, role, status, first_name, last_name, settings_id) values
+  ('aaaaaaaa-0000-0000-0000-000000000099', '99999999-9999-9999-9999-999999999999',
+   'Admin', 'Active', 'Bea', 'Admin', gen_random_uuid());
+
+select pg_temp.as_role('anon');
+
+select pg_temp.expect_error('anon cannot list uploaded data',
+  $q$select public.data_portal_list_datasets()$q$, 'permission denied');
+select pg_temp.expect_error('anon cannot start an upload',
+  $q$select public.data_portal_begin_upload('x', 'X', array['a'], 'datasets/x/f.csv', 'f.csv')$q$,
+  'permission denied');
+select pg_temp.expect_error('anon cannot read an uploaded table',
+  $q$select * from uploads.fixture_dataset$q$, 'permission denied');
+
+reset role;
+
+select pg_temp.as_user('22222222-2222-2222-2222-222222222222');
+
+select pg_temp.expect_error('tutor cannot list uploaded data',
+  $q$select public.data_portal_list_datasets()$q$, 'Admin access required');
+select pg_temp.expect_error('tutor cannot preview uploaded data',
+  $q$select public.data_portal_dataset_preview('fixture_dataset')$q$, 'Admin access required');
+select pg_temp.expect_error('tutor cannot start an upload',
+  $q$select public.data_portal_begin_upload('x', 'X', array['a'], 'datasets/x/f.csv', 'f.csv')$q$,
+  'Admin access required');
+select pg_temp.expect_error('tutor cannot read an uploaded table',
+  $q$select * from uploads.fixture_dataset$q$, 'permission denied');
+select pg_temp.expect_error('tutor cannot read the upload catalog',
+  $q$select * from analysis.uploaded_datasets$q$, 'permission denied');
+select pg_temp.expect_error('tutor cannot create a table among the uploads',
+  $q$create table uploads.planted (x text)$q$, 'permission denied');
+
+reset role;
+
+select pg_temp.as_user('33333333-3333-3333-3333-333333333333');
+
+select pg_temp.expect_error('student cannot list uploaded data',
+  $q$select public.data_portal_list_datasets()$q$, 'Admin access required');
+select pg_temp.expect_error('student cannot preview uploaded data',
+  $q$select public.data_portal_dataset_preview('fixture_dataset')$q$, 'Admin access required');
+select pg_temp.expect_error('student cannot read an uploaded table',
+  $q$select * from uploads.fixture_dataset$q$, 'permission denied');
+
+reset role;
+
+select pg_temp.as_user('44444444-4444-4444-4444-444444444444');
+
+select pg_temp.expect_error('inactive admin cannot list uploaded data',
+  $q$select public.data_portal_list_datasets()$q$, 'Admin access required');
+select pg_temp.expect_error('inactive admin cannot start an upload',
+  $q$select public.data_portal_begin_upload('x', 'X', array['a'], 'datasets/x/f.csv', 'f.csv')$q$,
+  'Admin access required');
+
+reset role;
+
+select pg_temp.as_user('11111111-1111-1111-1111-111111111111');
+
+select pg_temp.expect_rows('active admin sees the uploaded datasets',
+  $q$select jsonb_array_elements(public.data_portal_list_datasets())$q$, 1);
+select pg_temp.expect_rows('active admin previews an uploaded dataset',
+  $q$select 1 where public.data_portal_dataset_preview('fixture_dataset')
+       @> '{"rowCount": 2, "rows": [["Ana", "9"], ["Lee", "10"]]}'$q$, 1);
+select pg_temp.expect_error('even an admin reads uploads only through the functions',
+  $q$select * from uploads.fixture_dataset$q$, 'permission denied');
+
+select pg_temp.expect_error('a dataset name must be an identifier',
+  $q$select public.data_portal_begin_upload('Bad Name', 'X', array['a'], 'datasets/bad/f.csv', 'f.csv')$q$,
+  'Invalid dataset name');
+select pg_temp.expect_error('a column name cannot carry SQL',
+  $q$select public.data_portal_begin_upload('ok_name', 'X', array['a"; drop table x; --'],
+       'datasets/ok_name/f.csv', 'f.csv')$q$, 'Invalid column names');
+select pg_temp.expect_error('column names must be unique',
+  $q$select public.data_portal_begin_upload('ok_name', 'X', array['a', 'a'],
+       'datasets/ok_name/f.csv', 'f.csv')$q$, 'Invalid column names');
+select pg_temp.expect_error('the file must be in the dataset''s own folder',
+  $q$select public.data_portal_begin_upload('ok_name', 'X', array['a'],
+       'datasets/other/f.csv', 'f.csv')$q$, 'Invalid storage path');
+
+-- Replace the fixture dataset with a three-column version.
+do $$
+declare
+  v_id uuid;
+begin
+  v_id := public.data_portal_begin_upload('fixture_dataset', 'Fixture v2',
+    array['name', 'grade', 'school'], 'datasets/fixture_dataset/v2.csv', 'v2.csv');
+  perform public.data_portal_append_upload_rows(v_id,
+    '[["Ana", "9", "North"], ["Lee", "10", null], ["Kim", "11", "South"]]');
+  perform set_config('test.upload_id', v_id::text, true);
+end
+$$;
+
+select pg_temp.expect_rows('the old table stays in place until the upload finishes',
+  $q$select 1 where public.data_portal_dataset_preview('fixture_dataset') @> '{"rowCount": 2}'$q$, 1);
+select pg_temp.expect_error('a row with the wrong number of values is refused',
+  $q$select public.data_portal_append_upload_rows(current_setting('test.upload_id')::uuid,
+       '[["only", "two"]]')$q$, 'Every row must hold 3 text values');
+select pg_temp.expect_error('a value that is not text is refused',
+  $q$select public.data_portal_append_upload_rows(current_setting('test.upload_id')::uuid,
+       '[["Ana", 9, "North"]]')$q$, 'Every row must hold 3 text values');
+
+reset role;
+
+select pg_temp.as_user('99999999-9999-9999-9999-999999999999');
+select pg_temp.expect_error('another admin cannot add to someone else''s upload',
+  $q$select public.data_portal_append_upload_rows(current_setting('test.upload_id')::uuid,
+       '[["X", "1", "Y"]]')$q$, 'Unknown upload');
+select pg_temp.expect_error('another admin cannot finish someone else''s upload',
+  $q$select public.data_portal_finish_upload(current_setting('test.upload_id')::uuid)$q$,
+  'Unknown upload');
+reset role;
+
+select pg_temp.as_user('11111111-1111-1111-1111-111111111111');
+
+select pg_temp.expect_rows('finishing the upload swaps the new table in',
+  $q$select 1 where public.data_portal_finish_upload(current_setting('test.upload_id')::uuid)
+       @> '{"name": "fixture_dataset", "rowCount": 3}'$q$, 1);
+select pg_temp.expect_rows('the replaced dataset holds the new rows and columns',
+  $q$select 1 where public.data_portal_dataset_preview('fixture_dataset')
+       @> '{"columns": ["name", "grade", "school"], "rowCount": 3,
+            "rows": [["Lee", "10", null]]}'$q$, 1);
+select pg_temp.expect_error('a finished upload cannot be added to',
+  $q$select public.data_portal_append_upload_rows(current_setting('test.upload_id')::uuid,
+       '[["X", "1", "Y"]]')$q$, 'already ready');
+
+-- A cancelled upload leaves the dataset as it was.
+do $$
+declare
+  v_id uuid;
+begin
+  v_id := public.data_portal_begin_upload('fixture_dataset', 'Fixture v3',
+    array['name'], 'datasets/fixture_dataset/v3.csv', 'v3.csv');
+  perform public.data_portal_append_upload_rows(v_id, '[["Zed"]]');
+  perform public.data_portal_cancel_upload(v_id);
+end
+$$;
+
+select pg_temp.expect_rows('a cancelled upload changes nothing',
+  $q$select 1 where public.data_portal_dataset_preview('fixture_dataset') @> '{"rowCount": 3}'$q$, 1);
+
+reset role;
+
+select pg_temp.expect_rows('the finished upload is recorded in the history',
+  $q$select 1 from analysis.dataset_uploads
+     where dataset_name = 'fixture_dataset' and status = 'ready'$q$, 1);
+select pg_temp.expect_rows('no staging table is left behind',
+  $q$select 1 from pg_tables where schemaname = 'uploads' and tablename like '\_import\_%'$q$, 0);
+
+-- ---------------------------------------------------------------------------
 -- signup: metadata is attacker-controlled and must not mint an admin
 -- ---------------------------------------------------------------------------
 

@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { getDataPortalOverview } from "@/lib/actions/data-portal/server.actions";
 import { DataPortalOverview, type OverviewState } from "./data-portal-overview";
+import { DataPortalUploads } from "./data-portal-uploads";
 import styles from "./data-portal.module.css";
 
 /**
@@ -65,6 +66,8 @@ export function DataPortalPage() {
           onDateRangeChange={handleRangeChange}
           onReload={() => void load(dateRange)}
         />
+
+        <DataPortalUploads />
       </div>
     </div>
   );
