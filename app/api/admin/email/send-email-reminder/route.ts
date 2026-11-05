@@ -1,6 +1,4 @@
-import { getProfileByEmail } from "@/lib/actions/user/client.actions";
-import { Profile } from "@/types";
-import { createAdminClient, createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/server";
 import { NextRequest, NextResponse } from "next/server";
 import { sendMail } from "@/lib/email/mailer";
 import { Table } from "@/lib/supabase/tables";
@@ -26,7 +24,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const supabase = await createClient();
+    // QStash calls this with only a bearer token, no user session. A cookie-bound client runs
+    // as anon, which RLS denies on Sessions, user_settings and user_notification_settings
+    // (20260911000001_rls_enable_policies), so every lookup 401'd and no reminder was sent.
+    const supabase = await createAdminClient();
 
     const data = await request.json();
     const { to, subject, body, sessionId, scheduledFor } = emailSchema.parse(data);
@@ -69,8 +70,7 @@ export async function POST(request: NextRequest) {
     // only deliver if this message is still tracked.
     const messageId = request.headers.get("upstash-message-id");
     if (!scheduledFor && messageId) {
-      const admin = await createAdminClient();
-      const { data: tracked, error: trackedError } = await admin
+      const { data: tracked, error: trackedError } = await supabase
         .from(Table.SessionReminders)
         .select("id")
         .eq("message_id", messageId)
@@ -84,14 +84,21 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    const recipient: Profile | null = await getProfileByEmail(to);
+    const { data: userSettings, error: userSettingsError } = await supabase
+      .from("user_settings")
+      .select("profile:Profiles!last_active_profile_id(settings_id)")
+      .eq("email", to)
+      .single();
 
-    if (!recipient) throw new Error("Unable to get recipient details");
+    if (userSettingsError) throw userSettingsError;
+    const settingsId = (userSettings?.profile as { settings_id: string | null } | null)
+      ?.settings_id;
+    if (!settingsId) throw new Error("Unable to get recipient details");
 
     const { data: notification_settings, error } = await supabase
-      .from("user_notification_settings")
+      .from(Table.UserNotificationSettings)
       .select("email_tutoring_session_notifications_enabled")
-      .eq("id", recipient.settingsId)
+      .eq("id", settingsId)
       .single();
 
     if (error) throw error;
@@ -117,10 +124,10 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error("Error sending email:", error);
     await logError(error, {}, "email_send_reminder_error");
-    return NextResponse.json({
-      status: 500,
-      error: error,
-      message: "Unable to send email or fetch email settings",
-    });
+    // A real 500 lets QStash retry the delivery and shows the failure in its logs.
+    return NextResponse.json(
+      { message: "Unable to send email or fetch email settings" },
+      { status: 500 },
+    );
   }
 }
