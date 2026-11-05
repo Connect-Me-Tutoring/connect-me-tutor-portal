@@ -31,10 +31,13 @@ begin
   where n.nspname = 'public'
     and c.relkind = 'r'
     and c.relrowsecurity
-    -- Sealed in the baseline snapshot rather than by these migrations, and no
-    -- application code reads it. Listed here so the check stays meaningful for
-    -- everything else instead of being switched off.
-    and c.relname <> 'discord_chatbot_conversations'
+    -- Sealed on purpose, and listed so the check stays meaningful for
+    -- everything else instead of being switched off:
+    --   discord_chatbot_conversations: sealed in the baseline snapshot, and no
+    --     application code reads it.
+    --   pairing_length_snapshots: every access path is a security definer
+    --     function (20260928000000_pairing_length_history_and_admin_guards).
+    and c.relname not in ('discord_chatbot_conversations', 'pairing_length_snapshots')
   group by c.relname
   having count(p.policyname) = 0;
 
