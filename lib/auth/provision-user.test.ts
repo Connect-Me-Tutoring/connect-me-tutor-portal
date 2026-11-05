@@ -45,7 +45,7 @@ const client = {
 vi.mock("@/lib/supabase/server", () => ({ createAdminClient: async () => client }));
 vi.mock("@/lib/posthog", () => ({ logError: vi.fn() }));
 
-const { provisionUser } = await import("./provision-user.server");
+const { provisionUser, ProvisionUserError } = await import("./provision-user.server");
 
 const student = (email: string): CreatedProfileData =>
   ({
@@ -69,9 +69,14 @@ const insertedProfile = (userId: string) => ({
   status: "Active",
 });
 
+type Row = { id?: string; role: string; first_name?: string; last_name?: string; status?: string };
+
 describe("provisionUser", () => {
-  let profilesByUser: Record<string, { role: string }[]>;
+  let profilesByUser: Record<string, Row[]>;
   let inserted: { user_id: string } | null;
+  let lastActiveProfileId: string | null;
+  let settingsUpdates: unknown[];
+  let pairingError: Error | null;
 
   beforeEach(() => {
     authUsers.clear();
@@ -79,7 +84,23 @@ describe("provisionUser", () => {
     deleteUser.mockReset();
     profilesByUser = {};
     inserted = null;
+    lastActiveProfileId = null;
+    settingsUpdates = [];
+    pairingError = null;
     respond = ({ table, op, args }) => {
+      if (table === "user_settings" && op === "update") {
+        settingsUpdates.push(args[0]);
+        return { data: null, error: null };
+      }
+      if (table === "user_settings") {
+        return {
+          data: lastActiveProfileId ? { last_active_profile_id: lastActiveProfileId } : null,
+          error: null,
+        };
+      }
+      if (table === "pairing_requests" && pairingError) {
+        return { data: null, error: pairingError };
+      }
       if (table === "Profiles" && op === "insert") {
         inserted = args[0] as { user_id: string };
         return { data: insertedProfile(inserted.user_id), error: null };
@@ -98,8 +119,9 @@ describe("provisionUser", () => {
     authUsers.set("parent@x", "existing-user");
     profilesByUser["existing-user"] = [{ role: "Student" }];
 
-    await provisionUser(student("Parent@X "));
+    const result = await provisionUser(student("Parent@X "));
 
+    expect(result.invited).toBe(false);
     expect(inviteUserByEmail).not.toHaveBeenCalled();
     expect(deleteUser).not.toHaveBeenCalled();
     expect(inserted?.user_id).toBe("existing-user");
@@ -119,8 +141,9 @@ describe("provisionUser", () => {
       return { data: { user: { id: "invited-user" } }, error: null };
     });
 
-    await provisionUser(student("new@x"));
+    const result = await provisionUser(student("new@x"));
 
+    expect(result.invited).toBe(true);
     expect(inviteUserByEmail).toHaveBeenCalledWith("new@x", expect.anything());
     expect(inserted?.user_id).toBe("invited-user");
   });
@@ -144,6 +167,72 @@ describe("provisionUser", () => {
     });
 
     await expect(provisionUser(student("new@x"))).rejects.toThrow("already registered");
+    expect(deleteUser).not.toHaveBeenCalled();
+  });
+
+  describe("re-adding someone whose email already has a login", () => {
+    beforeEach(() => authUsers.set("parent@x", "existing-user"));
+
+    it("refuses the same person with the same role instead of adding a duplicate", async () => {
+      profilesByUser["existing-user"] = [
+        { id: "old", role: "Student", first_name: " new ", last_name: "STUDENT", status: "Active" },
+      ];
+
+      await expect(provisionUser(student("parent@x"))).rejects.toThrow(
+        "already has a student profile",
+      );
+      expect(inserted).toBeNull();
+      expect(inviteUserByEmail).not.toHaveBeenCalled();
+    });
+
+    it("points the admin at reactivation when that profile is inactive", async () => {
+      profilesByUser["existing-user"] = [
+        { id: "old", role: "Student", first_name: "New", last_name: "Student", status: "Inactive" },
+      ];
+
+      const attempt = provisionUser(student("parent@x"));
+      await expect(attempt).rejects.toBeInstanceOf(ProvisionUserError);
+      await expect(attempt).rejects.toThrow("Reactivate that profile");
+      expect(inserted).toBeNull();
+    });
+
+    it("still adds a sibling who shares the login", async () => {
+      profilesByUser["existing-user"] = [
+        { id: "sib", role: "Student", first_name: "Older", last_name: "Student", status: "Active" },
+      ];
+      lastActiveProfileId = "sib";
+
+      const result = await provisionUser(student("parent@x"));
+
+      expect(inserted?.user_id).toBe("existing-user");
+      expect(result.invited).toBe(false);
+      expect(settingsUpdates).toEqual([]); // the sibling's active profile stays the default
+    });
+
+    it("opens the new profile when the login's last active profile is inactive", async () => {
+      profilesByUser["existing-user"] = [
+        { id: "old", role: "Student", first_name: "Old", last_name: "Profile", status: "Inactive" },
+      ];
+      lastActiveProfileId = "old";
+
+      const result = await provisionUser({ ...student("parent@x"), role: "Tutor" });
+
+      expect(settingsUpdates).toEqual([{ last_active_profile_id: "new-profile" }]);
+      expect(result.warning).toBeUndefined();
+    });
+  });
+
+  it("reports a pairing queue failure as a warning, not a failed add", async () => {
+    inviteUserByEmail.mockImplementation(async (email: string) => {
+      authUsers.set(email, "invited-user");
+      return { data: { user: { id: "invited-user" } }, error: null };
+    });
+    pairingError = new Error("queue unavailable");
+
+    const result = await provisionUser(student("new@x"));
+
+    expect(result.profile.id).toBe("new-profile");
+    expect(result.warning).toMatch(/pairing queue/);
     expect(deleteUser).not.toHaveBeenCalled();
   });
 });
