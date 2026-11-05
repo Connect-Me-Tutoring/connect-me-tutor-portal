@@ -54,7 +54,7 @@ export async function provisionLegacyPendingConsentRequests(): Promise<{
 
     try {
       // The temp password was dropped when the request was parked; the student sets their own.
-      const profile = await provisionUser({ ...profileData, password: "" });
+      const { profile } = await provisionUser({ ...profileData, password: "" });
       await supabase
         .from(TABLE)
         .update({

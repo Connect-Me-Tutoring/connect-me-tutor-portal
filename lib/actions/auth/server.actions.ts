@@ -21,13 +21,27 @@ import {
   provisionLegacyPendingConsentRequests,
 } from "@/lib/consent/parental-consent.server";
 
+export type CreateUserResult =
+  { ok: true; profile: Profile; invited: boolean; warning?: string } | { ok: false; error: string };
+
 /**
  * Creates a new user through an email invite. Parental consent for students under
  * 13 is collected at intake, outside the portal, before an admin adds them.
+ * Returns failures instead of throwing because Next.js hides thrown server-action
+ * messages in production, and the admin needs the reason (duplicate, invalid email...).
  */
-export const createUser = async (newProfileData: CreatedProfileData): Promise<Profile> => {
+export const createUser = async (newProfileData: CreatedProfileData): Promise<CreateUserResult> => {
   await verifyAdmin();
-  return provisionUser(newProfileData);
+  try {
+    const { profile, invited, warning } = await provisionUser(newProfileData);
+    return { ok: true, profile, invited, warning };
+  } catch (error) {
+    const message = (error as { message?: unknown } | null)?.message;
+    return {
+      ok: false,
+      error: typeof message === "string" && message ? message : "Unable to add user",
+    };
+  }
 };
 
 /** Students still waiting on the retired parent-approval email link. */
