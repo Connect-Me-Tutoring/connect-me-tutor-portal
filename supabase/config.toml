@@ -224,10 +224,12 @@ otp_expiry = 3600
 # admin_email = "admin@email.com"
 # sender_name = "Admin"
 
-# Uncomment to customize email template
-# [auth.email.template.invite]
-# subject = "You have been invited"
-# content_path = "./supabase/templates/invite.html"
+# Must link to /auth/confirm with token_hash, not {{ .ConfirmationURL }}: mail
+# scanners open links first, and only /auth/confirm waits for a button press
+# before spending the single-use token. Mirror this in prod's dashboard template.
+[auth.email.template.invite]
+subject = "You've been invited to Connect Me"
+content_path = "./supabase/templates/invite.html"
 
 # signInWithOtp() sends magic_link to existing users and confirmation to new
 # ones; the OTP pages expect a 6-digit code, so both show {{ .Token }}.
