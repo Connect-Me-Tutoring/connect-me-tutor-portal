@@ -24,8 +24,8 @@ drop policy if exists "update if owner" on public."Profiles";
 drop policy if exists "analytics read" on public."Profiles";
 
 -- Admin profiles are visible to any authenticated user: fetchAdmins()
--- (lib/actions/chat/server.actions.ts) and createAdminConversation()'s
--- discovery step need to find an admin before any conversation or pairing
+-- (lib/actions/chat/server.actions.ts:82) and createAdminConversation()'s
+-- discovery step need to find an admin before any conversation/pairing
 -- relationship exists between the caller and that admin.
 create policy "profiles_select_related"
   on public."Profiles" for select to authenticated

@@ -1,8 +1,11 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import type { Session } from "@/types";
+import { logEvent } from "@/lib/posthog";
 
 const mockSelect = vi.fn();
 const mockUpdate = vi.fn();
-const mockFrom = vi.fn(() => ({ select: mockSelect, update: mockUpdate }));
+const mockInsert = vi.fn();
+const mockFrom = vi.fn(() => ({ select: mockSelect, update: mockUpdate, insert: mockInsert }));
 
 vi.mock("@/lib/supabase/server", () => ({
   createClient: vi.fn().mockResolvedValue({ from: mockFrom }),
@@ -11,11 +14,13 @@ vi.mock("@/lib/supabase/server", () => ({
 }));
 
 const requireAdmin = vi.fn().mockResolvedValue({});
+const requireSessionAccessById = vi.fn().mockImplementation(async () => ({ from: mockFrom }));
 vi.mock("../auth/authz.server", () => ({
   requireAdmin: (...args: unknown[]) => requireAdmin(...args),
   requireAuthenticatedProfile: vi.fn(),
   requireEnrollmentAccess: vi.fn(),
   requireSessionAccess: vi.fn(),
+  requireSessionAccessById: (...args: unknown[]) => requireSessionAccessById(...args),
   requireStudentProfileAccess: vi.fn(),
   requireTutorProfileAccess: vi.fn(),
   applySessionScope: vi.fn(),
@@ -26,7 +31,13 @@ vi.mock("@/lib/posthog", () => ({
   logEvent: vi.fn().mockResolvedValue(undefined),
 }));
 
-const { getCompletedSessionsCount, markUnconfirmedSEFCron } =
+const updateScheduledEmailBeforeSessions = vi.fn().mockResolvedValue(undefined);
+vi.mock("../email/server.actions", () => ({
+  updateScheduledEmailBeforeSessions: (...args: unknown[]) =>
+    updateScheduledEmailBeforeSessions(...args),
+}));
+
+const { getCompletedSessionsCount, markUnconfirmedSEFCron, updateSession, addSessionsForCron } =
   await import("../session/server.actions");
 
 const START = "2026-08-02T04:00:00.000Z";
@@ -189,5 +200,203 @@ describe("markUnconfirmedSEFCron", () => {
     const result = await markUnconfirmedSEFCron();
 
     expect(result).toEqual({ success: false, error: "deadlock detected", unconfirmed: 0 });
+  });
+});
+
+describe("updateSession SEF persistence", () => {
+  const session = {
+    id: "session-1",
+    date: "2020-01-01T12:00:00Z",
+    status: "Complete",
+    session_exit_form: "We covered fractions.",
+    isQuestionOrConcern: false,
+    isFirstSession: false,
+    duration: 60,
+    summary: "",
+    tutor: null,
+    student: null,
+    createdAt: "2020-01-01T00:00:00Z",
+    enrollmentId: null,
+    isStandalone: false,
+  } satisfies Session;
+  const row = {
+    ...session,
+    session_exit_form: session.session_exit_form,
+    is_question_or_concern: false,
+    is_first_session: false,
+  };
+
+  function mockSave(result: { data: unknown; error: unknown }) {
+    const builder = { eq: vi.fn(), select: vi.fn(), single: vi.fn().mockResolvedValue(result) };
+    builder.eq.mockReturnValue(builder);
+    builder.select.mockReturnValue(builder);
+    mockUpdate.mockReturnValue(builder);
+  }
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    requireSessionAccessById.mockResolvedValue({ from: mockFrom });
+    updateScheduledEmailBeforeSessions.mockResolvedValue(undefined);
+    vi.mocked(logEvent).mockResolvedValue(undefined);
+  });
+
+  it("rejects a database failure rather than returning null or reporting a save", async () => {
+    mockSave({ data: null, error: new Error("database unavailable") });
+    await expect(updateSession(session)).rejects.toThrow("database unavailable");
+    expect(updateScheduledEmailBeforeSessions).not.toHaveBeenCalled();
+    expect(logEvent).not.toHaveBeenCalled();
+  });
+
+  it("rejects a write that returned no saved row", async () => {
+    mockSave({ data: null, error: null });
+    await expect(updateSession(session)).rejects.toThrow("No data returned");
+    expect(updateScheduledEmailBeforeSessions).not.toHaveBeenCalled();
+  });
+
+  it("authorizes the stored session before attempting to save", async () => {
+    requireSessionAccessById.mockRejectedValue(new Error("Access denied"));
+    await expect(updateSession(session)).rejects.toThrow("Access denied");
+    expect(requireSessionAccessById).toHaveBeenCalledWith(session.id);
+    expect(mockUpdate).not.toHaveBeenCalled();
+  });
+
+  it("saves notes and completion together and returns the database record", async () => {
+    mockSave({ data: row, error: null });
+    await expect(updateSession(session)).resolves.toMatchObject({
+      id: session.id,
+      status: "Complete",
+      session_exit_form: "We covered fractions.",
+    });
+    expect(mockUpdate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        status: "Complete",
+        session_exit_form: "We covered fractions.",
+      }),
+    );
+    expect(logEvent).toHaveBeenCalledWith(
+      "session_exit_form_saved",
+      expect.objectContaining({
+        session_id: session.id,
+        late: true,
+      }),
+    );
+  });
+
+  it("does not turn an audit logging outage into a failed save", async () => {
+    mockSave({ data: row, error: null });
+    vi.mocked(logEvent).mockRejectedValueOnce(new Error("audit unavailable"));
+    await expect(updateSession(session)).resolves.toMatchObject({ status: "Complete" });
+  });
+
+  it("still returns the saved SEF if reminder cleanup fails after commit", async () => {
+    mockSave({ data: row, error: null });
+    updateScheduledEmailBeforeSessions.mockRejectedValue(new Error("reminder service down"));
+    await expect(updateSession(session)).resolves.toMatchObject({ status: "Complete" });
+  });
+});
+
+describe("addSessionsForCron", () => {
+  // Sun Oct 25 – Sat Oct 31 2026 in America/New_York (EDT, UTC-4).
+  const WEEK_START = "2026-10-25T04:00:00.000Z";
+  const WEEK_END = "2026-11-01T03:59:59.999Z";
+
+  const enrollment = (overrides: Record<string, unknown>) =>
+    ({
+      id: "e1",
+      student: { id: "student-1" },
+      tutor: { id: "tutor-1" },
+      day: "Monday",
+      startTime: "16:00",
+      endTime: "17:00",
+      meetingId: "m1",
+      summary: "Math",
+      startDate: "2026-09-01T04:00:00.000Z",
+      duration: 1,
+      paused: false,
+      ...overrides,
+    }) as any;
+
+  const captureInsert = () => {
+    const select = vi.fn().mockResolvedValue({ data: [], error: null });
+    mockInsert.mockReturnValue({ select });
+  };
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.useFakeTimers();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it("creates the week's sessions when run before the week starts", async () => {
+    vi.setSystemTime(new Date("2026-10-25T00:00:00.000Z")); // Sat Oct 24, 8pm ET
+    captureInsert();
+
+    await addSessionsForCron(WEEK_START, WEEK_END, [enrollment({})], []);
+
+    expect(mockInsert).toHaveBeenCalledWith([
+      expect.objectContaining({ enrollment_id: "e1", date: "2026-10-26T20:00:00.000Z" }),
+    ]);
+  });
+
+  it("does not backfill slots that have already passed", async () => {
+    vi.setSystemTime(new Date("2026-10-28T12:00:00.000Z")); // Wed Oct 28
+    captureInsert();
+
+    await addSessionsForCron(
+      WEEK_START,
+      WEEK_END,
+      [
+        enrollment({ id: "past", day: "Monday" }),
+        enrollment({ id: "future", day: "Saturday", startTime: "10:00", endTime: "11:00" }),
+      ],
+      [],
+    );
+
+    expect(mockInsert).toHaveBeenCalledTimes(1);
+    expect(mockInsert.mock.calls[0][0]).toEqual([
+      expect.objectContaining({ enrollment_id: "future", date: "2026-10-31T14:00:00.000Z" }),
+    ]);
+  });
+
+  it("schedules biweekly enrollments every other 7-day block from their start date", async () => {
+    vi.setSystemTime(new Date("2026-10-25T00:00:00.000Z")); // Sat Oct 24, 8pm ET
+    captureInsert();
+
+    await addSessionsForCron(
+      WEEK_START,
+      WEEK_END,
+      [
+        // Tue Sep 22 → Mon Oct 26 is 34 days, block 4: an on week.
+        enrollment({ id: "on", frequency: "biweekly", startDate: "2026-09-22T04:00:00.000Z" }),
+        // Tue Sep 29 → Mon Oct 26 is 27 days, block 3: an off week.
+        enrollment({ id: "off", frequency: "biweekly", startDate: "2026-09-29T04:00:00.000Z" }),
+        enrollment({
+          id: "weekly",
+          frequency: "weekly",
+          startDate: "2026-09-08T04:00:00.000Z",
+          student: { id: "student-2" },
+        }),
+      ],
+      [],
+    );
+
+    expect(mockInsert.mock.calls[0][0][0]).toEqual(
+      expect.objectContaining({ enrollment_id: "on", date: "2026-10-26T20:00:00.000Z" }),
+    );
+    expect(
+      mockInsert.mock.calls[0][0].map((s: { enrollment_id: string }) => s.enrollment_id),
+    ).toEqual(["on", "weekly"]);
+  });
+
+  it("inserts nothing when every slot in the week has passed", async () => {
+    vi.setSystemTime(new Date("2026-11-01T00:00:00.000Z")); // Sat Oct 31, 8pm ET
+
+    const result = await addSessionsForCron(WEEK_START, WEEK_END, [enrollment({})], []);
+
+    expect(mockInsert).not.toHaveBeenCalled();
+    expect(result).toEqual([]);
   });
 });

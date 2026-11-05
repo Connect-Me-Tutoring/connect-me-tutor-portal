@@ -283,10 +283,10 @@
 //           >
 //             If you experience any issues, please reach out to{" "}
 //             <Link
-//               href="mailto:ykowalczyk@connectmego.org"
+//               href="mailto:info@connectmego.org"
 //               style={{ color: "#0E5B94", textDecoration: "underline", fontWeight: "bold" }}
 //             >
-//               ykowalczyk@connectmego.org
+//               info@connectmego.org
 //             </Link>{" "}
 //             for assistance.
 //           </Text>

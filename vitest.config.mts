@@ -6,7 +6,7 @@ export default defineConfig({
   resolve: {
     tsconfigPaths: true,
     alias: {
-      "server-only": new URL("./tests/stubs/server-only.ts", import.meta.url).pathname,
+      "server-only": "node_modules/next/dist/compiled/server-only/empty.js",
     },
   },
   test: {

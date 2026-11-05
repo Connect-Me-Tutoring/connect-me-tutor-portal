@@ -1,6 +1,7 @@
 import LoginForm from "@/components/auth/LoginForm";
 import { LoginTestimonial } from "@/components/auth/LoginTestimonial";
 import Logo from "@/components/ui/logo";
+import Link from "next/link";
 import { selectRandomLoginQuote } from "@/lib/login/select-random-login-quote";
 import type { Metadata } from "next";
 import { connection } from "next/server";
@@ -36,6 +37,11 @@ export default async function LoginPage() {
           </div>
 
           <LoginForm />
+          <p className="text-xs text-center opacity-60">
+            <Link href="/privacy" className="underline">
+              Privacy Policy
+            </Link>
+          </p>
         </div>
       </section>
     </section>

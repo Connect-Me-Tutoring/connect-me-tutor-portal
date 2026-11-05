@@ -55,3 +55,6 @@ unlighthouse.config.mjs
 
 #mcp
 .mcp.json
+
+#quint
+specs*

@@ -11,6 +11,9 @@ const InactiveEnrollmentEarlyWarning = (params: {
     If sessions remain unconfirmed, your enrollment will deactivate in about two weeks to free up
     space for additional tutoring sessions. If your sessions with ${student.firstName} are still active, please
     fill in the Session Exit Form, and your enrollment will not be removed. <b>If this enrollment is no longer active, please delete it in the Tutor Portal.</b>
+    <br><br>
+    If you were unable to submit a Session Exit Form because of a technical issue, just reply to
+    this email and our team will sort it out.
   `;
 };
 

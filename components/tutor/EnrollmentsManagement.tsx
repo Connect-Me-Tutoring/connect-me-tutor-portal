@@ -23,11 +23,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Dialog, DialogTrigger } from "@/components/ui/dialog";
-import {
-  getAllEnrollments,
-  getMeetings,
-  pauseEnrollmentOverSummer,
-} from "@/lib/actions/admin.actions";
+import { getMeetings, pauseEnrollmentOverSummer } from "@/lib/actions/admin.actions";
 import {
   removeEnrollment,
   updateEnrollment,
@@ -40,6 +36,8 @@ import toast from "react-hot-toast";
 import AvailabilityFormat from "@/components/student/AvailabilityFormat";
 import { useRouter } from "next/navigation";
 import { checkAvailableMeetingForEnrollments } from "@/lib/actions/meeting/client.actions";
+import { getEnrollmentMeetingSlots } from "@/lib/actions/meeting/occupancy.server.actions";
+import { getWeeklyMeetingSchedules } from "@/lib/actions/meeting-schedule/client.actions";
 import EnrollmentFormDialog from "@/components/shared/enrollment/EnrollmentFormDialog";
 import DeleteEnrollmentDialog from "@/components/shared/enrollment/DeleteEnrollmentDialog";
 import { LoadMoreButton } from "@/components/ui/load-more-button";
@@ -118,8 +116,6 @@ const EnrollmentList = ({
   const [students, setStudents] = useState<Profile[]>(initialStudents || []);
   const [tutors, setTutors] = useState<Profile[]>([profile]);
 
-  const [allEnrollments, setAllEnrollments] = useState<Enrollment[]>([]);
-
   const [selectedTutorId, setSelectedTutorId] = useState(profile.id);
   const [selectedStudentId, setSelectedStudentId] = useState("");
   const [loading, setLoading] = useState(false);
@@ -190,19 +186,27 @@ const EnrollmentList = ({
 
   const normalizeText = (text: string) => text.toLowerCase().trim();
 
-  const checkAvailableMeetings = async (enrollment: Omit<Enrollment, "id" | "createdAt">) => {
+  const checkAvailableMeetings = async (
+    enrollment: Omit<Enrollment, "id" | "createdAt"> & { id?: string },
+  ) => {
     setIsCheckingMeetingAvailability(true);
-    const otherEnrollments: Enrollment[] | null =
-      allEnrollments.length > 0 ? allEnrollments : await getAllEnrollments();
-    if (otherEnrollments) {
+    try {
+      // RLS hides other tutors' enrollments, so read occupancy via a server action
+      const [slots, weeklySchedules] = await Promise.all([
+        getEnrollmentMeetingSlots(),
+        getWeeklyMeetingSchedules(),
+      ]);
       const updatedMeetingAvailability = await checkAvailableMeetingForEnrollments(
         enrollment,
-        otherEnrollments,
+        slots.filter((slot) => slot.id !== enrollment.id),
         meetings,
+        weeklySchedules,
       );
       setMeetingAvailability(updatedMeetingAvailability);
-      setAllEnrollments(otherEnrollments);
       setIsCheckingMeetingAvailability(false);
+    } catch (error) {
+      console.error("Failed to check meeting availability:", error);
+      toast.error("Unable to check meeting link availability");
     }
   };
 

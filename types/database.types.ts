@@ -4,7 +4,7 @@ export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "12.2.3 (519615d)";
+    PostgrestVersion: "14.18";
   };
   public: {
     Tables: {
@@ -152,6 +152,7 @@ export type Database = {
           end_time: string | null;
           frequency: Database["public"]["Enums"]["session_frequency"];
           id: string;
+          inactivity_warning_level: number | null;
           inactivity_warning_sent_at: string | null;
           meetingId: string | null;
           pairing_id: string | null;
@@ -171,6 +172,7 @@ export type Database = {
           end_time?: string | null;
           frequency?: Database["public"]["Enums"]["session_frequency"];
           id?: string;
+          inactivity_warning_level?: number | null;
           inactivity_warning_sent_at?: string | null;
           meetingId?: string | null;
           pairing_id?: string | null;
@@ -190,6 +192,7 @@ export type Database = {
           end_time?: string | null;
           frequency?: Database["public"]["Enums"]["session_frequency"];
           id?: string;
+          inactivity_warning_level?: number | null;
           inactivity_warning_sent_at?: string | null;
           meetingId?: string | null;
           pairing_id?: string | null;
@@ -569,6 +572,98 @@ export type Database = {
           },
         ];
       };
+      parental_consents: {
+        Row: {
+          consent_text_version: string | null;
+          created_at: string;
+          expires_at: string;
+          id: string;
+          parent_email: string;
+          parent_name: string | null;
+          pending_profile: Json | null;
+          profile_id: string | null;
+          requested_by: string | null;
+          resolved_at: string | null;
+          resolved_ip: string | null;
+          resolved_user_agent: string | null;
+          status: string;
+          student_first_name: string;
+          token_hash: string;
+        };
+        Insert: {
+          consent_text_version?: string | null;
+          created_at?: string;
+          expires_at: string;
+          id?: string;
+          parent_email: string;
+          parent_name?: string | null;
+          pending_profile?: Json | null;
+          profile_id?: string | null;
+          requested_by?: string | null;
+          resolved_at?: string | null;
+          resolved_ip?: string | null;
+          resolved_user_agent?: string | null;
+          status?: string;
+          student_first_name: string;
+          token_hash: string;
+        };
+        Update: {
+          consent_text_version?: string | null;
+          created_at?: string;
+          expires_at?: string;
+          id?: string;
+          parent_email?: string;
+          parent_name?: string | null;
+          pending_profile?: Json | null;
+          profile_id?: string | null;
+          requested_by?: string | null;
+          resolved_at?: string | null;
+          resolved_ip?: string | null;
+          resolved_user_agent?: string | null;
+          status?: string;
+          student_first_name?: string;
+          token_hash?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "parental_consents_profile_id_fkey";
+            columns: ["profile_id"];
+            isOneToOne: false;
+            referencedRelation: "Profiles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      profile_status_changes: {
+        Row: {
+          changed_at: string;
+          changed_by: string | null;
+          from_status: string | null;
+          id: number;
+          profile_id: string;
+          role: string | null;
+          to_status: string;
+        };
+        Insert: {
+          changed_at?: string;
+          changed_by?: string | null;
+          from_status?: string | null;
+          id?: never;
+          profile_id: string;
+          role?: string | null;
+          to_status: string;
+        };
+        Update: {
+          changed_at?: string;
+          changed_by?: string | null;
+          from_status?: string | null;
+          id?: never;
+          profile_id?: string;
+          role?: string | null;
+          to_status?: string;
+        };
+        Relationships: [];
+      };
       Profiles: {
         Row: {
           age: string | null;
@@ -576,6 +671,8 @@ export type Database = {
           availability: Json[] | null;
           created_at: string;
           date_of_birth: string | null;
+          deactivated_at: string | null;
+          deactivated_by: string | null;
           email: string | null;
           first_name: string;
           gender: string | null;
@@ -606,6 +703,8 @@ export type Database = {
           availability?: Json[] | null;
           created_at?: string;
           date_of_birth?: string | null;
+          deactivated_at?: string | null;
+          deactivated_by?: string | null;
           email?: string | null;
           first_name: string;
           gender?: string | null;
@@ -636,6 +735,8 @@ export type Database = {
           availability?: Json[] | null;
           created_at?: string;
           date_of_birth?: string | null;
+          deactivated_at?: string | null;
+          deactivated_by?: string | null;
           email?: string | null;
           first_name?: string;
           gender?: string | null;
@@ -792,6 +893,85 @@ export type Database = {
           {
             foreignKeyName: "Sessions_tutor_id_fkey";
             columns: ["tutor_id"];
+            isOneToOne: false;
+            referencedRelation: "Profiles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      tickets: {
+        Row: {
+          category: string;
+          contact_email: string | null;
+          created_at: string;
+          description: string;
+          id: string;
+          page_url: string | null;
+          profile_id: string | null;
+          status: string;
+          subject: string;
+          urgency: string;
+          user_id: string;
+        };
+        Insert: {
+          category: string;
+          contact_email?: string | null;
+          created_at?: string;
+          description: string;
+          id?: string;
+          page_url?: string | null;
+          profile_id?: string | null;
+          status?: string;
+          subject: string;
+          urgency?: string;
+          user_id?: string;
+        };
+        Update: {
+          category?: string;
+          contact_email?: string | null;
+          created_at?: string;
+          description?: string;
+          id?: string;
+          page_url?: string | null;
+          profile_id?: string | null;
+          status?: string;
+          subject?: string;
+          urgency?: string;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "tickets_profile_id_fkey";
+            columns: ["profile_id"];
+            isOneToOne: false;
+            referencedRelation: "Profiles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      tutor_manual_versions: {
+        Row: {
+          created_at: string;
+          created_by: string | null;
+          id: number;
+          sections: Json;
+        };
+        Insert: {
+          created_at?: string;
+          created_by?: string | null;
+          id?: never;
+          sections: Json;
+        };
+        Update: {
+          created_at?: string;
+          created_by?: string | null;
+          id?: never;
+          sections?: Json;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "tutor_manual_versions_created_by_fkey";
+            columns: ["created_by"];
             isOneToOne: false;
             referencedRelation: "Profiles";
             referencedColumns: ["id"];
@@ -1021,10 +1201,12 @@ export type Database = {
         Args: { p_captured_on?: string };
         Returns: number;
       };
+      data_portal_assistant_claim: { Args: never; Returns: Json };
       data_portal_overview: {
         Args: { p_date_range: string; p_tz?: string };
         Returns: Json;
       };
+      ensure_weekly_pairing_length_snapshot: { Args: never; Returns: number };
       get_admin_conversations: {
         Args: never;
         Returns: {
@@ -1097,6 +1279,17 @@ export type Database = {
         Returns: {
           conversation_id: string;
           participants: Json;
+        }[];
+      };
+      get_dropoff_stats: {
+        Args: { p_as_of?: string };
+        Returns: {
+          active: number;
+          dropped: number;
+          is_complete: boolean;
+          month: string;
+          returned: number;
+          role: string;
         }[];
       };
       get_enrollment_with_profiles: {
@@ -1453,7 +1646,8 @@ export type Database = {
         | "Expired"
         | "Standalone"
         | "Unsubmitted"
-        | "Unconfirmed";
+        | "Unconfirmed"
+        | "Student Did Not Attend";
       timezone: "EST" | "CST" | "PST" | "MST" | "MT" | "Other";
     };
     CompositeTypes: {
@@ -1607,6 +1801,7 @@ export const Constants = {
         "Standalone",
         "Unsubmitted",
         "Unconfirmed",
+        "Student Did Not Attend",
       ],
       timezone: ["EST", "CST", "PST", "MST", "MT", "Other"],
     },
