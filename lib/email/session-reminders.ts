@@ -18,10 +18,10 @@ export const SESSION_REMINDER_DESCRIPTION = "Session Reminder";
 // Same fallback as the other email links. NEXT_PUBLIC_* values are inlined at build time, so
 // one missing from the build environment becomes "undefined" here and QStash refuses the
 // destination even though the variable shows as set in Vercel.
-const SITE_URL = (process.env.NEXT_PUBLIC_SITE_URL || "https://www.connectmego.app").replace(
-  /\/$/,
-  "",
-);
+const SITE_URL = (
+  process.env.NEXT_PUBLIC_SITE_URL?.trim().replace(/^(["'])(.*)\1$/, "$2") ||
+  "https://www.connectmego.app"
+).replace(/\/+$/, "");
 
 export const getQstashClient = () => {
   const { token, baseUrl } = resolveQstashCredentials();
