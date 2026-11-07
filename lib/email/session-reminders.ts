@@ -15,6 +15,14 @@ import { resolveQstashCredentials } from "@/lib/qstash/credentials";
 
 export const SESSION_REMINDER_DESCRIPTION = "Session Reminder";
 
+// Same fallback as the other email links. NEXT_PUBLIC_* values are inlined at build time, so
+// one missing from the build environment becomes "undefined" here and QStash refuses the
+// destination even though the variable shows as set in Vercel.
+const SITE_URL = (
+  process.env.NEXT_PUBLIC_SITE_URL?.trim().replace(/^(["'])(.*)\1$/, "$2") ||
+  "https://www.connectmego.app"
+).replace(/\/+$/, "");
+
 export const getQstashClient = () => {
   const { token, baseUrl } = resolveQstashCredentials();
   return new Client({ token, baseUrl });
@@ -61,7 +69,7 @@ export async function scheduleEmail({
 }) {
   try {
     return await getQstashClient().publishJSON({
-      url: `${process.env.NEXT_PUBLIC_SITE_URL}/api/admin/email/send-email-reminder`,
+      url: `${SITE_URL}/api/admin/email/send-email-reminder`,
       notBefore: notBefore,
       body: {
         to: to,
@@ -203,7 +211,19 @@ export const scheduleReminder = async (data: { session: Session; type: "Tutor" |
   }
 };
 
-export type ReminderRunResult = { scheduled: number; skipped: number; failed: number };
+export type ReminderRunResult = {
+  scheduled: number;
+  skipped: number;
+  failed: number;
+  /** Distinct failure messages (e.g. QStash's response body), so the cron response says why. */
+  errors: string[];
+};
+
+const describeError = (error: unknown) => {
+  const status = (error as { status?: number })?.status;
+  const message = error instanceof Error ? error.message : String(error);
+  return status ? `${status}: ${message}` : message;
+};
 
 /**
  * Schedules the Tutor and Student reminders for each session. Failures are counted rather
@@ -212,7 +232,8 @@ export type ReminderRunResult = { scheduled: number; skipped: number; failed: nu
 export async function sendScheduledEmailsBeforeSessions(
   sessions: Session[],
 ): Promise<ReminderRunResult> {
-  const tally: ReminderRunResult = { scheduled: 0, skipped: 0, failed: 0 };
+  const tally = { scheduled: 0, skipped: 0, failed: 0 };
+  const errors = new Set<string>();
 
   await Promise.all(
     sessions.map(async (session) => {
@@ -225,13 +246,14 @@ export async function sendScheduledEmailsBeforeSessions(
           else tally.skipped++;
         } catch (error) {
           tally.failed++;
+          errors.add(describeError(error).slice(0, 300));
           console.error("Error processing session %s:", session.id, error);
         }
       }
     }),
   );
 
-  return tally;
+  return { ...tally, errors: [...errors].slice(0, 5) };
 }
 
 /**

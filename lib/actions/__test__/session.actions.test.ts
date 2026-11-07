@@ -4,8 +4,8 @@ import { logEvent } from "@/lib/posthog";
 
 const mockSelect = vi.fn();
 const mockUpdate = vi.fn();
-const mockInsert = vi.fn();
-const mockFrom = vi.fn(() => ({ select: mockSelect, update: mockUpdate, insert: mockInsert }));
+const mockUpsert = vi.fn();
+const mockFrom = vi.fn(() => ({ select: mockSelect, update: mockUpdate, upsert: mockUpsert }));
 
 vi.mock("@/lib/supabase/server", () => ({
   createClient: vi.fn().mockResolvedValue({ from: mockFrom }),
@@ -318,7 +318,7 @@ describe("addSessionsForCron", () => {
 
   const captureInsert = () => {
     const select = vi.fn().mockResolvedValue({ data: [], error: null });
-    mockInsert.mockReturnValue({ select });
+    mockUpsert.mockReturnValue({ select });
   };
 
   beforeEach(() => {
@@ -336,9 +336,11 @@ describe("addSessionsForCron", () => {
 
     await addSessionsForCron(WEEK_START, WEEK_END, [enrollment({})], []);
 
-    expect(mockInsert).toHaveBeenCalledWith([
-      expect.objectContaining({ enrollment_id: "e1", date: "2026-10-26T20:00:00.000Z" }),
-    ]);
+    expect(mockUpsert).toHaveBeenCalledWith(
+      [expect.objectContaining({ enrollment_id: "e1", date: "2026-10-26T20:00:00.000Z" })],
+      // An already-existing slot must be skipped, not fail the whole week's batch.
+      { onConflict: "tutor_id,student_id,date", ignoreDuplicates: true },
+    );
   });
 
   it("does not backfill slots that have already passed", async () => {
@@ -355,8 +357,8 @@ describe("addSessionsForCron", () => {
       [],
     );
 
-    expect(mockInsert).toHaveBeenCalledTimes(1);
-    expect(mockInsert.mock.calls[0][0]).toEqual([
+    expect(mockUpsert).toHaveBeenCalledTimes(1);
+    expect(mockUpsert.mock.calls[0][0]).toEqual([
       expect.objectContaining({ enrollment_id: "future", date: "2026-10-31T14:00:00.000Z" }),
     ]);
   });
@@ -383,11 +385,11 @@ describe("addSessionsForCron", () => {
       [],
     );
 
-    expect(mockInsert.mock.calls[0][0][0]).toEqual(
+    expect(mockUpsert.mock.calls[0][0][0]).toEqual(
       expect.objectContaining({ enrollment_id: "on", date: "2026-10-26T20:00:00.000Z" }),
     );
     expect(
-      mockInsert.mock.calls[0][0].map((s: { enrollment_id: string }) => s.enrollment_id),
+      mockUpsert.mock.calls[0][0].map((s: { enrollment_id: string }) => s.enrollment_id),
     ).toEqual(["on", "weekly"]);
   });
 
@@ -396,7 +398,7 @@ describe("addSessionsForCron", () => {
 
     const result = await addSessionsForCron(WEEK_START, WEEK_END, [enrollment({})], []);
 
-    expect(mockInsert).not.toHaveBeenCalled();
+    expect(mockUpsert).not.toHaveBeenCalled();
     expect(result).toEqual([]);
   });
 });
