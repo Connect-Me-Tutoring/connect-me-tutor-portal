@@ -4,7 +4,6 @@ import { Enrollment, Meeting, Session } from "@/types";
 import type { Database } from "@/types/database.types";
 
 type SessionStatus = Database["public"]["Enums"]["session_status"];
-import { toast } from "react-hot-toast";
 import { Client } from "@upstash/qstash";
 import { createAdminClient, createClient } from "@/lib/supabase/server";
 import {
@@ -1371,7 +1370,7 @@ export async function addStandaloneSession(
       .single();
 
     if (error) throw error;
-    if (!data) toast.error("No Data");
+    if (!data) throw new Error("Unable to create session");
 
     // Reminders are sent by the send-session-reminders cron once the session is 20 minutes out.
   } catch (error) {

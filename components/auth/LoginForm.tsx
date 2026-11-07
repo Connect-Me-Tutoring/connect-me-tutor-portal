@@ -23,6 +23,7 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { getProfileRole } from "@/lib/actions/user/client.actions";
+import { getErrorMessage } from "@/lib/utils/error";
 
 const formSchema = z.object({
   email: z.string().email({
@@ -75,11 +76,8 @@ export default function LoginForm() {
         toast.error("Something went wrong. Please try again.");
       }
     } catch (error) {
-      if (error instanceof Error) {
-        toast.error(error.message);
-      } else {
-        toast.error("An unknown error occurred");
-      }
+      console.error("Login error:", error);
+      toast.error(getErrorMessage(error, "Unable to log in. Please check your credentials."));
     } finally {
       setIsLoading(false);
     }
