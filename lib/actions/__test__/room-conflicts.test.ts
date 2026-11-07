@@ -141,6 +141,14 @@ describe("assertRoomFreeForEnrollment", () => {
       await expect(assertRoomFreeForEnrollment(slot)).rejects.toThrow(ROOM_TAKEN_MESSAGE);
     });
 
+    it("ignores orphaned sessions left behind by deleted enrollments", async () => {
+      room("Zoom Link B");
+      // Deleting an enrollment nulls its sessions' enrollment_id (ON DELETE SET NULL).
+      queue("Sessions", [rescheduled({ enrollment_id: null, is_standalone: false })]);
+
+      await expect(assertRoomFreeForEnrollment(slot)).resolves.toBeUndefined();
+    });
+
     it("compares on Eastern wall-clock time, not the UTC day", async () => {
       room("Zoom Link B");
       // Mon Nov 9, 11pm ET is Tue Nov 10, 04:00 UTC.
