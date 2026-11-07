@@ -122,7 +122,9 @@ export const deleteAllPairingRequests = async () => {
 export const getRejectedTutorIdsForStudent = async (
   studentProfileId: string,
 ): Promise<string[]> => {
-  const supabase = await createClient();
+  // Runs from cron as well as the admin UI; match the rest of the pairing
+  // workflow, which uses the service-role client.
+  const supabase = await createAdminClient();
   const cooldown = getPairingRejectionCooldown();
 
   const { data, error } = await supabase
