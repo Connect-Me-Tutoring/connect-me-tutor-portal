@@ -1,10 +1,15 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
+import { requireAdmin } from "@/lib/actions/auth/authz.server";
 
 export type TimeInterval = "7d" | "30d" | "90d" | "1y" | "all";
 
 export async function getUserGrowthMetrics(interval: TimeInterval = "30d") {
+  // Reads role and status for every profile in the window, so it is an
+  // admin report whichever page happens to render the chart.
+  await requireAdmin();
+
   try {
     const supabase = await createClient();
     const now = new Date();

@@ -58,3 +58,6 @@ unlighthouse.config.mjs
 
 #quint
 specs*
+
+# Files set aside instead of deleted
+/deleted/
