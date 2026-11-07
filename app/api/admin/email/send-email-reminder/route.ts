@@ -129,10 +129,10 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error("Error sending email:", error);
     await logError(error, {}, "email_send_reminder_error");
-    return NextResponse.json({
-      status: 500,
-      error: error,
-      message: "Unable to send email or fetch email settings",
-    });
+    // A real 500 lets QStash retry the delivery and shows the failure in its logs.
+    return NextResponse.json(
+      { message: "Unable to send email or fetch email settings" },
+      { status: 500 },
+    );
   }
 }

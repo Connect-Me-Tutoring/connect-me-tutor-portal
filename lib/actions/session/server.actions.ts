@@ -229,7 +229,13 @@ export async function addSessionsForCron(
     }
 
     if (sessionsToCreate.length > 0) {
-      const { data, error } = await supabase.from(Table.Sessions).insert(sessionsToCreate).select(`
+      // A single slot that already has a row (unique_sessions: tutor_id, student_id, date)
+      // used to fail the whole batch with a 409, so the week got no sessions at all (seen on
+      // the 2026-11-01 run). Skip existing slots instead; only new rows are returned.
+      const { data, error } = await supabase.from(Table.Sessions).upsert(sessionsToCreate, {
+        onConflict: "tutor_id,student_id,date",
+        ignoreDuplicates: true,
+      }).select(`
           *,
           student:Profiles!student_id(*),
           tutor:Profiles!tutor_id(*),
