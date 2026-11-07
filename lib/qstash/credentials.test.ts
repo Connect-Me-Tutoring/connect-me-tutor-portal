@@ -33,4 +33,19 @@ describe("resolveQstashCredentials", () => {
       "US_EAST_1_QSTASH_TOKEN is not set",
     );
   });
+
+  it("strips quotes and whitespace pasted in from a .env file", () => {
+    expect(
+      resolveQstashCredentials({
+        US_EAST_1_QSTASH_TOKEN: ' "us-token" ',
+        US_EAST_1_QSTASH_URL: '"https://qstash-us-east-1.upstash.io/"',
+      }),
+    ).toEqual({ token: "us-token", baseUrl: "https://qstash-us-east-1.upstash.io" });
+  });
+
+  it("treats a quoted empty token as missing", () => {
+    expect(() => resolveQstashCredentials({ US_EAST_1_QSTASH_TOKEN: '""' })).toThrow(
+      "US_EAST_1_QSTASH_TOKEN is not set",
+    );
+  });
 });
