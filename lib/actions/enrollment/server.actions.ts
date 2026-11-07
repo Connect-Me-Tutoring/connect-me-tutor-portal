@@ -13,8 +13,12 @@ import { handleCalculateDuration, isValidUUID } from "../../utils";
 import { addDays, format, subDays, subWeeks } from "date-fns";
 import { addStandaloneSession } from "../session/server.actions";
 import { getMeeting } from "../meeting/server.actions";
-import { fromZonedTime } from "date-fns-tz";
-import { computeSessionDateForSchedule, getEasternWeekBounds } from "../../utils/timezone";
+import { fromZonedTime, toZonedTime } from "date-fns-tz";
+import {
+  EASTERN_TIMEZONE,
+  computeSessionDateForSchedule,
+  getEasternWeekBounds,
+} from "../../utils/timezone";
 import { assertRoomFreeForEnrollment } from "../meeting/room-conflicts.server";
 import { sendMail } from "@/lib/email/mailer";
 import InactiveEnrollmentWarning from "@/components/emails/enrollments/inactve-enrollment-warning";
@@ -469,6 +473,9 @@ export const updateEnrollment = async (enrollment: Enrollment) => {
           day: schedule.day,
           startTime: schedule.startTime,
           endTime: schedule.endTime,
+          startDate: enrollment.startDate,
+          endDate: enrollment.endDate,
+          frequency: enrollment.frequency,
         },
         enrollment.id,
       );
@@ -505,7 +512,7 @@ export const updateEnrollment = async (enrollment: Enrollment) => {
       throw duplicateSlotError(updateEnrollmentError);
     }
 
-    await updateFutureSessions(enrollment);
+    await updateFutureSessions(enrollment, current ? currentSchedule : null);
     return updateEnrollmentData;
   } catch (error) {
     console.error("Unable to update Enrollment", error);
@@ -518,7 +525,17 @@ export const updateEnrollment = async (enrollment: Enrollment) => {
   }
 };
 
-const updateFutureSessions = async (enrollment: Enrollment) => {
+/**
+ * Carries an enrollment edit over to its upcoming sessions. Sessions still on the previous
+ * weekly slot follow the enrollment to its new day, time, room and length. Sessions that
+ * were rescheduled off that slot keep their own date, room and length: re-anchoring them
+ * would silently undo the reschedule (on any edit, even an unrelated one) and could drop
+ * them onto a time or room that is now taken.
+ */
+const updateFutureSessions = async (
+  enrollment: Enrollment,
+  previousSchedule: Availability | null,
+) => {
   const now = new Date().toISOString();
   const supabase = await createAdminClient();
 
@@ -529,7 +546,7 @@ const updateFutureSessions = async (enrollment: Enrollment) => {
 
   const { data: futureSessions, error: fetchError } = await supabase
     .from(Table.Sessions)
-    .select("id, date")
+    .select("id, date, meeting_id, duration")
     .eq("enrollment_id", enrollment.id)
     .gte("date", now)
     .not("status", "in", '(Cancelled,Rescheduled,"Student Did Not Attend")');
@@ -538,18 +555,43 @@ const updateFutureSessions = async (enrollment: Enrollment) => {
   if (!futureSessions || futureSessions.length === 0) return;
 
   const rows = futureSessions
-    .filter((session): session is { id: string; date: string } => Boolean(session.date))
-    .map((session) => ({
-      id: session.id,
-      student_id: enrollment.student?.id,
-      tutor_id: enrollment.tutor?.id,
-      meeting_id: enrollment.meetingId,
-      duration: enrollment.duration,
-      date: computeSessionDateForSchedule(session.date, schedule.day!, schedule.startTime!),
-    }));
+    .filter((session): session is typeof session & { date: string } => Boolean(session.date))
+    .map((session) => {
+      const base = {
+        id: session.id,
+        student_id: enrollment.student?.id,
+        tutor_id: enrollment.tutor?.id,
+      };
+      // Every row carries every column: a bulk upsert writes the union of keys, so an
+      // omitted column would be nulled rather than left alone.
+      if (!isOnWeeklySlot(session.date, previousSchedule)) {
+        return {
+          ...base,
+          meeting_id: session.meeting_id,
+          duration: session.duration,
+          date: session.date,
+        };
+      }
+      return {
+        ...base,
+        meeting_id: enrollment.meetingId,
+        duration: enrollment.duration,
+        date: computeSessionDateForSchedule(session.date, schedule.day!, schedule.startTime!),
+      };
+    });
 
   const { error: updateError } = await supabase.from(Table.Sessions).upsert(rows);
   if (updateError) throw updateError;
+};
+
+/** Whether a session starts on the given weekly slot (Eastern). No slot means "assume yes". */
+const isOnWeeklySlot = (sessionDate: string, slot: Availability | null) => {
+  if (!slot?.day || !slot.startTime) return true;
+  const zoned = toZonedTime(new Date(sessionDate), EASTERN_TIMEZONE);
+  return (
+    format(zoned, "EEEE").toLowerCase() === slot.day.toLowerCase() &&
+    format(zoned, "HH:mm") === slot.startTime
+  );
 };
 
 /**
@@ -692,6 +734,9 @@ export const addEnrollment = async (
         day: schedule.day,
         startTime: schedule.startTime,
         endTime: schedule.endTime,
+        startDate: enrollment.startDate,
+        endDate: enrollment.endDate,
+        frequency: enrollment.frequency,
       });
     }
 
