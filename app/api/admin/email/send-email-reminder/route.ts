@@ -1,4 +1,6 @@
+import { Profile } from "@/types";
 import { createAdminClient } from "@/lib/supabase/server";
+import { tableToInterfaceProfiles } from "@/lib/utils/type-utils";
 import { NextRequest, NextResponse } from "next/server";
 import { sendMail } from "@/lib/email/mailer";
 import { Table } from "@/lib/supabase/tables";
@@ -24,9 +26,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // QStash calls this with only a bearer token, no user session. A cookie-bound client runs
-    // as anon, which RLS denies on Sessions, user_settings and user_notification_settings
-    // (20260911000001_rls_enable_policies), so every lookup 401'd and no reminder was sent.
+    // Authenticated with a bearer token rather than a user session.
     const supabase = await createAdminClient();
 
     const data = await request.json();
@@ -70,7 +70,8 @@ export async function POST(request: NextRequest) {
     // only deliver if this message is still tracked.
     const messageId = request.headers.get("upstash-message-id");
     if (!scheduledFor && messageId) {
-      const { data: tracked, error: trackedError } = await supabase
+      const admin = await createAdminClient();
+      const { data: tracked, error: trackedError } = await admin
         .from(Table.SessionReminders)
         .select("id")
         .eq("message_id", messageId)
@@ -84,21 +85,25 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    const { data: userSettings, error: userSettingsError } = await supabase
+    // Look the recipient up with the same server-side client.
+    const { data: recipientSettings, error: recipientError } = await supabase
       .from("user_settings")
-      .select("profile:Profiles!last_active_profile_id(settings_id)")
+      .select("profile:Profiles!last_active_profile_id(*)")
       .eq("email", to)
       .single();
 
-    if (userSettingsError) throw userSettingsError;
-    const settingsId = (userSettings?.profile as { settings_id: string | null } | null)
-      ?.settings_id;
-    if (!settingsId) throw new Error("Unable to get recipient details");
+    if (recipientError) throw recipientError;
+
+    const recipient: Profile | null = recipientSettings?.profile
+      ? tableToInterfaceProfiles(recipientSettings.profile)
+      : null;
+
+    if (!recipient) throw new Error("Unable to get recipient details");
 
     const { data: notification_settings, error } = await supabase
-      .from(Table.UserNotificationSettings)
+      .from("user_notification_settings")
       .select("email_tutoring_session_notifications_enabled")
-      .eq("id", settingsId)
+      .eq("id", recipient.settingsId)
       .single();
 
     if (error) throw error;

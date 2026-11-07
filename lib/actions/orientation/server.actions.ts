@@ -5,7 +5,7 @@ import { requireAuthenticatedProfile } from "@/lib/actions/auth/authz.server";
 import { policyQuizQuestions } from "@/constants/policy-quiz";
 import { appendOrientationQuestionToSheet } from "@/lib/google-sheet";
 import { hasTutorOrientationAccess } from "@/lib/orientation/config.server";
-import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/server";
 import { Table } from "@/lib/supabase/tables";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
@@ -43,7 +43,10 @@ export async function submitQuizCompletion(payload: SubmitQuizPayload) {
     throw new Error("Tutor orientation is not enabled.");
   }
 
-  const supabase = await createClient();
+  // Completion is a protected field. Authenticate and authorize above, then
+  // use the server-only service client because authenticated users cannot
+  // update orientation_completed_at directly.
+  const supabase = await createAdminClient();
 
   const tutorName = `${profile.firstName ?? ""} ${profile.lastName ?? ""}`.trim() || "A tutor";
 
