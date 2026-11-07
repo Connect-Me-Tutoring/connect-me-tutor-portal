@@ -644,15 +644,20 @@ export default function DashboardLayout({
                     </span>
                     {isOpen && (
                       <>
-                        <span className="ml-3 flex min-w-0 flex-col items-start text-left">
-                          <span className="truncate text-sm font-medium">
+                        <span className="ml-3 flex min-w-0 flex-1 flex-col text-left">
+                          <span
+                            className="truncate text-sm font-medium"
+                            title={profile ? `${profile.firstName} ${profile.lastName}` : undefined}
+                          >
                             {profile ? `${profile.firstName} ${profile.lastName}` : "Account"}
                           </span>
                           {profile && (
-                            <span className="text-xs text-muted-foreground">{profile.role}</span>
+                            <span className="truncate text-xs text-muted-foreground">
+                              {profile.role}
+                            </span>
                           )}
                         </span>
-                        <MoreHorizontal className="ml-auto h-4 w-4 text-muted-foreground" />
+                        <MoreHorizontal className="ml-2 h-4 w-4 shrink-0 text-muted-foreground" />
                       </>
                     )}
                   </Button>
@@ -772,16 +777,20 @@ export default function DashboardLayout({
                   <PanelLeftOpenIcon className="h-4 w-4" />
                 </Button>
               )}
-              <div className="flex items-center space-x-2 absolute tpo-4 right-8">
+              {/* Capped width so long names truncate instead of covering the mobile menu button */}
+              <div className="flex items-center space-x-2 absolute right-4 sm:right-8 max-w-[calc(100%-5rem)] sm:max-w-xs">
                 {profile ? (
                   <Select onValueChange={handleSwitchProfile}>
-                    <SelectTrigger className="space-x-2 z-50">
-                      <User className="w-4 h-4" />
-                      <span className="font-semibold">
+                    <SelectTrigger className="z-50 min-w-0 gap-2 [&>svg]:shrink-0">
+                      <User className="w-4 h-4 shrink-0" />
+                      <span
+                        className="min-w-0 truncate font-semibold"
+                        title={`${profile.firstName} ${profile.lastName}`}
+                      >
                         {profile.firstName} {profile.lastName}
                       </span>
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="max-w-[calc(100vw-2rem)]">
                       {userProfiles.map((p) => (
                         <SelectItem key={p.id} value={p.id || ""}>
                           {p.firstName} {p.lastName}
