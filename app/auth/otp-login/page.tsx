@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import toast, { Toaster } from "react-hot-toast";
 import { useState, useEffect, useRef, Suspense } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { classifyOtpSendError, otpSendErrorMessage } from "@/lib/auth/otp-send-error";
 import { startNavigationProgress } from "@/components/ui/navigation-progress";
 import { useSearchParams } from "next/navigation";
 import Logo from "@/components/ui/logo"; // Import Logo
@@ -90,15 +91,20 @@ function OTPLogin() {
         },
       });
 
-      // An unknown email is rejected (otp_disabled, or signup_disabled when signups are
-      // off project-wide). Treat it like a success so the page doesn't reveal which
-      // emails have accounts.
-      if (error && error.code !== "otp_disabled" && error.code !== "signup_disabled") {
-        toast.error("We couldn't send a code right now. Please try again in a minute.");
+      // Unknown emails count as sent so the page doesn't reveal which emails have accounts.
+      // If a code went out moments ago (e.g. the page was reloaded), that code still
+      // works, so go to the code step instead of leaving them stuck on this one.
+      const outcome = classifyOtpSendError(error);
+      if (outcome.kind === "rate_limited" || outcome.kind === "failed") {
+        toast.error(otpSendErrorMessage(outcome)!);
         throw error;
       }
 
-      toast.success("If an account exists for that email, we've sent a 6-digit code.");
+      if (outcome.kind === "recently_sent") {
+        toast(otpSendErrorMessage(outcome)!);
+      } else {
+        toast.success("If an account exists for that email, we've sent a 6-digit code.");
+      }
       setOtpSent(true);
       emailForm.reset();
 
