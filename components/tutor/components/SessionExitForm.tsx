@@ -53,6 +53,9 @@ const sessionExitFormDeadline = (currSession: Session) => {
   if (currSession.status === "Complete") {
     urgencyClass = "bg-green-500 text-white hover:bg-green-600 border-green-500";
     deadlineText = "SEF Submitted";
+  } else if (currSession.status === "Sub-Request") {
+    urgencyClass = "bg-gray-100 text-gray-700 hover:bg-gray-200 border-gray-200";
+    deadlineText = "No SEF needed";
   } else if (currSession.status === "Unconfirmed" || daysUntilDeadline < 0) {
     urgencyClass = "bg-gray-400 text-white hover:bg-gray-500 border-gray-400";
     deadlineText = "Submit overdue SEF";
@@ -95,12 +98,19 @@ export const SessionExitFormTrigger = ({ currSession }: { currSession: Session }
         </Button>
       </HoverCardTrigger>
       <HoverCardContent>
-        <div className="space-y-1 text-sm">
-          <p className="font-medium">Submit by 11:59pm EST</p>
-          <p className="text-muted-foreground">
-            Session Exit Form will be available after your session
+        {currSession.status === "Sub-Request" ? (
+          <p className="text-sm text-muted-foreground">
+            A substitute was requested for this session, so it doesn&apos;t need a Session Exit
+            Form.
           </p>
-        </div>
+        ) : (
+          <div className="space-y-1 text-sm">
+            <p className="font-medium">Submit by 11:59pm EST</p>
+            <p className="text-muted-foreground">
+              Session Exit Form will be available after your session
+            </p>
+          </div>
+        )}
       </HoverCardContent>
     </HoverCard>
   );
