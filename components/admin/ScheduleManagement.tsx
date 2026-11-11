@@ -1267,6 +1267,31 @@ const Schedule = () => {
                     }}
                   />
                 </div>
+
+                <div>
+                  <Label>Created At</Label>
+                  <Input
+                    type="text"
+                    readOnly
+                    disabled
+                    value={
+                      selectedSession?.createdAt || selectedSession?.created_at
+                        ? new Date(
+                            selectedSession.createdAt || selectedSession.created_at!
+                          ).toLocaleString("en-US", {
+                            timeZone: "America/New_York",
+                            year: "numeric",
+                            month: "2-digit",
+                            day: "2-digit",
+                            hour: "2-digit",
+                            minute: "2-digit",
+                            hour12: true,
+                          }) + " EST"
+                        : "N/A"
+                    }
+                    className="bg-gray-100 cursor-not-allowed text-gray-500"
+                  />
+                </div>
                 <div>
                   <Label>Meeting</Label>
                   <Select
