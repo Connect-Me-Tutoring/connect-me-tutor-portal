@@ -239,38 +239,15 @@ const ActiveSessionsTable = ({
                         <UserRoundPlus className="h-4 w-4 mr-2" />
                         Request Substitute
                       </DropdownMenuItem>
-                      <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                          <DropdownMenuItem
-                            onSelect={(e) => {
-                              e.preventDefault();
-                            }}
-                          >
-                            <CalendarX className="h-4 w-4 mr-2" />
-                            Cancel
-                          </DropdownMenuItem>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent>
-                          <AlertDialogHeader>
-                            <AlertDialogTitle>Cancel Session?</AlertDialogTitle>
-                            <AlertDialogDescription>
-                              Are you sure you want to cancel this session with{" "}
-                              {session.student?.firstName}{" "}
-                              {session.student?.lastName} on{" "}
-                              {formatSessionDate(session.date)}? This action
-                              cannot be undone.
-                            </AlertDialogDescription>
-                          </AlertDialogHeader>
-                          <AlertDialogFooter>
-                            <AlertDialogCancel>Cancel</AlertDialogCancel>
-                            <AlertDialogAction
-                              onClick={() => handleStatusChange(session)}
-                            >
-                              Confirm Cancellation
-                            </AlertDialogAction>
-                          </AlertDialogFooter>
-                        </AlertDialogContent>
-                      </AlertDialog>
+
+
+                      
+                      <CancellationForm
+                        session={session}
+                        handleStatusChange={handleStatusChange}
+                      />
+
+                      
                     </DropdownMenuGroup>
                   </DropdownMenuContent>
                 </DropdownMenu>
