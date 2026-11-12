@@ -10,20 +10,9 @@ import {
   ChevronsRight,
   ChevronLeft,
   ChevronRight,
-  RefreshCcw,
   Download,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import {
-  AlertDialog,
-  AlertDialogTrigger,
-  AlertDialogDescription,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogContent,
-  AlertDialogFooter,
-  AlertDialogAction,
-} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import AvailabilityFormat from "@/components/student/AvailabilityFormat";
 import { Combobox } from "@/components/ui/combobox";
@@ -36,11 +25,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { getProfile } from "@/lib/actions/user/client.actions";
-import {
-  getAllProfiles,
-  getUserFromId,
-  resendEmailConfirmation,
-} from "@/lib/actions/admin.actions";
+import { getAllProfiles, getUserFromId } from "@/lib/actions/admin.actions";
 import {
   editProfile,
   deactivateProfile,
@@ -63,9 +48,9 @@ import { useLoadMore } from "@/hooks/useLoadMore";
 import { ResponsiveList, ResponsiveListColumn } from "@/components/ui/responsive-list";
 import toast, { Toaster } from "react-hot-toast";
 import { set } from "date-fns";
-import { AlertDialogCancel } from "@radix-ui/react-alert-dialog";
 import LegacyConsentBanner from "./components/LegacyConsentBanner";
 import AddStudentForm from "./components/AddStudentForm";
+import SendSignInCodeAction from "./components/SendSignInCodeAction";
 import ProfileStatusForm from "./components/ProfileStatusForm";
 import { inactiveLast } from "@/lib/utils/inactive-last";
 import EditStudentForm from "./components/EditStudentForm";
@@ -475,37 +460,6 @@ const StudentList = ({ initialStudents }: any) =>
       link.remove();
     };
 
-    const renderResendEmailAction = (student: Profile) => (
-      <AlertDialog>
-        <AlertDialogTrigger asChild>
-          <Button variant="ghost" size="icon">
-            <RefreshCcw className="h-4 w-4" />
-          </Button>
-        </AlertDialogTrigger>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Resend Email Confirmation for {student.firstName}</AlertDialogTitle>
-            <AlertDialogDescription>
-              {" "}
-              Note: Will not resend confirmation email if the user has already signed in before
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={() =>
-                resendEmailConfirmation(student.email)
-                  .then(() => toast.success("Resent Email Confirmation"))
-                  .catch(() => toast.error("Failed to resend email"))
-              }
-            >
-              Resend
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-    );
-
     const columns: ResponsiveListColumn<Profile>[] = [
       {
         key: "status",
@@ -592,7 +546,7 @@ const StudentList = ({ initialStudents }: any) =>
       {
         key: "actions",
         header: "Actions",
-        cell: (student) => renderResendEmailAction(student),
+        cell: (student) => <SendSignInCodeAction profile={student} />,
         mobileCell: null,
       },
     ];
@@ -666,7 +620,7 @@ const StudentList = ({ initialStudents }: any) =>
               #{student.studentNumber} &middot; {student.status}
             </>
           )}
-          mobileAction={(student) => renderResendEmailAction(student)}
+          mobileAction={(student) => <SendSignInCodeAction profile={student} />}
           mobileFooter={<LoadMoreButton hasMore={hasMoreStudents} onClick={loadMoreStudents} />}
         />
 

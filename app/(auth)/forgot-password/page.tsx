@@ -21,6 +21,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { trackOtpEvent } from "@/lib/auth/otp-tracking";
 import { setDefaultAutoSelectFamily } from "net";
 
 const emailSchema = z.object({
@@ -79,6 +80,7 @@ export default function ForgotPasswordPage() {
 
   const handleSendToken = async (values: z.infer<typeof emailSchema>) => {
     setEmailForReset(values.email);
+    trackOtpEvent("auth_otp_send_requested", { source: "password_reset", email: values.email });
     try {
       const { error } = await supabase.auth.signInWithOtp({
         email: values.email,
@@ -105,13 +107,26 @@ export default function ForgotPasswordPage() {
         email: values.email,
         token: "",
       });
+      trackOtpEvent("auth_otp_send_completed", {
+        source: "password_reset",
+        email: values.email,
+        outcome: error ? "failed" : "accepted",
+        error,
+      });
     } catch (error) {
+      trackOtpEvent("auth_otp_send_completed", {
+        source: "password_reset",
+        email: values.email,
+        outcome: "failed",
+        error,
+      });
       console.error("Error sending token:", error);
     }
   };
 
   const handleVerifyOtp = async (values: z.infer<typeof tokenSchema>) => {
     setIsLoading(true);
+    trackOtpEvent("auth_otp_verify_requested", { source: "password_reset", email: values.email });
     try {
       const {
         data: { session },
@@ -128,12 +143,29 @@ export default function ForgotPasswordPage() {
       }
 
       if (session) {
+        trackOtpEvent("auth_otp_verify_completed", {
+          source: "password_reset",
+          email: values.email,
+          outcome: "verified",
+        });
         router.push("/set-password"); // Redirect to dashboard or home
         router.refresh(); // Refresh server components
       } else {
+        trackOtpEvent("auth_otp_verify_completed", {
+          source: "password_reset",
+          email: values.email,
+          outcome: "failed",
+          error: { code: "session_missing" },
+        });
         toast.error("Failed to verify OTP. Please try again.");
       }
     } catch (error) {
+      trackOtpEvent("auth_otp_verify_completed", {
+        source: "password_reset",
+        email: values.email,
+        outcome: "failed",
+        error,
+      });
       console.error("Error verifying OTP:", error);
       // toast.error("Failed to verify OTP. Please try again.");
     } finally {
