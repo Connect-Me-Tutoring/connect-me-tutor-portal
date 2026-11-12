@@ -2,23 +2,11 @@
 import React, { useState, useEffect } from "react";
 import { format, startOfMonth, endOfMonth, eachWeekOfInterval, parseISO } from "date-fns";
 import {
-  AlertDialog,
-  AlertDialogTrigger,
-  AlertDialogContent,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogFooter,
-  AlertDialogDescription,
-  AlertDialogAction,
-  AlertDialogCancel,
-} from "@/components/ui/alert-dialog";
-import {
   Bell,
   ChevronDown,
   Plus,
   Link as LinkIcon,
   Eye,
-  RefreshCw,
   ChevronsLeft,
   ChevronsRight,
   ChevronLeft,
@@ -40,7 +28,6 @@ import {
   getAllProfiles,
   getEventsWithTutorMonth,
   getUserFromId,
-  resendEmailConfirmation,
 } from "@/lib/actions/admin.actions";
 import {
   editProfile,
@@ -68,6 +55,7 @@ import toast, { Toaster } from "react-hot-toast";
 import { Combobox } from "@/components/ui/combobox";
 
 import AddTutorForm from "./components/AddTutorForm";
+import SendSignInCodeAction from "./components/SendSignInCodeAction";
 import ProfileStatusForm from "./components/ProfileStatusForm";
 import { inactiveLast } from "@/lib/utils/inactive-last";
 import EditTutorForm from "./components/EditTutorForm";
@@ -270,18 +258,6 @@ const TutorList = ({ initialTutors }: any) => {
     }
   };
 
-  const handleResendEmailConfirmation = async () => {
-    if (selectedTutor) {
-      try {
-        await resendEmailConfirmation(selectedTutor.email);
-        toast.success("Resent Email Confirmation");
-      } catch (error) {
-        console.error("Failed to resend email confirmation", error);
-        toast.error("Failed to resend email confirmation");
-      }
-    }
-  };
-
   // #807: tutors are deactivated, never deleted. Deleting cascades away their
   // enrollments, pairings, and hour credits, and nulls tutor_id on sessions.
   const handleDeactivateTutor = async (profileId: string) => {
@@ -351,42 +327,6 @@ const TutorList = ({ initialTutors }: any) => {
     link.click();
     document.body.removeChild(link);
   };
-
-  const renderResendEmailAction = (tutor: Profile) => (
-    <AlertDialog>
-      <AlertDialogTrigger asChild>
-        <Button variant="ghost" size="icon">
-          <RefreshCw className="h-4 w-4" />
-        </Button>
-      </AlertDialogTrigger>
-
-      <AlertDialogContent>
-        <AlertDialogHeader>
-          <AlertDialogTitle> Resend Confirmation Email for {tutor.firstName}</AlertDialogTitle>
-          <AlertDialogDescription>
-            Note: Will not resend confirmation email if the user has already signed in before
-          </AlertDialogDescription>
-        </AlertDialogHeader>{" "}
-        <AlertDialogFooter>
-          {" "}
-          <AlertDialogCancel>Cancel</AlertDialogCancel>
-          <AlertDialogAction
-            onClick={() => {
-              resendEmailConfirmation(tutor.email)
-                .then(() => {
-                  toast.success("Resent Email Confirmation");
-                })
-                .catch(() => {
-                  toast.error("Failed to resend email confirmation");
-                });
-            }}
-          >
-            Resend
-          </AlertDialogAction>
-        </AlertDialogFooter>
-      </AlertDialogContent>
-    </AlertDialog>
-  );
 
   const columns: ResponsiveListColumn<Profile>[] = [
     {
@@ -462,7 +402,7 @@ const TutorList = ({ initialTutors }: any) => {
     {
       key: "actions",
       header: "Actions",
-      cell: (tutor) => renderResendEmailAction(tutor),
+      cell: (tutor) => <SendSignInCodeAction profile={tutor} />,
       mobileCell: null,
     },
   ];
@@ -533,7 +473,7 @@ const TutorList = ({ initialTutors }: any) => {
         rowKey={(tutor, index) => index}
         mobileTitle={(tutor) => `${tutor.firstName} ${tutor.lastName}`}
         mobileSubtitle={(tutor) => tutor.status}
-        mobileAction={(tutor) => renderResendEmailAction(tutor)}
+        mobileAction={(tutor) => <SendSignInCodeAction profile={tutor} />}
         mobileFooter={<LoadMoreButton hasMore={hasMoreTutors} onClick={loadMoreTutors} />}
       />
       <div className="mt-4 hidden md:flex justify-between items-center">

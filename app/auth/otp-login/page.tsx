@@ -3,7 +3,6 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
-import { useRouter } from "next/navigation";
 import toast, { Toaster } from "react-hot-toast";
 import { useState, useEffect, useRef, Suspense } from "react";
 import { createClient } from "@/lib/supabase/client";
@@ -14,13 +13,13 @@ import { Button } from "@/components/ui/button";
 import {
   Form,
   FormControl,
-  FormDescription,
   FormField,
   FormItem,
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { trackOtpEvent } from "@/lib/auth/otp-tracking";
 
 // Define your Zod schema for OTP login
 const emailSchema = z.object({
@@ -33,7 +32,6 @@ const otpSchema = z.object({
 });
 
 function OTPLogin() {
-  const router = useRouter();
   const searchParams = useSearchParams();
   const supabase = createClient();
   const [isLoading, setIsLoading] = useState(false);
@@ -69,17 +67,21 @@ function OTPLogin() {
           emailForm.setValue("email", email);
           sentOtp.current = true;
           await handleSendOtp({ email });
-          setOtpSent(true);
         }
       }
     };
     autoSendOtp();
   }, [searchParams]);
 
+  const prepareCodeEntry = ({ email }: z.infer<typeof emailSchema>) => {
+    setEmailForOtp(email);
+    otpForm.reset({ email, token: "" });
+  };
+
   const handleSendOtp = async (values: z.infer<typeof emailSchema>) => {
     setIsLoading(true);
-    setEmailForOtp(values.email);
 
+    trackOtpEvent("auth_otp_send_requested", { source: "login", email: values.email });
     try {
       const { error } = await supabase.auth.signInWithOtp({
         email: values.email,
@@ -102,12 +104,20 @@ function OTPLogin() {
       setOtpSent(true);
       emailForm.reset();
 
-      // Properly reset and set the OTP form
-      otpForm.reset({
+      prepareCodeEntry(values);
+      trackOtpEvent("auth_otp_send_completed", {
+        source: "login",
         email: values.email,
-        token: "",
+        outcome: error ? "failed" : "accepted",
+        error,
       });
     } catch (error) {
+      trackOtpEvent("auth_otp_send_completed", {
+        source: "login",
+        email: values.email,
+        outcome: "failed",
+        error,
+      });
       console.error("Error sending OTP:", error);
     } finally {
       setIsLoading(false);
@@ -116,6 +126,7 @@ function OTPLogin() {
 
   const handleVerifyOtp = async (values: z.infer<typeof otpSchema>) => {
     setIsLoading(true);
+    trackOtpEvent("auth_otp_verify_requested", { source: "login", email: values.email });
     try {
       const {
         data: { session },
@@ -132,14 +143,31 @@ function OTPLogin() {
       }
 
       if (session) {
+        trackOtpEvent("auth_otp_verify_completed", {
+          source: "login",
+          email: values.email,
+          outcome: "verified",
+        });
         toast.success("Logged in successfully!");
         startNavigationProgress();
         window.location.assign("/dashboard");
         return;
       } else {
+        trackOtpEvent("auth_otp_verify_completed", {
+          source: "login",
+          email: values.email,
+          outcome: "failed",
+          error: { code: "session_missing" },
+        });
         toast.error("Failed to verify OTP. Please try again.");
       }
     } catch (error) {
+      trackOtpEvent("auth_otp_verify_completed", {
+        source: "login",
+        email: values.email,
+        outcome: "failed",
+        error,
+      });
       console.error("Error verifying OTP:", error);
       // toast.error("Failed to verify OTP. Please try again.");
     } finally {
@@ -192,6 +220,18 @@ function OTPLogin() {
                       >
                         {isLoading ? "Sending OTP..." : "Send OTP"}
                       </Button>
+                      <Button
+                        type="button"
+                        variant="link"
+                        className="w-full"
+                        onClick={emailForm.handleSubmit((values) => {
+                          prepareCodeEntry(values);
+                          setOtpSent(true);
+                        })}
+                        disabled={isLoading}
+                      >
+                        I already have a code
+                      </Button>
                     </form>
                   </Form>
                 </>
@@ -200,7 +240,7 @@ function OTPLogin() {
                   <div className="flex flex-col gap-3 text-center">
                     <h1 className="text-xl sm:text-2xl font-bold">Enter OTP</h1>
                     <p className="text-sm text-gray-600">
-                      An OTP has been sent to {emailForOtp}. Please enter it below.
+                      Enter the code from the email sent to {emailForOtp}.
                     </p>
                   </div>
                   <Form {...otpForm} key="otp-form">
