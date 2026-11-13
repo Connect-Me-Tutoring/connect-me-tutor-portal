@@ -1,6 +1,6 @@
-import { getProfileByEmail } from "@/lib/actions/user/client.actions";
 import { Profile } from "@/types";
-import { createAdminClient, createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/server";
+import { tableToInterfaceProfiles } from "@/lib/utils/type-utils";
 import { NextRequest, NextResponse } from "next/server";
 import { sendMail } from "@/lib/email/mailer";
 import { Table } from "@/lib/supabase/tables";
@@ -26,7 +26,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const supabase = await createClient();
+    // Authenticated with a bearer token rather than a user session.
+    const supabase = await createAdminClient();
 
     const data = await request.json();
     const { to, subject, body, sessionId, scheduledFor } = emailSchema.parse(data);
@@ -84,7 +85,18 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    const recipient: Profile | null = await getProfileByEmail(to);
+    // Look the recipient up with the same server-side client.
+    const { data: recipientSettings, error: recipientError } = await supabase
+      .from("user_settings")
+      .select("profile:Profiles!last_active_profile_id(*)")
+      .eq("email", to)
+      .single();
+
+    if (recipientError) throw recipientError;
+
+    const recipient: Profile | null = recipientSettings?.profile
+      ? tableToInterfaceProfiles(recipientSettings.profile)
+      : null;
 
     if (!recipient) throw new Error("Unable to get recipient details");
 
@@ -117,10 +129,10 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error("Error sending email:", error);
     await logError(error, {}, "email_send_reminder_error");
-    return NextResponse.json({
-      status: 500,
-      error: error,
-      message: "Unable to send email or fetch email settings",
-    });
+    // A real 500 lets QStash retry the delivery and shows the failure in its logs.
+    return NextResponse.json(
+      { message: "Unable to send email or fetch email settings" },
+      { status: 500 },
+    );
   }
 }

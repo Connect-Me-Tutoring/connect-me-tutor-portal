@@ -4,6 +4,7 @@ const mocks = vi.hoisted(() => ({
   appendOrientationQuestionToSheet: vi.fn(),
   eq: vi.fn(),
   from: vi.fn(),
+  hasTutorOrientationAccess: vi.fn(),
   maybeSingle: vi.fn(),
   requireAuthenticatedProfile: vi.fn(),
   revalidatePath: vi.fn(),
@@ -28,11 +29,11 @@ vi.mock("@/lib/actions/auth/authz.server", () => ({
 }));
 
 vi.mock("@/lib/orientation/config.server", () => ({
-  hasTutorOrientationAccess: async () => true,
+  hasTutorOrientationAccess: (...args: unknown[]) => mocks.hasTutorOrientationAccess(...args),
 }));
 
 vi.mock("@/lib/supabase/server", () => ({
-  createClient: vi.fn().mockResolvedValue({ from: mocks.from }),
+  createAdminClient: vi.fn().mockResolvedValue({ from: mocks.from }),
 }));
 
 vi.mock("@/lib/google-sheet", () => ({
@@ -58,6 +59,7 @@ describe("submitQuizCompletion", () => {
     mocks.update.mockReturnValue(query);
     mocks.eq.mockReturnValue(query);
     mocks.select.mockReturnValue(query);
+    mocks.hasTutorOrientationAccess.mockResolvedValue(true);
     mocks.appendOrientationQuestionToSheet.mockResolvedValue(null);
     mocks.requireAuthenticatedProfile.mockResolvedValue({
       profile: {
@@ -165,5 +167,21 @@ describe("submitQuizCompletion", () => {
     });
     expect(mocks.appendOrientationQuestionToSheet).not.toHaveBeenCalled();
     expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("does not save completion while the PostHog flag is disabled", async () => {
+    mocks.hasTutorOrientationAccess.mockResolvedValue(false);
+
+    await expect(
+      submitQuizCompletion({
+        questionsText: null,
+        retries: 0,
+        totalAttempts: policyQuizQuestions.length,
+        totalQuestions: policyQuizQuestions.length,
+      }),
+    ).rejects.toThrow("Tutor orientation is not enabled.");
+
+    expect(mocks.update).not.toHaveBeenCalled();
+    expect(mocks.appendOrientationQuestionToSheet).not.toHaveBeenCalled();
   });
 });

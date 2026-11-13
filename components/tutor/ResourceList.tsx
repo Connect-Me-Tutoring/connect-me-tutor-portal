@@ -1,4 +1,6 @@
 "use client";
+
+import Link from "next/link";
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import {
@@ -234,24 +236,18 @@ const ResourceList = () => {
           <Card className="w-[300px] aspect-square flex flex-col justify-between">
             <CardHeader>
               <CardTitle>Tutor Manual</CardTitle>
-              <CardDescription>Manual that tutors can refer to</CardDescription>
+              <CardDescription>How to use the tutor portal</CardDescription>
             </CardHeader>
 
             <CardContent>
-              <p className="mb-4">This manual contains helpful information for tutors.</p>
+              <p className="mb-4">
+                Step-by-step help with pairing, sessions, exit forms, enrollments, and hours.
+              </p>
             </CardContent>
 
             <CardFooter>
-              <Button
-                className="w-full"
-                onClick={() =>
-                  window.open(
-                    "https://docs.google.com/document/d/1Tzc0JA90Ghy76UdBPCRFrUcT27jOxTvqh4yxq1_xVXY/edit?tab=t.0",
-                    "_blank",
-                  )
-                }
-              >
-                Open Tutor Manual
+              <Button className="w-full" asChild>
+                <Link href="/dashboard/manual">Open Tutor Manual</Link>
               </Button>
             </CardFooter>
           </Card>

@@ -949,6 +949,35 @@ export type Database = {
           },
         ];
       };
+      tutor_manual_versions: {
+        Row: {
+          created_at: string;
+          created_by: string | null;
+          id: number;
+          sections: Json;
+        };
+        Insert: {
+          created_at?: string;
+          created_by?: string | null;
+          id?: never;
+          sections: Json;
+        };
+        Update: {
+          created_at?: string;
+          created_by?: string | null;
+          id?: never;
+          sections?: Json;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "tutor_manual_versions_created_by_fkey";
+            columns: ["created_by"];
+            isOneToOne: false;
+            referencedRelation: "Profiles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       User_Availabilities: {
         Row: {
           created_at: string;
