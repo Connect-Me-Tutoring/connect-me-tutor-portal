@@ -35,6 +35,7 @@ import { addEnrollment } from "@/lib/actions/enrollment/server.actions";
 import { removeEnrollment, updateEnrollment } from "@/lib/actions/enrollment/server.actions";
 import { Enrollment, Profile, Event, Meeting, Availability } from "@/types";
 import toast from "react-hot-toast";
+import { getErrorMessage } from "@/lib/utils/error";
 import AvailabilityFormat from "@/components/student/AvailabilityFormat";
 import { z } from "zod";
 import Link from "next/link";
@@ -460,7 +461,7 @@ const EnrollmentList = ({
       }
     } catch (error) {
       console.error("Error adding enrollment:", error);
-      toast.error(`${error}`);
+      toast.error(getErrorMessage(error, "Failed to add enrollment. Please try again."));
     }
   };
 

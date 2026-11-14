@@ -30,6 +30,7 @@ import { updateWeeklyMeetingSchedule } from "@/lib/actions/meeting-schedule/serv
 import { getWeeklyMeetingSchedules } from "@/lib/actions/meeting-schedule/client.actions";
 import { checkAvailableMeetingForWeeklySchedules } from "@/lib/utils/meeting-schedule.utils";
 import { toast, Toaster } from "react-hot-toast";
+import { getErrorMessage } from "@/lib/utils/error";
 
 const HOURS = Array.from({ length: 17 }, (_, i) => i + 7); // 7am–11pm
 
@@ -253,7 +254,7 @@ export default function HQSchedule({ meetingsPromise, enrollmentsPromise }: Prop
     queryKey: ["weekly-meeting-schedules"],
     queryFn: getWeeklyMeetingSchedules,
     useErrorBoundary: (error: Error) => {
-      toast.error(`Failed to load schedules: ${error.message}`);
+      toast.error(getErrorMessage(error, "Failed to load schedules. Please try again."));
       return false;
     },
   });
