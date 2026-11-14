@@ -16,6 +16,7 @@ import type {
 } from "@/types/sessionExitForm";
 import { removeSessionReminders } from "@/lib/email/session-reminders";
 import { logError } from "@/lib/posthog";
+import { SESSION_SUBJECTS } from "@/constants/sessionExitForm";
 
 type SessionStatus = Database["public"]["Enums"]["session_status"];
 
@@ -186,9 +187,9 @@ const SESSION_WITH_RELATIONS = `*,
 export async function submitSessionExitForm(
   input: SubmitSessionExitFormInput,
 ): Promise<SubmitSessionExitFormResult> {
-  const { sessionId, isQuestionOrConcern, isFirstSession } = input;
+  const { sessionId, subject, isQuestionOrConcern, isFirstSession } = input;
   const notes = typeof input.notes === "string" ? input.notes.trim() : "";
-  if (!sessionId || !notes) {
+  if (!sessionId || !notes || !SESSION_SUBJECTS.some((option) => option === subject)) {
     return { ok: false, reason: "invalid" };
   }
 
@@ -199,6 +200,7 @@ export async function submitSessionExitForm(
       .update({
         status: "Complete",
         session_exit_form: notes,
+        subject,
         is_question_or_concern: isQuestionOrConcern,
         is_first_session: isFirstSession,
       })
@@ -251,6 +253,7 @@ export async function undoSessionExitForm(sessionId: string) {
       .update({
         status: "Active",
         session_exit_form: null,
+        subject: null,
         is_question_or_concern: false,
         is_first_session: false,
       })

@@ -92,6 +92,8 @@ interface SessionsTableProps {
     notes: string,
     isQuestionOrConcern: boolean,
     isFirstSession: boolean,
+    subject: string,
+    category?: string,
   ) => void;
   handlePageChange: (page: number) => void;
   handleRowsPerPageChange: (value: string) => void;

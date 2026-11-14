@@ -81,7 +81,12 @@ vi.mock("../components/CompletedSessionsTable", () => ({
 // A native select avoids testing Radix's pointer/geometry implementation in jsdom.
 vi.mock("@/components/ui/select", () => ({
   Select: ({ children, onValueChange, ...props }: any) => (
-    <select aria-label="Issue Category" onChange={(e) => onValueChange(e.target.value)} {...props}>
+    <select
+      aria-label={props.name === "subject" ? "Subject" : "Issue Category"}
+      onChange={(e) => onValueChange(e.target.value)}
+      {...props}
+    >
+      <option value="">Select...</option>
       {children}
     </select>
   ),
@@ -134,13 +139,14 @@ function setup(session = { ...originalSession }) {
   return session;
 }
 /** What the server action returns once the conditional write has completed the session. */
-const savedResult = ({ sessionId, notes, isQuestionOrConcern, isFirstSession }: any) => ({
+const savedResult = ({ sessionId, notes, subject, isQuestionOrConcern, isFirstSession }: any) => ({
   ok: true,
   session: {
     ...originalSession,
     id: sessionId,
     status: "Complete",
     session_exit_form: notes,
+    subject,
     isQuestionOrConcern,
     isFirstSession,
   },
@@ -148,6 +154,9 @@ const savedResult = ({ sessionId, notes, isQuestionOrConcern, isFirstSession }: 
 function openAndFill() {
   fireEvent.click(screen.getAllByRole("button", { name: "Submit overdue SEF" })[0]);
   fireEvent.change(screen.getByRole("textbox"), { target: { value: "We covered fractions." } });
+  fireEvent.change(screen.getByRole("combobox", { name: "Subject" }), {
+    target: { value: "Math" },
+  });
   fireEvent.click(screen.getByRole("checkbox", { name: /My student knows/ }));
 }
 beforeEach(() => {
@@ -165,6 +174,18 @@ afterEach(() => {
 });
 
 describe("SEF submission", () => {
+  it("requires a subject even when notes and confirmation are filled", () => {
+    setup();
+    openAndFill();
+    fireEvent.change(screen.getByRole("combobox", { name: "Subject" }), { target: { value: "" } });
+    fireEvent.click(screen.getByRole("button", { name: "Submit" }));
+    expect((screen.getByRole("button", { name: "Submit" }) as HTMLButtonElement).disabled).toBe(
+      true,
+    );
+    expect(submitSessionExitForm).not.toHaveBeenCalled();
+    expect(fetch).not.toHaveBeenCalled();
+  });
+
   it("opens one dialog across all four table triggers and submits an overdue session", async () => {
     const source = setup();
     openAndFill();
@@ -175,6 +196,10 @@ describe("SEF submission", () => {
     expect(source.session_exit_form).toBe("");
     expect(context.sessions).toEqual([]);
     expect(context.currentSessions[0].status).toBe("Complete");
+    expect(context.currentSessions[0].subject).toBe("Math");
+    expect(submitSessionExitForm).toHaveBeenCalledWith(
+      expect.objectContaining({ subject: "Math" }),
+    );
     expect(screen.getByTestId("past-sessions").textContent).toContain(
       "Complete: We covered fractions.",
     );
@@ -208,6 +233,9 @@ describe("SEF submission", () => {
     expect(
       screen.getByRole("checkbox", { name: /My student knows/ }).getAttribute("aria-checked"),
     ).toBe("true");
+    expect((screen.getByRole("combobox", { name: "Subject" }) as HTMLSelectElement).value).toBe(
+      "Math",
+    );
     expect(source.status).toBe("Unconfirmed");
     expect(context.pastSessions).toEqual([source]);
     expect(context.sessions).toEqual([]);
@@ -275,7 +303,9 @@ describe("SEF submission", () => {
     setup();
     openAndFill();
     fireEvent.click(screen.getByRole("checkbox", { name: "I have a question or a concern" }));
-    fireEvent.change(screen.getByRole("combobox"), { target: { value: "technical" } });
+    fireEvent.change(screen.getByRole("combobox", { name: "Issue Category" }), {
+      target: { value: "technical" },
+    });
     fireEvent.click(screen.getByRole("button", { name: "Submit" }));
     expect((await screen.findByRole("alert")).textContent).toContain("question or concern");
     expect(submitSessionExitForm).not.toHaveBeenCalled();
@@ -284,7 +314,9 @@ describe("SEF submission", () => {
         .getByRole("checkbox", { name: "I have a question or a concern" })
         .getAttribute("aria-checked"),
     ).toBe("true");
-    expect((screen.getByRole("combobox") as HTMLSelectElement).value).toBe("technical");
+    expect(
+      (screen.getByRole("combobox", { name: "Issue Category" }) as HTMLSelectElement).value,
+    ).toBe("technical");
     fireEvent.click(screen.getByRole("button", { name: "Submit" }));
     await waitFor(() => expect(toastSuccess).toHaveBeenCalledOnce());
     expect(context.pastSessions[0].isQuestionOrConcern).toBe(true);
