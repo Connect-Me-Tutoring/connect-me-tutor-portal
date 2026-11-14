@@ -15,6 +15,7 @@ export interface SessionExitFormPayload {
 
 export interface SubmitSessionExitFormInput {
   sessionId: string;
+  subject: string;
   notes: string;
   isQuestionOrConcern: boolean;
   isFirstSession: boolean;

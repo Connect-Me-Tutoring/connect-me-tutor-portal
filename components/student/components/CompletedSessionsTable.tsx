@@ -118,6 +118,9 @@ const CompletedSessionsTable = ({
                       <DialogHeader>
                         <DialogTitle>Meeting Notes</DialogTitle>
                       </DialogHeader>
+                      {SC.selectedSession?.subject && (
+                        <p className="text-sm">Subject: {SC.selectedSession.subject}</p>
+                      )}
                       <Textarea>{SC.selectedSession?.session_exit_form}</Textarea>
                     </DialogContent>
                   </Dialog>
@@ -211,6 +214,9 @@ const CompletedSessionsTable = ({
                 <DialogHeader>
                   <DialogTitle>Meeting Notes</DialogTitle>
                 </DialogHeader>
+                {SC.selectedSession?.subject && (
+                  <p className="text-sm">Subject: {SC.selectedSession.subject}</p>
+                )}
                 <Textarea>{SC.selectedSession?.session_exit_form}</Textarea>
               </DialogContent>
             </Dialog>

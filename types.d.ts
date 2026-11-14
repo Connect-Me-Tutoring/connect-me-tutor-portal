@@ -38,6 +38,7 @@ export interface Session {
   status:
     "Active" | "Complete" | "Cancelled" | "Rescheduled" | "Unconfirmed" | "Student Did Not Attend";
   session_exit_form: string;
+  subject?: string | null;
   summary: string;
   isQuestionOrConcern: boolean;
   isFirstSession: boolean;
