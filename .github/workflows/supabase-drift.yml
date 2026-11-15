@@ -1,0 +1,60 @@
+name: Supabase Schema Drift
+
+# Catches schema changes made outside of a committed migration (dashboard
+# table/SQL editor, MCP, psql, ...). Compares each hosted database against the
+# migrations on the branch that deploys to it and fails if they differ.
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "17 13 * * *" # daily
+
+permissions:
+  contents: read
+
+env:
+  SUPABASE_CLI_VERSION: 2.122.1
+
+jobs:
+  drift:
+    name: Drift check (${{ matrix.target }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - target: prod
+            branch: main
+          - target: dev
+            branch: dev
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_DB_PASSWORD: ${{ matrix.target == 'prod' && secrets.SUPABASE_DB_PASSWORD || secrets.SUPABASE_DEV_DB_PASSWORD }}
+      PROJECT_REF: ${{ matrix.target == 'prod' && secrets.SUPABASE_PROJECT_ID || secrets.SUPABASE_DEV_PROJECT_ID }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ matrix.branch }}
+
+      - uses: supabase/setup-cli@v1
+        with:
+          version: ${{ env.SUPABASE_CLI_VERSION }}
+
+      - name: Link project
+        run: supabase link --project-ref "$PROJECT_REF"
+
+      # Migrations recorded on the remote but missing from the branch, e.g. one
+      # applied through the dashboard or MCP instead of a PR.
+      - name: Check migration history
+        run: supabase db push --dry-run
+
+      # Schema edits that were never recorded as a migration at all.
+      - name: Diff remote schema against migrations
+        run: |
+          supabase db diff --linked --schema public > drift.sql
+          if [ -s drift.sql ]; then
+            echo "::error::${{ matrix.target }} schema differs from the migrations on ${{ matrix.branch }}. Turn the change into a migration (or revert it)."
+            cat drift.sql
+            exit 1
+          fi
+          echo "No drift."

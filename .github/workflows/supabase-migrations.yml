@@ -1,0 +1,86 @@
+name: Supabase Migrations
+
+# Migrations in supabase/migrations/ are the only way schema changes reach the
+# hosted databases:
+#   - PRs into dev/main: dry run against the target project (no changes made).
+#   - Push to dev:  apply to the dev project.
+#   - Push to main: apply to prod, gated by the `supabase-production`
+#     environment (add required reviewers to it in GitHub settings).
+# See docs/supabase-migrations.md for the matching Supabase/GitHub settings.
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - dev
+      - main
+    paths:
+      - "supabase/migrations/**"
+  pull_request:
+    branches:
+      - dev
+      - main
+    paths:
+      - "supabase/migrations/**"
+
+permissions:
+  contents: read
+
+env:
+  SUPABASE_CLI_VERSION: 2.122.1
+
+jobs:
+  dry-run:
+    name: Dry run (${{ github.base_ref == 'main' && 'prod' || 'dev' }})
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_DB_PASSWORD: ${{ github.base_ref == 'main' && secrets.SUPABASE_DB_PASSWORD || secrets.SUPABASE_DEV_DB_PASSWORD }}
+      PROJECT_REF: ${{ github.base_ref == 'main' && secrets.SUPABASE_PROJECT_ID || secrets.SUPABASE_DEV_PROJECT_ID }}
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: supabase/setup-cli@v1
+        with:
+          version: ${{ env.SUPABASE_CLI_VERSION }}
+
+      - name: Link project
+        run: supabase link --project-ref "$PROJECT_REF"
+
+      - name: Show migration status
+        run: supabase migration list --linked
+
+      # Fails if the remote has migrations that are not in this branch (i.e.
+      # someone changed the database outside of a committed migration).
+      - name: Dry run
+        run: supabase db push --dry-run
+
+  deploy:
+    name: Apply migrations (${{ github.ref_name == 'main' && 'prod' || 'dev' }})
+    if: github.event_name != 'pull_request' && (github.ref_name == 'main' || github.ref_name == 'dev')
+    runs-on: ubuntu-latest
+    environment: ${{ github.ref_name == 'main' && 'supabase-production' || 'supabase-dev' }}
+    # Never let two runs race each other against the same database.
+    concurrency:
+      group: supabase-migrations-${{ github.ref_name }}
+      cancel-in-progress: false
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_DB_PASSWORD: ${{ github.ref_name == 'main' && secrets.SUPABASE_DB_PASSWORD || secrets.SUPABASE_DEV_DB_PASSWORD }}
+      PROJECT_REF: ${{ github.ref_name == 'main' && secrets.SUPABASE_PROJECT_ID || secrets.SUPABASE_DEV_PROJECT_ID }}
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: supabase/setup-cli@v1
+        with:
+          version: ${{ env.SUPABASE_CLI_VERSION }}
+
+      - name: Link project
+        run: supabase link --project-ref "$PROJECT_REF"
+
+      - name: Show migration status
+        run: supabase migration list --linked
+
+      - name: Apply migrations
+        run: supabase db push
