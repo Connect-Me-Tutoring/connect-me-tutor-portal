@@ -130,6 +130,7 @@ export const tableToInterfaceSessions = (data: any): Session => {
     session_exit_form: data.session_exit_form,
     isQuestionOrConcern: data.is_question_or_concern,
     isFirstSession: data.is_first_session,
+    questionOrConcernCategory: data.question_or_concern_category ?? null,
     isStandalone: data.is_standalone,
     duration: data.duration,
   };

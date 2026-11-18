@@ -4,7 +4,8 @@ import { z } from "zod";
 import { CATEGORY_LABELS } from "@/constants/sessionExitForm";
 import { SessionExitFormCategory, SessionExitFormPayload } from "@/types/sessionExitForm";
 import { logEvent, logError } from "@/lib/posthog";
-import { requireAuthenticatedUser } from "@/lib/actions/auth/authz.server";
+import { requireAuthenticatedProfile } from "@/lib/actions/auth/authz.server";
+import { createSessionExitFormTechTicket } from "@/lib/tickets/server";
 
 export const dynamic = "force-dynamic";
 
@@ -48,8 +49,9 @@ export async function GET() {
 }
 
 export async function POST(request: NextRequest) {
+  let ctx: Awaited<ReturnType<typeof requireAuthenticatedProfile>>;
   try {
-    await requireAuthenticatedUser();
+    ctx = await requireAuthenticatedProfile();
   } catch {
     return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
   }
@@ -69,6 +71,7 @@ export async function POST(request: NextRequest) {
   }
 
   const formData: SessionExitFormPayload = parsed.data;
+  const categoryKey = formData.category;
 
   if (formData.category) {
     const label = CATEGORY_LABELS[formData.category as SessionExitFormCategory];
@@ -85,8 +88,6 @@ export async function POST(request: NextRequest) {
 
   try {
     await writeSpreadSheet(formData);
-
-    return NextResponse.json({ success: true }, { status: 200 });
   } catch (error) {
     console.error("API route error:", error);
     await logError(error, { category: formData.category }, "sef_error");
@@ -98,4 +99,16 @@ export async function POST(request: NextRequest) {
       { status: 500 },
     );
   }
+
+  // Only after the concern is recorded, so a retry after a sheet failure can't open a
+  // second ticket. Never throws; failures are logged inside.
+  if (categoryKey === "technical") {
+    await createSessionExitFormTechTicket(ctx, {
+      formContent: formData.formContent,
+      tutorName: [formData.tutorFirstName, formData.tutorLastName].filter(Boolean).join(" "),
+      studentName: [formData.studentFirstName, formData.studentLastName].filter(Boolean).join(" "),
+    });
+  }
+
+  return NextResponse.json({ success: true }, { status: 200 });
 }

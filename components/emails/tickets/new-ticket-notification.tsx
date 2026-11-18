@@ -11,6 +11,8 @@ export interface NewTicketNotificationEmailProps {
   subject: string;
   description: string;
   pageUrl?: string;
+  /** Overrides the default note addressed to the submitter. */
+  intro?: string;
 }
 
 const labelStyle = { margin: "0 0 4px", fontSize: "12px", color: "#6b7280" };
@@ -26,6 +28,7 @@ export default function NewTicketNotificationEmail({
   subject,
   description,
   pageUrl,
+  intro,
 }: NewTicketNotificationEmailProps) {
   const fields: [string, string | undefined][] = [
     ["Submitted by", `${submitterName} (${submitterRole})`],
@@ -45,8 +48,8 @@ export default function NewTicketNotificationEmail({
             Ticket received: {subject}
           </Text>
           <Text style={{ fontSize: "14px", color: "#374151", margin: "0 0 16px" }}>
-            Thanks for reaching out. The Connect Me operations team has your ticket and will follow
-            up by email.
+            {intro ??
+              "Thanks for reaching out. The Connect Me operations team has your ticket and will follow up by email."}
           </Text>
           <Section>
             {fields

@@ -41,6 +41,8 @@ export interface Session {
   summary: string;
   isQuestionOrConcern: boolean;
   isFirstSession: boolean;
+  /** Set when isQuestionOrConcern is true: which Session Exit Form category was chosen. */
+  questionOrConcernCategory?: "attendance" | "technical" | "behavior" | "urgent" | null;
   isStandalone: boolean;
 }
 

@@ -71,6 +71,7 @@ export async function submitSessionExitFormFlow({
       notes,
       isQuestionOrConcern,
       isFirstSession,
+      category: isQuestionOrConcern ? category : undefined,
     });
   } catch (error) {
     // Network failure or the server action itself blowing up.

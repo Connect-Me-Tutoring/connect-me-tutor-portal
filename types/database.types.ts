@@ -830,6 +830,7 @@ export type Database = {
           is_question_or_concern: boolean;
           is_standalone: boolean;
           meeting_id: string | null;
+          question_or_concern_category: string | null;
           session_exit_form: string | null;
           status: Database["public"]["Enums"]["session_status"] | null;
           student_id: string | null;
@@ -846,6 +847,7 @@ export type Database = {
           is_question_or_concern?: boolean;
           is_standalone?: boolean;
           meeting_id?: string | null;
+          question_or_concern_category?: string | null;
           session_exit_form?: string | null;
           status?: Database["public"]["Enums"]["session_status"] | null;
           student_id?: string | null;
@@ -862,6 +864,7 @@ export type Database = {
           is_question_or_concern?: boolean;
           is_standalone?: boolean;
           meeting_id?: string | null;
+          question_or_concern_category?: string | null;
           session_exit_form?: string | null;
           status?: Database["public"]["Enums"]["session_status"] | null;
           student_id?: string | null;

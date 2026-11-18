@@ -3,6 +3,9 @@ import { z } from "zod";
 export const SERIOUS_INCIDENT_FORM_URL =
   "https://docs.google.com/forms/d/e/1FAIpQLSdWtwkfILDsd6o6skBhUoeEa0SprHxk4-B1ZjRpa3zPPiwTzw/viewform?usp=sharing";
 
+/** Technical concerns from Session Exit Forms are emailed here as tickets. */
+export const TECH_TEAM_EMAIL = "tech@connectmego.org";
+
 export const TICKET_CATEGORIES = [
   "technical",
   "sessions",
