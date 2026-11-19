@@ -23,8 +23,20 @@ drop policy if exists "Update profile if admin" on public."Profiles";
 drop policy if exists "update if owner" on public."Profiles";
 drop policy if exists "analytics read" on public."Profiles";
 
+-- Admin profiles are visible to any authenticated user: fetchAdmins()
+-- (lib/actions/chat/server.actions.ts:82) and createAdminConversation()'s
+-- discovery step need to find an admin before any conversation/pairing
+-- relationship exists between the caller and that admin.
+create policy "profiles_select_related"
+  on public."Profiles" for select to authenticated
   using (
     (select private.is_admin())
+    or role = 'Admin'
+    or id = any ((select private.visible_profile_ids())::uuid[])
+  );
+
+create policy "profiles_update_own"
+  on public."Profiles" for update to authenticated
   using (user_id = (select auth.uid()))
   with check (user_id = (select auth.uid()));
 

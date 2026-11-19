@@ -7,7 +7,7 @@ import CurrentSessionsTable from "./components/CurrentSessionsTable";
 import CompletedSessionsTable from "./components/CompletedSessionsTable";
 import { getProfile } from "@/lib/actions/user/client.actions";
 import { getMeetings } from "@/lib/actions/admin.actions";
-import { getTutorSessions, recordSessionExitForm } from "@/lib/actions/tutor/actions";
+import { getTutorSessions } from "@/lib/actions/tutor/actions";
 import { getAllSessions } from "@/lib/actions/session/client.actions";
 import {
   rescheduleSession,
@@ -16,6 +16,7 @@ import {
 } from "@/lib/actions/session/server.actions";
 import { Session, Profile, Meeting } from "@/types";
 import toast from "react-hot-toast";
+import { submitSessionExitFormFlow, type SessionExitFormOutcome } from "@/lib/session-exit-form";
 import {
   parseISO,
   addHours,
@@ -182,58 +183,40 @@ const StudentDashboard = () => {
     }
   };
 
+  /**
+   * Returns the outcome instead of swallowing it, so the Session Exit Form knows whether to
+   * close. Dashboard state is only updated from the session the server sends back.
+   */
   const handleSessionComplete = async (
-    updatedSession: Session,
+    session: Session,
     notes: string,
     isQuestionOrConcern: boolean,
     isFirstSession: boolean,
-  ) => {
-    try {
-      await recordSessionExitForm(updatedSession.id, notes);
-      updatedSession.status = "Complete";
-      updatedSession.isQuestionOrConcern = isQuestionOrConcern;
-      updatedSession.isFirstSession = isFirstSession;
-      await updateSession(updatedSession);
-      SC.setCurrentSessions(
-        SC.currentSessions.map((e: Session) => (e.id === updatedSession.id ? updatedSession : e)),
-      );
-      SC.setSessions(
-        SC.sessions.map((e: Session) => (e.id === updatedSession.id ? updatedSession : e)),
-      );
-      toast.success("Session Marked Complete");
-      SC.setIsSessionExitFormOpen(false);
-      SC.setNotes("");
-      SC.setNextClassConfirmed(false);
+    category?: string,
+  ): Promise<SessionExitFormOutcome> => {
+    const outcome = await submitSessionExitFormFlow({
+      session,
+      notes,
+      isQuestionOrConcern,
+      isFirstSession,
+      category,
+    });
+    if (!outcome.ok) return outcome;
 
-      //API Call to update operation logs
+    const saved = outcome.session;
+    SC.setCurrentSessions(SC.currentSessions.map((e: Session) => (e.id === saved.id ? saved : e)));
+    SC.setSessions(SC.sessions.map((e: Session) => (e.id === saved.id ? saved : e)));
+    SC.setIsSessionExitFormOpen(false);
+    SC.setNotes("");
+    SC.setNextClassConfirmed(false);
 
-      if (isQuestionOrConcern) {
-        const response = await fetch("/api/session-exit-form/questions-concerns", {
-          headers: {
-            "Content-Type": "application/json",
-          },
-          method: "POST",
-          body: JSON.stringify({
-            tutorFirstName: updatedSession.tutor?.firstName,
-            tutorLastName: updatedSession.tutor?.lastName,
-            studentFirstName: updatedSession.student?.firstName,
-            studentLastName: updatedSession.student?.lastName,
-            formContent: notes,
-            tutorEmail: updatedSession.tutor?.email,
-            studentEmail: updatedSession.student?.email,
-          }),
-        });
-        const data = await response.json();
-
-        if (!data.success) {
-          toast.error("Unable to record question or concern");
-          throw new Error(data.error);
-        }
-      }
-    } catch (error) {
-      console.error("Failed to record Session Exit Form", error);
-      toast.error("Failed to record Session Exit Form");
+    if (outcome.alreadySubmitted) {
+      toast("This Session Exit Form was already submitted.");
+      return outcome;
     }
+
+    toast.success("Session Marked Complete");
+    return outcome;
   };
 
   const paginatedSessions = SC.filteredSessions.slice(

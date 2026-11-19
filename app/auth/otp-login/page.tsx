@@ -83,17 +83,22 @@ function OTPLogin() {
     try {
       const { error } = await supabase.auth.signInWithOtp({
         email: values.email,
-        // options: {
-        // emailRedirectTo: `${window.location.origin}/auth/callback`,
-        // },
+        options: {
+          // Accounts are created by admins only; never sign up a new email from here.
+          shouldCreateUser: false,
+          // emailRedirectTo: `${window.location.origin}/auth/callback`,
+        },
       });
 
-      if (error) {
-        toast.error(error.message);
+      // An unknown email is rejected (otp_disabled, or signup_disabled when signups are
+      // off project-wide). Treat it like a success so the page doesn't reveal which
+      // emails have accounts.
+      if (error && error.code !== "otp_disabled" && error.code !== "signup_disabled") {
+        toast.error("We couldn't send a code right now. Please try again in a minute.");
         throw error;
       }
 
-      toast.success("OTP sent to your email!");
+      toast.success("If an account exists for that email, we've sent a 6-digit code.");
       setOtpSent(true);
       emailForm.reset();
 

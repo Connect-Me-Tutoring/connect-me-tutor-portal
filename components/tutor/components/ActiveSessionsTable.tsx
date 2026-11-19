@@ -2,6 +2,7 @@ import React from "react";
 import { useState } from "react";
 import { formatSessionDate, formatSessionDuration } from "@/lib/utils";
 import { Session, Meeting } from "@/types";
+import type { SessionExitFormOutcome } from "@/lib/session-exit-form";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
@@ -49,7 +50,7 @@ import {
 import { SessionStatusBadge } from "@/components/sessions/SessionStatusBadge";
 import { format, parseISO, isAfter } from "date-fns";
 import { AlertDialogTrigger } from "@radix-ui/react-alert-dialog";
-import SessionExitForm from "./SessionExitForm";
+import { SessionExitFormTrigger } from "./SessionExitForm";
 import CancellationForm from "./CancellationForm";
 import EditSessionForm from "./EditSessionForm";
 import { boolean } from "zod";
@@ -92,7 +93,7 @@ interface SessionsTableProps {
     isQuestionOrConcern: boolean,
     isFirstSession: boolean,
     category?: string,
-  ) => void;
+  ) => Promise<SessionExitFormOutcome>;
   handlePageChange: (page: number) => void;
   handleRowsPerPageChange: (value: string) => void;
   handleInputChange: (e: { target: { name: string; value: string } }) => void;
@@ -105,47 +106,19 @@ const ActiveSessionsTable = ({
   loadMore,
   meetings,
   totalPages,
-  setNextClassConfirmed,
   handleStatusChange,
-  handleSessionComplete,
   handlePageChange,
   handleRowsPerPageChange,
 }: any) => {
   const TC = useDashboardContext();
-  const markSessionComplete = async (
-    updatedSession: Session,
-    notes: string,
-    isQuestionOrConcern: boolean,
-    isFirstSession: boolean,
-    category?: string,
-  ) => {
-    await handleSessionComplete(
-      updatedSession,
-      notes,
-      isQuestionOrConcern,
-      isFirstSession,
-      category,
-    );
-    try {
-      await fetch("/api/send-feedback-email", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          studentEmail: updatedSession.student?.email,
-          studentName: updatedSession.student?.firstName,
-        }),
-      });
-    } catch (emailError) {
-      console.error("Failed to send feedback email:", emailError);
-    }
-  };
+
   return (
     <>
       <div className="hidden md:block w-full">
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Mark Status</TableHead>
+              <TableHead>Status</TableHead>
               <TableHead>Date</TableHead>
               <TableHead>Title</TableHead>
               <TableHead>Student</TableHead>
@@ -183,12 +156,7 @@ const ActiveSessionsTable = ({
                   )}
                 </TableCell>
                 <TableCell>
-                  <SessionExitForm
-                    currSession={session}
-                    setNextClassConfirmed={setNextClassConfirmed}
-                    handleSessionComplete={markSessionComplete}
-                    handleStatusChange={handleStatusChange}
-                  />
+                  <SessionExitFormTrigger currSession={session} />
                 </TableCell>
                 <TableCell className="flex content-center">
                   <DropdownMenu>
@@ -336,12 +304,7 @@ const ActiveSessionsTable = ({
               </div>
             </div>
             <div>
-              <SessionExitForm
-                currSession={session}
-                setNextClassConfirmed={setNextClassConfirmed}
-                handleSessionComplete={markSessionComplete}
-                handleStatusChange={handleStatusChange}
-              />
+              <SessionExitFormTrigger currSession={session} />
             </div>
             <div>
               <DropdownMenu>

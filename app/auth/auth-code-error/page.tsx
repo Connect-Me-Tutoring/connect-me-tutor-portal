@@ -1,69 +1,13 @@
-"use client";
-
-import { supabase } from "@/lib/supabase/client";
-import toast, { Toaster, ValueFunction } from "react-hot-toast";
-import Logo from "@/components/ui/logo";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
-import * as z from "zod";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useState } from "react";
-// import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
+import Logo from "@/components/ui/logo";
 import { Button } from "@/components/ui/button";
-import {
-  Form,
-  FormControl,
-  FormDescription,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
-import { setDefaultAutoSelectFamily } from "net";
 
-const formSchema = z.object({
-  email: z.string().email({
-    message: "Please enter a valid email address.",
-  }),
-});
-
+// Expired or already-used email links (invites included) land here from /auth/confirm.
+// Forgot password sends a fresh 6-digit code, which also works for invited users who
+// never set a password, then continues to /set-password.
 export default function AuthError() {
-  const [resetPassword, setResetPassword] = useState<boolean>(false);
-
-  const router = useRouter();
-  const [isLoading, setIsLoading] = useState(false);
-
-  const sendResetPassword = async () => {
-    try {
-      const email = form.getValues("email");
-
-      const { data: resetData, error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}`,
-      });
-      if (error) {
-        throw error;
-      }
-      if (!resetData) {
-        throw new Error();
-      }
-      toast.success("Password reset email sent successfully");
-    } catch (error) {
-      console.error("Unable to reset password");
-      toast.error(`Unable to send reset password link ${error}`);
-    }
-  };
-  const form = useForm<z.infer<typeof formSchema>>({
-    resolver: zodResolver(formSchema),
-    defaultValues: {
-      email: "",
-    },
-  });
-
   return (
     <>
-      <Toaster />
       <section className="flex flex-row ">
         <div className="absolute left-8 top-8">
           <Logo />
@@ -74,39 +18,19 @@ export default function AuthError() {
           <div className="container h-full mx-auto max-w-lg p-10 flex flex-col items-center justify-center align-center">
             <div className="p-8 flex flex-col items-center justify-center gap-4 border border-gray-300 rounded-xl">
               <div className="flex flex-col gap-3">
-                <h1 className="text-2xl text-center font-bold">Your link may have expired</h1>
-                <p className="text-sm text-gray-600"></p>
+                <h1 className="text-2xl text-center font-bold">This link has expired</h1>
+                <p className="text-sm text-center text-gray-600">
+                  Email links only work for a limited time and can only be used once. If you were
+                  invited to Connect Me, or need to reset your password, get a new 6-digit code sent
+                  to your email and set your password from there.
+                </p>
               </div>
-              <Form {...form}>
-                <form
-                  onSubmit={form.handleSubmit(async () => {
-                    await sendResetPassword();
-                  })}
-                  className="space-y-8 p-0 rounded-md"
-                >
-                  <FormField
-                    control={form.control}
-                    name="email"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Enter your email</FormLabel>
-                        <FormControl>
-                          <Input placeholder="youremail@example.com" {...field} />
-                        </FormControl>
-                        <FormDescription>
-                          Enter the email associated with your account to receive an email to set
-                          your login information
-                        </FormDescription>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <Button type="submit" className="w-full bg-blue-400">
-                    Reset Password
-                  </Button>
-                </form>
-                <Toaster />
-              </Form>
+              <Button asChild className="w-full bg-blue-400">
+                <Link href="/forgot-password">Get a new code</Link>
+              </Button>
+              <Link href="/" className="text-sm text-gray-600 hover:underline">
+                Back to login
+              </Link>
             </div>
           </div>
         </section>

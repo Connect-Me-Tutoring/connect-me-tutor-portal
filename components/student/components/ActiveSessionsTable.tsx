@@ -134,7 +134,7 @@ const ActiveSessionsTable = ({
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Mark Status</TableHead>
+              <TableHead>Status</TableHead>
               <TableHead>Date</TableHead>
               <TableHead>Title</TableHead>
               <TableHead>Tutor</TableHead>

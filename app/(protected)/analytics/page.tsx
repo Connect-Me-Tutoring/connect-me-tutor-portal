@@ -1,8 +1,16 @@
 import React from "react";
+import { redirect } from "next/navigation";
+import { requireAdmin } from "@/lib/actions/auth/authz.server";
 import AnalyticsCard from "@/components/analytics/AnalyticsCard";
 import UserGrowthChart from "@/components/analytics/UserGrowthChart";
 
-export default function AnalyticsPage() {
+export default async function AnalyticsPage() {
+  try {
+    await requireAdmin();
+  } catch {
+    redirect("/dashboard");
+  }
+
   return (
     <main className="p-6">
       <div className="mb-6">

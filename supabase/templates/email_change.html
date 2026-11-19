@@ -1,0 +1,21 @@
+<!-- Local-dev auth email. Prod's templates live in the Supabase dashboard; set
+     prod's "Change Email Address" template to the same link. It must go through
+     /auth/confirm with token_hash so the confirmed address is copied to Profiles.
+     With double_confirm_changes this is sent to both the old and new address. -->
+<div
+  style="font-family: sans-serif; max-width: 480px; margin: 0 auto; padding: 24px; color: #111827"
+>
+  <h2 style="margin: 0 0 16px">Confirm your new Connect Me email</h2>
+  <p style="margin: 0 0 16px">
+    Click below to confirm changing your login email from {{ .Email }} to {{ .NewEmail }}.
+  </p>
+  <p style="margin: 0 0 16px">
+    <a
+      href="{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=email_change&next=/dashboard/settings"
+      >Confirm email change</a
+    >
+  </p>
+  <p style="margin: 0; font-size: 12px; color: #6b7280">
+    If you didn't request this change, you can ignore this email.
+  </p>
+</div>

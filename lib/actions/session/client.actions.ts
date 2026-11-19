@@ -1,11 +1,11 @@
 "use client";
 import { Profile, Session, Notification, Event, Enrollment, Meeting } from "@/types";
 import type { Database } from "@/types/database.types";
+import { getSessionMeetingSlots } from "../meeting/occupancy.server.actions";
 
 type SessionStatus = Database["public"]["Enums"]["session_status"];
 import {
   deleteScheduledEmailBeforeSessions,
-  sendScheduledEmailsBeforeSessions,
   updateScheduledEmailBeforeSessions,
 } from "../email/server.actions";
 import { getProfileWithProfileId, getProfileByEmail } from "../user/client.actions";
@@ -29,6 +29,7 @@ import toast from "react-hot-toast";
 import { DatabaseIcon } from "lucide-react";
 import { getMeeting } from "../admin.actions";
 import { fromZonedTime } from "date-fns-tz";
+import { isEnrollmentSessionDate } from "@/lib/enrollment-schedule";
 import { Table } from "../../supabase/tables";
 import {
   tableToInterfaceMeetings,
@@ -43,14 +44,21 @@ import { supabase } from "@/lib/supabase/client";
  * @param requestedDate - The date to search around for existing sessions
  * @returns Promise resolving to array of sessions or undefined
  */
+/**
+ * Minimal view of sessions occupying meeting links around `requestedDate`.
+ * Read server-side because RLS hides other tutors' sessions, and the link
+ * availability check must see every booking (no identities returned).
+ */
 export const fetchDaySessionsFromSchedule = async (requestedDate: Date) => {
   if (requestedDate) {
     try {
-      const startDateSearch = addHours(requestedDate, -12).toISOString();
-
-      const endDateSearch = addHours(requestedDate, 12).toISOString();
-      const data = await getAllSessions(startDateSearch, endDateSearch);
-      return data;
+      const slots = await getSessionMeetingSlots(requestedDate.toISOString());
+      return slots.map((slot) => ({
+        id: slot.id,
+        date: slot.date,
+        duration: slot.duration,
+        meeting: { id: slot.meetingId },
+      }));
     } catch (error) {
       console.error("Failed to fetch sessions for day");
       throw error;
@@ -133,7 +141,6 @@ export async function addSessions(
         summary,
         startDate,
         duration,
-        frequency,
       } = enrollment;
 
       //Check if paused over the summer
@@ -198,6 +205,12 @@ export async function addSessions(
 
           if (isNaN(startHour) || isNaN(startMinute) || isNaN(endHour) || isNaN(endMinute)) {
             throw new Error(`Invalid time format: start=${startTime}, end=${endTime}`);
+          }
+
+          // Biweekly enrollments skip their off weeks
+          if (!isEnrollmentSessionDate(enrollment, format(currentDate, "yyyy-MM-dd"))) {
+            currentDate = addDays(currentDate, 1);
+            continue;
           }
 
           // Create session date with correct time
@@ -383,7 +396,12 @@ export async function getTutorSessions(
 }
 
 export async function getSessionTimePassed(sessionId: string): Promise<number> {
-  const { data } = await supabase.from("Sessions").select("date").single().throwOnError();
+  const { data } = await supabase
+    .from("Sessions")
+    .select("date")
+    .eq("id", sessionId)
+    .single()
+    .throwOnError();
   if (!data || !data.date) throw new Error("Session Date Not Found");
   const sessionDate: Date = new Date(data.date);
   const now: Date = new Date();

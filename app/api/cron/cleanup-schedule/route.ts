@@ -47,17 +47,19 @@ export async function GET(req: NextRequest) {
     const unconfirmedResult = await markUnconfirmedSEFCron();
     results.markUnconfirmedSEF = unconfirmedResult;
 
-    // Task 2a: Early-warn inactive enrollments (3+ weeks missing SEF)
-    const earlyWarnResult = await warnInactiveEnrollmentsEarly();
-    results.warnInactiveEnrollmentsEarly = {
-      warned: earlyWarnResult.length,
-      error: undefined,
-    };
-
-    // Task 2b: Warn inactive enrollments (4+ weeks missing SEF)
+    // Task 2a: Warn inactive enrollments (4+ weeks missing SEF). Runs before the early
+    // warning so an enrollment that qualifies for both gets only this stronger notice: the
+    // level-4 stamp then holds back the early one.
     const warnResult = await warnInactiveEnrollments();
     results.warnInactiveEnrollments = {
       warned: warnResult.length,
+      error: undefined,
+    };
+
+    // Task 2b: Early-warn inactive enrollments (3+ weeks missing SEF)
+    const earlyWarnResult = await warnInactiveEnrollmentsEarly();
+    results.warnInactiveEnrollmentsEarly = {
+      warned: earlyWarnResult.length,
       error: undefined,
     };
 

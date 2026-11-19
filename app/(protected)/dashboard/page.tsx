@@ -1,4 +1,4 @@
-import AdminDashboard from "@/components/admin/DashboardContent";
+import AdminHome from "@/components/admin/AdminHome";
 // import Dashboard from "@/components/dashboard/dashboard";
 import StudentDashboard from "@/components/student/StudentDashboard";
 import TutorDashboard from "@/components/tutor/dashboard";
@@ -17,7 +17,12 @@ import { getProfile } from "@/lib/actions/profile/server.actions";
 import { logEvent } from "@/lib/posthog";
 
 /** Statuses that put a session in the past bucket: it has happened and needs no more action. */
-const PAST_SESSION_STATUSES: Session["status"][] = ["Complete", "Cancelled", "Unconfirmed"];
+const PAST_SESSION_STATUSES: Session["status"][] = [
+  "Complete",
+  "Cancelled",
+  "Unconfirmed",
+  "Student Did Not Attend",
+];
 
 async function TutorDashboardPage({
   profile,
@@ -32,7 +37,7 @@ async function TutorDashboardPage({
   });
 
   const activeTutorSessions = sessions.then((sessions) =>
-    sessions.filter((session) => session.status == "Active"),
+    sessions.filter((session) => session.status === "Active"),
   );
 
   const pastTutorSessions = sessions.then((sessions) =>
@@ -133,7 +138,11 @@ export default async function DashboardPage() {
       {profile.role === "Tutor" && (
         <TutorDashboardPage key={profile.id} profile={profile} meetings={meetings} />
       )}
-      {profile.role === "Admin" && <AdminDashboard />}
+      {profile.role === "Admin" && (
+        <Suspense fallback={<SkeletonTable />}>
+          <AdminHome />
+        </Suspense>
+      )}
     </>
   );
 }

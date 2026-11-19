@@ -1,31 +1,19 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# Generates types from the prod Supabase project.
+#
 # Local dev: after a one-time `supabase link`, the CLI remembers the project
 # in the gitignored supabase/.temp/ dir, so --linked needs no further config.
 # CI (and anyone who hasn't linked yet): falls back to the explicit project
-# ref via SUPABASE_PROJECT_REF (set as a repo secret in .github/workflows/ci.yml).
-target="types/database.types.ts"
-tmp_file="${target}.new"
-trap 'rm -f "$tmp_file"' EXIT
+# id via SUPABASE_PROJECT_ID (a repo secret, used for main in .github/workflows/ci.yml).
+source "$(dirname "${BASH_SOURCE[0]}")/gen-types-lib.sh"
 
 if [ -f supabase/.temp/project-ref ]; then
-  supabase gen types typescript --linked --schema public > "$tmp_file"
-elif [ -n "${SUPABASE_PROJECT_REF:-}" ]; then
-  supabase gen types typescript --project-id "$SUPABASE_PROJECT_REF" --schema public > "$tmp_file"
+  write_types --linked
+elif [ -n "${SUPABASE_PROJECT_ID:-}" ]; then
+  write_types --project-id "$SUPABASE_PROJECT_ID"
 else
-  echo "Not linked (run 'supabase link') and SUPABASE_PROJECT_REF is not set." >&2
+  echo "Not linked (run 'supabase link') and SUPABASE_PROJECT_ID is not set." >&2
   exit 1
 fi
-
-if [ ! -s "$tmp_file" ]; then
-  echo "supabase gen types produced empty output; leaving $target untouched" >&2
-  exit 1
-fi
-
-mv "$tmp_file" "$target"
-
-# Raw CLI output isn't Prettier-formatted, but the committed file is (format:check
-# enforces this repo-wide) - format the real path in place so the CI drift-check
-# diffs like-for-like instead of flagging cosmetic differences as schema drift.
-npx prettier --write "$target" >/dev/null

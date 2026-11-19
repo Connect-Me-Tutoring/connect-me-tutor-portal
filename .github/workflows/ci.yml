@@ -42,10 +42,21 @@ jobs:
       - name: Run TypeScript check
         run: npm run typecheck
 
-      - name: Check Supabase types are up to date
+      # base_ref is the target branch on a pull request and empty on a push.
+      - name: Check Supabase types are up to date (prod)
+        if: ${{ (github.base_ref || github.ref_name) == 'main' }}
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
-          SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
+          SUPABASE_PROJECT_ID: ${{ secrets.SUPABASE_PROJECT_ID }}
         run: |
           npm run gen:types
+          git diff --exit-code types/database.types.ts
+
+      - name: Check Supabase types are up to date (dev)
+        if: ${{ (github.base_ref || github.ref_name) != 'main' }}
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_DEV_PROJECT_ID: ${{ secrets.SUPABASE_DEV_PROJECT_ID }}
+        run: |
+          npm run gen:types:dev
           git diff --exit-code types/database.types.ts

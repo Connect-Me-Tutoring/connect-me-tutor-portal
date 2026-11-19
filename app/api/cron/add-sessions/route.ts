@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { startOfWeek, endOfWeek } from "date-fns";
+import { addDays } from "date-fns";
 import { addSessionsForCron, getAllSessionsForCron } from "@/lib/actions/session/server.actions";
 import { getAllActiveEnrollmentsForCron } from "@/lib/actions/enrollment/server.actions";
 import { isCronRequestAuthorized } from "@/lib/security/cron";
@@ -14,8 +14,9 @@ export async function GET(request: Request) {
   }
 
   try {
-    const now = new Date();
-    const { weekStart, weekEnd } = getEasternWeekBounds(now);
+    // vercel.json fires this Sunday 00:00 UTC, which is still Saturday evening in
+    // New York, so "now" falls in the week that is ending. Build the coming week instead.
+    const { weekStart, weekEnd } = getEasternWeekBounds(addDays(new Date(), 1));
     const weekStartString = weekStart.toISOString();
     const weekEndString = weekEnd.toISOString();
 

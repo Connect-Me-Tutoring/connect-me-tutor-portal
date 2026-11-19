@@ -136,6 +136,13 @@ export default function ResetPassword() {
                 <Button type="submit" className="w-full bg-blue-400" onClick={confirmPasswords}>
                   Set Password
                 </Button>
+                <p className="text-xs text-center text-gray-600">
+                  By setting your password you agree to our{" "}
+                  <Link href="/privacy" className="underline">
+                    Privacy Policy
+                  </Link>
+                  .
+                </p>
               </div>
             </div>
           </div>
