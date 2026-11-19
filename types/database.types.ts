@@ -833,7 +833,6 @@ export type Database = {
           session_exit_form: string | null;
           status: Database["public"]["Enums"]["session_status"] | null;
           student_id: string | null;
-          subject: string | null;
           summary: string | null;
           tutor_id: string | null;
         };
@@ -850,7 +849,6 @@ export type Database = {
           session_exit_form?: string | null;
           status?: Database["public"]["Enums"]["session_status"] | null;
           student_id?: string | null;
-          subject?: string | null;
           summary?: string | null;
           tutor_id?: string | null;
         };
@@ -867,7 +865,6 @@ export type Database = {
           session_exit_form?: string | null;
           status?: Database["public"]["Enums"]["session_status"] | null;
           student_id?: string | null;
-          subject?: string | null;
           summary?: string | null;
           tutor_id?: string | null;
         };
