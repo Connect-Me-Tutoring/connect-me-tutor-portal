@@ -92,6 +92,7 @@ interface SessionsTableProps {
     notes: string,
     isQuestionOrConcern: boolean,
     isFirstSession: boolean,
+    subject: string,
     category?: string,
   ) => Promise<SessionExitFormOutcome>;
   handlePageChange: (page: number) => void;

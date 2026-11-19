@@ -1,4 +1,5 @@
 import React, { useRef, useState } from "react";
+import { useForm } from "react-hook-form";
 import { Loader2 } from "lucide-react";
 import { Dialog, DialogContent, DialogTitle, DialogHeader } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -17,7 +18,15 @@ import {
 } from "@/components/ui/select";
 import CancellationForm from "./CancellationForm";
 import { useDashboardContext } from "@/lib/contexts/dashboardContext";
-import { CATEGORY_LABELS } from "@/constants/sessionExitForm";
+import { CATEGORY_LABELS, SESSION_SUBJECTS } from "@/constants/sessionExitForm";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
 import type { SessionExitFormOutcome } from "@/lib/session-exit-form";
 
 interface SessionExitFormProps {
@@ -27,6 +36,7 @@ interface SessionExitFormProps {
     notes: string,
     isQuestionOrConcern: boolean,
     isFirstSession: boolean,
+    subject: string,
     category?: string,
   ) => Promise<SessionExitFormOutcome>;
   handleStatusChange: (session: Session) => void;
@@ -114,6 +124,8 @@ const SessionExitForm = ({
 }: SessionExitFormProps) => {
   const TC = useDashboardContext();
 
+  const form = useForm<{ subject: string }>({ defaultValues: { subject: "" } });
+  const subject = form.watch("subject");
   const [isFirstSession, setIsFirstSession] = useState(false);
   const [isQuestionOrConcern, setIsQuestionOrConcern] = useState(false);
   const [category, setCategory] = useState("");
@@ -124,6 +136,7 @@ const SessionExitForm = ({
   const submittingRef = useRef(false);
 
   const resetLocalFormState = () => {
+    form.reset();
     setIsQuestionOrConcern(false);
     setCategory("");
     setIsFirstSession(false);
@@ -146,6 +159,7 @@ const SessionExitForm = ({
         TC.notes,
         isQuestionOrConcern,
         isFirstSession,
+        subject,
         category,
       );
       if (outcome.ok) {
@@ -242,6 +256,42 @@ const SessionExitForm = ({
           </div>
         )}
 
+        <Form {...form}>
+          <FormField
+            control={form.control}
+            name="subject"
+            rules={{ required: "Please select a subject." }}
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>
+                  Subject <span className="text-destructive">*</span>
+                </FormLabel>
+                <Select
+                  name={field.name}
+                  disabled={isSubmitting}
+                  value={field.value}
+                  onValueChange={field.onChange}
+                  required
+                >
+                  <FormControl>
+                    <SelectTrigger ref={field.ref} onBlur={field.onBlur} aria-required="true">
+                      <SelectValue placeholder="Select a subject..." />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    {SESSION_SUBJECTS.map((option) => (
+                      <SelectItem key={option} value={option}>
+                        {option}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </Form>
+
         <Textarea
           disabled={isSubmitting}
           value={TC.notes}
@@ -272,12 +322,13 @@ const SessionExitForm = ({
           </p>
         )}
         <Button
-          onClick={handleSubmit}
+          onClick={form.handleSubmit(handleSubmit)}
           aria-busy={isSubmitting}
           disabled={
             isSubmitting ||
             !canSubmitSessionExitForm(currSession) ||
             !TC.notes.trim() ||
+            !subject ||
             (!TC.nextClassConfirmed && !isQuestionOrConcern) ||
             (isQuestionOrConcern && !category)
           }
