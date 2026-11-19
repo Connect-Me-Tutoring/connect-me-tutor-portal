@@ -1,16 +1,17 @@
 name: Supabase Migrations (dev)
 
-# Opt-in per PR: add the `migrate-dev` label to a PR to push its branch's
-# migrations to the dev Supabase project. While the label stays on, every new
-# commit to the PR pushes again (`db push` only runs migrations dev hasn't
-# applied yet). Remove the label to stop.
+# Every non-draft PR that changes supabase/migrations/ pushes its branch's
+# migrations to the dev Supabase project: on open, on "Ready for review", and
+# on each new commit (`db push` only runs migrations dev hasn't applied yet).
+# Open the PR as a draft (or convert it back to draft) to keep a migration
+# that's still in progress off the shared dev database.
 #
 # Applied migrations are not rolled back if the PR is closed without merging;
 # revert them on dev by hand.
 
 on:
   pull_request:
-    types: [labeled, synchronize]
+    types: [opened, reopened, synchronize, ready_for_review]
     paths:
       - "supabase/migrations/**"
 
@@ -20,12 +21,11 @@ permissions:
 jobs:
   apply-dev:
     name: Push migrations to dev
-    # Only when the PR carries the label, and never for forks (they get no
-    # secrets, and dev write access shouldn't be one label away for outsiders).
+    # Skip drafts, and never run for forks (they get no secrets, and outside
+    # contributors shouldn't be able to write to dev by opening a PR).
     if: >-
-      contains(github.event.pull_request.labels.*.name, 'migrate-dev') &&
-      github.event.pull_request.head.repo.full_name == github.repository &&
-      (github.event.action != 'labeled' || github.event.label.name == 'migrate-dev')
+      !github.event.pull_request.draft &&
+      github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
     environment: supabase-dev
     # One push to dev at a time across all PRs; never cancel one mid-run.
