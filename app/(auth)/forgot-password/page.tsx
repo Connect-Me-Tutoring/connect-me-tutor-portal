@@ -1,13 +1,11 @@
 "use client";
 
-import toast, { Toaster, ValueFunction } from "react-hot-toast";
+import toast, { Toaster } from "react-hot-toast";
 import Logo from "@/components/ui/logo";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
-import * as z from "zod";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useState, useEffect } from "react";
+import type { z } from "zod";
+import { useState, useEffect, useRef } from "react";
 import { createClient } from "@/lib/supabase/client";
 
 import { Button } from "@/components/ui/button";
@@ -21,47 +19,32 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { setDefaultAutoSelectFamily } from "net";
-
-const emailSchema = z.object({
-  email: z.string().email({
-    message: "Please enter a valid email address.",
-  }),
-});
-
-const tokenSchema = z.object({
-  email: z.string().email(),
-  token: z.string().min(6, { message: "Token must be 6 digits" }).max(6),
-});
+import {
+  resetEmailSchema as emailSchema,
+  resetCodeSchema as tokenSchema,
+  sendPasswordResetCode,
+  verifyPasswordResetCode,
+  passwordResetError,
+} from "@/lib/auth/password-reset";
 
 export default function ForgotPasswordPage() {
-  const [resetPassword, setResetPassword] = useState<boolean>(false);
-  const [isEmailSent, setIsEmailSent] = useState<boolean>(false);
-  const [emailForReset, setEmailForReset] = useState<string>("");
-
-  const router = useRouter();
-  const [isLoading, setIsLoading] = useState(false);
+  const [isEmailSent, setIsEmailSent] = useState(false);
+  const [emailForReset, setEmailForReset] = useState("");
+  const [status, setStatus] = useState<"idle" | "sending" | "verifying">("idle");
+  const [errorMessage, setErrorMessage] = useState("");
+  const [resendAfter, setResendAfter] = useState(0);
+  const pending = useRef(false);
+  const isLoading = status !== "idle";
   const supabase = createClient();
 
-  const sendResetPassword = async () => {
-    try {
-      const email = emailForm.getValues("email");
+  useEffect(() => {
+    if (resendAfter <= Date.now()) return;
+    const timer = setInterval(() => {
+      if (Date.now() >= resendAfter) setResendAfter(0);
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [resendAfter]);
 
-      const { data, error } = await supabase.auth.resetPasswordForEmail(email);
-
-      if (error) {
-        throw error;
-      }
-      if (!data) {
-        throw new Error();
-      }
-
-      toast.success("Password reset email sent successfully");
-    } catch (error) {
-      console.error("Unable to reset password");
-      toast.error(`Unable to send reset password link ${error}`);
-    }
-  };
   const emailForm = useForm<z.infer<typeof emailSchema>>({
     resolver: zodResolver(emailSchema),
     defaultValues: {
@@ -72,72 +55,46 @@ export default function ForgotPasswordPage() {
   const tokenForm = useForm<z.infer<typeof tokenSchema>>({
     resolver: zodResolver(tokenSchema),
     defaultValues: {
-      email: "",
       token: "",
     },
   });
 
   const handleSendToken = async (values: z.infer<typeof emailSchema>) => {
-    setEmailForReset(values.email);
+    if (pending.current || resendAfter > Date.now()) return;
+    pending.current = true;
+    setStatus("sending");
+    setErrorMessage("");
+    // Also throttle retries after a timeout: the original email may still arrive.
+    setResendAfter(Date.now() + 60_000);
     try {
-      const { error } = await supabase.auth.signInWithOtp({
-        email: values.email,
-        options: {
-          // Accounts are created by admins only; never sign up a new email from here.
-          shouldCreateUser: false,
-          // emailRedirectTo: `${window.location.origin}/auth/callback`,
-        },
-      });
-
-      // An unknown email is rejected (otp_disabled, or signup_disabled when signups are
-      // off project-wide). Treat it like a success so the page doesn't reveal which
-      // emails have accounts.
-      if (error && error.code !== "otp_disabled" && error.code !== "signup_disabled") {
-        toast.error("We couldn't send a code right now. Please try again in a minute.");
-        throw error;
-      }
-
-      toast.success("If an account exists for that email, we've sent a 6-digit code.");
+      await sendPasswordResetCode(supabase, values.email);
+      setEmailForReset(values.email);
       setIsEmailSent(true);
-      emailForm.reset();
-
-      tokenForm.reset({
-        email: values.email,
-        token: "",
-      });
+      tokenForm.reset({ token: "" });
+      toast.success("If an account exists for that email, we've sent a 6-digit code.");
     } catch (error) {
-      console.error("Error sending token:", error);
+      setErrorMessage(
+        passwordResetError(error, "We couldn't send a code. Please try again in a minute."),
+      );
+    } finally {
+      pending.current = false;
+      setStatus("idle");
     }
   };
 
   const handleVerifyOtp = async (values: z.infer<typeof tokenSchema>) => {
-    setIsLoading(true);
+    if (pending.current) return;
+    pending.current = true;
+    setStatus("verifying");
+    setErrorMessage("");
     try {
-      const {
-        data: { session },
-        error,
-      } = await supabase.auth.verifyOtp({
-        email: values.email, // Use the stored email
-        token: values.token,
-        type: "email", // or 'sms' if using SMS OTP
-      });
-
-      if (error) {
-        toast.error(error.message);
-        throw error;
-      }
-
-      if (session) {
-        router.push("/set-password"); // Redirect to dashboard or home
-        router.refresh(); // Refresh server components
-      } else {
-        toast.error("Failed to verify OTP. Please try again.");
-      }
+      await verifyPasswordResetCode(supabase, emailForReset, values.token);
+      // Load with the newly persisted session cookies, without a push/refresh race.
+      window.location.assign("/set-password");
     } catch (error) {
-      console.error("Error verifying OTP:", error);
-      // toast.error("Failed to verify OTP. Please try again.");
-    } finally {
-      setIsLoading(false);
+      setErrorMessage(passwordResetError(error, "We couldn't verify the code. Please try again."));
+      pending.current = false;
+      setStatus("idle");
     }
   };
 
@@ -161,7 +118,8 @@ export default function ForgotPasswordPage() {
                   </div>
                   <Form {...emailForm}>
                     <form
-                      onSubmit={emailForm.handleSubmit(handleSendToken)}
+                      method="post"
+                      onSubmit={(event) => emailForm.handleSubmit(handleSendToken)(event)}
                       className="space-y-8 p-0 rounded-md"
                     >
                       <FormField
@@ -174,7 +132,14 @@ export default function ForgotPasswordPage() {
                               your password
                             </FormDescription>
                             <FormControl>
-                              <Input placeholder="youremail@example.com" {...field} />
+                              <Input
+                                type="email"
+                                autoComplete="email"
+                                aria-label="Email address"
+                                placeholder="youremail@example.com"
+                                disabled={isLoading}
+                                {...field}
+                              />
                             </FormControl>
 
                             <FormMessage />
@@ -182,11 +147,18 @@ export default function ForgotPasswordPage() {
                         )}
                       />
 
-                      <Button type="submit" className="w-full bg-blue-400">
-                        Reset Password
+                      <Button
+                        type="submit"
+                        className="w-full bg-blue-400"
+                        disabled={isLoading || resendAfter > 0}
+                      >
+                        {status === "sending"
+                          ? "Sending..."
+                          : resendAfter > 0
+                            ? "Please wait before trying again"
+                            : "Reset Password"}
                       </Button>
                     </form>
-                    <Toaster />
                   </Form>
                 </>
               ) : (
@@ -194,12 +166,14 @@ export default function ForgotPasswordPage() {
                   <div className="flex flex-col gap-3 text-center">
                     <h1 className="text-xl sm:text-2xl font-bold">Enter Verification Code</h1>
                     <p className="text-sm text-gray-600">
-                      A verification code has been sent to {emailForReset}. Please enter it below.
+                      If an account exists for {emailForReset}, a code is on its way. Enter the code
+                      from the latest email.
                     </p>
                   </div>
                   <Form {...tokenForm} key="otp-form">
                     <form
-                      onSubmit={tokenForm.handleSubmit(handleVerifyOtp)}
+                      method="post"
+                      onSubmit={(event) => tokenForm.handleSubmit(handleVerifyOtp)(event)}
                       className="space-y-6 w-full"
                     >
                       <FormField
@@ -212,7 +186,9 @@ export default function ForgotPasswordPage() {
                               <Input
                                 type="text"
                                 placeholder="Enter your 6-digit code"
-                                maxLength={6}
+                                inputMode="numeric"
+                                autoComplete="one-time-code"
+                                disabled={isLoading}
                                 {...field}
                               />
                             </FormControl>
@@ -225,14 +201,26 @@ export default function ForgotPasswordPage() {
                         className="w-full bg-green-500 hover:bg-green-600 text-white"
                         disabled={isLoading}
                       >
-                        {isLoading ? "Verifying..." : "Verify code"}
+                        {status === "verifying" ? "Verifying..." : "Verify code"}
                       </Button>
                     </form>
                   </Form>
                   <Button
+                    variant="outline"
+                    onClick={() => handleSendToken({ email: emailForReset })}
+                    disabled={isLoading || resendAfter > 0}
+                  >
+                    {status === "sending"
+                      ? "Sending..."
+                      : resendAfter > 0
+                        ? "Resend available in a minute"
+                        : "Resend code"}
+                  </Button>
+                  <Button
                     variant="link"
                     onClick={() => {
                       setIsEmailSent(false);
+                      setErrorMessage("");
                       emailForm.reset();
                       tokenForm.reset();
                     }}
@@ -241,6 +229,11 @@ export default function ForgotPasswordPage() {
                     Use a different email?
                   </Button>
                 </>
+              )}
+              {errorMessage && (
+                <p role="alert" className="text-sm text-red-600">
+                  {errorMessage}
+                </p>
               )}
             </div>
           </div>
