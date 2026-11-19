@@ -10,7 +10,6 @@ export const metadata: Metadata = {
   title: "Log in | Connect Me",
   description: "Connect Me Tutor Portal",
 };
-
 export default async function LoginPage() {
   await connection();
   const quote = selectRandomLoginQuote();
