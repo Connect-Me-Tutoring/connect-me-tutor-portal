@@ -16,6 +16,7 @@ import type {
 } from "@/types/sessionExitForm";
 import { removeSessionReminders } from "@/lib/email/session-reminders";
 import { logError } from "@/lib/posthog";
+import { CATEGORY_LABELS } from "@/constants/sessionExitForm";
 
 type SessionStatus = Database["public"]["Enums"]["session_status"];
 
@@ -191,6 +192,11 @@ export async function submitSessionExitForm(
   if (!sessionId || !notes) {
     return { ok: false, reason: "invalid" };
   }
+  // A question or concern must carry one of the known categories; otherwise none is stored.
+  const category = isQuestionOrConcern ? input.category : undefined;
+  if (isQuestionOrConcern && !(category && Object.hasOwn(CATEGORY_LABELS, category))) {
+    return { ok: false, reason: "invalid" };
+  }
 
   try {
     const supabase = await requireSessionAccessById(sessionId);
@@ -200,6 +206,7 @@ export async function submitSessionExitForm(
         status: "Complete",
         session_exit_form: notes,
         is_question_or_concern: isQuestionOrConcern,
+        question_or_concern_category: category ?? null,
         is_first_session: isFirstSession,
       })
       .eq("id", sessionId)
@@ -252,6 +259,7 @@ export async function undoSessionExitForm(sessionId: string) {
         status: "Active",
         session_exit_form: null,
         is_question_or_concern: false,
+        question_or_concern_category: null,
         is_first_session: false,
       })
       .eq("id", sessionId)

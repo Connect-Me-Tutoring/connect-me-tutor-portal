@@ -18,6 +18,7 @@ export interface SubmitSessionExitFormInput {
   notes: string;
   isQuestionOrConcern: boolean;
   isFirstSession: boolean;
+  category?: string;
 }
 
 /**

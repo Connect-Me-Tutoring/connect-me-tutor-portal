@@ -1,20 +1,15 @@
 "use server";
-import React from "react";
 import { createClient } from "../../supabase/server";
 import { Table } from "../../supabase/tables";
 import { requireAdmin, requireAuthenticatedProfile } from "../auth/authz.server";
-import { sendMail } from "@/lib/email/mailer";
-import { withRetry } from "@/lib/utils";
-import { logError, logEvent } from "@/lib/posthog";
-import NewTicketNotificationEmail from "@/components/emails/tickets/new-ticket-notification";
+import { logError } from "@/lib/posthog";
+import { insertTicket, sendTicketEmail, ticketContactEmail } from "@/lib/tickets/server";
 import {
-  TICKET_CATEGORY_LABELS,
   TICKET_STATUSES,
   type Ticket,
   type TicketCategory,
   type TicketStatus,
   type TicketUrgency,
-  TICKET_URGENCY_LABELS,
   ticketFormSchema,
   type TicketFormValues,
 } from "@/constants/tickets";
@@ -31,77 +26,22 @@ export async function submitTicket(input: TicketFormValues): Promise<SubmitTicke
     return { ok: false, error: parsed.error.issues[0]?.message ?? "Invalid ticket." };
   }
 
-  const { user, profile } = await requireAuthenticatedProfile();
-  const values = parsed.data;
-  const contactEmail = profile.email || user.email || "";
-
-  const supabase = await createClient();
-  const { data, error } = await supabase
-    .from(Table.Tickets)
-    .insert({
-      user_id: user.id,
-      profile_id: profile.id,
-      category: values.category,
-      urgency: values.urgency,
-      subject: values.subject,
-      description: values.description,
-      page_url: values.pageUrl || null,
-      contact_email: contactEmail || null,
-    })
-    .select("id")
-    .single();
-
-  if (error || !data) {
-    console.error("Unable to create ticket", error);
-    await logError(error, { user_id: user.id, category: values.category }, "ticket_error");
+  const ctx = await requireAuthenticatedProfile();
+  const ticket = parsed.data;
+  const ticketId = await insertTicket(ctx, ticket, "get_help");
+  if (!ticketId) {
     return { ok: false, error: "We couldn't submit your ticket. Please try again." };
   }
 
-  await logEvent("ticket_submitted", {
-    ticket_id: data.id,
-    category: values.category,
-    urgency: values.urgency,
-    role: profile.role,
+  // The submitter gets a receipt with operations cc'd.
+  // Without a contact email, fall back to notifying operations alone.
+  const contactEmail = ticketContactEmail(ctx);
+  await sendTicketEmail(ctx, ticketId, ticket, {
+    to: contactEmail || process.env.OPERATIONS_EMAIL!,
+    cc: contactEmail ? [process.env.OPERATIONS_EMAIL!] : undefined,
   });
 
-  try {
-    await withRetry(
-      async () => {
-        const result = await sendMail({
-          from: "Connect Me Portal <notifications@connectmego.app>",
-          // The submitter gets a receipt with operations cc'd.
-          // Without a contact email, fall back to notifying operations alone.
-          to: contactEmail || process.env.OPERATIONS_EMAIL!,
-          cc: contactEmail ? [process.env.OPERATIONS_EMAIL!] : undefined,
-          subject: `[Ticket][${values.urgency.toUpperCase()}] ${values.subject}`,
-          react: React.createElement(NewTicketNotificationEmail, {
-            ticketId: data.id,
-            submitterName: `${profile.firstName} ${profile.lastName}`.trim(),
-            submitterRole: profile.role,
-            contactEmail,
-            category: TICKET_CATEGORY_LABELS[values.category],
-            urgency: TICKET_URGENCY_LABELS[values.urgency].label,
-            subject: values.subject,
-            description: values.description,
-            pageUrl: values.pageUrl,
-          }),
-        });
-        if (result.error) throw result.error;
-        return result;
-      },
-      {
-        onRetry: async (error, attempt) => {
-          console.error(`submitTicket email attempt ${attempt + 1} failed:`, error);
-          await logError(error, { ticket_id: data.id, attempt }, "ticket_error");
-        },
-      },
-    );
-  } catch (emailError) {
-    console.error("Unable to send ticket notification email", emailError);
-    await logError(emailError, { ticket_id: data.id }, "ticket_error");
-  }
-
-  return { ok: true, ticketId: data.id };
+  return { ok: true, ticketId };
 }
 
 /** All tickets, newest first, with the submitting profile's name and role. Admin only. */
