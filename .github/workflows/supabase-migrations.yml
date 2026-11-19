@@ -45,14 +45,16 @@ jobs:
       - name: Dry run
         run: supabase db push --dry-run --db-url "$SUPABASE_PREVIEW_DB_URL"
 
-  # Writes to prod. The `production` environment must have required reviewers
+  # Writes to prod. The `supabase-production` environment must have required reviewers
   # and a deployment-branch rule limited to `main`; its secrets are only
   # released to approved runs from that branch.
   apply:
     name: Apply migrations to prod
     if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
-    environment: production
+    # Not `production`: GitHub matches environment names case-insensitively, and
+    # `Production` is Vercel's deployment environment, which has no protection rules.
+    environment: supabase-production
     # Applies are serialized and never cancelled. Kept separate from the PR
     # dry-run group so a queued dry run can't evict a pending prod apply.
     concurrency:
