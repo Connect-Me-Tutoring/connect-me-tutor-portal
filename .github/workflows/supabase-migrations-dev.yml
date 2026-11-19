@@ -1,0 +1,72 @@
+name: Supabase Migrations (dev)
+
+# Opt-in per PR: add the `migrate-dev` label to a PR to push its branch's
+# migrations to the dev Supabase project. While the label stays on, every new
+# commit to the PR pushes again (`db push` only runs migrations dev hasn't
+# applied yet). Remove the label to stop.
+#
+# Applied migrations are not rolled back if the PR is closed without merging;
+# revert them on dev by hand.
+
+on:
+  pull_request:
+    types: [labeled, synchronize]
+    paths:
+      - "supabase/migrations/**"
+
+permissions:
+  contents: read
+
+jobs:
+  apply-dev:
+    name: Push migrations to dev
+    # Only when the PR carries the label, and never for forks (they get no
+    # secrets, and dev write access shouldn't be one label away for outsiders).
+    if: >-
+      contains(github.event.pull_request.labels.*.name, 'migrate-dev') &&
+      github.event.pull_request.head.repo.full_name == github.repository &&
+      (github.event.action != 'labeled' || github.event.label.name == 'migrate-dev')
+    runs-on: ubuntu-latest
+    environment: supabase-dev
+    # One push to dev at a time across all PRs; never cancel one mid-run.
+    concurrency:
+      group: supabase-migrations-dev
+      cancel-in-progress: false
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DEV_DB_PASSWORD }}
+      SUPABASE_DEV_PROJECT_ID: ${{ secrets.SUPABASE_DEV_PROJECT_ID }}
+    steps:
+      - name: Checkout PR branch
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      - name: Setup Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: 2.117.0
+
+      - name: Link dev project
+        run: supabase link --project-ref "$SUPABASE_DEV_PROJECT_ID"
+
+      - name: Show pending migrations
+        run: supabase migration list --linked
+
+      # --include-all: several PRs push to dev independently, so a branch's
+      # migration can be older than one another PR already applied. Without it
+      # `db push` refuses to run anything. Prod keeps the strict ordering.
+      - name: Push migrations to dev
+        run: supabase db push --include-all
+
+      - name: Summary
+        if: always()
+        run: |
+          {
+            echo "### Supabase dev migrations"
+            echo "PR #${{ github.event.pull_request.number }} at \`${{ github.event.pull_request.head.sha }}\` → dev project."
+            echo
+            echo '```'
+            supabase migration list --linked 2>&1 | tail -n 15
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
