@@ -191,6 +191,7 @@ const TutorDashboard = () => {
     notes: string,
     isQuestionOrConcern: boolean,
     isFirstSession: boolean,
+    subject: string,
     category?: string,
   ): Promise<SessionExitFormOutcome> => {
     const outcome = await submitSessionExitFormFlow({
@@ -198,6 +199,7 @@ const TutorDashboard = () => {
       notes,
       isQuestionOrConcern,
       isFirstSession,
+      subject,
       category,
     });
     if (!outcome.ok) return outcome;
