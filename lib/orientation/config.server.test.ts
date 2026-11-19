@@ -88,6 +88,15 @@ describe("tutor orientation configuration", () => {
       await expect(hasTutorOrientationAccess({ ...tutor, id: "tutor-2" })).resolves.toBe(false);
     });
 
+    it("allows all tutors without PostHog when the env flag is true", async () => {
+      process.env.ORIENTATION_QUIZ_ENABLED = "true";
+      mocks.getClient.mockReturnValue(null);
+
+      await expect(hasTutorOrientationAccess(tutor)).resolves.toBe(true);
+      await expect(hasTutorOrientationAccess({ role: "Student" })).resolves.toBe(false);
+      expect(mocks.evaluateFlags).not.toHaveBeenCalled();
+    });
+
     it("treats missing PostHog configuration as disabled", async () => {
       mocks.getClient.mockReturnValue(null);
 

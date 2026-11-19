@@ -78,8 +78,8 @@ import { UserAvailabilities } from "../ui/UserAvailabilities";
 
 const TutorList = ({ initialTutors }: any) => {
   const supabase = createClient();
-  const [tutors, setTutors] = useState<Profile[]>(initialTutors);
-  const [filteredTutors, setFilteredTutors] = useState<Profile[]>(initialTutors);
+  const [tutors, setTutors] = useState<Profile[]>(initialTutors ?? []);
+  const [filteredTutors, setFilteredTutors] = useState<Profile[]>(initialTutors ?? []);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
@@ -123,8 +123,8 @@ const TutorList = ({ initialTutors }: any) => {
       setLoading(true);
       setError(null);
 
-      const tutorsData = await getAllProfiles("Tutor", "created_at", false);
-      if (!tutorsData) throw new Error("No tutors found");
+      // getAllProfiles returns null for "no rows" as well as errors.
+      const tutorsData = (await getAllProfiles("Tutor", "created_at", false)) ?? [];
 
       setTutors(tutorsData);
       setFilteredTutors(tutorsData);
