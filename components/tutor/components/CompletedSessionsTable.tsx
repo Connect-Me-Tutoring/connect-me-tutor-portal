@@ -239,6 +239,7 @@ const CompletedSessionsTable = ({
           <DialogHeader>
             <DialogTitle>Meeting Notes</DialogTitle>
           </DialogHeader>
+          {notesSession?.subject && <p className="text-sm">Subject: {notesSession.subject}</p>}
           <Textarea readOnly value={notesSession?.session_exit_form ?? ""} />
         </DialogContent>
       </Dialog>

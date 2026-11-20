@@ -1,0 +1,114 @@
+name: Supabase Migrations
+
+on:
+  workflow_dispatch:
+  # Every push to main: migrations first, then the production deploy (Vercel's
+  # own Git deploys for main are off in vercel.json). With nothing pending,
+  # `db push` is a no-op and the deploy still runs.
+  push:
+    branches:
+      - main
+  # No paths filter: "Preview pending migrations" is a required check on main,
+  # and a required check that never runs blocks the merge.
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  # PRs into main only preview what would run. Uses a low-privilege connection
+  # string (read access to supabase_migrations.schema_migrations is enough), so
+  # no prod-write credential is ever exposed to PR-triggered runs.
+  dry-run:
+    name: Preview pending migrations
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    environment: supabase-preview
+    concurrency:
+      group: supabase-migrations-pr-${{ github.ref }}
+      cancel-in-progress: true
+    env:
+      SUPABASE_PREVIEW_DB_URL: ${{ secrets.SUPABASE_PREVIEW_DB_URL }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Setup Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: 2.117.0
+
+      - name: Show pending migrations
+        run: supabase migration list --db-url "$SUPABASE_PREVIEW_DB_URL"
+
+      - name: Dry run
+        run: supabase db push --dry-run --db-url "$SUPABASE_PREVIEW_DB_URL"
+
+  # Writes to prod. The `supabase-production` environment has a
+  # deployment-branch rule limited to `main`, so its secrets are only released
+  # to runs from that branch.
+  apply:
+    name: Apply migrations to prod
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    # Not `production`: GitHub matches environment names case-insensitively, and
+    # `Production` is Vercel's deployment environment, which has no protection rules.
+    environment: supabase-production
+    # Applies are serialized and never cancelled. Kept separate from the PR
+    # dry-run group so a queued dry run can't evict a pending prod apply.
+    concurrency:
+      group: supabase-migrations-prod
+      cancel-in-progress: false
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+      SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Setup Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: 2.117.0
+
+      - name: Link project
+        run: supabase link --project-ref "$SUPABASE_PROJECT_REF"
+
+      - name: Show pending migrations
+        run: supabase migration list --linked
+
+      - name: Apply migrations
+        run: supabase db push
+
+  # Production deploy, only after migrations succeeded. If `apply` fails or is
+  # skipped, this job doesn't run and the previous deployment stays live.
+  # Builds on Vercel (not --prebuilt) so the build gets the project's real
+  # environment variables; `vercel pull` returns sensitive ones as empty.
+  deploy:
+    name: Deploy to Vercel production
+    needs: apply
+    runs-on: ubuntu-latest
+    environment: supabase-production
+    concurrency:
+      group: vercel-production
+      cancel-in-progress: false
+    env:
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+      VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Install Vercel CLI
+        run: npm install -g vercel@60.1.3
+
+      - name: Deploy
+        run: |
+          url=$(vercel deploy --prod --yes --token="$VERCEL_TOKEN")
+          echo "Deployed: $url"
+          echo "### Production deploy" >> "$GITHUB_STEP_SUMMARY"
+          echo "$url" >> "$GITHUB_STEP_SUMMARY"

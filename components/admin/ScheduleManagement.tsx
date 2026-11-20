@@ -1404,6 +1404,9 @@ const Schedule = () => {
                   }
                   return (
                     <div>
+                      {selectedSession.subject && (
+                        <p className="text-sm mb-2">Subject: {selectedSession.subject}</p>
+                      )}
                       <Label>SEF Exit Reason</Label>
                       <Textarea
                         readOnly

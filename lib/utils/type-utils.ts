@@ -128,6 +128,7 @@ export const tableToInterfaceSessions = (data: any): Session => {
     student: data.student ? tableToInterfaceProfiles(data.student) : null,
     tutor: data.tutor ? tableToInterfaceProfiles(data.tutor) : null,
     session_exit_form: data.session_exit_form,
+    subject: data.subject ?? null,
     isQuestionOrConcern: data.is_question_or_concern,
     isFirstSession: data.is_first_session,
     isStandalone: data.is_standalone,
