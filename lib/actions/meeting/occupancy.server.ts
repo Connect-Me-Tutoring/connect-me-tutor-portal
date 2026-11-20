@@ -66,13 +66,13 @@ export async function queryEnrollmentMeetingSlots(
 }
 
 /**
- * Sessions that occupy their room between `from` and `to` (by start time). Cancelled and
- * rescheduled sessions have released the room, and orphans (enrollment deleted, not a
- * standalone session) never meet.
+ * Sessions that occupy their room between `from` and `to` (by start time; no `to` means
+ * open-ended). Cancelled and rescheduled sessions have released the room, and orphans
+ * (enrollment deleted, not a standalone session) never meet.
  */
 export async function querySessionMeetingSlots(
   supabase: any,
-  range: { from: Date; to: Date },
+  range: { from: Date; to?: Date },
   meetingId?: string,
 ): Promise<SessionMeetingSlotRow[]> {
   let query = supabase
@@ -80,8 +80,8 @@ export async function querySessionMeetingSlots(
     .select("id, meeting_id, date, duration, enrollment_id, is_standalone")
     .not("meeting_id", "is", null)
     .not("status", "in", "(Cancelled,Rescheduled)")
-    .gte("date", range.from.toISOString())
-    .lte("date", range.to.toISOString());
+    .gte("date", range.from.toISOString());
+  if (range.to) query = query.lte("date", range.to.toISOString());
   if (meetingId) query = query.eq("meeting_id", meetingId);
 
   const { data } = await query.throwOnError();
