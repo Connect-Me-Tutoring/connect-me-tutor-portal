@@ -28,6 +28,86 @@ interface UserMetadata {
   languages_spoken: string[];
 }
 
+export type ProvisionUserResult = {
+  profile: Profile;
+  /** False when the email already had a login: the profile joins it and no invite is sent. */
+  invited: boolean;
+  /** Set when the profile was created but a follow-up step failed. Safe to show admins. */
+  warning?: string;
+};
+
+/** A failure the admin can act on. Its message is safe to show them. */
+export class ProvisionUserError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "ProvisionUserError";
+  }
+}
+
+type ExistingProfile = {
+  id: string;
+  role: string | null;
+  first_name: string | null;
+  last_name: string | null;
+  status: string | null;
+};
+
+const normalizeName = (name: string | null | undefined) =>
+  (name ?? "").trim().replace(/\s+/g, " ").toLowerCase();
+
+/**
+ * Siblings can share a parent's login, so a second Student profile on one login is
+ * normal. The same person with the same role twice is not: it is an admin re-adding
+ * someone who already exists, which used to leave duplicates that only deletion fixed.
+ */
+const findSamePerson = (profiles: ExistingProfile[], input: CreatedProfileData) =>
+  profiles.find(
+    (p) =>
+      p.role === input.role &&
+      normalizeName(p.first_name) === normalizeName(input.firstName) &&
+      normalizeName(p.last_name) === normalizeName(input.lastName),
+  );
+
+const samePersonMessage = (existing: ExistingProfile, input: CreatedProfileData) => {
+  const name = `${input.firstName} ${input.lastName}`.trim();
+  const role = input.role.toLowerCase();
+  if (existing.status === "Inactive") {
+    return `${name} already has an inactive ${role} profile under ${input.email}. Reactivate that profile instead of adding them again.`;
+  }
+  return `${name} already has a ${role} profile under ${input.email}, so nothing was added and no email was sent. If they can't sign in, ask them to use Forgot password on the login page to get a sign-in code.`;
+};
+
+/**
+ * A login opens on its last active profile. When a new profile joins a login whose last
+ * active profile is inactive (someone returning), open the new one instead, or they land
+ * back on the profile that was deactivated. Active profiles are left alone; the profile
+ * switcher covers siblings.
+ */
+const openNewProfileIfLastActiveIsInactive = async (
+  supabase: Awaited<ReturnType<typeof createAdminClient>>,
+  userId: string,
+  newProfileId: string,
+  existingProfiles: ExistingProfile[],
+) => {
+  const { data: settings } = await supabase
+    .from("user_settings")
+    .select("last_active_profile_id")
+    .eq("user_id", userId)
+    .maybeSingle()
+    .throwOnError();
+  const lastActiveId = settings?.last_active_profile_id;
+  if (!lastActiveId || lastActiveId === newProfileId) return;
+
+  const lastActive = existingProfiles.find((p) => p.id === lastActiveId);
+  if (lastActive && lastActive.status !== "Inactive") return;
+
+  await supabase
+    .from("user_settings")
+    .update({ last_active_profile_id: newProfileId })
+    .eq("user_id", userId)
+    .throwOnError();
+};
+
 const ensurePairingQueueForNewProfile = async (
   supabase: Awaited<ReturnType<typeof createAdminClient>>,
   profile: { id: string; role: string | null },
@@ -112,9 +192,12 @@ const inviteUser = async (newProfileData: CreatedProfileData) => {
 
 /**
  * Creates the auth user (via email invite), the Profiles row, and the pairing queue entry.
+ * When the email already has a login, the profile joins that login and no invite is sent.
+ * Re-adding the same person (same role and name on that login) is refused, so a repeated
+ * call after a success can't leave a duplicate.
  * No authorization check: callers must have already verified an admin or a parental consent.
  */
-export const provisionUser = async (input: CreatedProfileData) => {
+export const provisionUser = async (input: CreatedProfileData): Promise<ProvisionUserResult> => {
   const supabase = await createAdminClient();
   // Auth stores emails lowercased; match it so the lookups below find the login.
   const newProfileData = { ...input, email: input.email.trim().toLowerCase() };
@@ -124,14 +207,22 @@ export const provisionUser = async (input: CreatedProfileData) => {
     const existingUserId = await getAuthUserIdByEmail(supabase, newProfileData.email);
 
     let userId = existingUserId;
+    let existingProfiles: ExistingProfile[] = [];
     if (existingUserId) {
-      const { data: existingProfiles } = await supabase
+      const { data } = await supabase
         .from("Profiles")
-        .select("role")
+        .select("id, role, first_name, last_name, status")
         .eq("user_id", existingUserId)
         .throwOnError();
-      if (existingProfiles?.some((p) => p.role === "Admin")) {
-        throw new Error("Multiple profiles prohibited for provided email");
+      existingProfiles = data ?? [];
+      if (existingProfiles.some((p) => p.role === "Admin")) {
+        throw new ProvisionUserError(
+          "Multiple profiles prohibited for provided email: it belongs to an admin account.",
+        );
+      }
+      const samePerson = findSamePerson(existingProfiles, newProfileData);
+      if (samePerson) {
+        throw new ProvisionUserError(samePersonMessage(samePerson, newProfileData));
       }
     } else {
       const { newUserId, authError } = await inviteUser(newProfileData);
@@ -193,19 +284,57 @@ export const provisionUser = async (input: CreatedProfileData) => {
       throw profileError;
     }
 
-    const createdProfileData: Profile = tableToInterfaceProfiles(createdProfile);
+    const profile: Profile = tableToInterfaceProfiles(createdProfile);
 
-    if (createdProfile?.id) {
+    // The profile (and any invite) exists from here on. Report later failures as warnings:
+    // an error here used to look like the whole add failed, so admins added them again.
+    const warnings: string[] = [];
+
+    if (existingUserId) {
+      try {
+        await openNewProfileIfLastActiveIsInactive(
+          supabase,
+          existingUserId,
+          createdProfile.id,
+          existingProfiles,
+        );
+      } catch (error) {
+        await logError(
+          error,
+          { action: "createUser.openNewProfile", profileId: createdProfile.id },
+          "auth_error",
+        );
+        warnings.push(
+          "They may still open on their old profile and need to switch profiles from the menu.",
+        );
+      }
+    }
+
+    try {
       await ensurePairingQueueForNewProfile(supabase, {
         id: createdProfile.id,
         role: createdProfile.role ?? null,
       });
+    } catch (error) {
+      await logError(
+        error,
+        { action: "createUser.pairingQueue", profileId: createdProfile.id },
+        "auth_error",
+      );
+      warnings.push("Adding them to the pairing queue failed, so they won't be matched yet.");
     }
 
-    return createdProfileData;
+    return {
+      profile,
+      invited: !existingUserId,
+      warning: warnings.length ? warnings.join(" ") : undefined,
+    };
   } catch (error) {
-    console.error("Error creating user:", error);
-    await logError(error, { action: "createUser", email: newProfileData.email }, "auth_error");
+    // A refusal the admin can act on is not an error to report.
+    if (!(error instanceof ProvisionUserError)) {
+      console.error("Error creating user:", error);
+      await logError(error, { action: "createUser", email: newProfileData.email }, "auth_error");
+    }
     throw error;
   }
 };

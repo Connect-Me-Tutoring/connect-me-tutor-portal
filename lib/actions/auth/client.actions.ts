@@ -1,7 +1,7 @@
 "use client";
 import { CreatedProfileData, Profile } from "@/types";
 import { createUser as createUserServer } from "@/lib/actions/auth/server.actions";
-import { createPassword, withRetry } from "@/lib/utils";
+import { createPassword } from "@/lib/utils";
 
 export const addUser = async (
   userData: Partial<Profile>,
@@ -51,8 +51,18 @@ export const addUser = async (
     languages_spoken: userData.languages_spoken || [],
   };
 
-  return withRetry(() => createUserServer(newProfileData), {
-    onRetry: (error, attempt) =>
-      console.error(`addUser attempt ${attempt + 1} failed:`, (error as Error).message),
-  });
+  // No automatic retry: creating an account sends an invite and isn't idempotent, so
+  // retrying used to send several invites (each dead once rolled back) or add the same
+  // person twice. A manual retry after a success is refused as a duplicate.
+  return createUserServer(newProfileData);
+};
+
+/** What to tell the admin after a successful add. */
+export const addedUserMessage = (
+  result: { profile: Profile; invited: boolean },
+  role: "Tutor" | "Student",
+) => {
+  const who = role.toLowerCase();
+  if (result.invited) return `Added ${who}. An invite email was sent to ${result.profile.email}.`;
+  return `Added ${who} to the login that already uses ${result.profile.email}. No invite email was sent: they sign in with that login and can switch profiles from the menu.`;
 };

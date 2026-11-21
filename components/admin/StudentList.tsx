@@ -46,7 +46,7 @@ import {
   deactivateProfile,
   reactivateProfile,
 } from "@/lib/actions/profile/server.actions";
-import { addUser } from "@/lib/actions/auth/client.actions";
+import { addUser, addedUserMessage } from "@/lib/actions/auth/client.actions";
 import { createClient } from "@/lib/supabase/client";
 import { Profile } from "@/types";
 import {
@@ -284,14 +284,20 @@ const StudentList = ({ initialStudents }: any) =>
     const handleAddStudentWithParam = async (student: Partial<Profile>) => {
       try {
         setAddingStudent(true);
-        const addedStudent = await addUser(student, "Student", true);
+        const result = await addUser(student, "Student", true);
+        if (!result.ok) {
+          toast.error(`Failed to add student: ${result.error}`, { duration: 10000 });
+          return;
+        }
+        const addedStudent = result.profile;
 
         if (addedStudent) {
           // Close modal and show success toast
           setIsModalOpen(false);
           setStudents((prevStudents) => [...prevStudents, addedStudent]);
           setFilteredStudents((prev) => [...prev, addedStudent]);
-          toast.success("Successfully added student.");
+          toast.success(addedUserMessage(result, "Student"), { duration: 8000 });
+          if (result.warning) toast.error(result.warning, { duration: 10000 });
 
           // Reset form
           setNewStudent({
@@ -332,73 +338,7 @@ const StudentList = ({ initialStudents }: any) =>
       }
     };
 
-    const handleAddStudent = async () => {
-      try {
-        setAddingStudent(true);
-        const addedStudent = await addUser(newStudent, "Student", true);
-
-        // Update local state
-        setStudents((prevStudents) => {
-          // Check if addedStudent is valid
-          if (addedStudent) {
-            return [...prevStudents, addedStudent]; // Ensure returning an array of Profile
-          }
-          return prevStudents; // Return previous state if addedStudent is not valid
-        });
-
-        setFilteredStudents((prevFiltered) => {
-          // Check if addedStudent is valid
-          if (addedStudent) {
-            return [...prevFiltered, addedStudent]; // Ensure returning an array of Profile
-          }
-          return prevFiltered; // Return previous state if addedStudent is not valid
-        });
-
-        if (addedStudent) {
-          // Close modal and show success toast
-          setIsModalOpen(false);
-          setStudents((prevStudents) => [...prevStudents, addedStudent]);
-          toast.success("Successfully added student.");
-
-          // Reset form
-          setNewStudent({
-            role: "Student",
-            firstName: "",
-            lastName: "",
-            age: "",
-            grade: "",
-            gender: "",
-            startDate: "",
-            availability: [],
-            email: "",
-            parentName: "",
-            parentPhone: "",
-            parentEmail: "",
-            timeZone: "",
-            subjects_of_interest: [],
-            status: "Active",
-            tutorIds: [],
-            studentNumber: "",
-          });
-        }
-      } catch (error) {
-        const err = error as Error;
-        console.error("Error adding student:", err.message);
-
-        // Provide more descriptive error messages
-        if (err.message.includes("Email")) {
-          toast.error(
-            "Failed to add student. Please check the email address and ensure it is valid and unique.",
-          );
-        } else if (err.message.includes("required")) {
-          toast.error(`Failed to add student. Required field error: ${err.message}`);
-        } else {
-          toast.error(`Failed to add student: ${err.message || "Please try again"}`);
-        }
-      } finally {
-        setAddingStudent(false);
-      }
-    };
+    const handleAddStudent = () => handleAddStudentWithParam(newStudent);
 
     // #807: students are deactivated, never deleted. Deleting cascades away
     // their enrollments and pairings, and nulls student_id on sessions.

@@ -48,7 +48,7 @@ import {
   reactivateProfile,
 } from "@/lib/actions/profile/server.actions";
 import { getEvents } from "@/lib/actions/event/server.actions";
-import { addUser } from "@/lib/actions/auth/client.actions";
+import { addUser, addedUserMessage } from "@/lib/actions/auth/client.actions";
 import { getTutorSessions } from "@/lib/actions/tutor/actions";
 import { createClient } from "@/lib/supabase/client";
 import { Profile, Session, Event } from "@/types";
@@ -225,13 +225,19 @@ const TutorList = ({ initialTutors }: any) => {
   const handleAddTutorWithParam = async (tutor: Partial<Profile>) => {
     try {
       setAddingTutor(true);
-      const addedTutor = await addUser(tutor, "Tutor", true);
+      const result = await addUser(tutor, "Tutor", true);
+      if (!result.ok) {
+        toast.error(`Failed to add tutor: ${result.error}`, { duration: 10000 });
+        return;
+      }
+      const addedTutor = result.profile;
 
       if (addedTutor) {
         setIsModalOpen(false);
         setTutors((prevTutors) => [...prevTutors, addedTutor]);
         setFilteredTutors((prev) => [...prev, addedTutor]);
-        toast.success("Successfully added tutor.");
+        toast.success(addedUserMessage(result, "Tutor"), { duration: 8000 });
+        if (result.warning) toast.error(result.warning, { duration: 10000 });
 
         setNewTutor({
           role: "Tutor",
