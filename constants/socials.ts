@@ -12,4 +12,3 @@ export const SOCIAL_LINKS = {
     url: "https://www.linkedin.com/company/connect-me-tutoring-mentoring/",
   },
 } as const;
-

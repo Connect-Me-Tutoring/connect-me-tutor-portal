@@ -74,5 +74,3 @@ export function getEmailFooterHtml(tagline = "Connect Me Free Tutoring & Mentori
     </div>
   `;
 }
-
-
