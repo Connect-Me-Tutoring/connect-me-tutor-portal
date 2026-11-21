@@ -504,6 +504,7 @@ export async function sendStudentSEFFeedbackEmail(session: Session): Promise<voi
         studentName,
         studentEmail,
         userId: session.tutor.userId,
+        sessionDate: session.date,
       }),
       headers: {
         "Content-Type": "application/json",
