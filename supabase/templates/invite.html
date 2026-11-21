@@ -1,0 +1,22 @@
+<!-- Local-dev invite email. Prod's templates live in the Supabase dashboard; set
+     prod's "Invite user" template to the same link. Don't use {{ .ConfirmationURL }}:
+     that link spends the token on the first GET, and school/work mail filters and
+     antivirus tools open links before the person does, so the invite shows as
+     expired. /auth/confirm only spends it when the person presses Continue. -->
+<div
+  style="font-family: sans-serif; max-width: 480px; margin: 0 auto; padding: 24px; color: #111827"
+>
+  <h2 style="margin: 0 0 16px">You've been invited to Connect Me</h2>
+  <p style="margin: 0 0 16px">
+    Click below to set your password and finish setting up your account.
+  </p>
+  <p style="margin: 0 0 16px">
+    <a href="{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=invite&next=/set-password"
+      >Set up your account</a
+    >
+  </p>
+  <p style="margin: 0; font-size: 12px; color: #6b7280">
+    If the link says it has expired, go to {{ .SiteURL }}/forgot-password and enter this email
+    address to get a 6-digit code instead.
+  </p>
+</div>

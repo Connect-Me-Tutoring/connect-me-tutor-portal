@@ -2,7 +2,7 @@ import Link from "next/link";
 import Logo from "@/components/ui/logo";
 import { Button } from "@/components/ui/button";
 
-// Expired or already-used email links (invites included) land here from /auth/confirm.
+// Expired or already-used email links (invites included) land here from /auth/confirm/verify.
 // Forgot password sends a fresh 6-digit code, which also works for invited users who
 // never set a password, then continues to /set-password.
 export default function AuthError() {
@@ -23,6 +23,10 @@ export default function AuthError() {
                   Email links only work for a limited time and can only be used once. If you were
                   invited to Connect Me, or need to reset your password, get a new 6-digit code sent
                   to your email and set your password from there.
+                </p>
+                <p className="text-sm text-center text-gray-600">
+                  Using a school or work email? Its security filter may have opened the link before
+                  you did. A 6-digit code avoids that.
                 </p>
               </div>
               <Button asChild className="w-full bg-blue-400">
