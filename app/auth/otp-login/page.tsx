@@ -21,6 +21,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { getErrorMessage } from "@/lib/utils/error";
 
 // Define your Zod schema for OTP login
 const emailSchema = z.object({
@@ -127,8 +128,8 @@ function OTPLogin() {
       });
 
       if (error) {
-        toast.error(error.message);
-        throw error;
+        toast.error(getErrorMessage(error, "Invalid code. Please check and try again."));
+        return;
       }
 
       if (session) {

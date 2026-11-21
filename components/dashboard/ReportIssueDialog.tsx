@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "react-hot-toast";
+import { getErrorMessage } from "@/lib/utils/error";
 import { AlertTriangle, CheckCircle2, ExternalLink } from "lucide-react";
 import {
   Dialog,
@@ -83,7 +84,9 @@ export default function ReportIssueDialog({ open, onOpenChange }: ReportIssueDia
     try {
       const result = await submitTicket(values);
       if (!result.ok) {
-        toast.error(result.error);
+        toast.error(
+          getErrorMessage(result.error, "We couldn't submit your ticket. Please try again."),
+        );
         return;
       }
       setSubmittedTicketId(result.ticketId);

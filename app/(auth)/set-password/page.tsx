@@ -8,6 +8,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useState, useEffect } from "react";
 import { string } from "zod";
 import { Button } from "@/components/ui/button";
+import { getErrorMessage } from "@/lib/utils/error";
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
@@ -78,7 +79,7 @@ export default function ResetPassword() {
       }
     } catch (error) {
       console.error("Password update error:", error);
-      toast.error(error instanceof Error ? error.message : "Failed to update password");
+      toast.error(getErrorMessage(error, "Failed to update password. Please try again."));
     }
   };
 
