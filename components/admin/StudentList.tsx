@@ -96,8 +96,8 @@ const StudentList = ({ initialStudents }: any) =>
   // }
   {
     const supabase = createClient();
-    const [students, setStudents] = useState<Profile[]>(initialStudents);
-    const [filteredStudents, setFilteredStudents] = useState<Profile[]>(initialStudents);
+    const [students, setStudents] = useState<Profile[]>(initialStudents ?? []);
+    const [filteredStudents, setFilteredStudents] = useState<Profile[]>(initialStudents ?? []);
     const [profile, setProfile] = useState<Profile | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -150,8 +150,8 @@ const StudentList = ({ initialStudents }: any) =>
 
         setProfile(profileData);
 
-        const studentsData = await getAllProfiles("Student", "created_at", false);
-        if (!studentsData) throw new Error("No students found");
+        // getAllProfiles returns null for "no rows" as well as errors.
+        const studentsData = (await getAllProfiles("Student", "created_at", false)) ?? [];
 
         setStudents(studentsData);
         setFilteredStudents(studentsData);
