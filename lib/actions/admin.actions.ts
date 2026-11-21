@@ -595,7 +595,8 @@ export async function getEventsWithTutorMonth(
         date,
         summary,
         tutor_id,
-        hours
+        hours,
+        type
       `,
       )
       .eq("tutor_id", tutorId) // Filter by tutor IDs

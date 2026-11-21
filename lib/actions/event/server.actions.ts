@@ -3,6 +3,8 @@
 import { createClient } from "@/lib/supabase/server";
 import { Event } from "@/types";
 import { logEvent, logError } from "@/lib/posthog";
+import { Table } from "@/lib/supabase/tables";
+import { requireTutorProfileAccess } from "../auth/authz.server";
 
 /* EVENTS */
 export async function getEvents(
@@ -23,7 +25,8 @@ export async function getEvents(
         date,
         summary,
         tutor_id,
-        hours
+        hours,
+        type
       `,
       )
       .eq("tutor_id", tutorId);
@@ -69,4 +72,55 @@ export async function getEvents(
     );
     throw error;
   }
+}
+
+export interface TutorEventHistory {
+  tutor: { id: string; firstName: string; lastName: string; email: string };
+  events: Event[];
+}
+
+/** Every event ever logged for a tutor, newest first. Null when the tutor doesn't exist. */
+export async function getTutorEventHistory(tutorId: string): Promise<TutorEventHistory | null> {
+  await requireTutorProfileAccess(tutorId);
+  const supabase = await createClient();
+
+  const [{ data: tutor, error: tutorError }, { data: events, error: eventsError }] =
+    await Promise.all([
+      supabase
+        .from(Table.Profiles)
+        .select("id, first_name, last_name, email")
+        .eq("id", tutorId)
+        .eq("role", "Tutor")
+        .maybeSingle(),
+      supabase
+        .from(Table.Events)
+        .select("id, created_at, date, summary, tutor_id, hours, type")
+        .eq("tutor_id", tutorId)
+        .order("date", { ascending: false, nullsFirst: false }),
+    ]);
+
+  const error = tutorError ?? eventsError;
+  if (error) {
+    await logError(error, { action: "getTutorEventHistory", tutorId }, "event_error");
+    throw error;
+  }
+  if (!tutor) return null;
+
+  return {
+    tutor: {
+      id: tutor.id,
+      firstName: tutor.first_name ?? "",
+      lastName: tutor.last_name ?? "",
+      email: tutor.email ?? "",
+    },
+    events: (events ?? []).map((event) => ({
+      createdAt: event.created_at,
+      id: event.id,
+      summary: event.summary ?? "",
+      tutorId: event.tutor_id ?? "",
+      date: event.date ?? "",
+      hours: event.hours ?? 0,
+      type: event.type,
+    })),
+  };
 }

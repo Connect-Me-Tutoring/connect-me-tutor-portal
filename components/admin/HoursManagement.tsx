@@ -1,5 +1,6 @@
 "use client";
 import React, { useState, useEffect } from "react";
+import Link from "next/link";
 import {
   format,
   startOfMonth,
@@ -973,7 +974,13 @@ const HoursManager = () => {
                 {filteredTutors.map((tutor) => (
                   <TableRow key={tutor.id}>
                     <TableCell className="sticky left-0 z-10 bg-white">
-                      {tutor.firstName} {tutor.lastName}
+                      <Link
+                        href={`/dashboard/hours-manager/${tutor.id}`}
+                        className="block text-blue-700 hover:underline"
+                        title="View event history"
+                      >
+                        {tutor.firstName} {tutor.lastName}
+                      </Link>
                     </TableCell>
                     {allTimeView ? (
                       <>
