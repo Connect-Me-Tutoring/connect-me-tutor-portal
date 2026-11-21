@@ -41,7 +41,6 @@ import {
   ChevronLeft,
   ChevronRight,
   CalendarX,
-  UserRoundPlus,
   CircleCheck,
   X,
   Video,
@@ -52,6 +51,7 @@ import { AlertDialogTrigger } from "@radix-ui/react-alert-dialog";
 import { SessionExitFormTrigger } from "./SessionExitForm";
 import CancellationForm from "./CancellationForm";
 import EditSessionForm from "./EditSessionForm";
+import RequestSubstituteDialog from "./RequestSubstituteDialog";
 import { useDashboardContext } from "@/lib/contexts/dashboardContext";
 import { MobileCard } from "@/components/ui/mobile-card";
 
@@ -139,22 +139,7 @@ const CurrentSessionsTable = ({
                     isDropdownItem={false}
                   />
 
-                  <HoverCard>
-                    <HoverCardTrigger>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() =>
-                          (window.location.href = "https://forms.gle/AC4an7K6NSNumDwKA")
-                        }
-                      >
-                        <UserRoundPlus className="h-4 w-4" />
-                      </Button>
-                    </HoverCardTrigger>
-                    <HoverCardContent>
-                      <center>Request a Substitute</center>
-                    </HoverCardContent>
-                  </HoverCard>
+                  <RequestSubstituteDialog session={session} />
                   {/* changed to show X icon for cancelled sessions, trash for active */}
                   {session.status === "Cancelled" || session.status === "Student Did Not Attend" ? (
                     <HoverCard>
@@ -228,13 +213,7 @@ const CurrentSessionsTable = ({
                 handleStatusChange={handleStatusChange}
                 isDropdownItem={false}
               />
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => (window.location.href = "https://forms.gle/AC4an7K6NSNumDwKA")}
-              >
-                <UserRoundPlus className="h-4 w-4" />
-              </Button>
+              <RequestSubstituteDialog session={session} />
               {session.status === "Cancelled" || session.status === "Student Did Not Attend" ? (
                 <Button variant="ghost" size="icon" onClick={() => handleUndoCancel?.(session.id)}>
                   <X className="h-4 w-4" color="#10b981" />

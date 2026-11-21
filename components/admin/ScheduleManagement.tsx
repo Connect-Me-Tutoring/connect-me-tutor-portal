@@ -656,9 +656,11 @@ const Schedule = () => {
               ? "bg-orange-100 border-l-4 border-l-orange-500 text-orange-900"
               : session.status === "Unconfirmed"
                 ? "bg-amber-100 border-l-4 border-l-amber-500 text-amber-900"
-                : session.isStandalone == true
-                  ? "bg-purple-100 border-l-4 border-l-purple-500 text-purple-900"
-                  : "bg-blue-100 border-l-4 border-l-blue-500 text-blue-900",
+                : session.status === "Sub-Request"
+                  ? "bg-teal-100 border-l-4 border-l-teal-500 text-teal-900"
+                  : session.isStandalone == true
+                    ? "bg-purple-100 border-l-4 border-l-purple-500 text-purple-900"
+                    : "bg-blue-100 border-l-4 border-l-blue-500 text-blue-900",
       )}
     >
       <div className="flex items-center justify-between gap-1">
@@ -733,6 +735,7 @@ const Schedule = () => {
                   { color: "bg-red-500", label: "Cancelled" },
                   { color: "bg-orange-500", label: "No-show" },
                   { color: "bg-amber-500", label: "Unconfirmed" },
+                  { color: "bg-teal-500", label: "Sub Requested" },
                   { color: "bg-blue-500", label: "Active" },
                   { color: "bg-purple-500", label: "Standalone" },
                 ].map(({ color, label }) => (
@@ -1163,9 +1166,11 @@ const Schedule = () => {
                                         ? "bg-orange-100 text-orange-800 font-medium"
                                         : session.status === "Unconfirmed"
                                           ? "bg-amber-100 text-amber-800"
-                                          : session.isStandalone
-                                            ? "bg-purple-100 text-purple-800"
-                                            : "bg-blue-100 text-blue-800",
+                                          : session.status === "Sub-Request"
+                                            ? "bg-teal-100 text-teal-800"
+                                            : session.isStandalone
+                                              ? "bg-purple-100 text-purple-800"
+                                              : "bg-blue-100 text-blue-800",
                                 )}
                               >
                                 <span className="truncate">
