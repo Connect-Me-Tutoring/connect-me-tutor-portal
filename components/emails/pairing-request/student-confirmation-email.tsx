@@ -2,6 +2,7 @@ import { formatDateWithOptions, to12HourWithMinutes } from "@/lib/utils";
 import { Availability, Meeting, Profile } from "@/types";
 import { PairingConfirmationEmailProps } from "@/types/email";
 import { Html, Head, Body, Container, Text, Link, Section } from "@react-email/components";
+import EmailFooter from "@/components/emails/email-footer";
 
 export default function StudentPairingConfirmationEmail({
   student,
@@ -312,19 +313,7 @@ export default function StudentPairingConfirmationEmail({
         </Section>
       </Section>
 
-      {/* Footer */}
-      <Section
-        style={{
-          backgroundColor: "#30302F",
-          padding: "16px",
-          textAlign: "center",
-          borderTop: "1px solid #495860",
-        }}
-      >
-        <Text style={{ color: "#8494A8", fontSize: "14px", margin: "0" }}>
-          Connect Me Free Tutoring & Mentoring
-        </Text>
-      </Section>
+      <EmailFooter />
     </Container>
   );
 

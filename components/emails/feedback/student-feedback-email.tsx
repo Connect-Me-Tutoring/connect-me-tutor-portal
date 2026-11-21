@@ -9,6 +9,7 @@ import {
   Text,
   Button,
 } from "@react-email/components";
+import EmailFooter from "@/components/emails/email-footer";
 
 interface FeedbackEmailProps {
   studentName?: string;
@@ -91,18 +92,7 @@ export default function FeedbackEmail({ studentName = "Student" }: FeedbackEmail
             </Section>
           </Section>
 
-          <Section
-            style={{
-              backgroundColor: "#30302F",
-              padding: "16px",
-              textAlign: "center",
-              borderTop: "1px solid #495860",
-            }}
-          >
-            <Text style={{ color: "#8494A8", fontSize: "14px", margin: "0" }}>
-              Connect Me Free Tutoring & Mentoring
-            </Text>
-          </Section>
+          <EmailFooter />
         </Container>
       </Body>
     </Html>

@@ -1,4 +1,6 @@
 import { Enrollment, Profile, Session } from "@/types";
+import { getEmailFooterHtml } from "@/components/emails/email-footer";
+
 const InactiveEnrollmentEarlyWarning = (params: {
   tutor: Profile;
   student: Profile;
@@ -14,6 +16,7 @@ const InactiveEnrollmentEarlyWarning = (params: {
     <br><br>
     If you were unable to submit a Session Exit Form because of a technical issue, just reply to
     this email and our team will sort it out.
+    ${getEmailFooterHtml()}
   `;
 };
 

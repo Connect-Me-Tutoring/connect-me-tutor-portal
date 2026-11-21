@@ -4,6 +4,7 @@
  */
 
 import { Profile } from "@/types";
+import { getEmailFooterHtml } from "@/components/emails/email-footer";
 
 export const missingSEFReminderEmail = (tutor: Profile, student: Profile) => {
   return `
@@ -26,5 +27,6 @@ export const missingSEFReminderEmail = (tutor: Profile, student: Profile) => {
       Best,<br>
       The Connect Me Free Tutoring & Mentoring Team
     </p>
+    ${getEmailFooterHtml()}
   `;
 };

@@ -1,6 +1,7 @@
 import { Profile } from "@/types";
 import { PairingRequestNotificationEmailProps } from "@/types/email";
 import React from "react";
+import EmailFooter from "@/components/emails/email-footer";
 
 export default function PairingRequestNotificationEmail({
   tutor,
@@ -404,18 +405,7 @@ export default function PairingRequestNotificationEmail({
       </div>
 
       {/* Footer */}
-      <div
-        style={{
-          backgroundColor: "#30302F",
-          padding: "16px",
-          textAlign: "center",
-          borderTop: "1px solid #495860",
-        }}
-      >
-        <div style={{ color: "#8494A8", fontSize: "14px", margin: "0" }}>
-          Connect Me Free Tutoring & Mentoring
-        </div>
-      </div>
+      <EmailFooter />
     </div>
   );
 

@@ -1,5 +1,6 @@
 import React from "react";
 import { Html, Head, Body, Container, Text, Link, Section } from "@react-email/components";
+import EmailFooter from "@/components/emails/email-footer";
 
 export interface ChatMessageNotificationEmailProps {
   recipientName: string;
@@ -43,6 +44,7 @@ export default function ChatMessageNotificationEmail({
           to continue the conversation.
         </Text>
       </Section>
+      <EmailFooter />
     </Container>
   );
 

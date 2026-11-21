@@ -2,6 +2,7 @@ import { formatDate, formatDateWithOptions, to12HourWithMinutes } from "@/lib/ut
 import { Profile } from "@/types";
 import { PairingConfirmationEmailProps } from "@/types/email";
 import React from "react";
+import EmailFooter from "@/components/emails/email-footer";
 
 // Mock utility function since we don't have access to the actual one
 
@@ -462,18 +463,7 @@ export default function TutorPairingConfirmationEmail({
       </div>
 
       {/* Footer */}
-      <div
-        style={{
-          backgroundColor: "#30302F",
-          padding: "16px",
-          textAlign: "center",
-          borderTop: "1px solid #495860",
-        }}
-      >
-        <div style={{ color: "#8494A8", fontSize: "14px", margin: "0" }}>
-          Connect Me Online Tutoring | Connecting Students with Success
-        </div>
-      </div>
+      <EmailFooter tagline="Connect Me Online Tutoring | Connecting Students with Success" />
     </div>
   );
 

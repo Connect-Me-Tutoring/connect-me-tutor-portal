@@ -1,5 +1,6 @@
 import { Html, Head, Body, Container, Text, Link, Section } from "@react-email/components";
 import { ParentMonthlyCheckInEmailProps } from "@/types/email";
+import EmailFooter from "@/components/emails/email-footer";
 
 export default function ParentMonthlyCheckInEmail({
   parentName,
@@ -160,6 +161,7 @@ export default function ParentMonthlyCheckInEmail({
           </Link>
         </Text>
       </Section>
+      <EmailFooter />
     </Container>
   );
 
