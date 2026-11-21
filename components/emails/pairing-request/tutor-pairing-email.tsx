@@ -1,3 +1,6 @@
+import React from "react";
+import EmailFooter from "@/components/emails/email-footer";
+
 interface TutorPairingEmailProps {
   tutorName?: string;
   studentName?: string;
@@ -158,6 +161,7 @@ export default function TutorPairingEmail({
           </p>
         </div>
       </div>
+      <EmailFooter style={{ margin: "0 -24px -24px -24px" }} />
     </div>
   );
 }

@@ -1,5 +1,6 @@
 import { Html, Head, Body, Container, Text, Link, Section } from "@react-email/components";
 import { TutorMonthlyCheckInEmailProps } from "@/types/email";
+import EmailFooter from "@/components/emails/email-footer";
 
 export default function TutorMonthlyCheckInEmail({
   tutor,
@@ -155,6 +156,7 @@ export default function TutorMonthlyCheckInEmail({
           </Link>
         </Text>
       </Section>
+      <EmailFooter />
     </Container>
   );
 

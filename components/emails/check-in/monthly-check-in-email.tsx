@@ -1,5 +1,6 @@
 import { Body, Container, Head, Html, Link, Preview, Section, Text } from "@react-email/components";
 import React from "react";
+import EmailFooter from "@/components/emails/email-footer";
 
 export interface MonthlyCheckInEmailProps {
   firstName: string;
@@ -122,6 +123,8 @@ export default function MonthlyCheckInEmail({
           </Text>
         </Section>
       </Section>
+
+      <EmailFooter />
     </Container>
   );
 

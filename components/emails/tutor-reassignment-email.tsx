@@ -1,3 +1,6 @@
+import React from "react";
+import EmailFooter from "@/components/emails/email-footer";
+
 interface TutorReassignmentEmailProps {
   studentName?: string;
   parentName?: string;
@@ -132,6 +135,7 @@ export default function TutorReassignmentEmail({
           </p>
         </div>
       </div>
+      <EmailFooter style={{ margin: "0 -24px -24px -24px" }} />
     </div>
   );
 }

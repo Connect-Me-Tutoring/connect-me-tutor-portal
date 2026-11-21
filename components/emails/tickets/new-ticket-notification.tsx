@@ -1,5 +1,6 @@
 import React from "react";
 import { Html, Head, Body, Container, Text, Section } from "@react-email/components";
+import EmailFooter from "@/components/emails/email-footer";
 
 export interface NewTicketNotificationEmailProps {
   ticketId: string;
@@ -60,6 +61,7 @@ export default function NewTicketNotificationEmail({
             <Text style={labelStyle}>Description</Text>
             <Text style={{ ...valueStyle, whiteSpace: "pre-wrap" }}>{description}</Text>
           </Section>
+          <EmailFooter style={{ marginTop: "24px" }} />
         </Container>
       </Body>
     </Html>

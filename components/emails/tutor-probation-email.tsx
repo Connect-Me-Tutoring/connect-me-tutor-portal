@@ -1,5 +1,6 @@
 import { Profile } from "@/types";
 import React from "react";
+import EmailFooter from "@/components/emails/email-footer";
 
 interface TutorProbationEmailProps {
   tutor: Profile;
@@ -255,19 +256,13 @@ export default function TutorProbationEmail({
         </div>
 
         {/* Footer */}
-        <div
+        <EmailFooter
+          tagline="Connect Me Online Tutoring | Connecting Students with Success"
           style={{
-            backgroundColor: "#30302F",
-            padding: "16px",
-            textAlign: "center",
             borderRadius: "4px",
             margin: "0 -24px -24px -24px",
           }}
-        >
-          <div style={{ color: "#8494A8", fontSize: "14px", margin: "0" }}>
-            Connect Me Online Tutoring | Connecting Students with Success
-          </div>
-        </div>
+        />
       </div>
     </div>
   );

@@ -1,5 +1,6 @@
 import { EarlySessionCheckInEmailProps } from "@/types/email";
 import { Body, Container, Head, Html, Link, Preview, Section, Text } from "@react-email/components";
+import EmailFooter from "@/components/emails/email-footer";
 
 const DEFAULT_PORTAL = "https://www.connectmego.app/";
 const DEFAULT_GUIDEBOOK = "https://drive.google.com/file/d/1vk9neT5FzDfk2ICpW6aeP5B_OL06te8i/view";
@@ -234,18 +235,7 @@ export default function EarlySessionCheckInEmail({
         </Section>
       </Section>
 
-      <Section
-        style={{
-          backgroundColor: "#30302F",
-          padding: "16px",
-          textAlign: "center",
-          borderTop: "1px solid #495860",
-        }}
-      >
-        <Text style={{ color: "#8494A8", fontSize: "14px", margin: "0" }}>
-          Connect Me Free Tutoring & Mentoring
-        </Text>
-      </Section>
+      <EmailFooter />
     </Container>
   );
 

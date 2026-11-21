@@ -10,6 +10,7 @@ import {
   Link,
 } from "@react-email/components";
 import * as React from "react";
+import EmailFooter from "@/components/emails/email-footer";
 
 export interface SessionRescheduleEmailProps {
   studentName: string;
@@ -60,6 +61,7 @@ export const StudentRescheduleNotificationEmail = ({
               The Connect Me Free Tutoring & Mentoring Team
             </Text>
           </Section>
+          <EmailFooter />
         </Container>
       </Body>
     </Html>
