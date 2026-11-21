@@ -56,9 +56,15 @@ export async function dispatchChatMessageEmails({
     const preview =
       messagePreview.length > 500 ? `${messagePreview.slice(0, 497)}...` : messagePreview;
 
+    const seenEmails = new Set<string>();
+
     for (const r of recipients) {
       if (r.id === senderProfileId) continue;
       if (!r.email) continue;
+
+      const normalizedEmail = r.email.trim().toLowerCase();
+      if (seenEmails.has(normalizedEmail)) continue;
+      seenEmails.add(normalizedEmail);
 
       // One recipient's failure must not abandon the rest of the round: the
       // debounce above would suppress a retry for the whole window.

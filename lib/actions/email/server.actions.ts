@@ -111,7 +111,7 @@ export async function sendStudentPairingConfirmationEmail(
     () =>
       sendMail({
         from: "Connect Me Free Tutoring & Mentoring <pairings@connectmego.app>",
-        to: process.env.DEV_EMAIL!,
+        to: emailTo || process.env.DEV_EMAIL!,
         cc: [process.env.OPERATIONS_EMAIL!],
         subject: "You Have Been Matched!",
         html: emailHtml,
@@ -137,7 +137,7 @@ export async function sendPairingRequestEmail(
     () =>
       sendMail({
         from: "reminder@connectmego.app",
-        to: process.env.DEV_EMAIL!,
+        to: emailTo || process.env.DEV_EMAIL!,
         cc: [process.env.OPERATIONS_EMAIL!],
         subject: "Connect Me Pairing Request",
         html: emailHtml,
@@ -161,7 +161,7 @@ export async function sendTutorPairingConfirmationEmail(
     () =>
       sendMail({
         from: "Connect Me Free Tutoring & Mentoring <confirmation@connectmego.app>",
-        to: process.env.DEV_EMAIL!,
+        to: emailTo || process.env.DEV_EMAIL!,
         cc: [process.env.OPERATIONS_EMAIL!],
         subject: "Confirmed for Tutoring",
         html: emailHtml,
@@ -376,12 +376,15 @@ export async function sendEarlySessionCheckInEmails(now = new Date()) {
 
   let sent = 0;
   let skipped = 0;
+  const sentEmailsInRun = new Set<string>();
 
   for (const recipient of recipients) {
-    if (existingDescriptions.has(recipient.description)) {
+    const normalizedEmail = recipient.email.trim().toLowerCase();
+    if (existingDescriptions.has(recipient.description) || sentEmailsInRun.has(normalizedEmail)) {
       skipped += 1;
       continue;
     }
+    sentEmailsInRun.add(normalizedEmail);
 
     const emailHtml = await render(
       React.createElement(EarlySessionCheckInEmail, recipient.templateProps),
@@ -601,6 +604,7 @@ export async function getEmailLogs(
     .from(Table.Emails)
     .select("id, created_at, recipient_email, subject", { count: "exact" })
     .order("created_at", { ascending: false })
+    .order("id", { ascending: false })
     .range(from, from + pageSize - 1);
 
   // Characters that would break out of a PostgREST or() filter or act as wildcards.
