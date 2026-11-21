@@ -38,6 +38,7 @@ export interface Session {
   status:
     "Active" | "Complete" | "Cancelled" | "Rescheduled" | "Unconfirmed" | "Student Did Not Attend";
   session_exit_form: string;
+  sessionSubject: import("@/constants/sessionExitForm").SessionSubject | null;
   summary: string;
   isQuestionOrConcern: boolean;
   isFirstSession: boolean;

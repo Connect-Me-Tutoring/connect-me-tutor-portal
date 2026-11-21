@@ -1404,6 +1404,10 @@ const Schedule = () => {
                   }
                   return (
                     <div>
+                      <Label>Subject</Label>
+                      <p className="mb-3 text-sm">
+                        {selectedSession.sessionSubject ?? "Not recorded"}
+                      </p>
                       <Label>SEF Exit Reason</Label>
                       <Textarea
                         readOnly

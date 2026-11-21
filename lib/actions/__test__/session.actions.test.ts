@@ -209,6 +209,7 @@ describe("updateSession SEF persistence", () => {
     date: "2020-01-01T12:00:00Z",
     status: "Complete",
     session_exit_form: "We covered fractions.",
+    sessionSubject: "Math",
     isQuestionOrConcern: false,
     isFirstSession: false,
     duration: 60,

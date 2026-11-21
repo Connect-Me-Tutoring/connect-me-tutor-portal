@@ -1,4 +1,5 @@
 import type { Session } from "@/types";
+import type { SessionSubject } from "@/constants/sessionExitForm";
 
 export type SessionExitFormCategory = "attendance" | "technical" | "behavior" | "urgent";
 
@@ -16,6 +17,7 @@ export interface SessionExitFormPayload {
 export interface SubmitSessionExitFormInput {
   sessionId: string;
   notes: string;
+  subject: SessionSubject;
   isQuestionOrConcern: boolean;
   isFirstSession: boolean;
 }

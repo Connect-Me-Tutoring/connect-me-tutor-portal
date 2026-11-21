@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { formatSessionDate, formatSessionDuration } from "@/lib/utils";
 import { Session } from "@/types";
 import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import {
   Table,
@@ -239,6 +240,10 @@ const CompletedSessionsTable = ({
           <DialogHeader>
             <DialogTitle>Meeting Notes</DialogTitle>
           </DialogHeader>
+          <div className="space-y-1.5">
+            <Label>Subject</Label>
+            <p className="text-sm">{notesSession?.sessionSubject ?? "Not recorded"}</p>
+          </div>
           <Textarea readOnly value={notesSession?.session_exit_form ?? ""} />
         </DialogContent>
       </Dialog>

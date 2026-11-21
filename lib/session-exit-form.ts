@@ -1,9 +1,11 @@
 import { submitSessionExitForm } from "@/lib/actions/tutor/actions";
 import type { Session } from "@/types";
+import { isSessionSubject, type SessionSubject } from "@/constants/sessionExitForm";
 
 export interface SessionExitFormSubmission {
   session: Session;
   notes: string;
+  subject: SessionSubject;
   isQuestionOrConcern: boolean;
   isFirstSession: boolean;
   category?: string;
@@ -31,10 +33,15 @@ const GENERIC_SAVE_ERROR =
 export async function submitSessionExitFormFlow({
   session,
   notes,
+  subject,
   isQuestionOrConcern,
   isFirstSession,
   category,
 }: SessionExitFormSubmission): Promise<SessionExitFormOutcome> {
+  if (!isSessionSubject(subject)) {
+    return { ok: false, error: "Please select the subject covered in this session." };
+  }
+
   if (isQuestionOrConcern) {
     try {
       const response = await fetch("/api/session-exit-form/questions-concerns", {
@@ -69,6 +76,7 @@ export async function submitSessionExitFormFlow({
     result = await submitSessionExitForm({
       sessionId: session.id,
       notes,
+      subject,
       isQuestionOrConcern,
       isFirstSession,
     });

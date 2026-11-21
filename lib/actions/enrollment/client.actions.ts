@@ -277,6 +277,7 @@ export const addEnrollment = async (enrollment: Omit<Enrollment, "id" | "created
         meeting: meeting,
         status: (enrollment as any).status || "Active",
         session_exit_form: "",
+        sessionSubject: null,
         isQuestionOrConcern: false,
         isFirstSession: true,
         isStandalone: false,

@@ -753,6 +753,7 @@ export const addEnrollment = async (
         meeting: meeting,
         status: (enrollment as any).status || "Active",
         session_exit_form: "",
+        sessionSubject: null,
         isQuestionOrConcern: false,
         isFirstSession: true,
         isStandalone: false,

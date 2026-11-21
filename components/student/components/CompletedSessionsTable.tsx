@@ -118,7 +118,13 @@ const CompletedSessionsTable = ({
                       <DialogHeader>
                         <DialogTitle>Meeting Notes</DialogTitle>
                       </DialogHeader>
-                      <Textarea>{SC.selectedSession?.session_exit_form}</Textarea>
+                      <div className="space-y-1.5">
+                        <Label>Subject</Label>
+                        <p className="text-sm">
+                          {SC.selectedSession?.sessionSubject ?? "Not recorded"}
+                        </p>
+                      </div>
+                      <Textarea readOnly value={SC.selectedSession?.session_exit_form ?? ""} />
                     </DialogContent>
                   </Dialog>
                 </TableCell>
@@ -211,7 +217,11 @@ const CompletedSessionsTable = ({
                 <DialogHeader>
                   <DialogTitle>Meeting Notes</DialogTitle>
                 </DialogHeader>
-                <Textarea>{SC.selectedSession?.session_exit_form}</Textarea>
+                <div className="space-y-1.5">
+                  <Label>Subject</Label>
+                  <p className="text-sm">{SC.selectedSession?.sessionSubject ?? "Not recorded"}</p>
+                </div>
+                <Textarea readOnly value={SC.selectedSession?.session_exit_form ?? ""} />
               </DialogContent>
             </Dialog>
           </MobileCard>

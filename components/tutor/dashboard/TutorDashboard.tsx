@@ -14,6 +14,7 @@ import toast from "react-hot-toast";
 import { submitSessionExitFormFlow, type SessionExitFormOutcome } from "@/lib/session-exit-form";
 import { useDashboardContext } from "@/lib/contexts/dashboardContext";
 import { undoSessionExitForm } from "@/lib/actions/tutor/actions";
+import type { SessionSubject } from "@/constants/sessionExitForm";
 import {
   getSessionTimePassed,
   sendStudentSEFFeedbackEmail,
@@ -189,6 +190,7 @@ const TutorDashboard = () => {
   const handleSessionComplete = async (
     session: Session,
     notes: string,
+    subject: SessionSubject,
     isQuestionOrConcern: boolean,
     isFirstSession: boolean,
     category?: string,
@@ -196,6 +198,7 @@ const TutorDashboard = () => {
     const outcome = await submitSessionExitFormFlow({
       session,
       notes,
+      subject,
       isQuestionOrConcern,
       isFirstSession,
       category,

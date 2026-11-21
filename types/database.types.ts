@@ -831,6 +831,7 @@ export type Database = {
           is_standalone: boolean;
           meeting_id: string | null;
           session_exit_form: string | null;
+          session_subject: string | null;
           status: Database["public"]["Enums"]["session_status"] | null;
           student_id: string | null;
           summary: string | null;
@@ -847,6 +848,7 @@ export type Database = {
           is_standalone?: boolean;
           meeting_id?: string | null;
           session_exit_form?: string | null;
+          session_subject?: string | null;
           status?: Database["public"]["Enums"]["session_status"] | null;
           student_id?: string | null;
           summary?: string | null;
@@ -863,6 +865,7 @@ export type Database = {
           is_standalone?: boolean;
           meeting_id?: string | null;
           session_exit_form?: string | null;
+          session_subject?: string | null;
           status?: Database["public"]["Enums"]["session_status"] | null;
           student_id?: string | null;
           summary?: string | null;

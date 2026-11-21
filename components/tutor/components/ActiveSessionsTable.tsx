@@ -48,6 +48,7 @@ import {
   Video,
 } from "lucide-react";
 import { SessionStatusBadge } from "@/components/sessions/SessionStatusBadge";
+import type { SessionSubject } from "@/constants/sessionExitForm";
 import { format, parseISO, isAfter } from "date-fns";
 import { AlertDialogTrigger } from "@radix-ui/react-alert-dialog";
 import { SessionExitFormTrigger } from "./SessionExitForm";
@@ -90,6 +91,7 @@ interface SessionsTableProps {
   handleSessionComplete: (
     session: Session,
     notes: string,
+    subject: SessionSubject,
     isQuestionOrConcern: boolean,
     isFirstSession: boolean,
     category?: string,

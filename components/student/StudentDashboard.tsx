@@ -17,6 +17,7 @@ import {
 import { Session, Profile, Meeting } from "@/types";
 import toast from "react-hot-toast";
 import { submitSessionExitFormFlow, type SessionExitFormOutcome } from "@/lib/session-exit-form";
+import type { SessionSubject } from "@/constants/sessionExitForm";
 import {
   parseISO,
   addHours,
@@ -190,6 +191,7 @@ const StudentDashboard = () => {
   const handleSessionComplete = async (
     session: Session,
     notes: string,
+    subject: SessionSubject,
     isQuestionOrConcern: boolean,
     isFirstSession: boolean,
     category?: string,
@@ -197,6 +199,7 @@ const StudentDashboard = () => {
     const outcome = await submitSessionExitFormFlow({
       session,
       notes,
+      subject,
       isQuestionOrConcern,
       isFirstSession,
       category,

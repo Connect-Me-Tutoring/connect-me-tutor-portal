@@ -17,7 +17,11 @@ import {
 } from "@/components/ui/select";
 import CancellationForm from "./CancellationForm";
 import { useDashboardContext } from "@/lib/contexts/dashboardContext";
-import { CATEGORY_LABELS } from "@/constants/sessionExitForm";
+import {
+  CATEGORY_LABELS,
+  SESSION_SUBJECTS,
+  type SessionSubject,
+} from "@/constants/sessionExitForm";
 import type { SessionExitFormOutcome } from "@/lib/session-exit-form";
 
 interface SessionExitFormProps {
@@ -25,6 +29,7 @@ interface SessionExitFormProps {
   handleSessionComplete: (
     session: Session,
     notes: string,
+    subject: SessionSubject,
     isQuestionOrConcern: boolean,
     isFirstSession: boolean,
     category?: string,
@@ -116,6 +121,7 @@ const SessionExitForm = ({
 
   const [isFirstSession, setIsFirstSession] = useState(false);
   const [isQuestionOrConcern, setIsQuestionOrConcern] = useState(false);
+  const [subject, setSubject] = useState<SessionSubject | "">("");
   const [category, setCategory] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
@@ -125,6 +131,7 @@ const SessionExitForm = ({
 
   const resetLocalFormState = () => {
     setIsQuestionOrConcern(false);
+    setSubject("");
     setCategory("");
     setIsFirstSession(false);
     setSubmitError(null);
@@ -134,6 +141,7 @@ const SessionExitForm = ({
     if (
       submittingRef.current ||
       !TC.selectedSession ||
+      !subject ||
       !canSubmitSessionExitForm(TC.selectedSession)
     )
       return;
@@ -144,6 +152,7 @@ const SessionExitForm = ({
       const outcome: SessionExitFormOutcome = await handleSessionComplete(
         TC.selectedSession,
         TC.notes,
+        subject,
         isQuestionOrConcern,
         isFirstSession,
         category,
@@ -228,7 +237,7 @@ const SessionExitForm = ({
               Issue Category <span className="text-red-500">*</span>
             </label>
             <Select disabled={isSubmitting} value={category} onValueChange={setCategory}>
-              <SelectTrigger id="category">
+              <SelectTrigger id="category" aria-label="Issue Category" aria-required="true">
                 <SelectValue placeholder="Select a category..." />
               </SelectTrigger>
               <SelectContent>
@@ -241,6 +250,28 @@ const SessionExitForm = ({
             </Select>
           </div>
         )}
+
+        <div className="flex flex-col space-y-1.5">
+          <label htmlFor="session-subject" className="text-sm font-medium">
+            Subject <span className="text-destructive">*</span>
+          </label>
+          <Select
+            disabled={isSubmitting}
+            value={subject}
+            onValueChange={(value) => setSubject(value as SessionSubject)}
+          >
+            <SelectTrigger id="session-subject" aria-label="Subject" aria-required="true">
+              <SelectValue placeholder="Select a subject..." />
+            </SelectTrigger>
+            <SelectContent>
+              {SESSION_SUBJECTS.map((option) => (
+                <SelectItem key={option} value={option}>
+                  {option}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
 
         <Textarea
           disabled={isSubmitting}
@@ -277,6 +308,7 @@ const SessionExitForm = ({
           disabled={
             isSubmitting ||
             !canSubmitSessionExitForm(currSession) ||
+            !subject ||
             !TC.notes.trim() ||
             (!TC.nextClassConfirmed && !isQuestionOrConcern) ||
             (isQuestionOrConcern && !category)
