@@ -66,9 +66,9 @@ export default function StudentWaitlistStatusEmail({
 
         <div style={bodyText}>
           Thank you for applying for Connect Me Tutoring for <strong>{studentName}</strong>! We are
-          currently experiencing very high demand for tutoring, and we want to make sure every
-          tutor is matched with a student who is ready to make the most of it. Currently, we do not
-          have an immediate tutor available, but we have added your student to our waiting list.
+          currently experiencing very high demand for tutoring, and we want to make sure every tutor
+          is matched with a student who is ready to make the most of it. Currently, we do not have
+          an immediate tutor available, but we have added your student to our waiting list.
         </div>
 
         {/* Commitment Checklist */}
@@ -101,7 +101,9 @@ export default function StudentWaitlistStatusEmail({
               lineHeight: "1.8",
             }}
           >
-            <li style={{ marginBottom: "8px" }}>Your student will attend every scheduled session</li>
+            <li style={{ marginBottom: "8px" }}>
+              Your student will attend every scheduled session
+            </li>
             <li style={{ marginBottom: "8px" }}>
               You will monitor your email and reply to our messages within 24 hours
             </li>
@@ -117,8 +119,8 @@ export default function StudentWaitlistStatusEmail({
         </div>
 
         <div style={bodyText}>
-          If your plans have changed, no problem. Just let us know by{" "}
-          <strong>replying all</strong> to this email, and we will update our list.
+          If your plans have changed, no problem. Just let us know by <strong>replying all</strong>{" "}
+          to this email, and we will update our list.
         </div>
 
         {/* Action Required Box */}
@@ -136,8 +138,8 @@ export default function StudentWaitlistStatusEmail({
         >
           Please reply to this email within <strong>{replyWithinHours} hours</strong> if you are
           still looking to receive tutoring for your student, and we will notify you as soon as a
-          tutor becomes available. Please note that we might ask you to reapply if you are unable
-          to reply within this timeframe. Thank you for your understanding and patience.
+          tutor becomes available. Please note that we might ask you to reapply if you are unable to
+          reply within this timeframe. Thank you for your understanding and patience.
         </div>
 
         {/* Closing */}

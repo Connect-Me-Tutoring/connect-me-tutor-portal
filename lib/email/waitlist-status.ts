@@ -22,8 +22,7 @@ export const WAITLIST_EMAIL_MAX_AGE_DAYS = 7;
 const WAITLIST_CC = ["archives@connectmego.org", "admissions-archive@connectmego.org"];
 
 /** Dedupe key in session_reminders: one waitlist email per student, ever. */
-export const buildWaitlistStatusDescription = (studentId: string) =>
-  `waitlist-status:${studentId}`;
+export const buildWaitlistStatusDescription = (studentId: string) => `waitlist-status:${studentId}`;
 
 type StudentRow = {
   id: string;

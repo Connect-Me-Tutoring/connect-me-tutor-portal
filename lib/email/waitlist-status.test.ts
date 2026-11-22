@@ -36,9 +36,8 @@ vi.mock("@/lib/supabase/server", () => ({
 vi.mock("@/lib/email/mailer", () => ({ sendMail: (...a: unknown[]) => sendMail(...a) }));
 vi.mock("@/lib/posthog", () => ({ logError: vi.fn() }));
 
-const { sendWaitlistStatusEmails, buildWaitlistStatusDescription } = await import(
-  "./waitlist-status"
-);
+const { sendWaitlistStatusEmails, buildWaitlistStatusDescription } =
+  await import("./waitlist-status");
 
 const student = (id: string, extra: Record<string, unknown> = {}) => ({
   id,
@@ -66,7 +65,9 @@ describe("sendWaitlistStatusEmails", () => {
       if (call.table === "Enrollments")
         return { data: enrolled.map((student_id) => ({ student_id })) };
       if (call.table === "session_reminders" && call.op === "select")
-        return { data: alreadySent.map((id) => ({ description: buildWaitlistStatusDescription(id) })) };
+        return {
+          data: alreadySent.map((id) => ({ description: buildWaitlistStatusDescription(id) })),
+        };
       if (call.table === "session_reminders" && call.op === "insert") return { data: { id: 99 } };
       return {};
     };
