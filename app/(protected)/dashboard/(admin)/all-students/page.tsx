@@ -6,7 +6,7 @@ import { Suspense } from "react";
 async function MyStudentsData() {
   const students = await getAllProfiles("Student", "created_at", false);
 
-  return <StudentList initialStudents={students} />;
+  return <StudentList initialStudents={students ?? []} />;
 }
 
 export default async function MyStudentsPage() {

@@ -28,6 +28,7 @@ import {
   getProfileUncached,
   requestEmailChange,
 } from "@/lib/actions/profile/server.actions";
+import { getErrorMessage } from "@/lib/utils/error";
 import { useProfile } from "@/lib/contexts/profileContext";
 import type { Database } from "@/types/database.types";
 import { getUserProfiles } from "@/lib/actions/profile/server.actions";
@@ -269,7 +270,7 @@ export default function SettingsPage({
       setIsSavingEmail(true);
       const { error } = await requestEmailChange(trimmedEmail);
       if (error) {
-        toast.error(error);
+        toast.error(getErrorMessage(error, "Unable to update email address"));
         return;
       }
       setPendingEmail(trimmedEmail.toLowerCase());
@@ -278,7 +279,7 @@ export default function SettingsPage({
       );
     } catch (error) {
       console.error("Error updating email:", error);
-      toast.error("Unable to update email address");
+      toast.error(getErrorMessage(error, "Unable to update email address"));
     } finally {
       setIsSavingEmail(false);
     }

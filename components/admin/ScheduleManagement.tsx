@@ -77,6 +77,7 @@ import { getAllSessions } from "@/lib/actions/session/client.actions";
 import { addSessions } from "@/lib/actions/session/client.actions";
 import { getProfileWithProfileId } from "@/lib/actions/user/client.actions";
 import { toast, Toaster } from "react-hot-toast";
+import { getErrorMessage } from "@/lib/utils/error";
 import { Session, Enrollment, Meeting, Profile } from "@/types";
 import { getSessionTimespan } from "@/lib/utils";
 import {
@@ -451,9 +452,9 @@ const Schedule = () => {
       toast.success(`${newSessions.length} new sessions added successfully`);
     },
     onError: (error: any, _, context) => {
-      error.digest === "4161161223"
+      error?.digest === "4161161223"
         ? toast.error("Please wait until adding new sessions")
-        : toast.error(`Failed to add sessions. ${error.message}`);
+        : toast.error(getErrorMessage(error, "Failed to add sessions. Please try again."));
     },
     onSettled: () => {},
   });
