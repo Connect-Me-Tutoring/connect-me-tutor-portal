@@ -1,6 +1,7 @@
 import React from "react";
 import { Section, Text, Link } from "@react-email/components";
 import { SOCIAL_LINKS } from "@/constants/socials";
+import { emailColors as c, emailFont } from "@/components/emails/layout/tokens";
 
 export interface EmailFooterProps {
   style?: React.CSSProperties;
@@ -8,69 +9,75 @@ export interface EmailFooterProps {
   className?: string;
 }
 
+const DEFAULT_TAGLINE = "Connect Me Free Tutoring & Mentoring";
+
+const links = [SOCIAL_LINKS.website, SOCIAL_LINKS.instagram, SOCIAL_LINKS.linkedin];
+
+// A light card footer, like the portal's CardFooter: it sits flush with the bottom of the
+// email card (radius 7px so it fits inside the card's 1px border and 8px corners).
 const defaultFooterStyle: React.CSSProperties = {
-  backgroundColor: "#30302F",
+  backgroundColor: c.page,
+  borderTop: `1px solid ${c.border}`,
+  borderRadius: "0 0 7px 7px",
   padding: "20px 16px",
   textAlign: "center",
-  borderTop: "1px solid #495860",
-  borderRadius: "0 0 8px 8px",
-};
-
-const linkStyle: React.CSSProperties = {
-  color: "#B7E2F2",
-  textDecoration: "underline",
-  fontSize: "13px",
-  fontWeight: 500,
-  margin: "0 8px",
-};
-
-const separatorStyle: React.CSSProperties = {
-  color: "#8494A8",
-  fontSize: "12px",
 };
 
 const taglineStyle: React.CSSProperties = {
-  color: "#8494A8",
+  color: c.muted,
+  fontSize: "12px",
+  lineHeight: "18px",
+  margin: "0 0 8px",
+};
+
+const linkStyle: React.CSSProperties = {
+  color: c.blue3,
   fontSize: "13px",
-  margin: "0 0 10px 0",
+  fontWeight: 500,
+  textDecoration: "none",
+};
+
+const separatorStyle: React.CSSProperties = {
+  color: c.gray1,
+  fontSize: "13px",
+  padding: "0 8px",
 };
 
 export default function EmailFooter({
   style,
-  tagline = "Connect Me Free Tutoring & Mentoring",
+  tagline = DEFAULT_TAGLINE,
   className,
 }: EmailFooterProps) {
   return (
     <Section style={{ ...defaultFooterStyle, ...style }} className={className}>
       <Text style={taglineStyle}>{tagline}</Text>
-      <Text style={{ margin: "0", lineHeight: "1.4" }}>
-        <Link href={SOCIAL_LINKS.website.url} style={linkStyle} target="_blank">
-          Website
-        </Link>
-        <span style={separatorStyle}>•</span>
-        <Link href={SOCIAL_LINKS.instagram.url} style={linkStyle} target="_blank">
-          Instagram
-        </Link>
-        <span style={separatorStyle}>•</span>
-        <Link href={SOCIAL_LINKS.linkedin.url} style={linkStyle} target="_blank">
-          LinkedIn
-        </Link>
+      <Text style={{ margin: 0, lineHeight: "20px" }}>
+        {links.map((link, i) => (
+          <React.Fragment key={link.label}>
+            {i > 0 ? <span style={separatorStyle}>·</span> : null}
+            <Link href={link.url} style={linkStyle} target="_blank">
+              {link.label}
+            </Link>
+          </React.Fragment>
+        ))}
       </Text>
     </Section>
   );
 }
 
-export function getEmailFooterHtml(tagline = "Connect Me Free Tutoring & Mentoring") {
+/** The same footer as raw HTML, for templates that build their markup as strings. */
+export function getEmailFooterHtml(tagline = DEFAULT_TAGLINE) {
+  const escaped = tagline.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  const linkHtml = links
+    .map(
+      (link) =>
+        `<a href="${link.url}" target="_blank" rel="noopener noreferrer" style="color: ${c.blue3}; font-size: 13px; font-weight: 500; text-decoration: none;">${link.label}</a>`,
+    )
+    .join(`<span style="color: ${c.gray1}; font-size: 13px; padding: 0 8px;">·</span>`);
   return `
-    <div style="background-color: #30302F; padding: 20px 16px; text-align: center; border-top: 1px solid #495860; border-radius: 0 0 8px 8px; margin-top: 24px; font-family: Arial, sans-serif;">
-      <p style="color: #8494A8; font-size: 13px; margin: 0 0 10px 0;">${tagline}</p>
-      <p style="margin: 0; line-height: 1.4;">
-        <a href="${SOCIAL_LINKS.website.url}" target="_blank" rel="noopener noreferrer" style="color: #B7E2F2; text-decoration: underline; font-size: 13px; font-weight: 500; margin: 0 8px;">Website</a>
-        <span style="color: #8494A8; font-size: 12px;">•</span>
-        <a href="${SOCIAL_LINKS.instagram.url}" target="_blank" rel="noopener noreferrer" style="color: #B7E2F2; text-decoration: underline; font-size: 13px; font-weight: 500; margin: 0 8px;">Instagram</a>
-        <span style="color: #8494A8; font-size: 12px;">•</span>
-        <a href="${SOCIAL_LINKS.linkedin.url}" target="_blank" rel="noopener noreferrer" style="color: #B7E2F2; text-decoration: underline; font-size: 13px; font-weight: 500; margin: 0 8px;">LinkedIn</a>
-      </p>
+    <div style="background-color: ${c.page}; border-top: 1px solid ${c.border}; border-radius: 0 0 7px 7px; padding: 20px 16px; text-align: center; font-family: ${emailFont};">
+      <p style="color: ${c.muted}; font-size: 12px; line-height: 18px; margin: 0 0 8px 0;">${escaped}</p>
+      <p style="margin: 0; line-height: 20px;">${linkHtml}</p>
     </div>
   `;
 }
