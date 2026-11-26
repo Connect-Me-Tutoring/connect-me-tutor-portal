@@ -193,7 +193,11 @@ To change the time **every week**, edit the enrollment in [My Enrollments](/dash
 
 ### Requesting a substitute
 
-Click the **Request a Substitute** icon (person with a +) on the session. It opens the substitute request form.
+1. Click the **Request a Substitute** icon (person with a +) on the session, or **Actions → Request Substitute** under Active Sessions.
+2. Confirm. The session is marked **Sub Requested** and the substitute request form opens in a new tab.
+3. Submit the form so a substitute can be found. Requests should be made at least 24 hours in advance.
+
+A Sub Requested session doesn't need a Session Exit Form and doesn't count toward your volunteer hours. Teaching it after all? Click the icon again (person with a ✓) and choose **Undo sub request**.
 
 ### Cancelling a session
 

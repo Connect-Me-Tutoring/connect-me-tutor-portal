@@ -1,4 +1,4 @@
-import { CircleAlert, CircleCheckBig, CircleX, Clock, UserX } from "lucide-react";
+import { CircleAlert, CircleCheckBig, CircleX, Clock, UserRoundPlus, UserX } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { Session } from "@/types";
@@ -32,6 +32,11 @@ const STATUS_STYLES: Partial<
     label: "Unconfirmed",
     className: "bg-amber-100 text-amber-800 border-amber-200",
     icon: CircleAlert,
+  },
+  "Sub-Request": {
+    label: "Sub Requested",
+    className: "bg-teal-100 text-teal-800 border-teal-200",
+    icon: UserRoundPlus,
   },
 };
 

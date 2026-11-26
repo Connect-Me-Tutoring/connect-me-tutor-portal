@@ -8,21 +8,14 @@ import { cachedGetProfile } from "@/lib/actions/cache";
 import { getTutorSessions } from "@/lib/actions/session/server.actions";
 import { getStudentSessions } from "@/lib/actions/session/server.actions";
 import { cachedGetUser } from "@/lib/actions/user/actions";
-import { Meeting, Profile, Session } from "@/types";
+import { Meeting, Profile } from "@/types";
 import { endOfWeek, startOfWeek } from "date-fns";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { DashboardContextProvider } from "@/lib/contexts/dashboardContext";
 import { getProfile } from "@/lib/actions/profile/server.actions";
 import { logEvent } from "@/lib/posthog";
-
-/** Statuses that put a session in the past bucket: it has happened and needs no more action. */
-const PAST_SESSION_STATUSES: Session["status"][] = [
-  "Complete",
-  "Cancelled",
-  "Unconfirmed",
-  "Student Did Not Attend",
-];
+import { isActiveDashboardSession, isPastDashboardSession } from "@/lib/session-substitute";
 
 async function TutorDashboardPage({
   profile,
@@ -37,11 +30,11 @@ async function TutorDashboardPage({
   });
 
   const activeTutorSessions = sessions.then((sessions) =>
-    sessions.filter((session) => session.status === "Active"),
+    sessions.filter((session) => isActiveDashboardSession(session)),
   );
 
   const pastTutorSessions = sessions.then((sessions) =>
-    sessions.filter((session) => PAST_SESSION_STATUSES.includes(session.status)).toReversed(),
+    sessions.filter((session) => isPastDashboardSession(session)).toReversed(),
   );
 
   const currentTutorSessions = sessions.then((sessions) => {
@@ -95,11 +88,11 @@ async function StudentDashboardPage({
   });
 
   const activeStudentSessions = sessions.then((sessions) =>
-    sessions.filter((session) => session.status == "Active"),
+    sessions.filter((session) => isActiveDashboardSession(session)),
   );
 
   const pastStudentSessions = sessions.then((sessions) =>
-    sessions.filter((session) => PAST_SESSION_STATUSES.includes(session.status)).toReversed(),
+    sessions.filter((session) => isPastDashboardSession(session)).toReversed(),
   );
 
   return (
