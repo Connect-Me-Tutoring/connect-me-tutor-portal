@@ -65,6 +65,7 @@ import { LoadMoreButton } from "@/components/ui/load-more-button";
 import { useLoadMore } from "@/hooks/useLoadMore";
 import { ResponsiveList, ResponsiveListColumn } from "@/components/ui/responsive-list";
 import toast, { Toaster } from "react-hot-toast";
+import { getErrorMessage } from "@/lib/utils/error";
 import { Combobox } from "@/components/ui/combobox";
 
 import AddTutorForm from "./components/AddTutorForm";
@@ -78,8 +79,8 @@ import { UserAvailabilities } from "../ui/UserAvailabilities";
 
 const TutorList = ({ initialTutors }: any) => {
   const supabase = createClient();
-  const [tutors, setTutors] = useState<Profile[]>(initialTutors);
-  const [filteredTutors, setFilteredTutors] = useState<Profile[]>(initialTutors);
+  const [tutors, setTutors] = useState<Profile[]>(initialTutors ?? []);
+  const [filteredTutors, setFilteredTutors] = useState<Profile[]>(initialTutors ?? []);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
@@ -123,8 +124,8 @@ const TutorList = ({ initialTutors }: any) => {
       setLoading(true);
       setError(null);
 
-      const tutorsData = await getAllProfiles("Tutor", "created_at", false);
-      if (!tutorsData) throw new Error("No tutors found");
+      // getAllProfiles returns null for "no rows" as well as errors.
+      const tutorsData = (await getAllProfiles("Tutor", "created_at", false)) ?? [];
 
       setTutors(tutorsData);
       setFilteredTutors(tutorsData);
@@ -261,9 +262,9 @@ const TutorList = ({ initialTutors }: any) => {
           "Failed to add tutor. Please check the email address and ensure it is valid and unique.",
         );
       } else if (err.message.includes("required")) {
-        toast.error(`Failed to add tutor. Required field error: ${err.message}`);
+        toast.error("Failed to add tutor. Please fill in all required fields.");
       } else {
-        toast.error(`Failed to add tutor: ${err.message || "Please try again"}`);
+        toast.error(getErrorMessage(err, "Failed to add tutor. Please try again."));
       }
     } finally {
       setAddingTutor(false);

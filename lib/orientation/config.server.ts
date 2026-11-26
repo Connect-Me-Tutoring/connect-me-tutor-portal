@@ -5,7 +5,10 @@ import PostHogClient from "@/lib/posthog";
 /** Existing PostHog feature flag used as the tutor-orientation kill switch. */
 export const TUTOR_ORIENTATION_FLAG = "tutor-orientation";
 
-/** Existing admin-dashboard display setting; not used for tutor access control. */
+/**
+ * Env override (`TUTOR_ORIENTATION_ENABLED`, falling back to `ORIENTATION_QUIZ_ENABLED`).
+ * When "true", every tutor gets orientation access regardless of the PostHog flag.
+ */
 export const isTutorOrientationEnabledForAll = () =>
   (process.env.TUTOR_ORIENTATION_ENABLED ?? process.env.ORIENTATION_QUIZ_ENABLED)?.trim() ===
   "true";
@@ -21,14 +24,15 @@ type OrientationProfile = {
 
 /**
  * Whether this profile can open the tutor orientation.
- * Admins retain preview access. Tutor access and enforcement follow PostHog, with
- * failures treated as disabled so the flag remains a safe emergency kill switch.
+ * Admins retain preview access. Tutors get access when the env override is "true";
+ * otherwise access follows PostHog, with failures treated as disabled.
  */
 export async function hasTutorOrientationAccess(
   profile: OrientationProfile | null | undefined,
 ): Promise<boolean> {
   if (!profile || !canViewTutorOrientation(profile.role)) return false;
   if (profile.role === "Admin") return true;
+  if (isTutorOrientationEnabledForAll()) return true;
   if (!profile.id) return false;
 
   const client = PostHogClient();

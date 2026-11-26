@@ -62,6 +62,7 @@ import { LoadMoreButton } from "@/components/ui/load-more-button";
 import { useLoadMore } from "@/hooks/useLoadMore";
 import { ResponsiveList, ResponsiveListColumn } from "@/components/ui/responsive-list";
 import toast, { Toaster } from "react-hot-toast";
+import { getErrorMessage } from "@/lib/utils/error";
 import { set } from "date-fns";
 import { AlertDialogCancel } from "@radix-ui/react-alert-dialog";
 import LegacyConsentBanner from "./components/LegacyConsentBanner";
@@ -96,8 +97,8 @@ const StudentList = ({ initialStudents }: any) =>
   // }
   {
     const supabase = createClient();
-    const [students, setStudents] = useState<Profile[]>(initialStudents);
-    const [filteredStudents, setFilteredStudents] = useState<Profile[]>(initialStudents);
+    const [students, setStudents] = useState<Profile[]>(initialStudents ?? []);
+    const [filteredStudents, setFilteredStudents] = useState<Profile[]>(initialStudents ?? []);
     const [profile, setProfile] = useState<Profile | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -150,8 +151,8 @@ const StudentList = ({ initialStudents }: any) =>
 
         setProfile(profileData);
 
-        const studentsData = await getAllProfiles("Student", "created_at", false);
-        if (!studentsData) throw new Error("No students found");
+        // getAllProfiles returns null for "no rows" as well as errors.
+        const studentsData = (await getAllProfiles("Student", "created_at", false)) ?? [];
 
         setStudents(studentsData);
         setFilteredStudents(studentsData);
@@ -323,9 +324,9 @@ const StudentList = ({ initialStudents }: any) =>
             "Failed to add student. Please check the email address and ensure it is valid and unique.",
           );
         } else if (err.message.includes("required")) {
-          toast.error(`Failed to add student. Required field error: ${err.message}`);
+          toast.error("Failed to add student. Please fill in all required fields.");
         } else {
-          toast.error(`Failed to add student: ${err.message || "Please try again"}`);
+          toast.error(getErrorMessage(err, "Failed to add student. Please try again."));
         }
       } finally {
         setAddingStudent(false);
@@ -391,9 +392,9 @@ const StudentList = ({ initialStudents }: any) =>
             "Failed to add student. Please check the email address and ensure it is valid and unique.",
           );
         } else if (err.message.includes("required")) {
-          toast.error(`Failed to add student. Required field error: ${err.message}`);
+          toast.error("Failed to add student. Please fill in all required fields.");
         } else {
-          toast.error(`Failed to add student: ${err.message || "Please try again"}`);
+          toast.error(getErrorMessage(err, "Failed to add student. Please try again."));
         }
       } finally {
         setAddingStudent(false);

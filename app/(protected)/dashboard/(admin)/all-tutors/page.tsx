@@ -5,7 +5,7 @@ import SkeletonTable, { SkeletonCard } from "@/components/ui/skeleton";
 
 async function MyTutorsData() {
   const tutors = await getAllProfiles("Tutor", "created_at", false);
-  return <TutorList initialTutors={tutors} />;
+  return <TutorList initialTutors={tutors ?? []} />;
 }
 
 export default async function MyTutorsPage() {

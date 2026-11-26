@@ -68,7 +68,7 @@ const AnalyticsDashboard = () => {
         >
           <DropoffChart />
         </AnalyticsCard>
-        <AnalyticsCard title="Pairing Length" subtitle="Active tenure and completed spans">
+        <AnalyticsCard title="Pairing Length" subtitle="Active = completed session in last 6 weeks">
           <PairingLengthCard />
         </AnalyticsCard>
       </div>
