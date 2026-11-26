@@ -84,7 +84,13 @@ export default function StudentWaitlistStatusEmail({
       <Section style={{ padding: "0 4px 20px" }}>
         <Row>
           <Column style={{ width: "36px" }}>
-            <Img src={logoUrl} width="28" height="28" alt="Connect Me" style={{ display: "block" }} />
+            <Img
+              src={logoUrl}
+              width="28"
+              height="28"
+              alt="Connect Me"
+              style={{ display: "block" }}
+            />
           </Column>
           <Column>
             <Text style={{ margin: 0, fontSize: "17px", fontWeight: 700, color: color.black }}>
@@ -168,7 +174,14 @@ export default function StudentWaitlistStatusEmail({
               <Text style={{ margin: 0, fontSize: "14px", fontWeight: 600, color: color.black }}>
                 Before you&apos;re matched
               </Text>
-              <Text style={{ margin: "2px 0 0", fontSize: "13px", lineHeight: "20px", color: color.muted }}>
+              <Text
+                style={{
+                  margin: "2px 0 0",
+                  fontSize: "13px",
+                  lineHeight: "20px",
+                  color: color.muted,
+                }}
+              >
                 If you can commit for at least the next 6 to 12 months, please confirm that:
               </Text>
             </Section>
@@ -179,7 +192,9 @@ export default function StudentWaitlistStatusEmail({
                   borderBottom: i < commitments.length - 1 ? `1px solid ${color.border}` : "none",
                 }}
               >
-                <Column style={{ width: "40px", verticalAlign: "top", padding: "14px 0 14px 16px" }}>
+                <Column
+                  style={{ width: "40px", verticalAlign: "top", padding: "14px 0 14px 16px" }}
+                >
                   <Text
                     style={{
                       margin: 0,
@@ -198,7 +213,9 @@ export default function StudentWaitlistStatusEmail({
                   </Text>
                 </Column>
                 <Column style={{ verticalAlign: "top", padding: "14px 16px 14px 4px" }}>
-                  <Text style={{ margin: 0, fontSize: "14px", lineHeight: "22px", color: color.black }}>
+                  <Text
+                    style={{ margin: 0, fontSize: "14px", lineHeight: "22px", color: color.black }}
+                  >
                     {item}
                   </Text>
                 </Column>
@@ -218,7 +235,9 @@ export default function StudentWaitlistStatusEmail({
               padding: "14px 16px",
             }}
           >
-            <Text style={{ margin: "0 0 4px", fontSize: "14px", fontWeight: 600, color: color.blue5 }}>
+            <Text
+              style={{ margin: "0 0 4px", fontSize: "14px", fontWeight: 600, color: color.blue5 }}
+            >
               Action needed: reply within {replyWithinHours} hours
             </Text>
             <Text style={{ margin: 0, fontSize: "14px", lineHeight: "22px", color: color.gray2 }}>
@@ -234,14 +253,20 @@ export default function StudentWaitlistStatusEmail({
             If your plans have changed, no problem. Just <strong>reply all</strong> to this email
             and we will update our list.
           </Text>
-          <Text style={{ ...text, margin: 0 }}>
-            Thank you for your understanding and patience.
-          </Text>
+          <Text style={{ ...text, margin: 0 }}>Thank you for your understanding and patience.</Text>
           <Hr style={{ borderColor: color.border, margin: "24px 0 16px" }} />
           <Text style={{ margin: 0, fontSize: "14px", lineHeight: "22px", color: color.muted }}>
             Best regards,
           </Text>
-          <Text style={{ margin: 0, fontSize: "14px", lineHeight: "22px", fontWeight: 600, color: color.black }}>
+          <Text
+            style={{
+              margin: 0,
+              fontSize: "14px",
+              lineHeight: "22px",
+              fontWeight: 600,
+              color: color.black,
+            }}
+          >
             Connect Me Free Tutoring &amp; Mentoring
           </Text>
         </Section>
