@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 // A fake service-role client: each query records its table/op/filters and resolves
 // through `respond`, which the tests configure per table.
@@ -55,6 +55,8 @@ describe("sendWaitlistStatusEmails", () => {
   let alreadySent: string[];
 
   beforeEach(() => {
+    vi.stubEnv("ARCHIVES_EMAIL", "archives@connectmego.org");
+    vi.stubEnv("ADMISSIONS_ARCHIVES_EMAIL", "admissions-archive@connectmego.org");
     calls.length = 0;
     sendMail.mockReset().mockResolvedValue({ data: { id: "msg-1" }, error: null });
     students = [];
@@ -71,6 +73,10 @@ describe("sendWaitlistStatusEmails", () => {
       if (call.table === "session_reminders" && call.op === "insert") return { data: { id: 99 } };
       return {};
     };
+  });
+
+  afterEach(() => {
+    vi.unstubAllEnvs();
   });
 
   it("queries active students created between 7 and 4 days ago", async () => {
@@ -99,6 +105,14 @@ describe("sendWaitlistStatusEmails", () => {
       cc: ["archives@connectmego.org", "admissions-archive@connectmego.org"],
       subject: "Connect Me Tutoring Status",
     });
+  });
+
+  it("leaves cc off when the archive addresses are not configured", async () => {
+    vi.stubEnv("ARCHIVES_EMAIL", "");
+    vi.stubEnv("ADMISSIONS_ARCHIVES_EMAIL", " ");
+    students = [student("a")];
+    await sendWaitlistStatusEmails();
+    expect(sendMail.mock.calls[0][0].cc).toBeUndefined();
   });
 
   it("falls back to the student email when there is no parent email", async () => {

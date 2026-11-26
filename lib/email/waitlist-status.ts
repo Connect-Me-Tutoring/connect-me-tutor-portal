@@ -19,7 +19,11 @@ export const WAITLIST_EMAIL_DELAY_DAYS = 4;
  */
 export const WAITLIST_EMAIL_MAX_AGE_DAYS = 7;
 
-const WAITLIST_CC = ["archives@connectmego.org", "admissions-archive@connectmego.org"];
+/** Archive inboxes copied on every waitlist email; unset or blank variables are skipped. */
+const waitlistCc = () =>
+  [process.env.ARCHIVES_EMAIL, process.env.ADMISSIONS_ARCHIVES_EMAIL]
+    .map((email) => email?.trim())
+    .filter((email): email is string => Boolean(email));
 
 /** Dedupe key in session_reminders: one waitlist email per student, ever. */
 export const buildWaitlistStatusDescription = (studentId: string) => `waitlist-status:${studentId}`;
@@ -71,6 +75,7 @@ export async function sendWaitlistStatusEmails(now = new Date()) {
   const enrolled = new Set((enrollments.data ?? []).map((row) => row.student_id));
   const sentDescriptions = new Set((alreadySent.data ?? []).map((row) => row.description));
 
+  const cc = waitlistCc();
   let sent = 0;
   let skipped = 0;
   let failed = 0;
@@ -100,7 +105,7 @@ export async function sendWaitlistStatusEmails(now = new Date()) {
       const { data, error } = await sendMail({
         from: "Connect Me Free Tutoring & Mentoring <reminder@connectmego.app>",
         to,
-        cc: WAITLIST_CC,
+        cc: cc.length ? cc : undefined,
         // Sent from an unmonitored address; route replies to operations.
         replyTo: process.env.OPERATIONS_EMAIL || undefined,
         subject: STUDENT_WAITLIST_STATUS_SUBJECT,
