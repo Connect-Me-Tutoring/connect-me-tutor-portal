@@ -97,7 +97,6 @@ export function emailLayoutHtml({
   const previewHtml = preview
     ? `<div style="display:none;overflow:hidden;line-height:1px;opacity:0;max-height:0;max-width:0;">${escapeHtml(preview)}</div>`
     : "";
-  // getEmailFooterHtml adds its own top margin; the footer here sits flush with the card.
-  const footer = getEmailFooterHtml(footerTagline).replace("margin-top: 24px; ", "");
+  const footer = getEmailFooterHtml(footerTagline);
   return `<div style="margin:0;padding:0;background-color:${c.page};font-family:${emailFont};">${previewHtml}<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:${c.page};"><tr><td align="center" style="padding:32px 16px;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:560px;"><tr><td style="padding:0 4px 20px;"><table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr><td style="width:36px;"><img src="${escapeHtml(logoUrl)}" width="28" height="28" alt="Connect Me" style="display:block;" /></td><td><p style="margin:0;font-size:17px;font-weight:700;color:${c.black};">Connect Me</p></td></tr></table></td></tr><tr><td style="background-color:${c.card};border:1px solid ${c.border};border-radius:8px;box-shadow:0 1px 2px 0 rgba(0,0,0,0.05);"><div style="padding:28px;">${content}</div>${footer}</td></tr></table></td></tr></table></div>`;
 }
