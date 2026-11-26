@@ -13,6 +13,7 @@ import {
   Section,
   Text,
 } from "@react-email/components";
+import EmailFooter from "@/components/emails/email-footer";
 
 export const STUDENT_WAITLIST_STATUS_SUBJECT = "Connect Me Tutoring Status";
 
@@ -270,20 +271,10 @@ export default function StudentWaitlistStatusEmail({
             Connect Me Free Tutoring &amp; Mentoring
           </Text>
         </Section>
-      </Section>
 
-      {/* Footer */}
-      <Text
-        style={{
-          margin: "20px 0 0",
-          textAlign: "center",
-          fontSize: "12px",
-          lineHeight: "18px",
-          color: color.muted,
-        }}
-      >
-        Connect Me Online Tutoring · Connecting Students with Success
-      </Text>
+        {/* Shared footer with social links; sits flush with the card's rounded bottom. */}
+        <EmailFooter tagline="Connect Me Online Tutoring · Connecting Students with Success" />
+      </Section>
     </Container>
   );
 
