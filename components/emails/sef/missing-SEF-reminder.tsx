@@ -4,29 +4,37 @@
  */
 
 import { Profile } from "@/types";
-import { getEmailFooterHtml } from "@/components/emails/email-footer";
+import {
+  emailBadgeHtml,
+  emailButtonHtml,
+  emailHeadingHtml,
+  emailLayoutHtml,
+  emailSignatureHtml,
+  emailTextHtml,
+  escapeHtml,
+} from "@/components/emails/layout/html";
 
 export const missingSEFReminderEmail = (tutor: Profile, student: Profile) => {
-  return `
-    <p>
-      Hi ${tutor.firstName},<br><br>
+  const studentFull = `${escapeHtml(student.firstName)} ${escapeHtml(student.lastName)}`;
 
-      This is a reminder to complete the Session Exit Forms (SEFs) for your
-      recent tutoring sessions with
-      <strong>${student.firstName} ${student.lastName}</strong>.<br><br>
-
-      Our records show that the last two sessions in the past two weeks
-      are still marked as incomplete.<br><br>
-
-      Please visit
-      <a href="https://www.connectmego.app/">Connect Me Tutor Portal</a>
-      and submit the required SEFs as soon as possible.<br><br>
-
-      If you have any questions, feel free to reach out to us on Discord.<br><br>
-
-      Best,<br>
-      The Connect Me Free Tutoring & Mentoring Team
-    </p>
-    ${getEmailFooterHtml()}
-  `;
+  return emailLayoutHtml({
+    preview: `Reminder: complete your Session Exit Forms for ${student.firstName} ${student.lastName}`,
+    content: [
+      emailBadgeHtml("Reminder", "warning"),
+      emailHeadingHtml("Complete your Session Exit Forms"),
+      emailTextHtml(`Hi ${escapeHtml(tutor.firstName)},`),
+      emailTextHtml(
+        `This is a reminder to complete the Session Exit Forms (SEFs) for your recent tutoring sessions with <strong>${studentFull}</strong>.`,
+      ),
+      emailTextHtml(
+        "Our records show that the last two sessions in the past two weeks are still marked as incomplete.",
+      ),
+      emailTextHtml(
+        "Please visit the Connect Me Tutor Portal and submit the required SEFs as soon as possible.",
+      ),
+      emailButtonHtml("https://www.connectmego.app/", "Open the Tutor Portal"),
+      emailTextHtml("If you have any questions, feel free to reach out to us on Discord."),
+      emailSignatureHtml("Best,", "The Connect Me Free Tutoring & Mentoring Team"),
+    ].join(""),
+  });
 };
