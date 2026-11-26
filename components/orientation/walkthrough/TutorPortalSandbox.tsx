@@ -43,7 +43,7 @@ import {
   type MouseEvent as ReactMouseEvent,
   type ReactNode,
 } from "react";
-import { STATUS, type Status, type Step, useJoyride } from "react-joyride";
+import { EVENTS, STATUS, type Status, type Step, useJoyride } from "react-joyride";
 
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -84,6 +84,7 @@ const NAV_ITEMS = [
 ] as const;
 
 const CLICK_STEP_BUTTONS: Step["buttons"] = ["back"];
+const TOUR_VIEWPORT_PADDING = { top: 10, right: 10, bottom: 56, left: 10 };
 const INTERACTIVE_TARGETS: Record<string, string> = {
   "open-actions": "[data-tour='session-actions']",
   "open-exit-form": "[data-tour='session-exit-trigger']",
@@ -268,9 +269,31 @@ export function TutorPortalSandbox() {
   const { controls, state, step, Tour } = useJoyride({
     continuous: true,
     run: true,
-    scrollToFirstStep: true,
     steps,
+    onEvent: ({ type, step }) => {
+      if (type !== EVENTS.STEP_BEFORE || typeof step.target !== "string") return;
+      if (step.placement === "center") return;
+
+      // Joyride's built-in scroll only moves vertically. The practice portal can scroll both ways.
+      document.querySelector(step.target)?.scrollIntoView({
+        behavior: "instant",
+        block: "nearest",
+        inline: step.id && INTERACTIVE_TARGETS[step.id] ? "center" : "nearest",
+      });
+    },
+    floatingOptions: {
+      strategy: "fixed",
+      flipOptions: { padding: TOUR_VIEWPORT_PADDING },
+      shiftOptions: {
+        boundary: [],
+        rootBoundary: "viewport",
+        crossAxis: true,
+        padding: TOUR_VIEWPORT_PADDING,
+      },
+    },
     options: {
+      arrowBase: 16,
+      arrowSize: 8,
       blockTargetInteraction: false,
       buttons: ["back", "primary"],
       dismissKeyAction: false,
@@ -279,11 +302,12 @@ export function TutorPortalSandbox() {
       primaryColor: "#171717",
       showProgress: true,
       skipBeacon: true,
+      skipScroll: true,
       spotlightPadding: 6,
       spotlightRadius: 6,
       targetWaitTimeout: 2500,
       textColor: "#171717",
-      width: 360,
+      width: "min(360px, calc(100vw - 24px))",
       zIndex: 140,
     },
     locale: {
@@ -292,9 +316,16 @@ export function TutorPortalSandbox() {
       nextWithProgress: "Next ({current} of {total})",
     },
     styles: {
+      arrow: { pointerEvents: "none" },
       floater: { filter: "drop-shadow(0 10px 24px rgba(0, 0, 0, 0.18))" },
       spotlight: { stroke: "#3b82f6", strokeWidth: 4 },
-      tooltip: { border: "1px solid #e5e7eb", borderRadius: 8, padding: 20 },
+      tooltip: {
+        border: "1px solid hsl(var(--border))",
+        borderRadius: 8,
+        maxHeight: "calc(100dvh - 72px)",
+        overflowY: "auto",
+        padding: 20,
+      },
       tooltipContainer: { textAlign: "left" },
       tooltipTitle: { fontSize: 17, fontWeight: 600, lineHeight: 1.4 },
       tooltipContent: {
@@ -388,37 +419,38 @@ export function TutorPortalSandbox() {
   };
 
   return (
-    <div
-      className="fixed inset-0 z-[70] overflow-auto bg-background text-foreground"
-      data-tour="sandbox-shell"
-      onClickCapture={handleSandboxClick}
-    >
+    <div className="contents" onClickCapture={handleSandboxClick}>
       {Tour}
       <div
-        className="pointer-events-none fixed left-4 top-4 z-[150] max-w-xs rounded-md border bg-background/95 px-3 py-2 text-xs font-medium shadow-sm lg:hidden"
+        className="pointer-events-none fixed left-4 top-4 z-[139] max-w-xs rounded-md border bg-background/95 px-3 py-2 text-xs font-medium shadow-sm lg:hidden"
         role="note"
       >
         This desktop-style walkthrough is best viewed on a larger screen.
       </div>
-      <div className="flex h-full min-w-[1180px]">
-        <PortalSidebar activeView={view} onSelect={selectView} />
-        <div className="flex-1 overflow-auto">
-          <header className="relative h-16 w-full bg-background">
-            <div className="absolute right-8 top-3 flex h-10 items-center gap-2 rounded-md border bg-background px-3 text-sm font-semibold">
-              <User aria-hidden="true" className="h-4 w-4" />
-              <span>Taylor Morgan</span>
-              <ChevronDown aria-hidden="true" className="h-4 w-4" />
-            </div>
-          </header>
-          <main className="min-h-[calc(100%-4rem)] rounded-2xl border-2 border-gray-200">
-            <PortalView
-              actionsOpen={actionsOpen}
-              exitFormCompleted={exitFormCompleted}
-              onOpenActions={openActions}
-              onOpenExitForm={openExitForm}
-              view={view}
-            />
-          </main>
+      <div
+        className="fixed inset-0 z-[70] overflow-auto bg-background text-foreground"
+        data-tour="sandbox-shell"
+      >
+        <div className="flex h-full min-w-[1180px]">
+          <PortalSidebar activeView={view} onSelect={selectView} />
+          <div className="flex-1 overflow-auto">
+            <header className="relative h-16 w-full bg-background">
+              <div className="absolute right-8 top-3 flex h-10 items-center gap-2 rounded-md border bg-background px-3 text-sm font-semibold">
+                <User aria-hidden="true" className="h-4 w-4" />
+                <span>Taylor Morgan</span>
+                <ChevronDown aria-hidden="true" className="h-4 w-4" />
+              </div>
+            </header>
+            <main className="min-h-[calc(100%-4rem)] rounded-2xl border-2 border-gray-200">
+              <PortalView
+                actionsOpen={actionsOpen}
+                exitFormCompleted={exitFormCompleted}
+                onOpenActions={openActions}
+                onOpenExitForm={openExitForm}
+                view={view}
+              />
+            </main>
+          </div>
         </div>
       </div>
       <Link
@@ -750,9 +782,9 @@ function TableFooterSummary({ label }: { label: string }) {
 
 function SessionExitPracticeDialog({ onSubmit }: { onSubmit: () => void }) {
   return (
-    <div className="fixed inset-0 z-[110] flex items-center justify-center bg-black/80">
-      <div className="relative w-full max-w-lg rounded-lg border bg-background p-6 shadow-lg">
-        <div className="mb-5 flex items-center justify-between gap-4">
+    <div className="fixed inset-0 z-[110] flex items-center justify-center bg-black/80 p-4">
+      <div className="relative max-h-full w-full max-w-lg overflow-y-auto rounded-lg border bg-background p-6 shadow-lg">
+        <div className="mb-5 flex flex-wrap items-center justify-between gap-4">
           <h2 className="text-lg font-semibold">Session Exit Form</h2>
           <Button variant="outline">The session did not happen</Button>
         </div>
